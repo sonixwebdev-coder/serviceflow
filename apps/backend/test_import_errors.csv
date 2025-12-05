@@ -1,0 +1,11 @@
+Tip,Prenume,Nume,Companie,Persoana contact,Telefon,Email,CUI,Nr. Reg. Com.,Observatii
+PF,Valid,Client,,,0721111111,valid@example.com,,,Should succeed
+INVALID,,,,,0721222222,invalid@example.com,,,Invalid type - should fail
+PF,,,,,0721333333,noemailnoname@example.com,,,Missing name - should fail
+PF,NoContact,Client,,,,,,No contact method - should fail
+PF,BadPhone,Client,,,12345,badphone@example.com,,,Invalid phone format - should fail
+PF,BadEmail,Client,,,0721444444,notanemail,,,Invalid email - should fail
+SRL,,,Missing Name Company,,0721555555,company@example.com,,,Missing company name - should fail
+SRL,,,Valid Company,Contact Person,0721666666,validcompany@example.com,RO77777777,J40/7777/2020,Should succeed
+SRL,,,Duplicate Phone Company,,0721111111,uniqueemail@example.com,RO88888888,J40/8888/2020,Duplicate phone - should skip
+PF,Duplicate,Email,,,0721999999,valid@example.com,,,Duplicate email - should skip

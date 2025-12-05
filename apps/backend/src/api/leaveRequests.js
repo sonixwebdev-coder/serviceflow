@@ -1,0 +1,97 @@
+const express = require('express');
+const { z } = require('zod');
+const asyncHandler = require('../middleware/asyncHandler');
+const authenticate = require('../middleware/authenticate');
+const authorize = require('../middleware/authorize');
+const validate = require('../middleware/validate');
+const { ok, created } = require('../utils/http');
+const {
+  listTimeOffRequests,
+  createTimeOffRequest,
+  approveTimeOffRequest,
+  rejectTimeOffRequest,
+  createMedicalLeave,
+} = require('../services/timeOffService');
+
+const listQuerySchema = z.object({
+  status: z.string().optional(),
+  employee: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+const createSchema = z.object({
+  leaveType: z.string().min(1),
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
+  reason: z.string().min(1),
+});
+
+const reviewSchema = z.object({
+  reviewNotes: z.string().optional(),
+});
+
+const createMedicalLeaveSchema = z.object({
+  employeeId: z.string().min(1),
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
+  reason: z.string().min(1),
+});
+
+const router = express.Router();
+
+router.get(
+  '/',
+  authenticate,
+  validate(listQuerySchema, 'query'),
+  asyncHandler(async (req, res) => {
+    const requests = await listTimeOffRequests(req.query, req.user);
+    return ok(res, requests);
+  })
+);
+
+router.post(
+  '/',
+  authenticate,
+  validate(createSchema),
+  asyncHandler(async (req, res) => {
+    const request = await createTimeOffRequest(req.body, req.user);
+    return created(res, request, 'Leave request submitted');
+  })
+);
+
+router.put(
+  '/:requestId/approve',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(reviewSchema),
+  asyncHandler(async (req, res) => {
+    const request = await approveTimeOffRequest(req.params.requestId, req.user, req.body || {});
+    return ok(res, request, 'Leave request approved');
+  })
+);
+
+router.put(
+  '/:requestId/reject',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(reviewSchema),
+  asyncHandler(async (req, res) => {
+    const request = await rejectTimeOffRequest(req.params.requestId, req.user, req.body || {});
+    return ok(res, request, 'Leave request rejected');
+  })
+);
+
+// Create medical leave for an employee (admin-only)
+router.post(
+  '/medical',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(createMedicalLeaveSchema),
+  asyncHandler(async (req, res) => {
+    const request = await createMedicalLeave(req.body, req.user);
+    return created(res, request, 'Medical leave created');
+  })
+);
+
+module.exports = router;

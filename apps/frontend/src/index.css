@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: #f9fafb;
+  }
+}
+
+@layer components {
+  .fc-viperx .fc-daygrid-day-frame {
+    min-height: 120px !important;
+  }
+
+  .fc-viperx .fc-daygrid-event.fc-appointment {
+    @apply rounded-lg border px-2 py-1 text-left text-xs font-semibold shadow-sm transition-all;
+    margin-bottom: 2px !important;
+  }
+
+  .fc-viperx .fc-daygrid-event.fc-appointment .fc-event-title {
+    @apply truncate text-xs font-semibold;
+  }
+
+  .fc-viperx .fc-daygrid-event.fc-appointment .fc-event-time {
+    @apply mb-0 text-[11px] font-medium;
+  }
+
+  .fc-viperx .status-pending {
+    @apply border-yellow-400 bg-yellow-100 text-yellow-900;
+    background-color: rgb(254 249 195) !important;
+    border-color: rgb(250 204 21) !important;
+    color: rgb(113 63 18) !important;
+  }
+
+  .fc-viperx .status-approved {
+    @apply border-blue-400 bg-blue-100 text-blue-900;
+    background-color: rgb(219 234 254) !important;
+    border-color: rgb(96 165 250) !important;
+    color: rgb(30 58 138) !important;
+  }
+
+  .fc-viperx .status-in-progress {
+    @apply border-amber-400 bg-amber-100 text-amber-900;
+    background-color: rgb(254 243 199) !important;
+    border-color: rgb(251 191 36) !important;
+    color: rgb(120 53 15) !important;
+  }
+
+  .fc-viperx .status-completed {
+    @apply border-emerald-400 bg-emerald-100 text-emerald-900;
+    background-color: rgb(209 250 229) !important;
+    border-color: rgb(52 211 153) !important;
+    color: rgb(6 78 59) !important;
+  }
+
+  .fc-viperx .status-cancelled {
+    @apply border-red-400 bg-red-100 text-red-900;
+    background-color: rgb(254 226 226) !important;
+    border-color: rgb(248 113 113) !important;
+    color: rgb(127 29 29) !important;
+  }
+
+  .fc-viperx .status-unknown {
+    @apply border-gray-200 bg-gray-100 text-gray-700;
+    background-color: rgb(243 244 246) !important;
+    border-color: rgb(229 231 235) !important;
+    color: rgb(55 65 81) !important;
+  }
+
+  .fc-viperx .fc-daygrid-event.fc-appointment.is-selected {
+    @apply ring-2 ring-viperx-primary ring-offset-1 ring-offset-white;
+  }
+}

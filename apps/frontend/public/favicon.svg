@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#EA580C" stroke="#C2410C" stroke-width="2"/>
+
+  <!-- Letter V in white -->
+  <path d="M 30 25 L 42 60 L 50 45 L 58 60 L 70 25 L 62 25 L 54 50 L 50 38 L 46 50 L 38 25 Z"
+        fill="#FFFFFF"
+        stroke="#FFFFFF"
+        stroke-width="1"
+        stroke-linejoin="round"/>
+
+  <!-- Small "X" accent -->
+  <g transform="translate(65, 60)">
+    <line x1="0" y1="0" x2="8" y2="8" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="8" y1="0" x2="0" y2="8" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>

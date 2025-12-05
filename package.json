@@ -1,0 +1,32 @@
+{
+  "name": "serviceflow-crm",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend"
+  ],
+  "scripts": {
+    "dev": "node scripts/start-all.js",
+    "dev:frontend": "npm run dev --workspace apps/frontend",
+    "dev:backend": "npm run dev --workspace apps/backend",
+    "build": "npm run build --workspace apps/frontend",
+    "lint": "npm run lint --workspace apps/frontend",
+    "install:all": "npm install --workspaces",
+    "db:seed": "node prisma/seed.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "ioredis": "^5.8.2",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.19.0",
+    "i": "^0.3.7",
+    "npm": "^11.6.0",
+    "prisma": "^6.19.0"
+  }
+}

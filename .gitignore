@@ -1,0 +1,138 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+apps/frontend/dist/
+apps/backend/dist/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+apps/frontend/.env
+apps/backend/.env
+*.env
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.iml
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+*.db
+*.db-journal
+
+# Uploads and user-generated content
+uploads/
+apps/backend/uploads/
+public/uploads/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+.cache/
+
+# SSL certificates (if any)
+*.pem
+*.key
+*.crt
+*.cert
+
+# Database dumps
+*.sql
+*.dump
+
+# Redis dumps
+dump.rdb
+
+# PM2 files
+.pm2/
+pm2-*.json
+ecosystem.config.js
+
+# Lock files (keep package-lock.json but ignore others if needed)
+# Uncomment the next line if you want to ignore package-lock.json
+# package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# Documentation build artifacts
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# Sentry
+.sentryclirc
+
+# Webpack
+.webpack/
+
+# Storybook
+storybook-static/
+
+# Next.js (if added later)
+.next/
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.Trash-*/
+
+# Mobile
+*.apk
+*.ipa
+*.aab
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Prisma migrations (keep in git, but can exclude if needed)
+# prisma/migrations/
+
+# Claude.md files (project-specific instructions)
+# CLAUDE.md is kept in repo, but temporary ones can be ignored
+# .claude/
