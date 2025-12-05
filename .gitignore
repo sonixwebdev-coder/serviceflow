@@ -136,3 +136,4 @@ $RECYCLE.BIN/
 # Claude.md files (project-specific instructions)
 # CLAUDE.md is kept in repo, but temporary ones can be ignored
 # .claude/
+/apps/backend/storage/
