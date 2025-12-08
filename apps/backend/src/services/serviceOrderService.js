@@ -204,7 +204,18 @@ const persistPdfForOrder = async ({
 };
 
 const sanitizeLineItems = (lineItems = []) => {
+  console.log('🔧 [BACKEND - ServiceOrder] Sanitizing line items, input:', JSON.stringify(lineItems, null, 2));
+
   const result = lineItems.map((item, index) => {
+    console.log(`🔍 [BACKEND - ServiceOrder] Processing item ${index}:`, {
+      name: item?.name,
+      hardwareQuantity: item?.hardwareQuantity,
+      laborQuantity: item?.laborQuantity,
+      hardwarePrice: item?.hardwarePrice,
+      laborPrice: item?.laborPrice,
+      hardwareUnit: item?.hardwareUnit,
+      laborUnit: item?.laborUnit,
+    });
 
     const name = String(item?.name ?? '').trim();
     if (!name) {
@@ -222,12 +233,15 @@ const sanitizeLineItems = (lineItems = []) => {
 
       const laborQtyValue = toNumeric(item?.laborQuantity);
       laborQuantity = laborQtyValue === null ? 1 : Math.max(0, laborQtyValue);
+
+      console.log(`✅ [BACKEND - ServiceOrder] Using separate quantities: hw=${hardwareQuantity}, labor=${laborQuantity}`);
     } else if (item?.quantity !== undefined) {
       // Legacy format - use same quantity for both
       const quantityValue = toNumeric(item?.quantity);
       const quantity = quantityValue === null ? 1 : Math.max(1, quantityValue);
       hardwareQuantity = quantity;
       laborQuantity = quantity;
+      console.log(`⚠️  [BACKEND - ServiceOrder] Using legacy quantity: ${quantity}`);
     }
 
     // Support both old format (unitPrice) and new format (hardwarePrice + laborPrice)
@@ -242,6 +256,8 @@ const sanitizeLineItems = (lineItems = []) => {
       const laborPriceValue = toNumeric(item?.laborPrice);
       laborPrice = laborPriceValue === null ? 0 : laborPriceValue;
 
+      console.log(`✅ [BACKEND - ServiceOrder] Using separate prices: hw=${hardwarePrice}, labor=${laborPrice}`);
+
       if (hardwarePrice < 0) {
         throw new AppError(`Articolul "${name}" trebuie sa aiba un pret pentru piese pozitiv sau zero.`, 400);
       }
@@ -252,6 +268,7 @@ const sanitizeLineItems = (lineItems = []) => {
       // Old format - convert unitPrice to hardwarePrice for backward compatibility
       const unitPriceValue = toNumeric(item?.unitPrice);
       hardwarePrice = unitPriceValue === null ? 0 : unitPriceValue;
+      console.log(`⚠️  [BACKEND - ServiceOrder] Using legacy unitPrice: ${hardwarePrice}`);
 
       if (hardwarePrice < 0) {
         throw new AppError(`Articolul "${name}" trebuie sa aiba un pret unitar pozitiv sau zero.`, 400);
@@ -260,8 +277,9 @@ const sanitizeLineItems = (lineItems = []) => {
 
     // Calculate total using separate quantities
     const totalPrice = roundCurrency((hardwareQuantity * hardwarePrice) + (laborQuantity * laborPrice));
+    console.log(`💰 [BACKEND - ServiceOrder] Calculated total: (${hardwareQuantity} × ${hardwarePrice}) + (${laborQuantity} × ${laborPrice}) = ${totalPrice}`);
 
-    return {
+    const sanitized = {
         name,
         description: item?.description ? String(item.description).trim() : null,
         quantity: Math.max(hardwareQuantity, laborQuantity), // Legacy field for backward compatibility
@@ -273,8 +291,12 @@ const sanitizeLineItems = (lineItems = []) => {
         hardwareUnit: item?.hardwareUnit ? String(item.hardwareUnit).trim() : null,
         laborUnit: item?.laborUnit ? String(item.laborUnit).trim() : null,
     };
+
+    console.log(`✨ [BACKEND - ServiceOrder] Sanitized item ${index}:`, sanitized);
+    return sanitized;
   });
 
+  console.log('🎯 [BACKEND - ServiceOrder] Final sanitized result:', JSON.stringify(result, null, 2));
   return result;
 };
 

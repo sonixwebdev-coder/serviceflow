@@ -654,8 +654,9 @@ useEffect(() => {
               description: item.description || '',
               hardwareQuantity: item.hardwareQuantity !== null && item.hardwareQuantity !== undefined ? item.hardwareQuantity : (item.quantity || 1),
               laborQuantity: item.laborQuantity !== null && item.laborQuantity !== undefined ? item.laborQuantity : (item.quantity || 1),
-              hardwarePrice: item.hardwarePrice !== undefined ? item.hardwarePrice : (item.unitPrice || 0),
-              laborPrice: item.laborPrice || 0,
+              // Use the enhanced fields if available, otherwise fallback to legacy unitPrice (put in labor)
+              hardwarePrice: item.hardwarePrice !== undefined && item.hardwarePrice !== null ? item.hardwarePrice : 0,
+              laborPrice: item.laborPrice !== undefined && item.laborPrice !== null ? item.laborPrice : (item.unitPrice || 0),
               hardwareUnit: item.hardwareUnit || '',
               laborUnit: item.laborUnit || '',
             }))
@@ -937,8 +938,8 @@ useEffect(() => {
       }))
       .filter((item) => item.name.length > 0);
 
-    console.log('📋 ORDER DRAFT LINE ITEMS:', orderDraft.lineItems);
-    console.log('✂️ TRIMMED ITEMS:', trimmedItems);
+    console.log('📋 [FRONTEND - CREATE] ORDER DRAFT LINE ITEMS (raw):', orderDraft.lineItems);
+    console.log('✂️ [FRONTEND - CREATE] TRIMMED ITEMS (filtered):', trimmedItems);
 
     // Phone, email, vehicle details are all optional now
 
@@ -955,6 +956,19 @@ useEffect(() => {
       startDateTime = combineDateAndTime(formState.scheduledDate, formState.startTime);
       endDateTime = combineDateAndTime(formState.scheduledDate, formState.endTime);
     }
+
+    const mappedLineItems = trimmedItems.map((item) => ({
+      name: item.name,
+      description: item.description || undefined,
+      hardwareQuantity: Number(item.hardwareQuantity) >= 0 ? Number(item.hardwareQuantity) : 1,
+      laborQuantity: Number(item.laborQuantity) >= 0 ? Number(item.laborQuantity) : 1,
+      hardwarePrice: Number(item.hardwarePrice) || 0,
+      laborPrice: Number(item.laborPrice) || 0,
+      hardwareUnit: item.hardwareUnit?.trim() || undefined,
+      laborUnit: item.laborUnit?.trim() || undefined,
+    }));
+
+    console.log('🚀 [FRONTEND - CREATE] MAPPED LINE ITEMS (sending to API):', mappedLineItems);
 
     const payload = {
       title,
@@ -989,22 +1003,14 @@ useEffect(() => {
       },
       serviceOrder: {
         notes: orderDraft.notes?.trim() || undefined,
-        lineItems: trimmedItems.map((item) => ({
-          name: item.name,
-          description: item.description || undefined,
-          hardwareQuantity: Number(item.hardwareQuantity) >= 0 ? Number(item.hardwareQuantity) : 1,
-          laborQuantity: Number(item.laborQuantity) >= 0 ? Number(item.laborQuantity) : 1,
-          hardwarePrice: Number(item.hardwarePrice) || 0,
-          laborPrice: Number(item.laborPrice) || 0,
-          hardwareUnit: item.hardwareUnit?.trim() || undefined,
-          laborUnit: item.laborUnit?.trim() || undefined,
-        })),
+        lineItems: mappedLineItems,
       },
       advancePayment: formState.advancePayment && parseFloat(formState.advancePayment) > 0
         ? parseFloat(formState.advancePayment)
         : undefined,
     };
 
+    console.log('📦 [FRONTEND - CREATE] FULL PAYLOAD:', JSON.stringify(payload.serviceOrder, null, 2));
     createMutation.mutate(payload);
   };
 
@@ -2660,8 +2666,9 @@ useEffect(() => {
                                       description: item.description || '',
                                       hardwareQuantity: item.hardwareQuantity !== null && item.hardwareQuantity !== undefined ? item.hardwareQuantity : (item.quantity || 1),
                                       laborQuantity: item.laborQuantity !== null && item.laborQuantity !== undefined ? item.laborQuantity : (item.quantity || 1),
-                                      hardwarePrice: item.hardwarePrice !== undefined ? item.hardwarePrice : (item.unitPrice || 0),
-                                      laborPrice: item.laborPrice || 0,
+                                      // Use the enhanced fields if available, otherwise fallback to legacy unitPrice (put in labor)
+                                      hardwarePrice: item.hardwarePrice !== undefined && item.hardwarePrice !== null ? item.hardwarePrice : 0,
+                                      laborPrice: item.laborPrice !== undefined && item.laborPrice !== null ? item.laborPrice : (item.unitPrice || 0),
                                       hardwareUnit: item.hardwareUnit || '',
                                       laborUnit: item.laborUnit || '',
                                     }))
@@ -2943,25 +2950,10 @@ useEffect(() => {
                           type="button"
                           disabled={createInvoiceMutation.isPending}
                           onClick={() => {
-                            const dueDate = new Date();
-                            dueDate.setDate(dueDate.getDate() + 30); // Default 30 days payment term
+                            console.log('🧾 [FRONTEND] Creating invoice from service order:', serviceOrder.id);
 
-                            const invoiceData = {
-                              appointmentId: selectedAppointmentId,
-                              serviceOrderId: serviceOrder.id,
-                              clientId: selectedAppointment.clientId,
-                              dueDate: dueDate.toISOString(),
-                              tax: serviceOrder.tax || 0,
-                              lineItems: serviceOrder.lineItems?.map((item, index) => ({
-                                name: item.name,
-                                description: item.description,
-                                quantity: Number(item.quantity) || 1,
-                                unitPrice: Number(item.unitPrice) || 0,
-                                order: index,
-                              })) || [],
-                            };
-
-                            createInvoiceMutation.mutate(invoiceData, {
+                            // Use the service order ID - backend will fetch all data from DB
+                            createInvoiceMutation.mutate({ serviceOrderId: serviceOrder.id }, {
                               onSuccess: (data) => {
                                 showToast({
                                   title: 'Factură creată',

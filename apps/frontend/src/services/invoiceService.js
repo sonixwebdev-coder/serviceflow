@@ -19,6 +19,11 @@ export const createInvoice = async (payload) => {
   return response.data?.data || response.data;
 };
 
+export const createInvoiceFromServiceOrder = async (serviceOrderId) => {
+  const response = await API.post(`/invoices/from-service-order/${serviceOrderId}`);
+  return response.data?.data || response.data;
+};
+
 export const updateInvoice = async (invoiceId, payload) => {
   const response = await API.put(`/invoices/${invoiceId}`, payload);
   return response.data?.data || response.data;
@@ -64,6 +69,7 @@ export default {
   fetchInvoices,
   fetchInvoiceById,
   createInvoice,
+  createInvoiceFromServiceOrder,
   updateInvoice,
   deleteInvoice,
   downloadInvoicePdf,

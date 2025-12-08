@@ -900,9 +900,9 @@ const Invoices = () => {
                         <table className="min-w-full text-sm">
                           <thead className="border-b border-gray-200 bg-gray-50">
                             <tr>
-                              <th className="px-3 py-2 text-left font-medium text-gray-600">Denumire</th>
-                              <th className="px-3 py-2 text-right font-medium text-gray-600">Cant.</th>
-                              <th className="px-3 py-2 text-right font-medium text-gray-600">Preț unitar</th>
+                              <th className="px-3 py-2 text-left font-medium text-gray-600">Articol</th>
+                              <th className="px-3 py-2 text-right font-medium text-gray-600">Piese</th>
+                              <th className="px-3 py-2 text-right font-medium text-gray-600">Manopera</th>
                               <th className="px-3 py-2 text-right font-medium text-gray-600">Total</th>
                             </tr>
                           </thead>
@@ -915,9 +915,35 @@ const Invoices = () => {
                                     <div className="text-xs text-gray-500">{item.description}</div>
                                   )}
                                 </td>
-                                <td className="px-3 py-2 text-right text-gray-900">{item.quantity}</td>
-                                <td className="px-3 py-2 text-right text-gray-900">
-                                  {formatCurrency(item.unitPrice)}
+                                <td className="px-3 py-2 text-right">
+                                  <div className="text-gray-900">
+                                    {item.hardwareQuantity > 0 && (
+                                      <>
+                                        {item.hardwareQuantity} {item.hardwareUnit || 'buc'} × {formatCurrency(item.hardwarePrice)}
+                                      </>
+                                    )}
+                                    {item.hardwareQuantity === 0 && <span className="text-gray-400">-</span>}
+                                  </div>
+                                  {item.hardwareQuantity > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      = {formatCurrency(item.hardwareQuantity * item.hardwarePrice)}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                  <div className="text-gray-900">
+                                    {item.laborQuantity > 0 && (
+                                      <>
+                                        {item.laborQuantity} {item.laborUnit || 'ora'} × {formatCurrency(item.laborPrice)}
+                                      </>
+                                    )}
+                                    {item.laborQuantity === 0 && <span className="text-gray-400">-</span>}
+                                  </div>
+                                  {item.laborQuantity > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      = {formatCurrency(item.laborQuantity * item.laborPrice)}
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="px-3 py-2 text-right font-medium text-gray-900">
                                   {formatCurrency(item.totalPrice)}
@@ -951,6 +977,26 @@ const Invoices = () => {
                           {formatCurrency(isEditing && calculatedTotals ? calculatedTotals.total : selectedInvoice.total)}
                         </span>
                       </div>
+
+                      {/* Payment Information */}
+                      {selectedInvoice.advancePayment > 0 && (
+                        <>
+                          <div className="flex justify-between border-t border-gray-200 pt-2">
+                            <span className="text-blue-600">Avans plătit:</span>
+                            <span className="text-blue-600">
+                              -{formatCurrency(selectedInvoice.advancePayment)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-base font-semibold">
+                            <span className={selectedInvoice.remainingBalance > 0 ? 'text-orange-600' : 'text-green-600'}>
+                              {selectedInvoice.remainingBalance > 0 ? 'Rest de plată:' : 'Achitat integral'}
+                            </span>
+                            <span className={selectedInvoice.remainingBalance > 0 ? 'text-orange-600' : 'text-green-600'}>
+                              {selectedInvoice.remainingBalance > 0 ? formatCurrency(selectedInvoice.remainingBalance) : '✓'}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 

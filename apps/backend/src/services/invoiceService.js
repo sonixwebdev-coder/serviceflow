@@ -182,23 +182,39 @@ const sanitizeLineItems = (lineItems = []) => {
     }
 
     // Enhanced quantity tracking - separate for hardware and labor
-    const hardwareQuantity = Math.max(0, parseInt(item?.hardwareQuantity ?? 1, 10) || 1);
-    const laborQuantity = Math.max(0, parseInt(item?.laborQuantity ?? 1, 10) || 1);
+    // Allow 0 for quantities in case item only has hardware OR labor (not both)
+    const hardwareQuantity = Math.max(0, parseInt(item?.hardwareQuantity ?? 0, 10) || 0);
+    const laborQuantity = Math.max(0, parseInt(item?.laborQuantity ?? 0, 10) || 0);
 
+    // If both are 0, default to 1 for legacy support
+    const finalHardwareQuantity = (hardwareQuantity === 0 && laborQuantity === 0) ? 1 : hardwareQuantity;
+    const finalLaborQuantity = (hardwareQuantity === 0 && laborQuantity === 0) ? 1 : laborQuantity;
+
+    let hardwarePrice = 0;
+    let laborPrice = 0;
+
+    // Try to get hardware and labor prices
     const hardwarePriceValue = toNumeric(item?.hardwarePrice);
-    const hardwarePrice = hardwarePriceValue === null ? 0 : Math.max(0, hardwarePriceValue);
-
     const laborPriceValue = toNumeric(item?.laborPrice);
-    const laborPrice = laborPriceValue === null ? 0 : Math.max(0, laborPriceValue);
+
+    // If both hardware and labor prices are provided, use them
+    if (hardwarePriceValue !== null || laborPriceValue !== null) {
+      hardwarePrice = hardwarePriceValue !== null ? Math.max(0, hardwarePriceValue) : 0;
+      laborPrice = laborPriceValue !== null ? Math.max(0, laborPriceValue) : 0;
+    } else {
+      // Backward compatibility: if unitPrice is provided but no hardware/labor prices, use it as labor price
+      const unitPriceValue = toNumeric(item?.unitPrice);
+      if (unitPriceValue !== null && unitPriceValue > 0) {
+        // Put all price in labor for backward compatibility
+        laborPrice = Math.max(0, unitPriceValue);
+        hardwarePrice = 0;
+      }
+    }
 
     // Calculate total: (hwQty * hwPrice) + (laborQty * laborPrice)
     const totalPrice = roundCurrency(
-      (hardwareQuantity * hardwarePrice) + (laborQuantity * laborPrice)
+      (finalHardwareQuantity * hardwarePrice) + (finalLaborQuantity * laborPrice)
     );
-
-    // Backward compatibility: if unitPrice is provided but no hardware/labor prices, use it
-    const unitPriceValue = toNumeric(item?.unitPrice);
-    const legacyUnitPrice = unitPriceValue !== null ? roundCurrency(unitPriceValue) : 0;
 
     // Legacy quantity for backward compatibility
     const quantityValue = toNumeric(item?.quantity);
@@ -208,8 +224,8 @@ const sanitizeLineItems = (lineItems = []) => {
       name,
       description: item?.description ? String(item.description).trim() : null,
       // Enhanced fields
-      hardwareQuantity,
-      laborQuantity,
+      hardwareQuantity: finalHardwareQuantity,
+      laborQuantity: finalLaborQuantity,
       hardwarePrice: roundCurrency(hardwarePrice),
       laborPrice: roundCurrency(laborPrice),
       hardwareUnit: item?.hardwareUnit ? String(item.hardwareUnit).trim() : null,
@@ -217,7 +233,7 @@ const sanitizeLineItems = (lineItems = []) => {
       totalPrice,
       // Legacy fields for backward compatibility
       quantity: legacyQuantity,
-      unitPrice: legacyUnitPrice || roundCurrency(hardwarePrice + laborPrice),
+      unitPrice: roundCurrency(hardwarePrice + laborPrice),
       order: item?.order ?? index,
     };
   });
@@ -721,18 +737,27 @@ const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
     throw new AppError('Service order must have an associated appointment', 400);
   }
 
+  console.log('🧾 [BACKEND - Invoice] Creating invoice from service order:', serviceOrder.id);
+  console.log('🧾 [BACKEND - Invoice] Service order line items from DB:', JSON.stringify(serviceOrder.lineItems, null, 2));
+
   // Map service order line items to invoice line items
-  const lineItems = serviceOrder.lineItems.map((item, index) => ({
-    name: item.name,
-    description: item.description,
-    hardwareQuantity: item.hardwareQuantity,
-    laborQuantity: item.laborQuantity,
-    hardwarePrice: Number(item.hardwarePrice),
-    laborPrice: Number(item.laborPrice),
-    hardwareUnit: item.hardwareUnit,
-    laborUnit: item.laborUnit,
-    order: index,
-  }));
+  const lineItems = serviceOrder.lineItems.map((item, index) => {
+    const mapped = {
+      name: item.name,
+      description: item.description,
+      hardwareQuantity: item.hardwareQuantity,
+      laborQuantity: item.laborQuantity,
+      hardwarePrice: Number(item.hardwarePrice),
+      laborPrice: Number(item.laborPrice),
+      hardwareUnit: item.hardwareUnit,
+      laborUnit: item.laborUnit,
+      order: index,
+    };
+    console.log(`🧾 [BACKEND - Invoice] Mapped line item ${index}:`, mapped);
+    return mapped;
+  });
+
+  console.log('🧾 [BACKEND - Invoice] All mapped line items:', JSON.stringify(lineItems, null, 2));
 
   // Create invoice with service order data
   const payload = {
