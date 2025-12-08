@@ -77,8 +77,7 @@ function App() {
             }
           />
 
-          {/* TEMPORARILY HIDDEN - DO NOT DELETE - Time tracking route */}
-          {/* <Route
+          <Route
             path="/time-tracking"
             element={
               <ProtectedRoute>
@@ -87,7 +86,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             }
-          /> */}
+          />
 
           <Route
             path="/crm/clients"
@@ -122,8 +121,7 @@ function App() {
             }
           />
 
-          {/* TEMPORARILY HIDDEN - DO NOT DELETE - Invoices route */}
-          {/* <Route
+          <Route
             path="/crm/invoices"
             element={
               <ProtectedRoute>
@@ -132,7 +130,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             }
-          /> */}
+          />
 
           <Route
             path="/profile"
@@ -168,8 +166,7 @@ function App() {
             }
           />
 
-          {/* TEMPORARILY HIDDEN - DO NOT DELETE - ANAF route */}
-          {/* <Route
+          <Route
             path="/anaf"
             element={
               <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
@@ -178,7 +175,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             }
-          /> */}
+          />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

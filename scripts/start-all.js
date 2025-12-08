@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('🚀 Starting ViperX Team Manager...\n');
+console.log('🚀 Starting ServiceFlow...\n');
 
 // Check if .env file exists
 function checkEnvFile() {
@@ -51,13 +51,9 @@ async function preparePrisma() {
         console.log('   Ensure DATABASE_URL is configured in apps/backend/.env and run npm run prisma:generate manually.\n');
     }
 
-    try {
-        await runCommand('🧱 Applying Prisma migrations →', 'npm', ['run', 'prisma:migrate'], { cwd: backendDir });
-    } catch (error) {
-        console.error('⚠️  Prisma migrations did not run.', error.message);
-        console.log('   Check that PostgreSQL is running and credentials are correct.');
-        console.log('   Continuing without applying migrations. Run npm run prisma:migrate once the database is ready.\n');
-    }
+    // Note: Migrations are NOT run automatically on dev start
+    // Run migrations manually with: npm run prisma:migrate
+    console.log('💡 Tip: Run migrations manually with "npm run prisma:migrate" if needed\n');
 }
 
 function startBackend() {

@@ -18,10 +18,12 @@ const useUsers = (initialFilters = {}, options = {}) => {
     queryFn: () => fetchUsers(filters),
   });
 
+  const errorMessage = useMemo(() => error?.message || (error ? String(error) : null), [error]);
+
   return {
     users: data || [],
     loading: isLoading,
-    error,
+    error: errorMessage,
     filters,
     setFilters,
     refresh: refetch,

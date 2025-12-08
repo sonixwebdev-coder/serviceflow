@@ -76,7 +76,7 @@ const registerUser = async ({ firstName, lastName, email, password, phoneNumber,
 };
 
 const loginUser = async ({ email, password }) => {
-  const user = await prisma.user.findUnique({
+  const user = await prisma.user.findFirst({
     where: { email },
     include: {
       roles: {

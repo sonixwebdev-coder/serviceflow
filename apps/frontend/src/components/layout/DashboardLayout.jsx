@@ -65,13 +65,10 @@ const DashboardLayout = ({ children }) => {
     { name: 'CRM Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },
     { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
     { name: 'CRM Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
-    // TEMPORARILY HIDDEN - DO NOT DELETE - Invoices feature
-    // { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
-    // TEMPORARILY HIDDEN - DO NOT DELETE - ANAF feature
-    // { name: 'ANAF E-Factura', href: '/anaf', icon: FileCheck, roles: [USER_ROLES.ADMIN] },
+    { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
+    { name: 'ANAF E-Factura', href: '/anaf', icon: FileCheck, roles: [USER_ROLES.ADMIN] },
     { name: 'Cereri concediu', href: '/leaves', icon: Umbrella, roles: [] },
-    // TEMPORARILY HIDDEN - DO NOT DELETE - Time tracking feature
-    // { name: 'Pontaj', href: '/time-tracking', icon: Clock, roles: [] },
+    { name: 'Pontaj', href: '/time-tracking', icon: Clock, roles: [] },
     { name: 'Angajati', href: '/employees', icon: Users, roles: [USER_ROLES.ADMIN] },
     { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
   ];

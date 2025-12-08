@@ -137,7 +137,7 @@ app.use('/api', apiRouter);
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
-    message: 'ViperX Team Manager API',
+    message: 'ServiceFlow API',
     timestamp: new Date().toISOString()
   });
 });
@@ -145,7 +145,7 @@ app.get('/health', (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'ViperX CRM API',
+    message: 'ServiceFlow API',
     version: '2.0.0',
     endpoints: {
       health: '/health',

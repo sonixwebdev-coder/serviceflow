@@ -16,10 +16,12 @@ const useNotifications = (initialFilters = {}) => {
     queryFn: () => fetchNotifications(filters),
   });
 
+  const errorMessage = useMemo(() => error?.message || (error ? String(error) : null), [error]);
+
   return {
     notifications: data || [],
     loading: isLoading,
-    error,
+    error: errorMessage,
     filters,
     setFilters,
     refresh: refetch,

@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
       persistSession(payload);
       return { success: true };
     } catch (error) {
-      const message = error?.message || error?.data?.message || 'Login failed. Please try again.';
+      const message = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
       return { success: false, message };
     }
   };
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
   const hasRole = (...roles) => {
     if (!roles.length) return true;
 
-    const required = roles.map((role) => role.toLowerCase());
+    const required = roles.filter(role => role).map((role) => role.toLowerCase());
     const owned = new Set();
 
     if (user?.role) {

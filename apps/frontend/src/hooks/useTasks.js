@@ -31,12 +31,13 @@ const useTasks = (initialFilters = {}, options = {}) => {
   });
 
   const tasks = useMemo(() => data?.data || EMPTY_ARRAY, [data]);
+  const errorMessage = useMemo(() => error?.message || (error ? String(error) : null), [error]);
 
   return {
     tasks,
     meta: data?.meta || null,
     loading: isLoading,
-    error,
+    error: errorMessage,
     filters,
     setFilters,
     page,

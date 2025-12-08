@@ -43,17 +43,29 @@ const mapInvoice = (invoice) => {
     notes: invoice.notes,
     sentAt: invoice.sentAt,
     paidAt: invoice.paidAt,
+    // Payment tracking
+    advancePayment: Number(invoice.advancePayment || 0),
+    remainingBalance: Number(invoice.remainingBalance || 0),
+    paymentStatus: invoice.paymentStatus?.toLowerCase() || 'unpaid',
+    advancePaidAt: invoice.advancePaidAt,
+    finalPaidAt: invoice.finalPaidAt,
     createdAt: invoice.createdAt,
     updatedAt: invoice.updatedAt,
     lineItems: invoice.lineItems?.map((item) => ({
       id: item.id,
       name: item.name,
       description: item.description,
-      quantity: Number(item.quantity),
-      unitPrice: Number(item.hardwarePrice || 0) + Number(item.laborPrice || 0), // Backward compatibility: unitPrice = hardwarePrice + laborPrice
+      // Enhanced quantity tracking
+      hardwareQuantity: Number(item.hardwareQuantity || 1),
+      laborQuantity: Number(item.laborQuantity || 1),
       hardwarePrice: Number(item.hardwarePrice || 0),
       laborPrice: Number(item.laborPrice || 0),
+      hardwareUnit: item.hardwareUnit,
+      laborUnit: item.laborUnit,
       totalPrice: Number(item.totalPrice),
+      // Backward compatibility fields
+      quantity: Number(item.quantity || 1),
+      unitPrice: Number(item.hardwarePrice || 0) + Number(item.laborPrice || 0),
       order: item.order,
     })) || [],
     appointment: invoice.appointment
@@ -169,23 +181,43 @@ const sanitizeLineItems = (lineItems = []) => {
       throw new AppError(`Line item #${index + 1} is missing a name`, 400);
     }
 
-    const quantityValue = toNumeric(item?.quantity);
-    const quantity = quantityValue === null ? 1 : Math.max(0.001, quantityValue);
+    // Enhanced quantity tracking - separate for hardware and labor
+    const hardwareQuantity = Math.max(0, parseInt(item?.hardwareQuantity ?? 1, 10) || 1);
+    const laborQuantity = Math.max(0, parseInt(item?.laborQuantity ?? 1, 10) || 1);
 
+    const hardwarePriceValue = toNumeric(item?.hardwarePrice);
+    const hardwarePrice = hardwarePriceValue === null ? 0 : Math.max(0, hardwarePriceValue);
+
+    const laborPriceValue = toNumeric(item?.laborPrice);
+    const laborPrice = laborPriceValue === null ? 0 : Math.max(0, laborPriceValue);
+
+    // Calculate total: (hwQty * hwPrice) + (laborQty * laborPrice)
+    const totalPrice = roundCurrency(
+      (hardwareQuantity * hardwarePrice) + (laborQuantity * laborPrice)
+    );
+
+    // Backward compatibility: if unitPrice is provided but no hardware/labor prices, use it
     const unitPriceValue = toNumeric(item?.unitPrice);
-    const unitPrice = unitPriceValue === null ? 0 : unitPriceValue;
-    if (unitPrice < 0) {
-      throw new AppError(`Line item "${name}" must have a non-negative unit price`, 400);
-    }
+    const legacyUnitPrice = unitPriceValue !== null ? roundCurrency(unitPriceValue) : 0;
 
-    const totalPrice = roundCurrency(quantity * unitPrice);
+    // Legacy quantity for backward compatibility
+    const quantityValue = toNumeric(item?.quantity);
+    const legacyQuantity = quantityValue === null ? 1 : Math.max(0.001, quantityValue);
 
     return {
       name,
       description: item?.description ? String(item.description).trim() : null,
-      quantity: roundCurrency(quantity),
-      unitPrice: roundCurrency(unitPrice),
+      // Enhanced fields
+      hardwareQuantity,
+      laborQuantity,
+      hardwarePrice: roundCurrency(hardwarePrice),
+      laborPrice: roundCurrency(laborPrice),
+      hardwareUnit: item?.hardwareUnit ? String(item.hardwareUnit).trim() : null,
+      laborUnit: item?.laborUnit ? String(item.laborUnit).trim() : null,
       totalPrice,
+      // Legacy fields for backward compatibility
+      quantity: legacyQuantity,
+      unitPrice: legacyUnitPrice || roundCurrency(hardwarePrice + laborPrice),
       order: item?.order ?? index,
     };
   });
@@ -370,6 +402,11 @@ const createInvoice = async (payload, options = {}) => {
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload);
   const relativePdfPath = buildRelativePdfPath(payload.appointmentId, invoiceNumber);
 
+  // Payment tracking from appointment
+  const advancePayment = appointment.advancePayment ? Number(appointment.advancePayment) : 0;
+  const remainingBalance = roundCurrency(totals.total - advancePayment);
+  const paymentStatus = advancePayment === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+
   const invoice = await client.invoice.create({
     data: {
       invoiceNumber,
@@ -384,15 +421,26 @@ const createInvoice = async (payload, options = {}) => {
       total: totals.total,
       notes,
       pdfUrl: relativePdfPath,
+      // Payment tracking
+      advancePayment,
+      remainingBalance,
+      paymentStatus,
+      advancePaidAt: appointment.advancePaidAt,
+      finalPaidAt: appointment.finalPaidAt,
       lineItems: {
         create: sanitizedItems.map((item) => ({
           name: item.name,
           description: item.description,
-          quantity: item.quantity,
-          // Backward compatibility: store unitPrice as laborPrice (hardware is 0 for invoices)
-          hardwarePrice: 0,
-          laborPrice: item.unitPrice,
+          // Enhanced quantity and price tracking
+          hardwareQuantity: item.hardwareQuantity,
+          laborQuantity: item.laborQuantity,
+          hardwarePrice: item.hardwarePrice,
+          laborPrice: item.laborPrice,
+          hardwareUnit: item.hardwareUnit,
+          laborUnit: item.laborUnit,
           totalPrice: item.totalPrice,
+          // Legacy fields
+          quantity: item.quantity,
           order: item.order,
         })),
       },
@@ -437,6 +485,13 @@ const updateInvoice = async (id, payload, options = {}) => {
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, existing);
   const relativePdfPath = existing.pdfUrl || buildRelativePdfPath(existing.appointmentId, existing.invoiceNumber, id);
 
+  // Recalculate payment status if advance payment or total changed
+  const advancePayment = payload.advancePayment !== undefined
+    ? Number(payload.advancePayment)
+    : Number(existing.advancePayment || 0);
+  const remainingBalance = roundCurrency(totals.total - advancePayment);
+  const paymentStatus = advancePayment === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+
   const invoice = await client.invoice.update({
     where: { id },
     data: {
@@ -448,16 +503,25 @@ const updateInvoice = async (id, payload, options = {}) => {
       tax: totals.tax,
       total: totals.total,
       pdfUrl: relativePdfPath,
+      // Update payment tracking
+      advancePayment,
+      remainingBalance,
+      paymentStatus,
       lineItems: {
         deleteMany: {},
         create: sanitizedItems.map((item) => ({
           name: item.name,
           description: item.description,
-          quantity: item.quantity,
-          // Backward compatibility: store unitPrice as laborPrice (hardware is 0 for invoices)
-          hardwarePrice: 0,
-          laborPrice: item.unitPrice,
+          // Enhanced quantity and price tracking
+          hardwareQuantity: item.hardwareQuantity,
+          laborQuantity: item.laborQuantity,
+          hardwarePrice: item.hardwarePrice,
+          laborPrice: item.laborPrice,
+          hardwareUnit: item.hardwareUnit,
+          laborUnit: item.laborUnit,
           totalPrice: item.totalPrice,
+          // Legacy fields
+          quantity: item.quantity,
           order: item.order,
         })),
       },
@@ -625,10 +689,70 @@ const getInvoicesByAppointment = async (appointmentId) => {
   return invoices.map(mapInvoice);
 };
 
+/**
+ * Create an invoice from a service order
+ * This automatically copies all line items from the service order to the invoice
+ */
+const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
+  const { tx, skipBroadcast = false } = options;
+  const client = tx || prisma;
+
+  // Get service order with all related data
+  const serviceOrder = await client.serviceOrder.findUnique({
+    where: { id: serviceOrderId },
+    include: {
+      appointment: {
+        include: {
+          client: true,
+          vehicle: true,
+        },
+      },
+      lineItems: {
+        orderBy: { id: 'asc' },
+      },
+    },
+  });
+
+  if (!serviceOrder) {
+    throw new AppError('Service order not found', 404);
+  }
+
+  if (!serviceOrder.appointment) {
+    throw new AppError('Service order must have an associated appointment', 400);
+  }
+
+  // Map service order line items to invoice line items
+  const lineItems = serviceOrder.lineItems.map((item, index) => ({
+    name: item.name,
+    description: item.description,
+    hardwareQuantity: item.hardwareQuantity,
+    laborQuantity: item.laborQuantity,
+    hardwarePrice: Number(item.hardwarePrice),
+    laborPrice: Number(item.laborPrice),
+    hardwareUnit: item.hardwareUnit,
+    laborUnit: item.laborUnit,
+    order: index,
+  }));
+
+  // Create invoice with service order data
+  const payload = {
+    appointmentId: serviceOrder.appointmentId,
+    serviceOrderId: serviceOrder.id,
+    clientId: serviceOrder.appointment.clientId,
+    lineItems,
+    tax: Number(serviceOrder.tax || 0),
+    notes: serviceOrder.notes,
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default: 30 days from now
+  };
+
+  return createInvoice(payload, { tx: client, skipBroadcast });
+};
+
 module.exports = {
   getInvoiceById,
   listInvoices,
   createInvoice,
+  createInvoiceFromServiceOrder,
   updateInvoice,
   deleteInvoice,
   generateInvoicePdf,

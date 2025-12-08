@@ -11,6 +11,7 @@ const {
 const {
   listInvoices,
   createInvoice,
+  createInvoiceFromServiceOrder,
   getInvoiceById,
   updateInvoice,
   deleteInvoice,
@@ -45,6 +46,17 @@ router.post(
   asyncHandler(async (req, res) => {
     const invoice = await createInvoice(req.body);
     return created(res, invoice, 'Invoice created successfully');
+  })
+);
+
+// Create invoice from service order
+router.post(
+  '/from-service-order/:serviceOrderId',
+  authenticate,
+  authorize({ roles: ['admin', 'manager', 'sales'] }),
+  asyncHandler(async (req, res) => {
+    const invoice = await createInvoiceFromServiceOrder(req.params.serviceOrderId);
+    return created(res, invoice, 'Invoice created from service order successfully');
   })
 );
 

@@ -19,11 +19,12 @@ const useLeaveRequests = (initialFilters = {}) => {
   });
 
   const leaveRequests = useMemo(() => data || EMPTY_ARRAY, [data]);
+  const errorMessage = useMemo(() => error?.message || (error ? String(error) : null), [error]);
 
   return {
     leaveRequests,
     loading: isLoading,
-    error,
+    error: errorMessage,
     filters,
     setFilters,
     refresh: refetch,

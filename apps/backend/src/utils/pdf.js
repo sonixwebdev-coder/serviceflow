@@ -1753,16 +1753,50 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
     context.cursor -= 12;
   }
 
+  // Prepare payment info for display
+  const paymentInfo = {
+    advancePayment: Number(invoice.advancePayment || 0),
+    remainingBalance: Number(invoice.remainingBalance || 0),
+    paymentStatus: invoice.paymentStatus || 'UNPAID',
+    advancePaidAt: invoice.advancePaidAt,
+    finalPaidAt: invoice.finalPaidAt,
+  };
+
   // Line items
   drawSectionHeading(context, 'DETALII FACTURARE', fonts, pdfDoc);
-  drawLineItemsTable(context, invoice.lineItems || [], fonts, pdfDoc, null, null);
-
-  // Totals
-  drawTotals(context, {
+  drawLineItemsTable(context, invoice.lineItems || [], fonts, pdfDoc, {
     subtotal: invoice.subtotal,
     tax: invoice.tax,
     total: invoice.total,
-  }, fonts, pdfDoc);
+  }, paymentInfo);
+
+  // Payment dates section (if applicable)
+  if (paymentInfo.paymentStatus !== 'UNPAID') {
+    context.cursor -= 10;
+    if (paymentInfo.advancePaidAt) {
+      const advanceDate = formatDate(paymentInfo.advancePaidAt);
+      context.page.drawText(sanitizeForPdf(`Avans plătit la: ${advanceDate}`), {
+        x: context.margin,
+        y: context.cursor,
+        size: 9,
+        font: fonts.regular,
+        color: rgb(0.3, 0.3, 0.7),
+      });
+      context.cursor -= 14;
+    }
+    if (paymentInfo.finalPaidAt) {
+      const finalDate = formatDate(paymentInfo.finalPaidAt);
+      context.page.drawText(sanitizeForPdf(`Plată finală la: ${finalDate}`), {
+        x: context.margin,
+        y: context.cursor,
+        size: 9,
+        font: fonts.regular,
+        color: rgb(0.0, 0.6, 0.0),
+      });
+      context.cursor -= 14;
+    }
+    context.cursor -= 5;
+  }
 
   // Notes
   if (invoice.notes) {

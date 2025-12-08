@@ -92,6 +92,11 @@ API.interceptors.response.use(
       return Promise.reject({ message: 'Network error. Please check your connection.' });
     }
 
+    // Don't try to refresh token on login/register endpoints
+    if (config.url?.includes('/auth/login') || config.url?.includes('/auth/register')) {
+      return Promise.reject(response.data || error);
+    }
+
     if (response.status !== 401 || config._retry) {
       return Promise.reject(response.data || { message: 'Request failed' });
     }

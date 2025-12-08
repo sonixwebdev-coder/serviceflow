@@ -26,12 +26,13 @@ export const useAppointments = (initialParams = {}, options = {}) => {
   });
 
   const appointments = useMemo(() => data?.data || EMPTY_ARRAY, [data]);
+  const errorMessage = useMemo(() => error?.message || (error ? String(error) : null), [error]);
 
   return {
     data: appointments,
     meta: data?.meta || null,
     loading: isLoading,
-    error,
+    error: errorMessage,
     params,
     setParams,
     page,

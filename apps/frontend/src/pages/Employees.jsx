@@ -12,9 +12,9 @@ import { USER_ROLES } from '../utils/constants';
 
 const ROLE_LABELS = {
   [USER_ROLES.ADMIN]: 'Administrator',
+  [USER_ROLES.MANAGER]: 'Manager',
   [USER_ROLES.TECHNICIAN]: 'Tehnician',
   [USER_ROLES.SALES]: 'Vanzari',
-  // Old roles removed: MANAGER, INVENTORY
 };
 
 const initialFormState = {

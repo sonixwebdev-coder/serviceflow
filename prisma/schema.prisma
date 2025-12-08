@@ -452,23 +452,29 @@ model ServiceOrderLineItem {
 }
 
 model Invoice {
-  id             String        @id @default(cuid())
-  invoiceNumber  String        @unique
-  appointmentId  String
-  serviceOrderId String?
-  clientId       String
-  status         InvoiceStatus @default(DRAFT)
-  issueDate      DateTime      @default(now())
-  dueDate        DateTime
-  subtotal       Decimal       @db.Decimal(12, 2)
-  tax            Decimal       @db.Decimal(12, 2)
-  total          Decimal       @db.Decimal(12, 2)
-  notes          String?       @db.Text
-  pdfUrl         String?
-  sentAt         DateTime?
-  paidAt         DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  appointmentId    String
+  serviceOrderId   String?
+  clientId         String
+  status           InvoiceStatus @default(DRAFT)
+  issueDate        DateTime      @default(now())
+  dueDate          DateTime
+  subtotal         Decimal       @db.Decimal(12, 2)
+  tax              Decimal       @db.Decimal(12, 2)
+  total            Decimal       @db.Decimal(12, 2)
+  notes            String?       @db.Text
+  pdfUrl           String?
+  sentAt           DateTime?
+  paidAt           DateTime?
+  // Payment tracking fields
+  advancePayment   Decimal?      @default(0) @db.Decimal(10, 2)
+  remainingBalance Decimal?      @db.Decimal(10, 2)
+  paymentStatus    PaymentStatus @default(UNPAID)
+  advancePaidAt    DateTime?
+  finalPaidAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   appointment   Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   serviceOrder  ServiceOrder?     @relation(fields: [serviceOrderId], references: [id])
@@ -483,18 +489,26 @@ model Invoice {
   @@index([issueDate])
   @@index([dueDate])
   @@index([createdAt])
+  @@index([paymentStatus])
 }
 
 model InvoiceLineItem {
-  id            String  @id @default(cuid())
-  invoiceId     String
-  name          String
-  description   String? @db.Text
-  quantity      Decimal @db.Decimal(10, 3)
-  hardwarePrice Decimal @default(0) @db.Decimal(12, 2)
-  laborPrice    Decimal @default(0) @db.Decimal(12, 2)
-  totalPrice    Decimal @db.Decimal(12, 2)
-  order         Int     @default(0)
+  id               String  @id @default(cuid())
+  invoiceId        String
+  name             String
+  description      String? @db.Text
+  // Enhanced quantity tracking - separate for hardware and labor
+  hardwareQuantity Int     @default(1)
+  laborQuantity    Int     @default(1)
+  hardwarePrice    Decimal @default(0) @db.Decimal(12, 2)
+  laborPrice       Decimal @default(0) @db.Decimal(12, 2)
+  totalPrice       Decimal @db.Decimal(12, 2)
+  // Unit tracking for better reporting
+  hardwareUnit     String?
+  laborUnit        String?
+  // Legacy field - kept for backward compatibility
+  quantity         Decimal @default(1) @db.Decimal(10, 3)
+  order            Int     @default(0)
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 

@@ -2932,8 +2932,7 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* TEMPORARILY HIDDEN - DO NOT DELETE - Invoice Section */}
-                  {/* {selectedAppointment.status === 'COMPLETED' && serviceOrder && (
+                  {selectedAppointment.status === 'COMPLETED' && serviceOrder && (
                     <div className="rounded-xl border border-gray-100 bg-white p-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -2990,7 +2989,7 @@ useEffect(() => {
                         </button>
                       </div>
                     </div>
-                  )} */}
+                  )}
 
                   {selectedAppointment.status !== 'COMPLETED' && (
                     <div className="flex flex-wrap gap-3">

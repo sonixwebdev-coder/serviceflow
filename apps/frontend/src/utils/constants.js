@@ -1,12 +1,10 @@
 export const USER_ROLES = {
   ADMIN: 'admin',
+  MANAGER: 'manager',
   TEHNICIAN: 'technician',
   TECHNICIAN: 'technician',  // Alias for backward compatibility (same value, won't duplicate in Object.values)
   VANZARI: 'sales',
   SALES: 'sales',            // Alias for backward compatibility (same value, won't duplicate in Object.values)
-  // TEMPORARILY HIDDEN - DO NOT DELETE - Old roles
-  // MANAGER: 'manager',    // Now maps to ADMIN
-  // INVENTORY: 'inventory', // Now maps to TEHNICIAN
 };
 
 export const TASK_STATUS = {
