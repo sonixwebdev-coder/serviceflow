@@ -16,6 +16,7 @@ import Appointments from './pages/Appointments.jsx';
 import Invoices from './pages/Invoices.jsx';
 import Profile from './pages/Profile.jsx';
 import AnafManagement from './pages/AnafManagement.jsx';
+import AnafCallback from './pages/AnafCallback.jsx';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { USER_ROLES } from './utils/constants';
 import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
@@ -31,6 +32,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/create-admin" element={<CreateFirstAdmin />} />
+          <Route path="/anaf/callback" element={<AnafCallback />} />
 
           {/* Protected Routes */}
           <Route

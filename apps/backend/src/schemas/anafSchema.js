@@ -12,6 +12,7 @@ const createAnafConfigSchema = z.object({
   redirectUri: z.string().url('Invalid redirect URI'),
   cif: z.string().min(1, 'CIF (tax ID) is required').regex(/^RO?\d+$/, 'Invalid CIF format'),
   isActive: z.boolean().optional().default(true),
+  environment: z.enum(['test', 'production']).optional().default('test'),
 });
 
 const updateAnafConfigSchema = z.object({
@@ -20,6 +21,7 @@ const updateAnafConfigSchema = z.object({
   redirectUri: z.string().url().optional(),
   cif: z.string().min(1).regex(/^RO?\d+$/).optional(),
   isActive: z.boolean().optional(),
+  environment: z.enum(['test', 'production']).optional(),
 });
 
 // Company schemas

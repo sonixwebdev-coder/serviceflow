@@ -753,6 +753,8 @@ model AnafConfig {
   redirectUri   String
   cif           String
   isActive      Boolean  @default(true)
+  environment   String   @default("test") // "test" or "production"
+  demoMode      Boolean  @default(false)  // Deprecated: kept for backward compatibility
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -760,6 +762,7 @@ model AnafConfig {
   tokens        AnafToken[]
 
   @@index([cif])
+  @@index([environment])
 }
 
 model AnafToken {
@@ -771,6 +774,7 @@ model AnafToken {
   refreshExpiresAt DateTime
   tokenType        String   @default("Bearer")
   scope            String?
+  isDemoData       Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -778,6 +782,7 @@ model AnafToken {
 
   @@index([configId])
   @@index([expiresAt])
+  @@index([isDemoData])
 }
 
 enum AnafInvoiceStatus {
@@ -805,6 +810,7 @@ model AnafInvoiceSync {
   maxRetries      Int                @default(3)
   xmlContent      String?            @db.Text
   responseData    Json?
+  isDemoData      Boolean            @default(false)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -814,6 +820,7 @@ model AnafInvoiceSync {
   @@index([status])
   @@index([uploadIndex])
   @@index([createdAt])
+  @@index([isDemoData])
 }
 
 model AnafMessage {
@@ -828,6 +835,7 @@ model AnafMessage {
   downloadedAt    DateTime?
   content         String?  @db.Text
   metadata        Json?
+  isDemoData      Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -835,6 +843,7 @@ model AnafMessage {
   @@index([tip])
   @@index([downloaded])
   @@index([dataCreare])
+  @@index([isDemoData])
 }
 
 // Push Notifications System

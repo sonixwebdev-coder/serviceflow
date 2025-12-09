@@ -13,19 +13,24 @@ const ANAF_API_BASE_URL = process.env.ANAF_API_BASE_URL ||
 const ANAF_TEST_API_BASE_URL = process.env.ANAF_TEST_API_BASE_URL ||
   'https://webserviceapl.anaf.ro/test/FCTEL/rest';
 
-// Use test environment if NODE_ENV is development
-const getBaseUrl = () => {
-  return process.env.NODE_ENV === 'production' ? ANAF_API_BASE_URL : ANAF_TEST_API_BASE_URL;
+/**
+ * Get base URL based on environment
+ * @param {string} environment - "test" or "production"
+ * @returns {string} Base URL for ANAF API
+ */
+const getBaseUrl = (environment = 'test') => {
+  return environment === 'production' ? ANAF_API_BASE_URL : ANAF_TEST_API_BASE_URL;
 };
 
 /**
  * Create axios instance with auth token
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Object} Axios instance
  */
-function createApiClient(accessToken) {
+function createApiClient(accessToken, environment = 'test') {
   return axios.create({
-    baseURL: getBaseUrl(),
+    baseURL: getBaseUrl(environment),
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/xml',
@@ -58,11 +63,12 @@ async function parseXmlResponse(xmlString) {
  * @param {string} invoiceXml - UBL Invoice XML
  * @param {string} cif - Company tax ID
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Promise<Object>} Upload response
  */
-async function uploadInvoice(invoiceXml, cif, accessToken) {
+async function uploadInvoice(invoiceXml, cif, accessToken, environment = 'test') {
   try {
-    const client = createApiClient(accessToken);
+    const client = createApiClient(accessToken, environment);
 
     const response = await client.post(`/upload?standard=UBL&cif=${cif}`, invoiceXml, {
       headers: {
@@ -108,11 +114,12 @@ async function uploadInvoice(invoiceXml, cif, accessToken) {
  * Check invoice processing status
  * @param {string} uploadIndex - Upload index from ANAF
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Promise<Object>} Status response
  */
-async function checkInvoiceStatus(uploadIndex, accessToken) {
+async function checkInvoiceStatus(uploadIndex, accessToken, environment = 'test') {
   try {
-    const client = createApiClient(accessToken);
+    const client = createApiClient(accessToken, environment);
 
     const response = await client.get(`/stareMesaj?index_incarcare=${uploadIndex}`);
 
@@ -148,11 +155,12 @@ async function checkInvoiceStatus(uploadIndex, accessToken) {
  * Download message ZIP from ANAF
  * @param {string} downloadId - Download ID from status response
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Promise<Buffer>} ZIP file buffer
  */
-async function downloadMessage(downloadId, accessToken) {
+async function downloadMessage(downloadId, accessToken, environment = 'test') {
   try {
-    const client = createApiClient(accessToken);
+    const client = createApiClient(accessToken, environment);
 
     const response = await client.get(`/descarcare?id=${downloadId}`, {
       responseType: 'arraybuffer',
@@ -180,11 +188,12 @@ async function downloadMessage(downloadId, accessToken) {
  * @param {number} days - Number of days to look back (max 60)
  * @param {string} filter - Filter type: T (toate), P (primite), E (emise), R (erori)
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Promise<Array>} List of messages
  */
-async function listMessages(cif, days = 60, filter = 'T', accessToken) {
+async function listMessages(cif, days = 60, filter = 'T', accessToken, environment = 'test') {
   try {
-    const client = createApiClient(accessToken);
+    const client = createApiClient(accessToken, environment);
 
     // Validate parameters
     const validDays = Math.min(Math.max(days, 1), 60);
@@ -231,11 +240,12 @@ async function listMessages(cif, days = 60, filter = 'T', accessToken) {
  * Convert XML invoice to PDF
  * @param {string} invoiceXml - UBL Invoice XML
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Promise<Buffer>} PDF buffer
  */
-async function convertXmlToPdf(invoiceXml, accessToken) {
+async function convertXmlToPdf(invoiceXml, accessToken, environment = 'test') {
   try {
-    const client = createApiClient(accessToken);
+    const client = createApiClient(accessToken, environment);
 
     const response = await client.post('/transformare/FACT1', invoiceXml, {
       headers: {
@@ -263,11 +273,12 @@ async function convertXmlToPdf(invoiceXml, accessToken) {
 /**
  * Health check / Hello endpoint
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Promise<Object>} Health check response
  */
-async function healthCheck(accessToken) {
+async function healthCheck(accessToken, environment = 'test') {
   try {
-    const client = createApiClient(accessToken);
+    const client = createApiClient(accessToken, environment);
 
     const response = await client.get('/');
 
@@ -291,11 +302,12 @@ async function healthCheck(accessToken) {
  * Validate invoice XML before upload
  * @param {string} invoiceXml - UBL Invoice XML
  * @param {string} accessToken - Bearer token
+ * @param {string} environment - "test" or "production"
  * @returns {Promise<Object>} Validation response
  */
-async function validateInvoiceXml(invoiceXml, accessToken) {
+async function validateInvoiceXml(invoiceXml, accessToken, environment = 'test') {
   try {
-    const client = createApiClient(accessToken);
+    const client = createApiClient(accessToken, environment);
 
     const response = await client.post('/validate', invoiceXml, {
       headers: {

@@ -8,6 +8,7 @@ const {
   listMessages,
 } = require('./anafApiService');
 const { buildUBLInvoice, validateXmlStructure, extractErrorMessages } = require('./anafXmlBuilder');
+const { writeFile } = require('../../utils/storage');
 
 /**
  * ANAF Invoice Service
@@ -95,11 +96,20 @@ async function generateInvoiceXml(invoiceId) {
     );
   }
 
+  // Save XML to storage for inspection
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const xmlFilename = `${invoice.invoiceNumber}_${timestamp}.xml`;
+  const xmlPath = `anaf-xml/${xmlFilename}`;
+
+  await writeFile(xmlPath, Buffer.from(xmlContent, 'utf-8'));
+
   return {
     xmlContent,
     validation,
     invoice,
     company,
+    xmlPath,
+    xmlFilename,
   };
 }
 
@@ -129,11 +139,12 @@ async function submitInvoiceToAnaf(invoiceId, options = {}) {
     }
   }
 
-  // Generate XML
-  const { xmlContent, validation, company } = await generateInvoiceXml(invoiceId);
+  // Generate and validate XML
+  const { xmlContent, validation, company, xmlPath, xmlFilename } = await generateInvoiceXml(invoiceId);
 
-  // Get valid token
+  // Get config and environment
   const config = await getAnafConfig();
+  const environment = config.environment || 'test';
   const token = await getValidToken(config.id);
 
   // Create or update sync record
@@ -159,7 +170,7 @@ async function submitInvoiceToAnaf(invoiceId, options = {}) {
 
   try {
     // Upload to ANAF
-    const uploadResult = await uploadInvoice(xmlContent, config.cif, token.accessToken);
+    const uploadResult = await uploadInvoice(xmlContent, config.cif, token.accessToken, environment);
 
     // Update sync record with upload index
     const updatedSync = await prisma.anafInvoiceSync.update({
@@ -168,7 +179,11 @@ async function submitInvoiceToAnaf(invoiceId, options = {}) {
         status: 'UPLOADED',
         uploadIndex: uploadResult.uploadIndex,
         uploadedAt: new Date(),
-        responseData: uploadResult,
+        responseData: {
+          ...uploadResult,
+          xmlPath,
+          xmlFilename,
+        },
       },
     });
 
@@ -181,6 +196,8 @@ async function submitInvoiceToAnaf(invoiceId, options = {}) {
       uploadIndex: uploadResult.uploadIndex,
       status: 'UPLOADED',
       message: 'Invoice successfully uploaded to ANAF',
+      xmlPath,
+      xmlFilename,
     };
   } catch (error) {
     // Update sync record with error
@@ -224,13 +241,14 @@ async function syncInvoiceStatus(invoiceId) {
     };
   }
 
-  // Get valid token
+  // Get valid token and environment
   const config = await getAnafConfig();
+  const environment = config.environment || 'test';
   const token = await getValidToken(config.id);
 
   try {
     // Check status from ANAF
-    const statusResult = await checkInvoiceStatus(sync.uploadIndex, token.accessToken);
+    const statusResult = await checkInvoiceStatus(sync.uploadIndex, token.accessToken, environment);
 
     // Update sync record
     const updateData = {
@@ -314,10 +332,11 @@ async function downloadAnafMessages(options = {}) {
   const { days = 7, filter = 'T' } = options;
 
   const config = await getAnafConfig();
+  const environment = config.environment || 'test';
   const token = await getValidToken(config.id);
 
-  // List messages
-  const messages = await listMessages(config.cif, days, filter, token.accessToken);
+  // List messages from ANAF
+  const messages = await listMessages(config.cif, days, filter, token.accessToken, environment);
 
   // Store messages in database
   const storedMessages = [];

@@ -123,7 +123,9 @@ export const getSyncRecords = async (params = {}) => {
 // Messages
 export const getAnafMessages = async (params = {}) => {
   const response = await API.get('/anaf/messages', { params });
-  return response.data?.data || response.data;
+  const data = response.data?.data || response.data;
+  // Extract messages array from the response object
+  return data.messages || data || [];
 };
 
 export const getAnafMessageById = async (messageId) => {

@@ -101,6 +101,19 @@ const mapInvoice = (invoice) => {
           registrationNumber: invoice.client.registrationNumber,
         }
       : null,
+    anafSync: invoice.anafSync
+      ? {
+          id: invoice.anafSync.id,
+          status: invoice.anafSync.status,
+          uploadIndex: invoice.anafSync.uploadIndex,
+          uploadedAt: invoice.anafSync.uploadedAt,
+          processedAt: invoice.anafSync.processedAt,
+          lastCheckedAt: invoice.anafSync.lastCheckedAt,
+          errorMessage: invoice.anafSync.errorMessage,
+          retryCount: invoice.anafSync.retryCount,
+          maxRetries: invoice.anafSync.maxRetries,
+        }
+      : null,
     pdfUrl: invoice.pdfUrl ? `/files/${invoice.pdfUrl.replace(/\\/g, '/')}` : null,
   };
 };
@@ -117,6 +130,27 @@ const includeConfig = {
     },
   },
   client: true,
+  anafSync: true,
+};
+
+/**
+ * Get standard include config for invoice queries
+ */
+const getIncludeConfig = () => {
+  return {
+    lineItems: {
+      orderBy: {
+        order: 'asc',
+      },
+    },
+    appointment: {
+      include: {
+        vehicle: true,
+      },
+    },
+    client: true,
+    anafSync: true,
+  };
 };
 
 const generateInvoiceNumber = async (client = prisma) => {
@@ -312,6 +346,8 @@ const sanitizePayload = (payload = {}, existing) => {
 };
 
 const getInvoiceById = async (id) => {
+  const includeConfig = getIncludeConfig();
+
   const invoice = await prisma.invoice.findUnique({
     where: { id },
     include: includeConfig,
@@ -356,6 +392,8 @@ const listInvoices = async (filters = {}, options = {}) => {
       mode: 'insensitive',
     };
   }
+
+  const includeConfig = getIncludeConfig();
 
   const orderBy = filters.sortBy
     ? { [filters.sortBy]: filters.sortOrder || 'desc' }
@@ -422,6 +460,8 @@ const createInvoice = async (payload, options = {}) => {
   const advancePayment = appointment.advancePayment ? Number(appointment.advancePayment) : 0;
   const remainingBalance = roundCurrency(totals.total - advancePayment);
   const paymentStatus = advancePayment === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+
+  const includeConfig = getIncludeConfig();
 
   const invoice = await client.invoice.create({
     data: {
@@ -507,6 +547,8 @@ const updateInvoice = async (id, payload, options = {}) => {
     : Number(existing.advancePayment || 0);
   const remainingBalance = roundCurrency(totals.total - advancePayment);
   const paymentStatus = advancePayment === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+
+  const includeConfig = getIncludeConfig();
 
   const invoice = await client.invoice.update({
     where: { id },

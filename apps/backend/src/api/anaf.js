@@ -150,7 +150,24 @@ router.post(
       });
 
       if (!company) {
-        throw new AppError('No active company found. Please create a company first.', 400);
+        // Auto-create a default company (especially for demo mode)
+        company = await prisma.company.create({
+          data: {
+            name: data.demoMode ? 'Demo Company SRL' : 'Company Name (Please Update)',
+            vatNumber: data.cif,
+            registrationNumber: data.demoMode ? 'J40/1234/2024' : 'Please Update',
+            address: data.demoMode ? 'Str. Demo, Nr. 1, București, România' : 'Please Update',
+            city: data.demoMode ? 'București' : 'Please Update',
+            county: data.demoMode ? 'București' : null,
+            country: 'RO',
+            phone: data.demoMode ? '+40712345678' : 'Please Update',
+            email: data.demoMode ? 'demo@example.com' : 'Please Update',
+            bankAccount: data.demoMode ? 'RO49AAAA1B31007593840000' : null,
+            bankName: data.demoMode ? 'Banca Demo' : null,
+            isActive: true,
+          },
+        });
+        console.log('[ANAF CONFIG] Auto-created company:', company.id, company.name);
       }
 
       data.companyId = company.id;
@@ -566,24 +583,51 @@ router.get(
   authenticate,
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
+    // Get current config to check demo mode
+    const config = await prisma.anafConfig.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const isDemoMode = config?.demoMode || false;
+
+    // Filter by demo mode - only show data matching current mode
     const stats = await prisma.anafInvoiceSync.groupBy({
       by: ['status'],
+      where: { isDemoData: isDemoMode },
       _count: true,
     });
 
-    const total = await prisma.anafInvoiceSync.count();
+    const total = await prisma.anafInvoiceSync.count({
+      where: { isDemoData: isDemoMode },
+    });
+
     const lastSync = await prisma.anafInvoiceSync.findFirst({
+      where: { isDemoData: isDemoMode },
       orderBy: { updatedAt: 'desc' },
       select: { updatedAt: true },
     });
 
+    // Build byStatus object
+    const byStatus = stats.reduce((acc, item) => {
+      acc[item.status] = item._count;
+      return acc;
+    }, {});
+
+    // Flatten the structure for easier frontend access
     return ok(res, {
       total,
-      byStatus: stats.reduce((acc, item) => {
-        acc[item.status] = item._count;
-        return acc;
-      }, {}),
+      byStatus,
+      // Add individual status counts at root level for easy access
+      OK: byStatus.OK || 0,
+      ERROR: byStatus.ERROR || 0,
+      REJECTED: byStatus.REJECTED || 0,
+      PENDING: byStatus.PENDING || 0,
+      UPLOADING: byStatus.UPLOADING || 0,
+      UPLOADED: byStatus.UPLOADED || 0,
+      PROCESSING: byStatus.PROCESSING || 0,
       lastSync: lastSync?.updatedAt,
+      demoMode: isDemoMode,  // Indicate which mode we're showing
     });
   })
 );
@@ -597,7 +641,17 @@ router.get(
   asyncHandler(async (req, res) => {
     const { page, limit, status, fromDate, toDate } = req.validated;
 
-    const where = {};
+    // Get current config to check demo mode
+    const config = await prisma.anafConfig.findFirst({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const isDemoMode = config?.demoMode || false;
+
+    const where = {
+      isDemoData: isDemoMode,  // Filter by current mode
+    };
 
     if (status) {
       where.status = status;
@@ -645,6 +699,55 @@ router.get(
         totalPages: Math.ceil(total / limit),
       },
     });
+  })
+);
+
+// Download XML file for an invoice
+router.get(
+  '/xml/:invoiceId',
+  authenticate,
+  authorize({ roles: ['admin', 'manager'] }),
+  asyncHandler(async (req, res) => {
+    const { invoiceId } = req.params;
+
+    // Get sync record to find XML path
+    const sync = await prisma.anafInvoiceSync.findUnique({
+      where: { invoiceId },
+    });
+
+    if (!sync) {
+      throw new AppError('No ANAF submission found for this invoice', 404);
+    }
+
+    const xmlPath = sync.responseData?.xmlPath;
+    const xmlFilename = sync.responseData?.xmlFilename || 'invoice.xml';
+
+    if (!xmlPath) {
+      // Fallback: return xmlContent from database if file doesn't exist
+      if (sync.xmlContent) {
+        res.setHeader('Content-Type', 'application/xml');
+        res.setHeader('Content-Disposition', `attachment; filename="${xmlFilename}"`);
+        return res.send(sync.xmlContent);
+      }
+      throw new AppError('XML file not found', 404);
+    }
+
+    // Serve the XML file
+    const { readFile } = require('../utils/storage');
+    try {
+      const xmlBuffer = await readFile(xmlPath);
+      res.setHeader('Content-Type', 'application/xml');
+      res.setHeader('Content-Disposition', `attachment; filename="${xmlFilename}"`);
+      return res.send(xmlBuffer);
+    } catch (error) {
+      // Fallback to database content if file doesn't exist
+      if (sync.xmlContent) {
+        res.setHeader('Content-Type', 'application/xml');
+        res.setHeader('Content-Disposition', `attachment; filename="${xmlFilename}"`);
+        return res.send(sync.xmlContent);
+      }
+      throw new AppError('XML file not found', 404);
+    }
   })
 );
 

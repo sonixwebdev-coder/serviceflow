@@ -17,11 +17,14 @@ import {
   Edit,
   Eye,
   Trash2,
+  FileText,
+  Upload,
 } from 'lucide-react';
 import useAuth from '../context/useAuth';
 import useToast from '../context/useToast';
 import {
   getAnafConfig,
+  createAnafConfig,
   getAuthorizationUrl,
   testAnafConnection,
   getSyncRecords,
@@ -33,7 +36,10 @@ import {
   downloadInvoiceXml,
   batchSyncInvoices,
   updateAnafConfig,
+  submitInvoiceToAnaf,
+
 } from '../services/anafService';
+import { fetchInvoices } from '../services/invoiceService';
 
 const STATUS_BADGES = {
   PENDING: 'bg-gray-100 text-gray-800 border border-gray-300',
@@ -86,7 +92,13 @@ const AnafManagement = () => {
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [testingConnection, setTestingConnection] = useState(false);
   const [editingConfig, setEditingConfig] = useState(false);
-  const [configForm, setConfigForm] = useState({});
+  const [configForm, setConfigForm] = useState({
+    cif: '',
+    clientId: '',
+    clientSecret: '',
+    redirectUri: `${window.location.origin}/anaf/callback`,
+    environment: 'test',
+  });
 
   // Sync status state
   const [syncRecords, setSyncRecords] = useState([]);
@@ -100,16 +112,41 @@ const AnafManagement = () => {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesFilters, setMessagesFilters] = useState({ type: 'T' });
   const [downloadingMessages, setDownloadingMessages] = useState({});
+  const [viewingMessage, setViewingMessage] = useState(null);
 
   // Statistics state
   const [statistics, setStatistics] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
+
+  // Invoices state
+  const [invoices, setInvoices] = useState([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [invoiceFilters, setInvoiceFilters] = useState({ status: '', anafStatus: '' });
+  const [submittingInvoices, setSubmittingInvoices] = useState({});
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
+  const [confirmSubmit, setConfirmSubmit] = useState(null); // { invoiceId, invoiceNumber }
 
   const isAdmin = hasRole('admin');
 
   // Load configuration
   useEffect(() => {
     loadConfiguration();
+
+    // Listen for OAuth success message from popup
+    const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === 'ANAF_AUTH_SUCCESS') {
+        showToast({
+          title: 'Autentificare reușită',
+          description: 'Conexiunea la ANAF a fost stabilită cu succes.',
+          type: 'success',
+        });
+        loadConfiguration(); // Reload config to get updated token
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   // Load data based on active tab
@@ -120,8 +157,10 @@ const AnafManagement = () => {
       loadMessages();
     } else if (activeTab === 'statistics') {
       loadStatistics();
+    } else if (activeTab === 'invoices') {
+      loadInvoices();
     }
-  }, [activeTab, syncFilters, messagesFilters]);
+  }, [activeTab, syncFilters, messagesFilters, invoiceFilters]);
 
   const loadConfiguration = async () => {
     setConfigLoading(true);
@@ -198,6 +237,40 @@ const AnafManagement = () => {
     }
   };
 
+  const handleCreateConfig = async () => {
+    try {
+      const payload = {
+        cif: configForm.cif,
+        clientId: configForm.clientId,
+        clientSecret: configForm.clientSecret,
+        redirectUri: configForm.redirectUri,
+        environment: configForm.environment || 'test',
+      };
+
+      await createAnafConfig(payload);
+      showToast({
+        title: 'Configurație creată',
+        description: `Configurația ANAF a fost creată cu succes (${configForm.environment === 'production' ? 'Producție' : 'Test'}).`,
+        type: 'success',
+      });
+      // Reset form
+      setConfigForm({
+        cif: '',
+        clientId: '',
+        clientSecret: '',
+        redirectUri: `${window.location.origin}/anaf/callback`,
+        environment: 'test',
+      });
+      loadConfiguration();
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || error.message || 'Nu s-a putut crea configurația.',
+        type: 'error',
+      });
+    }
+  };
+
   const handleSaveConfig = async () => {
     if (!config?.id) return;
 
@@ -229,7 +302,13 @@ const AnafManagement = () => {
   const loadSyncRecords = async () => {
     setSyncLoading(true);
     try {
-      const records = await getSyncRecords(syncFilters);
+      // Filter out empty strings
+      const params = {};
+      if (syncFilters.status) params.status = syncFilters.status;
+      if (syncFilters.page) params.page = syncFilters.page;
+      if (syncFilters.limit) params.limit = syncFilters.limit;
+
+      const records = await getSyncRecords(params);
       setSyncRecords(Array.isArray(records) ? records : []);
     } catch (error) {
       showToast({
@@ -346,6 +425,10 @@ const AnafManagement = () => {
     }
   };
 
+  const handleViewMessage = (message) => {
+    setViewingMessage(message);
+  };
+
   const handleDownloadMessage = async (messageId, messageType) => {
     setDownloadingMessages((prev) => ({ ...prev, [messageId]: true }));
     try {
@@ -374,6 +457,31 @@ const AnafManagement = () => {
     }
   };
 
+
+  const handleEnvironmentChange = async (newEnvironment) => {
+    if (!config?.id) return;
+
+    try {
+      await updateAnafConfig(config.id, { environment: newEnvironment });
+      showToast({
+        title: 'Mediu actualizat',
+        description: `Mediul a fost schimbat la ${newEnvironment === 'production' ? 'Producție' : 'Test'}.`,
+        type: 'success',
+      });
+      await loadConfiguration();
+      await loadInvoices();
+      await loadSyncRecords();
+      await loadStatistics();
+      await loadMessages();
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: 'Nu s-a putut actualiza mediul.',
+        type: 'error',
+      });
+    }
+  };
+
   const loadStatistics = async () => {
     setStatsLoading(true);
     try {
@@ -390,15 +498,107 @@ const AnafManagement = () => {
     }
   };
 
+  const loadInvoices = async () => {
+    setInvoicesLoading(true);
+    try {
+      const params = {};
+      if (invoiceFilters.status) params.status = invoiceFilters.status;
+      if (invoiceFilters.anafStatus) params.anafStatus = invoiceFilters.anafStatus;
+
+      const response = await fetchInvoices(params);
+      setInvoices(response.data || response);
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: 'Nu s-au putut încărca facturile.',
+        type: 'error',
+      });
+    } finally {
+      setInvoicesLoading(false);
+    }
+  };
+
+  const handleSubmitInvoice = async (invoiceId, invoiceNumber) => {
+    // Show confirmation dialog first
+    setConfirmSubmit({ invoiceId, invoiceNumber });
+  };
+
+  const performInvoiceSubmit = async (invoiceId) => {
+    setSubmittingInvoices(prev => ({ ...prev, [invoiceId]: true }));
+    try {
+      await submitInvoiceToAnaf(invoiceId);
+      const envLabel = config?.environment === 'production' ? 'producție' : 'test';
+      showToast({
+        title: 'Succes',
+        description: `Factura a fost trimisă către ANAF (mediu: ${envLabel}).`,
+        type: 'success',
+      });
+      await loadInvoices();
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || 'Nu s-a putut trimite factura către ANAF.',
+        type: 'error',
+      });
+    } finally {
+      setSubmittingInvoices(prev => ({ ...prev, [invoiceId]: false }));
+    }
+  };
+
+  const handleBulkSubmit = async () => {
+    if (selectedInvoices.length === 0) return;
+
+    const confirmBulk = window.confirm(
+      `Sigur doriți să trimiteți ${selectedInvoices.length} facturi către ANAF?`
+    );
+
+    if (!confirmBulk) return;
+
+    for (const invoiceId of selectedInvoices) {
+      await handleSubmitInvoice(invoiceId);
+    }
+
+    setSelectedInvoices([]);
+  };
+
+  const toggleInvoiceSelection = (invoiceId) => {
+    setSelectedInvoices(prev =>
+      prev.includes(invoiceId)
+        ? prev.filter(id => id !== invoiceId)
+        : [...prev, invoiceId]
+    );
+  };
+
+  const toggleAllInvoices = () => {
+    // Only select invoices that can be submitted
+    const submittableInvoices = invoices.filter(invoice => {
+      const anafSync = invoice.anafSync;
+      const canSubmit = invoice.status !== 'CANCELLED' &&
+                       (!anafSync || anafSync.status === 'ERROR');
+      return canSubmit;
+    });
+
+    // If all submittable invoices are already selected, deselect all
+    const submittableIds = submittableInvoices.map(inv => inv.id);
+    const allSubmittableSelected = submittableIds.every(id => selectedInvoices.includes(id));
+
+    if (allSubmittableSelected && submittableIds.length > 0) {
+      setSelectedInvoices([]);
+    } else {
+      setSelectedInvoices(submittableIds);
+    }
+  };
+
   const tabs = [
     { id: 'configuration', label: 'Configurație', icon: Settings },
+    { id: 'invoices', label: 'Facturi', icon: FileText },
     { id: 'sync-status', label: 'Status Sincronizare', icon: RefreshCw },
     { id: 'messages', label: 'Mesaje', icon: Mail },
     { id: 'statistics', label: 'Statistici', icon: BarChart3 },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -434,8 +634,9 @@ const AnafManagement = () => {
         </nav>
       </div>
 
+
       {/* Tab Content */}
-      <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="mt-4 rounded-lg border border-gray-200 bg-white">
         {/* Configuration Tab */}
         {activeTab === 'configuration' && (
           <div className="p-6">
@@ -444,24 +645,181 @@ const AnafManagement = () => {
                 <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
               </div>
             ) : !config ? (
-              <div className="py-12 text-center">
-                <Settings className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm font-medium text-gray-900">Nicio configurație</p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Configurația ANAF nu a fost încă setată. Contactează un administrator.
-                </p>
+              <div className="py-8">
+                <div className="mb-6 text-center">
+                  <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm font-medium text-gray-900">Nicio configurație</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Creează o configurație nouă pentru a te conecta la ANAF.
+                  </p>
+                </div>
+
+                {/* Create Configuration Form */}
+                <div className="mx-auto max-w-2xl rounded-lg border border-gray-200 bg-white p-6">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                    Configurație ANAF Nouă
+                  </h3>
+
+                  <div className="space-y-4">
+                    {/* Environment Selector */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mediu ANAF
+                      </label>
+                      <select
+                        value={configForm.environment}
+                        onChange={(e) =>
+                          setConfigForm({ ...configForm, environment: e.target.value })
+                        }
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      >
+                        <option value="test">Test (pentru dezvoltare și testare)</option>
+                        <option value="production">Producție (pentru facturi reale)</option>
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Selectează mediul ANAF: Test pentru dezvoltare sau Producție pentru facturi reale.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        CIF <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={configForm.cif}
+                        onChange={(e) =>
+                          setConfigForm({ ...configForm, cif: e.target.value })
+                        }
+                        placeholder="RO12345678"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Codul de Identificare Fiscală al companiei tale
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Client ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={configForm.clientId}
+                        onChange={(e) =>
+                          setConfigForm({ ...configForm, clientId: e.target.value })
+                        }
+                        placeholder=""
+                        disabled={false}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Primit de la ANAF după înregistrarea aplicației
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Client Secret <span className="text-red-500">*</span>
+                        
+                      </label>
+                      <input
+                        type="password"
+                        value={configForm.clientSecret}
+                        onChange={(e) =>
+                          setConfigForm({ ...configForm, clientSecret: e.target.value })
+                        }
+                        placeholder=""
+                        disabled={false}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Primit de la ANAF după înregistrarea aplicației
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Redirect URI <span className="text-red-500">*</span>
+                        
+                      </label>
+                      <input
+                        type="text"
+                        value={configForm.redirectUri}
+                        onChange={(e) =>
+                          setConfigForm({ ...configForm, redirectUri: e.target.value })
+                        }
+                        placeholder="http://localhost:5173/anaf/callback"
+                        disabled={false}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Trebuie să fie identic cu cel înregistrat la ANAF
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Mediu <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={configForm.environment}
+                        onChange={(e) =>
+                          setConfigForm({ ...configForm, environment: e.target.value })
+                        }
+                        disabled={false}
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="test">Test</option>
+                        <option value="production">Production</option>
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Folosește Test pentru dezvoltare
+                      </p>
+                    </div>
+
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                        <div className="flex">
+                          <AlertCircle className="h-5 w-5 flex-shrink-0 text-blue-600" />
+                          <div className="ml-3">
+                            <p className="text-sm font-medium text-blue-800">
+                              Informații importante
+                            </p>
+                            <p className="mt-1 text-sm text-blue-700">
+                              Pentru a obține credențialele OAuth, trebuie să înregistrezi
+                              aplicația în portalul ANAF. Consultă documentația din fișierul
+                              ANAF_EFACTURA_GUIDE.md pentru detalii complete.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        onClick={handleCreateConfig}
+                        disabled={!configForm.cif || !configForm.clientId || !configForm.clientSecret || !configForm.redirectUri}
+                        className="flex-1 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Creează Configurație
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="">
                 {/* Connection Status */}
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900">Status Conexiune</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-gray-900">Status Conexiune</h3>
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          {config.environment === 'production' ? 'PRODUCȚIE' : 'TEST'}
+                        </span>
+                      </div>
                       <p className="mt-1 text-sm text-gray-600">
-                        {config.token
-                          ? 'Conectat la ANAF'
-                          : 'Neconectat - autentificare necesară'}
+                        {config.token ? 'Conectat la ANAF' : 'Neconectat - autentificare necesară'}
                       </p>
                       {config.token?.expiresAt && (
                         <p className="mt-1 text-xs text-gray-500">
@@ -470,20 +828,21 @@ const AnafManagement = () => {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={handleTestConnection}
-                        disabled={testingConnection}
-                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        {testingConnection ? 'Testare...' : 'Testează Conexiunea'}
-                      </button>
-                      <button
-                        onClick={handleConnectToAnaf}
-                        className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
-                      >
-                        <ExternalLink className="mr-2 inline h-4 w-4" />
-                        Conectează ANAF
-                      </button>
+                        <button
+                          onClick={handleTestConnection}
+                          disabled={testingConnection}
+                          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          {testingConnection ? 'Testare...' : 'Testează Conexiunea'}
+                        </button>
+                        <button
+                          onClick={handleConnectToAnaf}
+                          className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                        >
+                          <ExternalLink className="mr-2 inline h-4 w-4" />
+                          Conectează ANAF
+                        </button>
+                      </div>
                     </div>
                   </div>
                   {connectionStatus && (
@@ -497,75 +856,152 @@ const AnafManagement = () => {
                       <p className="text-sm">{connectionStatus.message}</p>
                     </div>
                   )}
-                </div>
+
+                {/* Environment Selector */}
+                {isAdmin && (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mediu ANAF
+                    </label>
+                    <select
+                      value={config.environment || 'test'}
+                      onChange={(e) => handleEnvironmentChange(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    >
+                      <option value="test">Test (pentru dezvoltare și testare)</option>
+                      <option value="production">Producție (pentru facturi reale)</option>
+                    </select>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Mediul curent determină serverul ANAF folosit pentru toate operațiunile.
+                    </p>
+                  </div>
+                )}
 
                 {/* Configuration Details */}
                 {isAdmin && (
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        Detalii Configurație
-                      </h3>
-                      {!editingConfig ? (
-                        <button
-                          onClick={() => setEditingConfig(true)}
-                          className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
-                        >
-                          <Edit className="mr-1 inline h-4 w-4" />
-                          Editează
-                        </button>
-                      ) : (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setEditingConfig(false)}
-                            className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
-                          >
-                            Anulează
-                          </button>
+                  <>
+                    {/* Show OAuth credentials form if no valid tokens */}
+                    {!config.token && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                        <div className="mb-3 flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-blue-900">
+                              Configurare Credențiale OAuth ANAF
+                            </h3>
+                            <p className="mt-1 text-xs text-blue-700">
+                              Pentru a te conecta la ANAF, introdu mai întâi credențialele OAuth de mai jos, apoi click pe "Conectează ANAF".
+                            </p>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">CIF</label>
+                            <input
+                              type="text"
+                              value={configForm.cif}
+                              onChange={(e) => setConfigForm({ ...configForm, cif: e.target.value })}
+                              placeholder="Ex: RO12345678"
+                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Client ID (OAuth)</label>
+                            <input
+                              type="text"
+                              value={configForm.clientId}
+                              onChange={(e) => setConfigForm({ ...configForm, clientId: e.target.value })}
+                              placeholder="Ex: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Client Secret (OAuth)</label>
+                            <input
+                              type="password"
+                              value={configForm.clientSecret}
+                              onChange={(e) => setConfigForm({ ...configForm, clientSecret: e.target.value })}
+                              placeholder="••••••••••••••••"
+                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            />
+                          </div>
                           <button
                             onClick={handleSaveConfig}
-                            className="rounded-lg bg-viperx-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                            className="w-full rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
                           >
-                            Salvează
+                            Salvează Credențialele
                           </button>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">CIF</label>
-                        {editingConfig ? (
-                          <input
-                            type="text"
-                            value={configForm.cif}
-                            onChange={(e) =>
-                              setConfigForm({ ...configForm, cif: e.target.value })
-                            }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                          />
-                        ) : (
-                          <p className="mt-1 text-sm text-gray-900">{config.cif || '—'}</p>
-                        )}
                       </div>
+                    )}
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Client ID
-                        </label>
-                        {editingConfig ? (
-                          <input
-                            type="text"
-                            value={configForm.clientId}
-                            onChange={(e) =>
-                              setConfigForm({ ...configForm, clientId: e.target.value })
-                            }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                          />
-                        ) : (
-                          <p className="mt-1 text-sm text-gray-900">{config.clientId || '—'}</p>
-                        )}
-                      </div>
+                    {/* Show config details if we have valid tokens */}
+                    {config.token && (
+                      <div className="rounded-lg border border-gray-200 p-4">
+                        <div className="mb-4 flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            Detalii Configurație
+                          </h3>
+                          {!editingConfig ? (
+                            <button
+                              onClick={() => setEditingConfig(true)}
+                              className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
+                            >
+                              <Edit className="mr-1 inline h-4 w-4" />
+                              Editează
+                            </button>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setEditingConfig(false)}
+                                className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                              >
+                                Anulează
+                              </button>
+                              <button
+                                onClick={handleSaveConfig}
+                                className="rounded-lg bg-viperx-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                              >
+                                Salvează
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">CIF</label>
+                            {editingConfig ? (
+                              <input
+                                type="text"
+                                value={configForm.cif}
+                                onChange={(e) =>
+                                  setConfigForm({ ...configForm, cif: e.target.value })
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                              />
+                            ) : (
+                              <p className="mt-1 text-sm text-gray-900">{config.cif || '—'}</p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Client ID
+                            </label>
+                            {editingConfig ? (
+                              <input
+                                type="text"
+                                value={configForm.clientId}
+                                onChange={(e) =>
+                                  setConfigForm({ ...configForm, clientId: e.target.value })
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                              />
+                            ) : (
+                              <p className="mt-1 text-sm text-gray-900">{config.clientId || '—'}</p>
+                            )}
+                          </div>
 
                       {editingConfig && (
                         <div>
@@ -643,45 +1079,262 @@ const AnafManagement = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* Company Info */}
+                {/* Company Information */}
                 {config.company && (
-                  <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                      Informații Companie
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <p className="text-xs text-gray-600">Denumire</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {config.company.name}
-                        </p>
+                  <>
+                    {/* Company Information */}
+                    {config.company && (
+                      <div className="rounded-lg border border-gray-200 p-4">
+                        <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                          Informații Companie
+                        </h3>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs text-gray-600">Denumire</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {config.company.name}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">CUI</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {config.company.vatNumber}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Nr. Reg. Com.</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {config.company.registrationNumber}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Email</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {config.company.email}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-600">CUI</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {config.company.vatNumber}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Nr. Reg. Com.</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {config.company.registrationNumber}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Email</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {config.company.email}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Invoices Tab */}
+        {activeTab === 'invoices' && (
+          <div className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex gap-3">
+                <select
+                  value={invoiceFilters.status}
+                  onChange={(e) => {
+                    setInvoiceFilters({ ...invoiceFilters, status: e.target.value });
+                    setPage(1);
+                  }}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                >
+                  <option value="">Toate statusurile</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="SENT">Trimisă</option>
+                  <option value="PAID">Plătită</option>
+                  <option value="CANCELLED">Anulată</option>
+                </select>
+
+                <select
+                  value={invoiceFilters.anafStatus}
+                  onChange={(e) => {
+                    setInvoiceFilters({ ...invoiceFilters, anafStatus: e.target.value });
+                    setPage(1);
+                  }}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                >
+                  <option value="">Status ANAF</option>
+                  <option value="NOT_SUBMITTED">Netrimisă</option>
+                  <option value="PENDING">În așteptare</option>
+                  <option value="UPLOADED">Încărcată</option>
+                  <option value="PROCESSING">În procesare</option>
+                  <option value="OK">Validată</option>
+                  <option value="ERROR">Eroare</option>
+                </select>
+              </div>
+
+              {selectedInvoices.length > 0 && (
+                <button
+                  onClick={handleBulkSubmit}
+                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                >
+                  <Upload className="mr-2 inline h-4 w-4" />
+                  Trimite {selectedInvoices.length} facturi
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={(() => {
+                          const submittableInvoices = invoices.filter(invoice => {
+                            const anafSync = invoice.anafSync;
+                            return invoice.status !== 'CANCELLED' && (!anafSync || anafSync.status === 'ERROR');
+                          });
+                          return submittableInvoices.length > 0 &&
+                                 submittableInvoices.every(inv => selectedInvoices.includes(inv.id));
+                        })()}
+                        onChange={toggleAllInvoices}
+                        className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                        title="Selectează toate facturile care pot fi trimise"
+                      />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Nr. Factură
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Client
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Data
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      ANAF
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Acțiuni
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {invoicesLoading ? (
+                    <tr>
+                      <td colSpan="8" className="px-6 py-12 text-center text-sm text-gray-500">
+                        Se încarcă...
+                      </td>
+                    </tr>
+                  ) : invoices.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="px-6 py-12 text-center">
+                        <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-2 text-sm font-medium text-gray-900">
+                          Nicio factură
+                        </p>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Creați o factură pentru a o putea trimite către ANAF
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    invoices.map((invoice) => {
+                      const anafSync = invoice.anafSync;
+                      const canSubmit = invoice.status !== 'CANCELLED' &&
+                                       (!anafSync || anafSync.status === 'ERROR');
+
+                      return (
+                        <tr key={invoice.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedInvoices.includes(invoice.id)}
+                              onChange={() => toggleInvoiceSelection(invoice.id)}
+                              disabled={!canSubmit}
+                              className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary disabled:opacity-50"
+                            />
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {invoice.invoiceNumber}
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
+                            <div className="text-sm text-gray-900">
+                              {invoice.client?.company ||
+                               `${invoice.client?.firstName} ${invoice.client?.lastName}`}
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {(invoice.total || 0).toFixed(2)} RON
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
+                            <div className="text-sm text-gray-900">
+                              {new Date(invoice.issueDate).toLocaleDateString('ro-RO')}
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                invoice.status === 'PAID'
+                                  ? 'bg-green-100 text-green-800'
+                                  : invoice.status === 'SENT'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : invoice.status === 'CANCELLED'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {invoice.status}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
+                            {anafSync ? (
+                              <span
+                                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                  anafSync.status === 'OK'
+                                    ? 'bg-green-100 text-green-800'
+                                    : anafSync.status === 'ERROR'
+                                    ? 'bg-red-100 text-red-800'
+                                    : anafSync.status === 'PROCESSING'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}
+                              >
+                                {anafSync.status}
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-800">
+                                Netrimisă
+                              </span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                            {canSubmit && (
+                              <button
+                                onClick={() => handleSubmitInvoice(invoice.id, invoice.invoiceNumber)}
+                                disabled={submittingInvoices[invoice.id]}
+                                className="text-viperx-primary hover:text-viperx-primary/80 disabled:opacity-50"
+                              >
+                                {submittingInvoices[invoice.id] ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Upload className="h-4 w-4" />
+                                )}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -939,18 +1592,29 @@ const AnafManagement = () => {
                           )}
                         </td>
                         <td className="whitespace-nowrap px-6 py-4 text-right">
-                          <button
-                            onClick={() => handleDownloadMessage(message.id, message.type)}
-                            disabled={downloadingMessages[message.id]}
-                            className="text-viperx-primary hover:text-viperx-primary/80 disabled:opacity-50"
-                            title="Descarcă mesaj"
-                          >
-                            <Download
-                              className={`h-4 w-4 ${
-                                downloadingMessages[message.id] ? 'animate-pulse' : ''
-                              }`}
-                            />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleViewMessage(message)}
+                              className="text-gray-600 hover:text-gray-900"
+                              title="Vezi detalii"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            {message.downloadId && (
+                              <button
+                                onClick={() => handleDownloadMessage(message.id, message.tip)}
+                                disabled={downloadingMessages[message.id]}
+                                className="text-viperx-primary hover:text-viperx-primary/80 disabled:opacity-50"
+                                title="Descarcă mesaj"
+                              >
+                                <Download
+                                  className={`h-4 w-4 ${
+                                    downloadingMessages[message.id] ? 'animate-pulse' : ''
+                                  }`}
+                                />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -974,83 +1638,171 @@ const AnafManagement = () => {
                 <p className="mt-2 text-sm font-medium text-gray-900">
                   Nu există date statistice
                 </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Trimite prima factură către ANAF pentru a vedea statistici.
+                </p>
               </div>
             ) : (
               <div className="space-y-6">
                 {/* Stats Cards */}
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">Total Sincronizate</p>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                          Total Facturi Trimise
+                        </p>
                         <p className="mt-2 text-3xl font-bold text-gray-900">
                           {statistics.total || 0}
                         </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Trimise către ANAF
+                        </p>
                       </div>
-                      <FileCheck className="h-8 w-8 text-gray-400" />
+                      <div className="rounded-full bg-gray-100 p-3">
+                        <FileCheck className="h-8 w-8 text-gray-600" />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                  <div className="rounded-lg border border-green-200 bg-green-50 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-green-600">Reușite (OK)</p>
+                        <p className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                          Validate cu Succes
+                        </p>
                         <p className="mt-2 text-3xl font-bold text-green-900">
                           {statistics.OK || 0}
                         </p>
+                        <p className="mt-1 text-xs text-green-600">
+                          Acceptate de ANAF
+                        </p>
                       </div>
-                      <CheckCircle className="h-8 w-8 text-green-600" />
+                      <div className="rounded-full bg-green-100 p-3">
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-red-600">Erori</p>
+                        <p className="text-xs font-medium text-red-600 uppercase tracking-wide">
+                          Erori de Validare
+                        </p>
                         <p className="mt-2 text-3xl font-bold text-red-900">
                           {statistics.ERROR || 0}
                         </p>
+                        <p className="mt-1 text-xs text-red-600">
+                          Necesită atenție
+                        </p>
                       </div>
-                      <XCircle className="h-8 w-8 text-red-600" />
+                      <div className="rounded-full bg-red-100 p-3">
+                        <XCircle className="h-8 w-8 text-red-600" />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                  <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-yellow-600">În Procesare</p>
+                        <p className="text-xs font-medium text-yellow-600 uppercase tracking-wide">
+                          În Curs de Procesare
+                        </p>
                         <p className="mt-2 text-3xl font-bold text-yellow-900">
                           {(statistics.PENDING || 0) +
                             (statistics.UPLOADED || 0) +
                             (statistics.PROCESSING || 0)}
                         </p>
+                        <p className="mt-1 text-xs text-yellow-600">
+                          Așteaptă validare
+                        </p>
                       </div>
-                      <Clock className="h-8 w-8 text-yellow-600" />
+                      <div className="rounded-full bg-yellow-100 p-3">
+                        <Clock className="h-8 w-8 text-yellow-600" />
+                      </div>
                     </div>
                   </div>
                 </div>
 
+                {/* Success Rate */}
+                {statistics.total > 0 && (
+                  <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                      Rata de Succes
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 transition-all duration-500"
+                            style={{
+                              width: `${((statistics.OK || 0) / statistics.total) * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900">
+                          {Math.round(((statistics.OK || 0) / statistics.total) * 100)}%
+                        </p>
+                        <p className="text-xs text-gray-500">din total</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Detailed Breakdown */}
-                <div className="rounded-lg border border-gray-200 p-4">
+                <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
                   <h3 className="mb-4 text-sm font-semibold text-gray-900">
                     Detalii pe Status
                   </h3>
+                  <p className="mb-4 text-xs text-gray-500">
+                    Distribuția facturilor pe fiecare status de procesare ANAF:
+                  </p>
                   <div className="space-y-3">
-                    {statistics.byStatus && Object.entries(statistics.byStatus)
-                      .map(([status, count]) => (
-                        <div key={status} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                                STATUS_BADGES[status] || STATUS_BADGES.PENDING
-                              }`}
-                            >
-                              {status}
-                            </span>
+                    {statistics.byStatus && Object.entries(statistics.byStatus).length > 0 ? (
+                      Object.entries(statistics.byStatus).map(([status, count]) => {
+                        const statusDescriptions = {
+                          PENDING: 'Așteptând încărcare',
+                          UPLOADING: 'Se încarcă pe server ANAF',
+                          UPLOADED: 'Încărcată, așteaptă procesare',
+                          PROCESSING: 'Se validează de ANAF',
+                          OK: 'Validată și acceptată',
+                          ERROR: 'Eroare la validare',
+                          REJECTED: 'Respinsă de ANAF',
+                        };
+
+                        return (
+                          <div key={status} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                            <div className="flex items-center gap-3 flex-1">
+                              <span
+                                className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                  STATUS_BADGES[status] || STATUS_BADGES.PENDING
+                                }`}
+                              >
+                                {status}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {statusDescriptions[status] || status}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <span className="text-lg font-semibold text-gray-900">{count}</span>
+                                <span className="ml-1 text-xs text-gray-500">
+                                  ({Math.round((count / statistics.total) * 100)}%)
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <span className="text-lg font-semibold text-gray-900">{count}</span>
-                        </div>
-                      ))}
+                        );
+                      })
+                    ) : (
+                      <p className="text-center text-sm text-gray-500 py-4">
+                        Nu există date disponibile
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1058,6 +1810,187 @@ const AnafManagement = () => {
           </div>
         )}
       </div>
+
+
+      {/* Production Confirmation Modal */}
+      {confirmSubmit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl">
+            {/* Header */}
+            <div className="bg-red-50 px-6 py-4 border-b border-red-200">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-red-100 p-2">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-red-900">
+                    ⚠️ Confirmare Trimitere către ANAF REAL
+                  </h3>
+                  <p className="text-xs text-red-700">
+                    Această acțiune este IREVERSIBILĂ
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+                  <p className="text-sm font-medium text-yellow-900">
+                    Ești pe cale să trimiți factura către sistemul ANAF oficial:
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-yellow-900">
+                    {confirmSubmit.invoiceNumber}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-gray-900">ATENȚIE:</p>
+                  <ul className="space-y-1 text-sm text-gray-700">
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Această acțiune NU poate fi anulată</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Factura va fi înregistrată în sistemul ANAF real</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Erorile pot genera probleme fiscale</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Verifică toate datele înainte de a continua</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+                  <p className="text-xs text-blue-800">
+                    💡 Sfat: Folosește mediul Test pentru testare. Poți schimba mediul din tabul Configurație.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+              <button
+                onClick={() => setConfirmSubmit(null)}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+              >
+                Anulează
+              </button>
+              <button
+                onClick={async () => {
+                  const invoiceId = confirmSubmit.invoiceId;
+                  setConfirmSubmit(null);
+                  await performInvoiceSubmit(invoiceId);
+                }}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 transition"
+              >
+                DA, Trimite către ANAF REAL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message Viewer Modal */}
+      {viewingMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative max-h-[80vh] w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Detalii Mesaj ANAF</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {viewingMessage.anafMessageId || viewingMessage.id}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingMessage(null)}
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition"
+              >
+                <XCircle className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="max-h-[60vh] overflow-y-auto p-6">
+              <div className="space-y-4">
+                {/* Basic Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tip Mesaj</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {viewingMessage.tip || '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">CIF</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {viewingMessage.cif || '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data Creare</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {viewingMessage.dataCreare ? formatDate(viewingMessage.dataCreare) : '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">ID Solicitare</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {viewingMessage.solicitareId || '—'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metadata */}
+                {viewingMessage.metadata && (
+                  <div className="mt-6">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                      Metadate Complete
+                    </p>
+                    <div className="rounded-lg bg-gray-50 p-4 border border-gray-200">
+                      <pre className="text-xs text-gray-700 whitespace-pre-wrap overflow-x-auto">
+                        {JSON.stringify(viewingMessage.metadata, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+              {viewingMessage.downloadId && (
+                <button
+                  onClick={() => {
+                    handleDownloadMessage(viewingMessage.id, viewingMessage.tip);
+                    setViewingMessage(null);
+                  }}
+                  disabled={downloadingMessages[viewingMessage.id]}
+                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-viperx-primary/90 transition disabled:opacity-50"
+                >
+                  <Download className="mr-2 inline h-4 w-4" />
+                  Descarcă Mesaj
+                </button>
+              )}
+              <button
+                onClick={() => setViewingMessage(null)}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+              >
+                Închide
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

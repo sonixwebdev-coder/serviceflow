@@ -213,7 +213,7 @@ const CompanySettings = () => {
           Se incarca profilul companiei...
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="">
           {/* Logo Upload Section */}
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Logo companie</h2>
