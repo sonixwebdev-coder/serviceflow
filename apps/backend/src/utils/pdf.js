@@ -1171,6 +1171,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
   // ========================================
   if (serviceOrder.notes) {
     drawSectionHeading(context, 'OBSERVAȚII', fonts, pdfDoc);
+    context.cursor -= 5; // Add spacing after heading
 
     const notesBoxStartY = context.cursor;
     const noteLines = serviceOrder.notes.split('\n');
@@ -1222,6 +1223,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
   // ========================================
   if (company.gdprNote) {
     drawSectionHeading(context, 'NOTIFICARE GDPR', fonts, pdfDoc);
+    context.cursor -= 5; // Add spacing after heading
     company.gdprNote.split('\n').forEach((line) => {
       context.page.drawText(sanitizeForPdf(line), {
         x: context.margin,
@@ -1801,6 +1803,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
   // Notes
   if (invoice.notes) {
     drawSectionHeading(context, 'OBSERVAȚII', fonts, pdfDoc);
+    context.cursor -= 5; // Add spacing after heading
 
     const notesBoxStartY = context.cursor;
     const noteLines = invoice.notes.split('\n');
@@ -1895,7 +1898,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
   });
 
   if (company.gdprNote) {
-    context.cursor -= 12;
+    context.cursor -= 15; // Increased spacing before GDPR note
     context.page.drawText(sanitizeForPdf(company.gdprNote), {
       x: context.margin,
       y: context.cursor,

@@ -24,7 +24,7 @@ import useAuth from '../context/useAuth';
 import { USER_ROLES } from '../utils/constants.js';
 import { getErrorMessage } from '../utils/errorUtils.js';
 import { createAppointment, downloadServiceOrderPdf } from '../services/appointmentService';
-import { recordAdvancePayment, recordFinalPayment, getPaymentStatus } from '../services/paymentService';
+import { getPaymentStatus, getAppointmentPayments, createPayment, deletePayment } from '../services/paymentService';
 import API from '../utils/api.js';
 import { getSocket } from '../lib/socket.js';
 
@@ -202,11 +202,18 @@ const Appointments = () => {
   const [typingUsers, setTypingUsers] = useState(new Map());
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [isAdvancePaymentModalOpen, setIsAdvancePaymentModalOpen] = useState(false);
-  const [isFinalPaymentModalOpen, setIsFinalPaymentModalOpen] = useState(false);
-  const [advancePaymentAmount, setAdvancePaymentAmount] = useState('');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    paymentMethod: 'CASH',
+    notes: '',
+    reference: '',
+  });
   const [paymentStatus, setPaymentStatus] = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [isRecordingPayment, setIsRecordingPayment] = useState(false);
   const [isLoadingPaymentStatus, setIsLoadingPaymentStatus] = useState(false);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
   const [isEditingAppointment, setIsEditingAppointment] = useState(false);
   const [editForm, setEditForm] = useState({});
   const queryClient = useQueryClient();
@@ -326,6 +333,24 @@ const Appointments = () => {
       setPaymentStatus(null);
     } finally {
       setIsLoadingPaymentStatus(false);
+    }
+  }, []);
+
+  /**
+   * Fetches all payments for the selected appointment
+   */
+  const fetchPayments = useCallback(async (appointmentId) => {
+    if (!appointmentId) return;
+
+    setIsLoadingPayments(true);
+    try {
+      const paymentsData = await getAppointmentPayments(appointmentId);
+      setPayments(paymentsData || []);
+    } catch (error) {
+      console.error('Failed to fetch payments:', error);
+      setPayments([]);
+    } finally {
+      setIsLoadingPayments(false);
     }
   }, []);
 
@@ -668,18 +693,20 @@ useEffect(() => {
   }, [serviceOrder, selectedAppointmentId]);
 
   /**
-   * Fetch unread count and payment status when appointment drawer opens
+   * Fetch unread count, payment status, and payments when appointment drawer opens
    */
   useEffect(() => {
     if (selectedAppointmentId) {
       fetchUnreadCount(selectedAppointmentId);
       fetchPaymentStatus(selectedAppointmentId);
+      fetchPayments(selectedAppointmentId);
     } else {
       setUnreadCount(0);
       setTypingUsers(new Map());
       setPaymentStatus(null);
+      setPayments([]);
     }
-  }, [selectedAppointmentId, fetchUnreadCount, fetchPaymentStatus]);
+  }, [selectedAppointmentId, fetchUnreadCount, fetchPaymentStatus, fetchPayments]);
 
   /**
    * Mark messages as read when switching to messages tab
@@ -835,57 +862,85 @@ useEffect(() => {
     }));
   };
 
-  const handleRecordAdvancePayment = async () => {
-    if (!selectedAppointmentId || !advancePaymentAmount) return;
+  const handleAddPayment = async () => {
+    if (!selectedAppointmentId) return;
 
-    const amount = parseFloat(advancePaymentAmount);
+    const amount = parseFloat(paymentForm.amount);
     if (isNaN(amount) || amount <= 0) {
       showToast({ title: 'Suma nu este valida', type: 'error' });
       return;
     }
 
-    const total = paymentStatus?.total || 0;
-    if (amount > total) {
-      showToast({ title: 'Suma avansului nu poate depasi totalul', type: 'error' });
-      return;
-    }
-
+    setIsRecordingPayment(true);
     try {
-      await recordAdvancePayment(selectedAppointmentId, amount);
-      showToast({ title: 'Avans inregistrat cu succes', type: 'success' });
-      setIsAdvancePaymentModalOpen(false);
-      setAdvancePaymentAmount('');
-      fetchPaymentStatus(selectedAppointmentId);
+      await createPayment({
+        appointmentId: selectedAppointmentId,
+        amount,
+        paymentMethod: paymentForm.paymentMethod,
+        notes: paymentForm.notes || undefined,
+        reference: paymentForm.reference || undefined,
+      });
+
+      showToast({ title: 'Plata inregistrata cu succes', type: 'success' });
+      setIsPaymentModalOpen(false);
+      setPaymentForm({
+        amount: '',
+        paymentMethod: 'CASH',
+        notes: '',
+        reference: '',
+      });
+
+      // Refresh payment data
+      await fetchPayments(selectedAppointmentId);
+      await fetchPaymentStatus(selectedAppointmentId);
       queryClient.invalidateQueries({ queryKey: ['appointment', selectedAppointmentId] });
-      queryClient.invalidateQueries({ queryKey: ['service-order', selectedAppointmentId] });
+
+      // Delay service order refetch to allow backend PDF regeneration to complete
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ['service-order', selectedAppointmentId],
+          refetchType: 'active'
+        });
+        queryClient.refetchQueries({
+          queryKey: ['service-order', selectedAppointmentId]
+        });
+      }, 2000);
     } catch (error) {
       showToast({
-        title: 'Nu am putut inregistra avansul',
+        title: 'Nu am putut inregistra plata',
         description: error?.message || 'Incearca din nou.',
         type: 'error',
       });
+    } finally {
+      setIsRecordingPayment(false);
     }
   };
 
-  const handleRecordFinalPayment = async () => {
-    if (!selectedAppointmentId || !paymentStatus) return;
-
-    const remainingAmount = paymentStatus.remaining || 0;
-    if (remainingAmount <= 0) {
-      showToast({ title: 'Nu exista suma ramasa de platit', type: 'error' });
-      return;
-    }
+  const handleDeletePayment = async (paymentId) => {
+    if (!confirm('Esti sigur ca vrei sa stergi aceasta plata?')) return;
 
     try {
-      await recordFinalPayment(selectedAppointmentId, remainingAmount);
-      showToast({ title: 'Plata finalizata cu succes', type: 'success' });
-      setIsFinalPaymentModalOpen(false);
-      fetchPaymentStatus(selectedAppointmentId);
+      await deletePayment(paymentId);
+      showToast({ title: 'Plata stearsa cu succes', type: 'success' });
+
+      // Refresh payment data
+      await fetchPayments(selectedAppointmentId);
+      await fetchPaymentStatus(selectedAppointmentId);
       queryClient.invalidateQueries({ queryKey: ['appointment', selectedAppointmentId] });
-      queryClient.invalidateQueries({ queryKey: ['service-order', selectedAppointmentId] });
+
+      // Delay service order refetch to allow backend PDF regeneration to complete
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ['service-order', selectedAppointmentId],
+          refetchType: 'active'
+        });
+        queryClient.refetchQueries({
+          queryKey: ['service-order', selectedAppointmentId]
+        });
+      }, 2000);
     } catch (error) {
       showToast({
-        title: 'Nu am putut finaliza plata',
+        title: 'Nu am putut sterge plata',
         description: error?.message || 'Incearca din nou.',
         type: 'error',
       });
@@ -2821,113 +2876,121 @@ useEffect(() => {
                   {/* Payment Section */}
                   {serviceOrder && (
                     <div className="rounded-xl border border-gray-100 bg-white p-4">
-                      <h3 className="text-base font-semibold text-gray-900">Plata</h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold text-gray-900">Plata</h3>
+                        {selectedAppointment.status !== 'COMPLETED' && (
+                          <button
+                            type="button"
+                            onClick={() => setIsPaymentModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-viperx-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                          >
+                            <Plus size={14} />
+                            Adauga plata
+                          </button>
+                        )}
+                      </div>
 
-                      {isLoadingPaymentStatus ? (
+                      {isLoadingPaymentStatus || isLoadingPayments ? (
                         <div className="mt-3 flex items-center justify-center py-4">
                           <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-viperx-primary"></div>
                         </div>
                       ) : paymentStatus ? (
-                        <div className="mt-3 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Status:</span>
-                            {(() => {
-                              const meta = getPaymentStatusMeta(paymentStatus.status);
-                              const Icon = meta.icon;
-                              return (
-                                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${meta.badgeClass}`}>
-                                  <Icon size={14} />
-                                  {meta.label}
-                                </span>
-                              );
-                            })()}
+                        <div className="mt-3 space-y-4">
+                          {/* Payment Summary */}
+                          <div className="rounded-lg bg-gray-50 p-3 space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Total comenzi:</span>
+                              <span className="font-semibold text-gray-900">{currencyFormatter.format(Number(paymentStatus.total || 0))}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm border-t pt-2">
+                              <span className="flex items-center gap-1.5 text-gray-600">
+                                <CheckCircle2 size={14} className="text-green-600" />
+                                Total platit:
+                              </span>
+                              <span className="font-semibold text-green-700">{currencyFormatter.format(Number(paymentStatus.totalPaid || 0))}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm border-t pt-2">
+                              <span className="font-medium text-gray-700">Rest de plata:</span>
+                              <span className={`font-bold ${Number(paymentStatus.remaining || 0) > 0 ? 'text-orange-600' : 'text-green-700'}`}>
+                                {currencyFormatter.format(Number(paymentStatus.remaining || 0))}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between border-t pt-2">
+                              <span className="text-xs text-gray-500">Status:</span>
+                              {(() => {
+                                const meta = getPaymentStatusMeta(paymentStatus.status);
+                                const Icon = meta.icon;
+                                return (
+                                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.badgeClass}`}>
+                                    <Icon size={12} />
+                                    {meta.label}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           </div>
 
-                          <dl className="space-y-2 text-sm">
-                            <div className="flex items-center justify-between">
-                              <dt className="text-gray-500">Total de plata:</dt>
-                              <dd className="font-semibold text-gray-900">{currencyFormatter.format(Number(paymentStatus.total || 0))}</dd>
-                            </div>
-
-                            {paymentStatus.advancePayment && (
-                              <>
-                                <div className="flex items-center justify-between border-t pt-2">
-                                  <dt className="flex items-center gap-1.5 text-gray-500">
-                                    <CheckCircle2 size={14} className="text-green-600" />
-                                    Avans platit:
-                                  </dt>
-                                  <dd className="font-medium text-green-700">{currencyFormatter.format(Number(paymentStatus.advancePayment.amount || 0))}</dd>
-                                </div>
-                                {paymentStatus.advancePayment.paidAt && (
-                                  <div className="flex items-center justify-between text-xs">
-                                    <dt className="text-gray-400">Platit la:</dt>
-                                    <dd className="text-gray-600">{formatDateTime(paymentStatus.advancePayment.paidAt, 'dd MMM yyyy, HH:mm')}</dd>
+                          {/* Payment History */}
+                          {payments.length > 0 ? (
+                            <div className="space-y-2">
+                              <h4 className="text-sm font-medium text-gray-700">Istoric plati</h4>
+                              <div className="space-y-2">
+                                {payments.map((payment, index) => (
+                                  <div
+                                    key={payment.id}
+                                    className="rounded-lg border border-gray-200 bg-white p-3 text-sm"
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="font-medium text-gray-900">
+                                            Plata #{index + 1}
+                                          </span>
+                                          <span className="text-xs text-gray-500">
+                                            {formatDateTime(payment.paymentDate, 'dd MMM yyyy, HH:mm')}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-gray-600">
+                                          <span className="font-medium">
+                                            {currencyFormatter.format(Number(payment.amount))}
+                                          </span>
+                                          <span className="text-gray-400">•</span>
+                                          <span>
+                                            {payment.paymentMethod === 'CASH' && 'Numerar'}
+                                            {payment.paymentMethod === 'CARD' && 'Card'}
+                                            {payment.paymentMethod === 'BANK_TRANSFER' && 'Transfer bancar'}
+                                            {payment.paymentMethod === 'OTHER' && 'Altele'}
+                                          </span>
+                                        </div>
+                                        {payment.reference && (
+                                          <div className="mt-1 text-xs text-gray-500">
+                                            Referinta: {payment.reference}
+                                          </div>
+                                        )}
+                                        {payment.notes && (
+                                          <div className="mt-1 text-xs text-gray-600">
+                                            {payment.notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                      {user?.role === USER_ROLES.ADMIN && selectedAppointment.status !== 'COMPLETED' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeletePayment(payment.id)}
+                                          className="ml-2 rounded p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                                          title="Sterge plata"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                )}
-                              </>
-                            )}
-
-                            {paymentStatus.status === 'PARTIAL' && (
-                              <div className="flex items-center justify-between border-t pt-2">
-                                <dt className="font-medium text-gray-700">Rest de plata:</dt>
-                                <dd className="font-bold text-orange-600">{currencyFormatter.format(Number(paymentStatus.remaining || 0))}</dd>
+                                ))}
                               </div>
-                            )}
-
-                            {paymentStatus.status === 'PAID' && paymentStatus.finalPayment && (
-                              <>
-                                <div className="flex items-center justify-between border-t pt-2">
-                                  <dt className="flex items-center gap-1.5 text-gray-500">
-                                    <CheckCircle2 size={14} className="text-green-600" />
-                                    Plata completa
-                                  </dt>
-                                  <dd className="font-semibold text-green-700">{currencyFormatter.format(Number(paymentStatus.total || 0))}</dd>
-                                </div>
-                                {paymentStatus.finalPayment?.paidAt && (
-                                  <div className="flex items-center justify-between text-xs">
-                                    <dt className="text-gray-400">Finalizat la:</dt>
-                                    <dd className="text-gray-600">{formatDateTime(paymentStatus.finalPayment.paidAt, 'dd MMM yyyy, HH:mm')}</dd>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </dl>
-
-                          {selectedAppointment.status !== 'COMPLETED' && (
-                            <div className="flex gap-2 border-t pt-3">
-                              {paymentStatus.status === 'UNPAID' && !paymentStatus.advancePayment && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setAdvancePaymentAmount('');
-                                    setIsAdvancePaymentModalOpen(true);
-                                  }}
-                                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
-                                >
-                                  Inregistreaza avans
-                                </button>
-                              )}
-                              {paymentStatus.status === 'UNPAID' && paymentStatus.advancePayment && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setAdvancePaymentAmount(String(paymentStatus.advancePayment.amount || ''));
-                                    setIsAdvancePaymentModalOpen(true);
-                                  }}
-                                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-                                >
-                                  Actualizeaza avans
-                                </button>
-                              )}
-                              {paymentStatus.status === 'PARTIAL' && (
-                                <button
-                                  type="button"
-                                  onClick={() => setIsFinalPaymentModalOpen(true)}
-                                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
-                                >
-                                  Inregistreaza plata finala
-                                </button>
-                              )}
+                            </div>
+                          ) : (
+                            <div className="rounded-lg border border-dashed border-gray-200 p-4 text-center text-sm text-gray-500">
+                              Nu exista plati inregistrate inca
                             </div>
                           )}
                         </div>
@@ -2950,8 +3013,6 @@ useEffect(() => {
                           type="button"
                           disabled={createInvoiceMutation.isPending}
                           onClick={() => {
-                            console.log('🧾 [FRONTEND] Creating invoice from service order:', serviceOrder.id);
-
                             // Use the service order ID - backend will fetch all data from DB
                             createInvoiceMutation.mutate({ serviceOrderId: serviceOrder.id }, {
                               onSuccess: (data) => {
@@ -3154,93 +3215,25 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Advance Payment Modal */}
-      {isAdvancePaymentModalOpen && (
+      {/* Add Payment Modal */}
+      {isPaymentModalOpen && paymentStatus && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
             <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">Inregistreaza avans</h3>
-              <p className="mt-1 text-sm text-gray-500">Introdu suma avansului pentru aceasta programare</p>
+              <h3 className="text-lg font-semibold text-gray-900">Adauga plata</h3>
+              <p className="mt-1 text-sm text-gray-500">Inregistreaza o noua plata pentru aceasta programare</p>
             </div>
 
             <div className="px-6 py-4 space-y-4">
-              {paymentStatus && (
-                <div className="rounded-lg bg-gray-50 p-3 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Total programare:</span>
-                    <span className="font-semibold text-gray-900">{currencyFormatter.format(Number(paymentStatus.total || 0))}</span>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label htmlFor="advanceAmount" className="block text-sm font-medium text-gray-700 mb-1">
-                  Suma avans <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    id="advanceAmount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={advancePaymentAmount}
-                    onChange={(e) => setAdvancePaymentAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    autoFocus
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">RON</span>
-                </div>
-                {advancePaymentAmount && paymentStatus && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    Rest dupa avans: {currencyFormatter.format(Math.max(0, Number(paymentStatus.total || 0) - parseFloat(advancePaymentAmount || 0)))}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 border-t px-6 py-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAdvancePaymentModalOpen(false);
-                  setAdvancePaymentAmount('');
-                }}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
-              >
-                Anuleaza
-              </button>
-              <button
-                type="button"
-                onClick={handleRecordAdvancePayment}
-                disabled={!advancePaymentAmount || parseFloat(advancePaymentAmount) <= 0}
-                className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Confirma avans
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Final Payment Modal */}
-      {isFinalPaymentModalOpen && paymentStatus && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
-            <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">Inregistreaza plata finala</h3>
-              <p className="mt-1 text-sm text-gray-500">Confirma plata restului pentru finalizarea tranzactiei</p>
-            </div>
-
-            <div className="px-6 py-4 space-y-4">
+              {/* Summary */}
               <div className="rounded-lg bg-gray-50 p-3 space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Total programare:</span>
+                  <span className="text-gray-600">Total comenzi:</span>
                   <span className="font-semibold text-gray-900">{currencyFormatter.format(Number(paymentStatus.total || 0))}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Avans platit:</span>
-                  <span className="font-medium text-green-700">{currencyFormatter.format(Number(paymentStatus.advancePayment?.amount || 0))}</span>
+                  <span className="text-gray-600">Total platit:</span>
+                  <span className="font-medium text-green-700">{currencyFormatter.format(Number(paymentStatus.totalPaid || 0))}</span>
                 </div>
                 <div className="flex items-center justify-between border-t pt-2">
                   <span className="font-medium text-gray-700">Rest de plata:</span>
@@ -3248,27 +3241,110 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-                <p className="text-sm text-blue-800">
-                  Vei confirma primirea sumei de <strong>{currencyFormatter.format(Number(paymentStatus.remaining || 0))}</strong> pentru finalizarea platii acestei programari.
-                </p>
+              {/* Amount */}
+              <div>
+                <label htmlFor="paymentAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                  Suma <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="paymentAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    autoFocus
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">RON</span>
+                </div>
+                {paymentForm.amount && paymentStatus && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Rest dupa plata: {currencyFormatter.format(Math.max(0, Number(paymentStatus.remaining || 0) - parseFloat(paymentForm.amount || 0)))}
+                  </p>
+                )}
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">
+                  Metoda de plata <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="paymentMethod"
+                  value={paymentForm.paymentMethod}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                >
+                  <option value="CASH">Numerar</option>
+                  <option value="CARD">Card</option>
+                  <option value="BANK_TRANSFER">Transfer bancar</option>
+                  <option value="OTHER">Altele</option>
+                </select>
+              </div>
+
+              {/* Reference (Optional) */}
+              <div>
+                <label htmlFor="paymentReference" className="block text-sm font-medium text-gray-700 mb-1">
+                  Referinta (optional)
+                </label>
+                <input
+                  id="paymentReference"
+                  type="text"
+                  value={paymentForm.reference}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, reference: e.target.value }))}
+                  placeholder="Nr. chitanta, ID tranzactie, etc."
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                />
+              </div>
+
+              {/* Notes (Optional) */}
+              <div>
+                <label htmlFor="paymentNotes" className="block text-sm font-medium text-gray-700 mb-1">
+                  Notite (optional)
+                </label>
+                <textarea
+                  id="paymentNotes"
+                  value={paymentForm.notes}
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Detalii suplimentare despre plata..."
+                  rows={2}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                />
               </div>
             </div>
 
             <div className="flex justify-end gap-3 border-t px-6 py-4">
               <button
                 type="button"
-                onClick={() => setIsFinalPaymentModalOpen(false)}
+                onClick={() => {
+                  setIsPaymentModalOpen(false);
+                  setPaymentForm({
+                    amount: '',
+                    paymentMethod: 'CASH',
+                    notes: '',
+                    reference: '',
+                  });
+                }}
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
               >
                 Anuleaza
               </button>
               <button
                 type="button"
-                onClick={handleRecordFinalPayment}
-                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+                onClick={handleAddPayment}
+                disabled={!paymentForm.amount || parseFloat(paymentForm.amount) <= 0 || isRecordingPayment}
+                className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Confirma plata finala
+                {isRecordingPayment && (
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {isRecordingPayment ? 'Se înregistrează...' : 'Adauga plata'}
               </button>
             </div>
           </div>

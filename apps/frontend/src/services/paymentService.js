@@ -40,8 +40,48 @@ export const getPaymentStatus = async (appointmentId) => {
   return response.data.data;
 };
 
+/**
+ * Get all payments for an appointment
+ * @param {string} appointmentId - The appointment ID
+ * @returns {Promise<Array>} Array of payment records
+ */
+export const getAppointmentPayments = async (appointmentId) => {
+  const response = await API.get(
+    `/payments/appointment/${appointmentId}`
+  );
+  return response.data.data;
+};
+
+/**
+ * Create a new payment
+ * @param {Object} paymentData - Payment data
+ * @param {string} paymentData.appointmentId - The appointment ID
+ * @param {number} paymentData.amount - Payment amount
+ * @param {string} paymentData.paymentMethod - Payment method (CASH, CARD, BANK_TRANSFER, OTHER)
+ * @param {string} paymentData.notes - Optional notes
+ * @param {string} paymentData.reference - Optional reference (receipt number, transaction ID)
+ * @returns {Promise<Object>} Created payment record
+ */
+export const createPayment = async (paymentData) => {
+  const response = await API.post('/payments', paymentData);
+  return response.data.data;
+};
+
+/**
+ * Delete a payment (admin only)
+ * @param {string} paymentId - The payment ID
+ * @returns {Promise<Object>} Deletion result
+ */
+export const deletePayment = async (paymentId) => {
+  const response = await API.delete(`/payments/${paymentId}`);
+  return response.data.data;
+};
+
 export default {
   recordAdvancePayment,
   recordFinalPayment,
   getPaymentStatus,
+  getAppointmentPayments,
+  createPayment,
+  deletePayment,
 };

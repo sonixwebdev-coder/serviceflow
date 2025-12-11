@@ -7,6 +7,7 @@ const { createNotification } = require('./notificationService');
 const { sendAppointmentNotification } = require('./pushNotificationService');
 const { optimizedAppointmentIncludes, minimalAppointmentIncludes } = require('../utils/optimizedIncludes');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
+const { createPayment } = require('./paymentService');
 const logger = require('../utils/logger');
 
 const STATUS_MAP = new Map([
@@ -462,6 +463,18 @@ const createAppointment = async (payload, currentUser) => {
             },
             include: includeConfig,
           });
+
+          // Create Payment record for the advance payment
+          await tx.payment.create({
+            data: {
+              appointmentId: appointment.id,
+              amount: advancePayment,
+              paymentMethod: 'CASH', // Default to cash for initial advance payments
+              paymentDate: new Date(),
+              notes: 'Avans initial la creare programare',
+              createdById: currentUser.id,
+            },
+          });
         }
       }
     }
@@ -881,26 +894,19 @@ const recordAdvancePayment = async (appointmentId, amount, userId) => {
     throw new AppError('Nu se poate inregistra plata pentru o programare fara articole in comanda de service.', 400);
   }
 
-  const currentAdvance = roundCurrency(Number(appointment.advancePayment || 0));
-  const totalAdvance = roundCurrency(currentAdvance + amount);
+  // Create Payment record (which will automatically update appointment payment status)
+  const payment = await createPayment({
+    appointmentId,
+    amount,
+    paymentMethod: 'CASH',
+    paymentDate: new Date(),
+    notes: 'Avans plătit',
+    createdById: userId,
+  });
 
-  if (totalAdvance > total) {
-    throw new AppError('Avansul nu poate depasi valoarea totala a programarii.', 400);
-  }
-
-  const remainingBalance = roundCurrency(total - totalAdvance);
-  const paymentStatus = remainingBalance <= 0 ? 'PAID' : 'PARTIAL';
-
-  const updated = await prisma.appointment.update({
+  // Get updated appointment with new payment status
+  const updated = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    data: {
-      advancePayment: totalAdvance,
-      remainingBalance: remainingBalance,
-      paymentStatus: paymentStatus,
-      advancePaidAt: appointment.advancePaidAt || new Date(),
-      finalPaidAt: paymentStatus === 'PAID' ? new Date() : null,
-      updatedById: userId,
-    },
     include: includeConfig,
   });
 
@@ -919,11 +925,12 @@ const recordAdvancePayment = async (appointmentId, amount, userId) => {
 
   return {
     appointment: updated,
+    payment,
     paymentSummary: {
-      total: total,
-      advance: totalAdvance,
-      remaining: remainingBalance,
-      status: paymentStatus,
+      total,
+      advance: Number(updated.advancePayment || 0),
+      remaining: Number(updated.remainingBalance || 0),
+      status: updated.paymentStatus,
     },
   };
 };
@@ -952,30 +959,19 @@ const recordFinalPayment = async (appointmentId, amount, userId) => {
     throw new AppError('Programarea este deja platita in intregime.', 400);
   }
 
-  if (!appointment.advancePayment || appointment.paymentStatus === 'UNPAID') {
-    throw new AppError('Nu exista avans platit. Va rugam sa inregistrati intai un avans sau folositi endpoint-ul de avans pentru plata integrala.', 400);
-  }
+  // Create Payment record for final payment (which will automatically update appointment)
+  const payment = await createPayment({
+    appointmentId,
+    amount,
+    paymentMethod: 'CASH',
+    paymentDate: new Date(),
+    notes: 'Plată finală',
+    createdById: userId,
+  });
 
-  const total = calculateAppointmentTotal(appointment);
-  const expectedRemaining = Number(appointment.remainingBalance || 0);
-
-  // Allow small tolerance for rounding differences (0.01 lei)
-  const difference = Math.abs(amount - expectedRemaining);
-  if (difference > 0.01) {
-    throw new AppError(
-      `Suma platii finale (${amount.toFixed(2)} lei) nu corespunde cu restul de plata (${expectedRemaining.toFixed(2)} lei). Va rugam verificati suma.`,
-      400
-    );
-  }
-
-  const updated = await prisma.appointment.update({
+  // Get updated appointment with new payment status
+  const updated = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    data: {
-      remainingBalance: 0,
-      paymentStatus: 'PAID',
-      finalPaidAt: new Date(),
-      updatedById: userId,
-    },
     include: includeConfig,
   });
 
@@ -992,12 +988,15 @@ const recordFinalPayment = async (appointmentId, amount, userId) => {
 
   broadcastAppointment('updated', updated);
 
+  const total = calculateAppointmentTotal(appointment);
+
   return {
     appointment: updated,
+    payment,
     paymentSummary: {
-      total: total,
-      paid: total,
-      status: 'PAID',
+      total,
+      paid: Number(updated.advancePayment || 0),
+      status: updated.paymentStatus,
     },
   };
 };
@@ -1019,14 +1018,19 @@ const getPaymentStatus = async (appointmentId) => {
   }
 
   const total = calculateAppointmentTotal(appointment);
-  const advanceAmount = Number(appointment.advancePayment || 0);
+
+  // Calculate total paid from Payment records
+  const { calculateTotalPaid } = require('./paymentService');
+  const totalPaid = await calculateTotalPaid(appointmentId);
+
   const remaining = Number(appointment.remainingBalance || 0);
 
   return {
     total: total,
-    status: appointment.paymentStatus, // Use 'status' not 'paymentStatus'
-    advancePayment: advanceAmount > 0 ? {
-      amount: advanceAmount,
+    totalPaid: totalPaid, // Total from all Payment records
+    status: appointment.paymentStatus,
+    advancePayment: totalPaid > 0 ? {
+      amount: totalPaid, // Use totalPaid from Payment records
       paidAt: appointment.advancePaidAt,
     } : null,
     remaining: remaining,

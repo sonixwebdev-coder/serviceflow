@@ -6,6 +6,7 @@ const { buildInvoicePdf } = require('../utils/pdf');
 const { writeFile, readFile, removeFile, exists } = require('../utils/storage');
 const { getCompanySettings } = require('./companySettingService');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
+const { calculateTotalPaid } = require('./paymentService');
 
 const VALID_STATUSES = ['DRAFT', 'GENERATED', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
 const IMMUTABLE_STATUSES = new Set(['PAID', 'CANCELLED']);
@@ -456,10 +457,20 @@ const createInvoice = async (payload, options = {}) => {
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload);
   const relativePdfPath = buildRelativePdfPath(payload.appointmentId, invoiceNumber);
 
-  // Payment tracking from appointment
-  const advancePayment = appointment.advancePayment ? Number(appointment.advancePayment) : 0;
-  const remainingBalance = roundCurrency(totals.total - advancePayment);
-  const paymentStatus = advancePayment === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+  // Payment tracking from Payment records (not just advance payment)
+  const totalPaid = await calculateTotalPaid(payload.appointmentId, { tx: client });
+  const remainingBalance = roundCurrency(totals.total - totalPaid);
+  const paymentStatus = totalPaid === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+
+  // Get payment dates from Payment records
+  const payments = await client.payment.findMany({
+    where: { appointmentId: payload.appointmentId },
+    orderBy: { paymentDate: 'asc' },
+  });
+  const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
+  const finalPaidAt = paymentStatus === 'PAID' && payments.length > 0
+    ? payments[payments.length - 1].paymentDate
+    : null;
 
   const includeConfig = getIncludeConfig();
 
@@ -477,12 +488,12 @@ const createInvoice = async (payload, options = {}) => {
       total: totals.total,
       notes,
       pdfUrl: relativePdfPath,
-      // Payment tracking
-      advancePayment,
+      // Payment tracking (from Payment records, not appointment fields)
+      advancePayment: totalPaid,
       remainingBalance,
       paymentStatus,
-      advancePaidAt: appointment.advancePaidAt,
-      finalPaidAt: appointment.finalPaidAt,
+      advancePaidAt,
+      finalPaidAt,
       lineItems: {
         create: sanitizedItems.map((item) => ({
           name: item.name,
@@ -541,12 +552,20 @@ const updateInvoice = async (id, payload, options = {}) => {
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, existing);
   const relativePdfPath = existing.pdfUrl || buildRelativePdfPath(existing.appointmentId, existing.invoiceNumber, id);
 
-  // Recalculate payment status if advance payment or total changed
-  const advancePayment = payload.advancePayment !== undefined
-    ? Number(payload.advancePayment)
-    : Number(existing.advancePayment || 0);
-  const remainingBalance = roundCurrency(totals.total - advancePayment);
-  const paymentStatus = advancePayment === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+  // Recalculate payment status from Payment records
+  const totalPaid = await calculateTotalPaid(existing.appointmentId, { tx: client });
+  const remainingBalance = roundCurrency(totals.total - totalPaid);
+  const paymentStatus = totalPaid === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+
+  // Get payment dates from Payment records
+  const payments = await client.payment.findMany({
+    where: { appointmentId: existing.appointmentId },
+    orderBy: { paymentDate: 'asc' },
+  });
+  const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
+  const finalPaidAt = paymentStatus === 'PAID' && payments.length > 0
+    ? payments[payments.length - 1].paymentDate
+    : null;
 
   const includeConfig = getIncludeConfig();
 
@@ -561,10 +580,12 @@ const updateInvoice = async (id, payload, options = {}) => {
       tax: totals.tax,
       total: totals.total,
       pdfUrl: relativePdfPath,
-      // Update payment tracking
-      advancePayment,
+      // Update payment tracking (from Payment records)
+      advancePayment: totalPaid,
       remainingBalance,
       paymentStatus,
+      advancePaidAt,
+      finalPaidAt,
       lineItems: {
         deleteMany: {},
         create: sanitizedItems.map((item) => ({
@@ -779,27 +800,18 @@ const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
     throw new AppError('Service order must have an associated appointment', 400);
   }
 
-  console.log('🧾 [BACKEND - Invoice] Creating invoice from service order:', serviceOrder.id);
-  console.log('🧾 [BACKEND - Invoice] Service order line items from DB:', JSON.stringify(serviceOrder.lineItems, null, 2));
-
   // Map service order line items to invoice line items
-  const lineItems = serviceOrder.lineItems.map((item, index) => {
-    const mapped = {
-      name: item.name,
-      description: item.description,
-      hardwareQuantity: item.hardwareQuantity,
-      laborQuantity: item.laborQuantity,
-      hardwarePrice: Number(item.hardwarePrice),
-      laborPrice: Number(item.laborPrice),
-      hardwareUnit: item.hardwareUnit,
-      laborUnit: item.laborUnit,
-      order: index,
-    };
-    console.log(`🧾 [BACKEND - Invoice] Mapped line item ${index}:`, mapped);
-    return mapped;
-  });
-
-  console.log('🧾 [BACKEND - Invoice] All mapped line items:', JSON.stringify(lineItems, null, 2));
+  const lineItems = serviceOrder.lineItems.map((item, index) => ({
+    name: item.name,
+    description: item.description,
+    hardwareQuantity: item.hardwareQuantity,
+    laborQuantity: item.laborQuantity,
+    hardwarePrice: Number(item.hardwarePrice),
+    laborPrice: Number(item.laborPrice),
+    hardwareUnit: item.hardwareUnit,
+    laborUnit: item.laborUnit,
+    order: index,
+  }));
 
   // Create invoice with service order data
   const payload = {
