@@ -6,7 +6,7 @@ const { buildInvoicePdf } = require('../utils/pdf');
 const { writeFile, readFile, removeFile, exists } = require('../utils/storage');
 const { getCompanySettings } = require('./companySettingService');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
-const { calculateTotalPaid } = require('./paymentService');
+const { calculateTotalPaid, updateInvoicePaymentStatus } = require('./paymentService');
 
 const VALID_STATUSES = ['DRAFT', 'GENERATED', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
 const IMMUTABLE_STATUSES = new Set(['PAID', 'CANCELLED']);
@@ -274,12 +274,23 @@ const sanitizeLineItems = (lineItems = []) => {
   });
 };
 
-const calculateTotals = (sanitizedLineItems = [], taxInput) => {
+const calculateTotals = (sanitizedLineItems = [], taxInput, companySettings = null) => {
   const subtotal = roundCurrency(
     sanitizedLineItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0)
   );
-  const taxValue = toNumeric(taxInput);
-  const tax = roundCurrency(Math.max(taxValue ?? 0, 0));
+
+  let tax = 0;
+
+  // Calculate TVA if enabled in company settings
+  if (companySettings && companySettings.tvaEnabled) {
+    const tvaPercentage = Number(companySettings.tvaPercentage) || 0;
+    tax = roundCurrency(subtotal * (tvaPercentage / 100));
+  } else {
+    // Use provided tax value or 0
+    const taxValue = toNumeric(taxInput);
+    tax = roundCurrency(Math.max(taxValue ?? 0, 0));
+  }
+
   const total = roundCurrency(subtotal + tax);
 
   return { subtotal, tax, total };
@@ -304,7 +315,7 @@ const resolveStatus = (requestedStatus, existingStatus) => {
   return desired;
 };
 
-const sanitizePayload = (payload = {}, existing) => {
+const sanitizePayload = (payload = {}, existing, companySettings = null) => {
   const lineItemsProvided = Object.prototype.hasOwnProperty.call(payload, 'lineItems');
   const sanitizedItems = lineItemsProvided
     ? sanitizeLineItems(Array.isArray(payload.lineItems) ? payload.lineItems : [])
@@ -321,7 +332,7 @@ const sanitizePayload = (payload = {}, existing) => {
     throw new AppError('Invoice must include at least one line item', 400);
   }
 
-  const totals = calculateTotals(sanitizedItems, payload.tax);
+  const totals = calculateTotals(sanitizedItems, payload.tax, companySettings);
   const status = resolveStatus(payload.status, existing?.status);
 
   // Validate dates
@@ -453,8 +464,11 @@ const createInvoice = async (payload, options = {}) => {
     throw new AppError('Client is required for invoice', 400);
   }
 
+  // Fetch company settings for TVA calculation
+  const companySettings = await getCompanySettings();
+
   const invoiceNumber = await generateInvoiceNumber(client);
-  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload);
+  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, null, companySettings);
   const relativePdfPath = buildRelativePdfPath(payload.appointmentId, invoiceNumber);
 
   // Payment tracking from Payment records (not just advance payment)
@@ -516,7 +530,6 @@ const createInvoice = async (payload, options = {}) => {
   });
 
   const mapped = mapInvoice(invoice);
-  const companySettings = await getCompanySettings();
 
   await persistPdfForInvoice({
     mappedInvoice: mapped,
@@ -537,22 +550,68 @@ const createInvoice = async (payload, options = {}) => {
 };
 
 const updateInvoice = async (id, payload, options = {}) => {
-  const { tx, skipBroadcast = false } = options;
+  const { tx, skipBroadcast = false, userId } = options;
   const client = tx || prisma;
 
   const existing = await client.invoice.findUnique({
     where: { id },
-    include: { lineItems: true },
+    include: { lineItems: true, appointment: true },
   });
 
   if (!existing) {
     throw new AppError('Invoice not found', 404);
   }
 
-  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, existing);
+  // Fetch company settings for TVA calculation
+  const companySettings = await getCompanySettings();
+
+  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, existing, companySettings);
   const relativePdfPath = existing.pdfUrl || buildRelativePdfPath(existing.appointmentId, existing.invoiceNumber, id);
 
-  // Recalculate payment status from Payment records
+  // Track if we're changing to PAID status for PDF regeneration
+  const changingToPaid = status === 'PAID' && existing.status !== 'PAID';
+
+  // If changing status to PAID, check for TVA adjustment need
+  if (changingToPaid && userId) {
+    const totalPaidBeforeAdjustment = await calculateTotalPaid(existing.appointmentId, { tx: client });
+    const invoiceTotal = Number(totals.total);
+    const remainingAmount = roundCurrency(invoiceTotal - totalPaidBeforeAdjustment);
+
+    if (remainingAmount > 0) {
+      // Check if TVA adjustment already exists
+      const existingAdjustment = await client.payment.findFirst({
+        where: {
+          appointmentId: existing.appointmentId,
+          invoiceId: id,
+          type: 'TVA_ADJUSTMENT',
+        },
+      });
+
+      if (!existingAdjustment) {
+        // Get last payment for payment method
+        const lastPayment = await client.payment.findFirst({
+          where: { appointmentId: existing.appointmentId },
+          orderBy: { paymentDate: 'desc' },
+        });
+
+        // Create TVA adjustment payment
+        await client.payment.create({
+          data: {
+            appointmentId: existing.appointmentId,
+            invoiceId: id,
+            amount: remainingAmount,
+            paymentMethod: lastPayment?.paymentMethod || 'CASH',
+            paymentDate: existing.issueDate || new Date(),
+            type: 'TVA_ADJUSTMENT',
+            notes: 'Plata TVA - generată automat',
+            createdById: userId,
+          },
+        });
+      }
+    }
+  }
+
+  // Recalculate payment status from Payment records (after potential TVA adjustment)
   const totalPaid = await calculateTotalPaid(existing.appointmentId, { tx: client });
   const remainingBalance = roundCurrency(totals.total - totalPaid);
   const paymentStatus = totalPaid === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
@@ -609,7 +668,6 @@ const updateInvoice = async (id, payload, options = {}) => {
   });
 
   const mapped = mapInvoice(invoice);
-  const companySettings = await getCompanySettings();
 
   await persistPdfForInvoice({
     mappedInvoice: mapped,
@@ -729,27 +787,100 @@ const markInvoiceAsSent = async (id, options = {}) => {
 };
 
 const markInvoiceAsPaid = async (id, options = {}) => {
-  const { tx, skipBroadcast = false } = options;
+  const { tx, skipBroadcast = false, userId } = options;
   const client = tx || prisma;
 
   const invoice = await client.invoice.findUnique({
     where: { id },
+    include: {
+      appointment: true,
+    },
   });
 
   if (!invoice) {
     throw new AppError('Invoice not found', 404);
   }
 
+  // Calculate total paid from existing payments
+  const totalPaid = await calculateTotalPaid(invoice.appointmentId, { tx: client });
+  const invoiceTotal = Number(invoice.total);
+  const remainingAmount = roundCurrency(invoiceTotal - totalPaid);
+
+  // If there's a remaining balance (likely TVA difference), create an adjustment payment
+  if (remainingAmount > 0 && userId) {
+    // Check if there's already a TVA adjustment payment for this invoice
+    const existingAdjustment = await client.payment.findFirst({
+      where: {
+        appointmentId: invoice.appointmentId,
+        invoiceId: id,
+        type: 'TVA_ADJUSTMENT',
+      },
+    });
+
+    if (!existingAdjustment) {
+      // Get the last payment to use the same payment method
+      const lastPayment = await client.payment.findFirst({
+        where: { appointmentId: invoice.appointmentId },
+        orderBy: { paymentDate: 'desc' },
+      });
+
+      // Create TVA adjustment payment
+      await client.payment.create({
+        data: {
+          appointmentId: invoice.appointmentId,
+          invoiceId: id,
+          amount: remainingAmount,
+          paymentMethod: lastPayment?.paymentMethod || 'CASH',
+          paymentDate: invoice.issueDate || new Date(),
+          type: 'TVA_ADJUSTMENT',
+          notes: 'Plata TVA - generată automat',
+          createdById: userId,
+        },
+      });
+    }
+  }
+
+  // Recalculate payment totals after potentially adding TVA adjustment
+  const newTotalPaid = await calculateTotalPaid(invoice.appointmentId, { tx: client });
+  const newRemainingBalance = roundCurrency(invoiceTotal - newTotalPaid);
+  const newPaymentStatus = newTotalPaid === 0 ? 'UNPAID' : (newRemainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+
+  // Get payment dates
+  const payments = await client.payment.findMany({
+    where: { appointmentId: invoice.appointmentId },
+    orderBy: { paymentDate: 'asc' },
+  });
+  const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
+  const finalPaidAt = newPaymentStatus === 'PAID' && payments.length > 0
+    ? payments[payments.length - 1].paymentDate
+    : null;
+
   const updated = await client.invoice.update({
     where: { id },
     data: {
       status: 'PAID',
       paidAt: new Date(),
+      advancePayment: newTotalPaid,
+      remainingBalance: newRemainingBalance,
+      paymentStatus: newPaymentStatus,
+      advancePaidAt,
+      finalPaidAt,
     },
     include: includeConfig,
   });
 
   const mapped = mapInvoice(updated);
+
+  // Regenerate PDF to reflect PAID status and updated payment info
+  const companySettings = await getCompanySettings();
+  await persistPdfForInvoice({
+    mappedInvoice: mapped,
+    relativePath: invoice.pdfUrl || buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, id),
+    previousPath: invoice.pdfUrl,
+    updateRecord: false,
+    companySettings,
+    client,
+  });
 
   if (!skipBroadcast) {
     broadcastInvoice('paid', mapped);

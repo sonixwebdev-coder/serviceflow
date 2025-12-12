@@ -78,7 +78,7 @@ router.put(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(updateInvoiceSchema),
   asyncHandler(async (req, res) => {
-    const invoice = await updateInvoice(req.params.id, req.body);
+    const invoice = await updateInvoice(req.params.id, req.body, { userId: req.user.id });
     return ok(res, invoice, 'Invoice updated successfully');
   })
 );
@@ -128,7 +128,7 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const invoice = await markInvoiceAsPaid(req.params.id);
+    const invoice = await markInvoiceAsPaid(req.params.id, { userId: req.user.id });
     return ok(res, invoice, 'Invoice marked as paid');
   })
 );

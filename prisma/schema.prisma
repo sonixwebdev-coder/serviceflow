@@ -96,6 +96,12 @@ enum PaymentMethod {
   OTHER
 }
 
+enum PaymentType {
+  REGULAR
+  PREPAYMENT
+  TVA_ADJUSTMENT
+}
+
 enum MessageType {
   TEXT
   SYSTEM
@@ -388,6 +394,7 @@ model Payment {
   amount        Decimal       @db.Decimal(10, 2)
   paymentMethod PaymentMethod @default(CASH)
   paymentDate   DateTime      @default(now())
+  type          PaymentType   @default(REGULAR)
   reference     String?
   notes         String?
   createdById   String

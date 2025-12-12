@@ -234,7 +234,7 @@ const drawKeyValue = (context, key, value, fonts, pdfDoc, options = {}) => {
   context.cursor -= lineHeight;
 };
 
-const drawLineItemsTable = (context, lineItems, fonts, pdfDoc, totals = null, paymentInfo = null) => {
+const drawLineItemsTable = (context, lineItems, fonts, pdfDoc, totals = null, paymentInfo = null, companySettings = null) => {
   const { margin, width } = context;
   const tableWidth = width - margin * 2;
   const rowHeight = 24;
@@ -276,7 +276,14 @@ const drawLineItemsTable = (context, lineItems, fonts, pdfDoc, totals = null, pa
   const totalsRows = [];
   if (totals) {
     totalsRows.push({ label: 'SUBTOTAL', value: formatCurrency(totals.subtotal || 0), bold: false });
-    totalsRows.push({ label: 'TVA', value: formatCurrency(totals.tax || 0), bold: false });
+
+    // Show TVA with percentage if enabled and amount > 0
+    let tvaLabel = 'TVA';
+    if (companySettings && companySettings.tvaEnabled && totals.tax > 0) {
+      const tvaPercentage = Number(companySettings.tvaPercentage) || 0;
+      tvaLabel = `TVA (${tvaPercentage}%)`;
+    }
+    totalsRows.push({ label: tvaLabel, value: formatCurrency(totals.tax || 0), bold: false });
     totalsRows.push({ label: 'TOTAL DE PLATA', value: formatCurrency(totals.total || 0), bold: true });
 
     // Add payment rows if payment information is provided
@@ -1134,7 +1141,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
     subtotal: serviceOrder.subtotal,
     tax: serviceOrder.tax,
     total: serviceOrder.total,
-  }, paymentInfo);
+  }, paymentInfo, company);
 
   // ========================================
   // SECTION 7: PAYMENT DATES (if applicable)
@@ -1770,7 +1777,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
     subtotal: invoice.subtotal,
     tax: invoice.tax,
     total: invoice.total,
-  }, paymentInfo);
+  }, paymentInfo, company);
 
   // Payment dates section (if applicable)
   if (paymentInfo.paymentStatus !== 'UNPAID') {

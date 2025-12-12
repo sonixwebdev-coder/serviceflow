@@ -20,6 +20,7 @@ const createPaymentSchema = z.object({
   invoiceId: z.string().cuid('Invalid invoice ID').optional(),
   amount: z.number().positive('Amount must be positive'),
   paymentMethod: z.enum(['CASH', 'CARD', 'BANK_TRANSFER', 'OTHER']).default('CASH'),
+  type: z.enum(['REGULAR', 'PREPAYMENT', 'TVA_ADJUSTMENT']).optional(),
   paymentDate: z.string().datetime().optional().or(z.date()).optional(),
   reference: z.string().optional(),
   notes: z.string().optional(),

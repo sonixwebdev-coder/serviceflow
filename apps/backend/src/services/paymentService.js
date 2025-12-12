@@ -8,6 +8,7 @@ const { AppError } = require('../utils/errors');
  * @param {string} data.invoiceId - Invoice ID (optional)
  * @param {number} data.amount - Payment amount
  * @param {string} data.paymentMethod - Payment method (CASH, CARD, BANK_TRANSFER, OTHER)
+ * @param {string} data.type - Payment type (REGULAR, PREPAYMENT, TVA_ADJUSTMENT)
  * @param {Date} data.paymentDate - Payment date
  * @param {string} data.reference - Payment reference
  * @param {string} data.notes - Payment notes
@@ -25,6 +26,7 @@ const createPayment = async (data, options = {}) => {
     invoiceId,
     amount,
     paymentMethod = 'CASH',
+    type = 'REGULAR',
     paymentDate = new Date(),
     reference,
     notes,
@@ -65,6 +67,7 @@ const createPayment = async (data, options = {}) => {
       invoiceId,
       amount: roundedAmount,
       paymentMethod,
+      type,
       paymentDate,
       reference,
       notes,

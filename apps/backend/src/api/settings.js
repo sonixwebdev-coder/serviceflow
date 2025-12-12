@@ -61,6 +61,8 @@ const companySettingsSchema = z.object({
   swift: z.string().max(20).optional(),
   contactPerson: z.string().max(120).optional(),
   rampCount: z.number().int().min(1).optional(),
+  tvaEnabled: z.boolean().optional(),
+  tvaPercentage: z.number().min(0).max(100).optional(),
   footerNote: z.string().max(500).optional(),
   gdprNote: z.string().max(1200).optional(),
   additionalNote: z.string().max(1200).optional(),

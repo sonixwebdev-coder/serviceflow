@@ -972,30 +972,85 @@ const Invoices = () => {
                         </span>
                       </div>
                       <div className="flex justify-between border-t border-gray-300 pt-2 text-base font-semibold">
-                        <span className="text-gray-900">Total:</span>
+                        <span className="text-gray-900">Total factura:</span>
                         <span className="text-gray-900">
                           {formatCurrency(isEditing && calculatedTotals ? calculatedTotals.total : selectedInvoice.total)}
                         </span>
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Payment Information */}
-                      {selectedInvoice.advancePayment > 0 && (
-                        <>
+                  {/* Payment Status */}
+                  <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-900">Status Plată</h3>
+                    <div className="space-y-3">
+                      {/* Payment Status Badge */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                            selectedInvoice.paymentStatus === 'paid' || selectedInvoice.paymentStatus === 'PAID'
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : selectedInvoice.paymentStatus === 'partial' || selectedInvoice.paymentStatus === 'PARTIAL'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-gray-50 text-gray-700 border-gray-200'
+                          }`}
+                        >
+                          {selectedInvoice.paymentStatus === 'paid' || selectedInvoice.paymentStatus === 'PAID'
+                            ? 'Plătită'
+                            : selectedInvoice.paymentStatus === 'partial' || selectedInvoice.paymentStatus === 'PARTIAL'
+                            ? 'Plată parțială'
+                            : 'Neplătită'}
+                        </span>
+                      </div>
+
+                      {/* Payment breakdown */}
+                      <div className="space-y-2 rounded-lg bg-gray-50 p-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Total:</span>
+                          <span className="font-medium text-gray-900">
+                            {formatCurrency(selectedInvoice.total)}
+                          </span>
+                        </div>
+                        {selectedInvoice.advancePayment > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-blue-600">Suma plătită:</span>
+                            <span className="font-medium text-blue-600">
+                              {formatCurrency(selectedInvoice.advancePayment)}
+                            </span>
+                          </div>
+                        )}
+                        {selectedInvoice.remainingBalance > 0 ? (
                           <div className="flex justify-between border-t border-gray-200 pt-2">
-                            <span className="text-blue-600">Avans plătit:</span>
-                            <span className="text-blue-600">
-                              -{formatCurrency(selectedInvoice.advancePayment)}
+                            <span className="font-medium text-orange-600">Rest de plată:</span>
+                            <span className="font-semibold text-orange-600">
+                              {formatCurrency(selectedInvoice.remainingBalance)}
                             </span>
                           </div>
-                          <div className="flex justify-between text-base font-semibold">
-                            <span className={selectedInvoice.remainingBalance > 0 ? 'text-orange-600' : 'text-green-600'}>
-                              {selectedInvoice.remainingBalance > 0 ? 'Rest de plată:' : 'Achitat integral'}
-                            </span>
-                            <span className={selectedInvoice.remainingBalance > 0 ? 'text-orange-600' : 'text-green-600'}>
-                              {selectedInvoice.remainingBalance > 0 ? formatCurrency(selectedInvoice.remainingBalance) : '✓'}
-                            </span>
+                        ) : selectedInvoice.advancePayment > 0 ? (
+                          <div className="flex justify-between border-t border-gray-200 pt-2">
+                            <span className="font-medium text-green-600">Status:</span>
+                            <span className="font-semibold text-green-600">Achitat integral ✓</span>
                           </div>
-                        </>
+                        ) : null}
+                      </div>
+
+                      {/* Payment dates */}
+                      {(selectedInvoice.advancePaidAt || selectedInvoice.finalPaidAt) && (
+                        <div className="space-y-1 text-xs text-gray-500">
+                          {selectedInvoice.advancePaidAt && (
+                            <div className="flex justify-between">
+                              <span>Prima plată:</span>
+                              <span>{formatDate(selectedInvoice.advancePaidAt)}</span>
+                            </div>
+                          )}
+                          {selectedInvoice.finalPaidAt && (
+                            <div className="flex justify-between">
+                              <span>Plată finală:</span>
+                              <span>{formatDate(selectedInvoice.finalPaidAt)}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1023,8 +1078,9 @@ const Invoices = () => {
                     <div className="rounded-lg border border-gray-200 bg-white p-4">
                       <h3 className="mb-3 text-sm font-semibold text-gray-900">Previzualizare PDF</h3>
                       <iframe
+                        key={`pdf-${selectedInvoice.id}-${selectedInvoice.updatedAt || Date.now()}`}
                         title={`Factură ${selectedInvoice.invoiceNumber}`}
-                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${selectedInvoice.pdfUrl}#toolbar=0`}
+                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${selectedInvoice.pdfUrl}?t=${new Date(selectedInvoice.updatedAt || Date.now()).getTime()}#toolbar=0`}
                         className="h-96 w-full rounded border border-gray-200 bg-white"
                       />
                     </div>

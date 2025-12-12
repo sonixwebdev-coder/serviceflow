@@ -19,6 +19,8 @@ const fields = [
   { name: 'iban', label: 'IBAN', placeholder: 'RO...' },
   { name: 'swift', label: 'SWIFT / BIC', placeholder: 'Cod identificare banca' },
   { name: 'rampCount', label: 'Rampe atelier', type: 'number', placeholder: 'Numar de rampe disponibile' },
+  { name: 'tvaEnabled', label: 'TVA activat', type: 'checkbox', description: 'Aplica TVA la facturi (nu se aplica la comenzile de service)' },
+  { name: 'tvaPercentage', label: 'Procent TVA', type: 'number', placeholder: '19', min: 0, max: 100, step: 0.01, description: 'Procentul TVA care va fi aplicat la facturi' },
   { name: 'footerNote', label: 'Nota subsol document', component: 'textarea', rows: 3 },
   { name: 'gdprNote', label: 'Notificare GDPR', component: 'textarea', rows: 4, placeholder: 'Explicati cum sunt stocate si procesate datele clientilor.' },
   { name: 'additionalNote', label: 'Informatii aditionale', component: 'textarea', rows: 4, placeholder: 'Orice text suplimentar de inclus pe documentele generate.' },
@@ -38,7 +40,13 @@ const CompanySettings = () => {
 
   useEffect(() => {
     if (data) {
-      setFormState(data);
+      // Ensure TVA fields have default values if not present
+      const formData = {
+        ...data,
+        tvaEnabled: data.tvaEnabled !== undefined ? data.tvaEnabled : false,
+        tvaPercentage: data.tvaPercentage !== undefined ? data.tvaPercentage : 19,
+      };
+      setFormState(formData);
       // Convert relative logo URL to absolute URL for preview
       if (data.logoUrl) {
         const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
@@ -178,10 +186,27 @@ const CompanySettings = () => {
         }
       }
 
+      // Build payload with explicit type conversions
       const payload = {
-        ...formState,
-        logoUrl,
-        rampCount: formState.rampCount ? Number(formState.rampCount) : undefined,
+        companyName: formState.companyName,
+        legalName: formState.legalName,
+        address: formState.address,
+        email: formState.email,
+        phone: formState.phone,
+        website: formState.website,
+        logoUrl: logoUrl,
+        vatNumber: formState.vatNumber,
+        registrationNumber: formState.registrationNumber,
+        bankName: formState.bankName,
+        iban: formState.iban,
+        swift: formState.swift,
+        contactPerson: formState.contactPerson,
+        footerNote: formState.footerNote,
+        gdprNote: formState.gdprNote,
+        additionalNote: formState.additionalNote,
+        rampCount: formState.rampCount ? Number(formState.rampCount) : 4,
+        tvaEnabled: formState.tvaEnabled === true || formState.tvaEnabled === 'true',
+        tvaPercentage: formState.tvaPercentage ? Number(formState.tvaPercentage) : 19,
       };
 
       await updateMutation.mutateAsync(payload);
@@ -273,18 +298,44 @@ const CompanySettings = () => {
           </div>
 
           {/* Company Details Section */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Detalii companie</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {fields.map((field) => {
                 const commonProps = {
                   id: field.name,
                   name: field.name,
-                  value: formState[field.name] ?? '',
-                  onChange: (event) => handleChange(field.name, event.target.value),
                   className:
-                    'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary',
+                    field.type === 'checkbox'
+                      ? 'h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary'
+                      : 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary',
                 };
+
+                if (field.type === 'checkbox') {
+                  return (
+                    <div key={field.name} className="md:col-span-2">
+                      <div className="flex items-start">
+                        <div className="flex h-5 items-center">
+                          <input
+                            {...commonProps}
+                            type="checkbox"
+                            checked={formState[field.name] === true || formState[field.name] === 'true'}
+                            onChange={(e) => handleChange(field.name, e.target.checked)}
+                          />
+                        </div>
+                        <div className="ml-3">
+                          <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+                            {field.label}
+                            {field.required && <span className="ml-1 text-red-500">*</span>}
+                          </label>
+                          {field.description && (
+                            <p className="text-xs text-gray-500 mt-1">{field.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
 
                 return (
                   <div key={field.name} className={field.component === 'textarea' ? 'md:col-span-2' : undefined}>
@@ -295,6 +346,8 @@ const CompanySettings = () => {
                     {field.component === 'textarea' ? (
                       <textarea
                         {...commonProps}
+                        value={formState[field.name] ?? ''}
+                        onChange={(event) => handleChange(field.name, event.target.value)}
                         rows={field.rows || 3}
                         placeholder={field.placeholder}
                       />
@@ -302,8 +355,16 @@ const CompanySettings = () => {
                       <input
                         {...commonProps}
                         type={field.type || 'text'}
+                        value={formState[field.name] ?? ''}
+                        onChange={(event) => handleChange(field.name, event.target.value)}
                         placeholder={field.placeholder}
+                        min={field.min}
+                        max={field.max}
+                        step={field.step}
                       />
+                    )}
+                    {field.description && !field.component && (
+                      <p className="text-xs text-gray-500 mt-1">{field.description}</p>
                     )}
                   </div>
                 );
@@ -312,7 +373,7 @@ const CompanySettings = () => {
           </div>
 
           {/* Export All Data Section */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-gray-900">
@@ -348,7 +409,7 @@ const CompanySettings = () => {
             </p>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="mt-6 flex items-center justify-between">
             <div className="text-xs text-gray-500">
               {isDirty ? 'Ai modificari nesalvate.' : 'Toate modificarile sunt salvate.'}
             </div>

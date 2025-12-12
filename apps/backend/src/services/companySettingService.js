@@ -20,6 +20,8 @@ const COMPANY_SETTING_KEYS = [
   'gdprNote',
   'additionalNote',
   'rampCount',
+  'tvaEnabled',
+  'tvaPercentage',
 ];
 
 const DEFAULT_SETTINGS = {
@@ -43,6 +45,8 @@ const DEFAULT_SETTINGS = {
     'All personal data is processed in accordance with GDPR regulations. Clients may request updates or removal at any time.',
   additionalNote: process.env.COMPANY_ADDITIONAL_NOTE || '',
   rampCount: Number(process.env.COMPANY_RAMP_COUNT || 4),
+  tvaEnabled: process.env.COMPANY_TVA_ENABLED === 'true' || false,
+  tvaPercentage: Number(process.env.COMPANY_TVA_PERCENTAGE || 19),
 };
 
 const mapRowsToSettings = (rows) => {
@@ -78,6 +82,19 @@ const mapRowsToSettings = (rows) => {
     settings.rampCount = Number(dbValues.rampCount) || DEFAULT_SETTINGS.rampCount;
   } else {
     settings.rampCount = DEFAULT_SETTINGS.rampCount;
+  }
+
+  // Special handling for TVA settings
+  if (dbValues.tvaEnabled !== undefined && dbValues.tvaEnabled !== null) {
+    settings.tvaEnabled = dbValues.tvaEnabled === true || dbValues.tvaEnabled === 'true';
+  } else {
+    settings.tvaEnabled = DEFAULT_SETTINGS.tvaEnabled;
+  }
+
+  if (dbValues.tvaPercentage !== undefined && dbValues.tvaPercentage !== null) {
+    settings.tvaPercentage = Number(dbValues.tvaPercentage) || DEFAULT_SETTINGS.tvaPercentage;
+  } else {
+    settings.tvaPercentage = DEFAULT_SETTINGS.tvaPercentage;
   }
 
   return settings;
@@ -126,6 +143,19 @@ const updateCompanySettings = async (payload, currentUser) => {
       throw new AppError('Ramp count must be a positive number', 400);
     }
     updates.rampCount = Math.floor(parsed);
+  }
+
+  // Validation for TVA settings
+  if (Object.prototype.hasOwnProperty.call(updates, 'tvaEnabled')) {
+    updates.tvaEnabled = updates.tvaEnabled === true || updates.tvaEnabled === 'true';
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, 'tvaPercentage')) {
+    const parsed = Number(updates.tvaPercentage);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+      throw new AppError('TVA percentage must be between 0 and 100', 400);
+    }
+    updates.tvaPercentage = parsed;
   }
 
   await prisma.$transaction(
