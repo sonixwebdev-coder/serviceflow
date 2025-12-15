@@ -43,7 +43,7 @@ router.get(
   authenticate,
   validate(listQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const todos = await listPersonalTodos(req.user.id, req.query);
+    const todos = await listPersonalTodos(req.tenantPrisma, req.user.id, req.query);
     return ok(res, todos);
   })
 );
@@ -53,7 +53,7 @@ router.get(
   '/:todoId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const todo = await getPersonalTodoById(req.params.todoId, req.user.id);
+    const todo = await getPersonalTodoById(req.tenantPrisma, req.params.todoId, req.user.id);
     return ok(res, todo);
   })
 );
@@ -64,7 +64,7 @@ router.post(
   authenticate,
   validate(createPersonalTodoSchema),
   asyncHandler(async (req, res) => {
-    const todo = await createPersonalTodo(req.user.id, req.body);
+    const todo = await createPersonalTodo(req.tenantPrisma, req.user.id, req.body);
     return created(res, todo, 'Todo created successfully');
   })
 );
@@ -84,7 +84,7 @@ router.patch(
       });
     }
 
-    const todo = await updatePersonalTodo(todoId, req.user.id, req.body);
+    const todo = await updatePersonalTodo(req.tenantPrisma, todoId, req.user.id, req.body);
     return ok(res, todo, 'Todo updated successfully');
   })
 );
@@ -94,7 +94,7 @@ router.delete(
   '/:todoId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const result = await deletePersonalTodo(req.params.todoId, req.user.id);
+    const result = await deletePersonalTodo(req.tenantPrisma, req.params.todoId, req.user.id);
     return ok(res, result);
   })
 );
@@ -104,7 +104,7 @@ router.post(
   '/:todoId/toggle',
   authenticate,
   asyncHandler(async (req, res) => {
-    const todo = await togglePersonalTodo(req.params.todoId, req.user.id);
+    const todo = await togglePersonalTodo(req.tenantPrisma, req.params.todoId, req.user.id);
     return ok(res, todo, 'Todo status updated');
   })
 );

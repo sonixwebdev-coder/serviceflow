@@ -16,6 +16,7 @@ const authenticate = async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
       include: {
+        organization: true,
         roles: {
           include: {
             role: {
@@ -36,12 +37,18 @@ const authenticate = async (req, res, next) => {
       throw new AppError('User not found or inactive', 401);
     }
 
+    // Check organization status
+    if (!user.organization || user.organization.status === 'SUSPENDED' || user.organization.status === 'CANCELLED') {
+      throw new AppError('Organization is not active', 403);
+    }
+
     req.user = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       name: `${user.firstName} ${user.lastName}`,
+      organizationId: user.organizationId,
       roles: user.roles.map((assignment) => assignment.role.key),
       permissions: user.roles.flatMap(
         (assignment) => assignment.role.permissions?.map((rp) => rp.permission.key) || []

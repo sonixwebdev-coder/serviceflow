@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { createNotification } = require('./notificationService');
 const { mapPersonalTodo } = require('../utils/transform');
@@ -8,7 +7,7 @@ const normalize = (value) => (value ? value.toUpperCase().replace(/-/g, '_') : u
 /**
  * List personal todos for the current user
  */
-const listPersonalTodos = async (userId, filters = {}) => {
+const listPersonalTodos = async (prisma, userId, filters = {}) => {
   const { isCompleted, priority } = filters;
 
   const where = {
@@ -39,7 +38,7 @@ const listPersonalTodos = async (userId, filters = {}) => {
 /**
  * Get a single personal todo by ID (for internal use)
  */
-const getPersonalTodoByIdRaw = async (todoId, userId) => {
+const getPersonalTodoByIdRaw = async (prisma, todoId, userId) => {
   const todo = await prisma.personalTodo.findUnique({
     where: { id: todoId },
   });
@@ -59,15 +58,15 @@ const getPersonalTodoByIdRaw = async (todoId, userId) => {
 /**
  * Get a single personal todo by ID (for API responses)
  */
-const getPersonalTodoById = async (todoId, userId) => {
-  const todo = await getPersonalTodoByIdRaw(todoId, userId);
+const getPersonalTodoById = async (prisma, todoId, userId) => {
+  const todo = await getPersonalTodoByIdRaw(prisma, todoId, userId);
   return mapPersonalTodo(todo);
 };
 
 /**
  * Create a new personal todo
  */
-const createPersonalTodo = async (userId, data) => {
+const createPersonalTodo = async (prisma, userId, data) => {
   const { title, description, priority, dueDate } = data;
 
   if (!title || title.trim().length === 0) {
@@ -90,9 +89,9 @@ const createPersonalTodo = async (userId, data) => {
 /**
  * Update a personal todo
  */
-const updatePersonalTodo = async (todoId, userId, data) => {
+const updatePersonalTodo = async (prisma, todoId, userId, data) => {
   // Verify ownership
-  const existing = await getPersonalTodoByIdRaw(todoId, userId);
+  const existing = await getPersonalTodoByIdRaw(prisma, todoId, userId);
 
   const updates = {};
 
@@ -136,9 +135,9 @@ const updatePersonalTodo = async (todoId, userId, data) => {
 /**
  * Delete a personal todo
  */
-const deletePersonalTodo = async (todoId, userId) => {
+const deletePersonalTodo = async (prisma, todoId, userId) => {
   // Verify ownership
-  await getPersonalTodoByIdRaw(todoId, userId);
+  await getPersonalTodoByIdRaw(prisma, todoId, userId);
 
   await prisma.personalTodo.delete({
     where: { id: todoId },
@@ -150,8 +149,8 @@ const deletePersonalTodo = async (todoId, userId) => {
 /**
  * Toggle todo completion status
  */
-const togglePersonalTodo = async (todoId, userId) => {
-  const todo = await getPersonalTodoByIdRaw(todoId, userId);
+const togglePersonalTodo = async (prisma, todoId, userId) => {
+  const todo = await getPersonalTodoByIdRaw(prisma, todoId, userId);
 
   const updated = await prisma.personalTodo.update({
     where: { id: todoId },
@@ -168,7 +167,7 @@ const togglePersonalTodo = async (todoId, userId) => {
  * Check for overdue todos and send notifications
  * This should be called periodically (e.g., daily via cron job)
  */
-const checkOverdueTodos = async () => {
+const checkOverdueTodos = async (prisma) => {
   const now = new Date();
 
   // Find all incomplete todos that are overdue
@@ -214,7 +213,7 @@ const checkOverdueTodos = async () => {
  * Check for todos due soon (within 24 hours) and send reminders
  * This should be called periodically (e.g., hourly via cron job)
  */
-const checkUpcomingTodos = async () => {
+const checkUpcomingTodos = async (prisma) => {
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 

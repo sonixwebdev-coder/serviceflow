@@ -169,8 +169,9 @@ const rolesKey = () => 'roles:all';
  * @returns {string} Cache key
  */
 const userListKey = (filters = {}) => {
-  const { search, role, isActive } = filters;
+  const { search, role, isActive, organizationId } = filters;
   const parts = ['users:list'];
+  if (organizationId) parts.push(`org:${organizationId}`);
   if (search) parts.push(`search:${search}`);
   if (role) parts.push(`role:${role}`);
   if (typeof isActive === 'boolean') parts.push(`active:${isActive}`);

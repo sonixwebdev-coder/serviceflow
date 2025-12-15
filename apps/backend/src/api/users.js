@@ -31,7 +31,7 @@ router.get(
   authenticate,
   validate(listUsersQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const users = await listUsers(req.query, req.user);
+    const users = await listUsers(req.tenantPrisma, req.query, req.user);
     return ok(res, users);
   })
 );
@@ -40,7 +40,7 @@ router.get(
   '/me',
   authenticate,
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser(req.user.id);
+    const user = await getCurrentUser(req.tenantPrisma, req.user.id);
     return ok(res, user);
   })
 );
@@ -50,7 +50,7 @@ router.get(
   '/profile',
   authenticate,
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser(req.user.id);
+    const user = await getCurrentUser(req.tenantPrisma, req.user.id);
     return ok(res, user);
   })
 );
@@ -60,7 +60,7 @@ router.put(
   authenticate,
   validate(updateProfileSchema),
   asyncHandler(async (req, res) => {
-    const user = await updateProfile(req.user.id, req.body);
+    const user = await updateProfile(req.tenantPrisma, req.user.id, req.body);
     return ok(res, user, 'Profile updated successfully');
   })
 );
@@ -70,7 +70,7 @@ router.put(
   authenticate,
   validate(changePasswordSchema),
   asyncHandler(async (req, res) => {
-    const result = await changePassword(req.user.id, req.body);
+    const result = await changePassword(req.tenantPrisma, req.user.id, req.body);
     return ok(res, result, result.message);
   })
 );
@@ -80,7 +80,7 @@ router.get(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
-    const user = await getUserById(req.params.userId);
+    const user = await getUserById(req.tenantPrisma, req.params.userId);
     return ok(res, user);
   })
 );
@@ -91,7 +91,7 @@ router.post(
   authorize({ roles: ['admin'] }),
   validate(createUserSchema),
   asyncHandler(async (req, res) => {
-    const user = await createUser(req.body);
+    const user = await createUser(req.tenantPrisma, req.body);
     return created(res, user, 'User created successfully');
   })
 );
@@ -102,7 +102,7 @@ router.put(
   authorize({ roles: ['admin', 'manager'] }),
   validate(updateUserSchema),
   asyncHandler(async (req, res) => {
-    const user = await updateUser(req.params.userId, req.body);
+    const user = await updateUser(req.tenantPrisma, req.params.userId, req.body);
     return ok(res, user, 'User updated successfully');
   })
 );
@@ -113,7 +113,7 @@ router.patch(
   authorize({ roles: ['admin'] }),
   validate(updateUserStatusSchema),
   asyncHandler(async (req, res) => {
-    const user = await updateUserStatus({ userId: req.params.userId, isActive: req.body.isActive });
+    const user = await updateUserStatus(req.tenantPrisma, { userId: req.params.userId, isActive: req.body.isActive });
     return ok(res, user, 'User status updated');
   })
 );
@@ -123,7 +123,7 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
-    await deactivateUser(req.params.userId);
+    await deactivateUser(req.tenantPrisma, req.params.userId);
     return noContent(res);
   })
 );

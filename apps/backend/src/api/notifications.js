@@ -17,7 +17,7 @@ router.get(
   authenticate,
   validate(listQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const notifications = await listNotifications(req.user.id, req.query || {});
+    const notifications = await listNotifications(req.tenantPrisma, req.user.id, req.query || {});
     return ok(res, notifications);
   })
 );
@@ -26,7 +26,7 @@ router.put(
   '/:notificationId/read',
   authenticate,
   asyncHandler(async (req, res) => {
-    await markNotificationRead(req.params.notificationId, req.user.id);
+    await markNotificationRead(req.tenantPrisma, req.params.notificationId, req.user.id);
     return noContent(res);
   })
 );

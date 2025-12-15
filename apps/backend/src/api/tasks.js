@@ -60,7 +60,7 @@ router.get(
   asyncHandler(async (req, res) => {
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
-    const tasks = await listTasks(req.query, req.user, { paginate });
+    const tasks = await listTasks(req.tenantPrisma, req.query, req.user, { paginate });
     return ok(res, tasks);
   })
 );
@@ -69,7 +69,7 @@ router.get(
   '/:taskId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const task = await getTaskById(req.params.taskId, req.user);
+    const task = await getTaskById(req.tenantPrisma, req.params.taskId, req.user);
     return ok(res, task);
   })
 );
@@ -80,7 +80,7 @@ router.post(
   // Allow all authenticated users to create tasks
   validate(createTaskSchema),
   asyncHandler(async (req, res) => {
-    const task = await createTask(req.body, req.user);
+    const task = await createTask(req.tenantPrisma, req.body, req.user);
     return created(res, task, 'Task created successfully');
   })
 );
@@ -90,7 +90,7 @@ router.put(
   authenticate,
   validate(updateTaskSchema),
   asyncHandler(async (req, res) => {
-    const task = await updateTask(req.params.taskId, req.body, req.user);
+    const task = await updateTask(req.tenantPrisma, req.params.taskId, req.body, req.user);
     return ok(res, task, 'Task updated successfully');
   })
 );
@@ -100,7 +100,7 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { getTaskComments } = require('../services/taskService');
-    const comments = await getTaskComments(req.params.taskId, req.user);
+    const comments = await getTaskComments(req.tenantPrisma, req.params.taskId, req.user);
     return ok(res, comments);
   })
 );
@@ -110,7 +110,7 @@ router.post(
   authenticate,
   validate(commentSchema),
   asyncHandler(async (req, res) => {
-    const task = await addTaskComment(req.params.taskId, req.body, req.user);
+    const task = await addTaskComment(req.tenantPrisma, req.params.taskId, req.body, req.user);
     return ok(res, task, 'Comment added successfully');
   })
 );
@@ -119,7 +119,7 @@ router.delete(
   '/:taskId',
   authenticate,
   asyncHandler(async (req, res) => {
-    await deleteTask(req.params.taskId, req.user);
+    await deleteTask(req.tenantPrisma, req.params.taskId, req.user);
     return noContent(res);
   })
 );

@@ -17,7 +17,12 @@ const createSocketServer = (httpServer) => {
 
     try {
       const payload = verifyAccessToken(token);
-      socket.user = { id: payload.sub, email: payload.email, roles: payload.roles };
+      socket.user = {
+        id: payload.sub,
+        email: payload.email,
+        roles: payload.roles,
+        organizationId: payload.organizationId,
+      };
       next();
     } catch (err) {
       next(new Error('AUTH_INVALID_TOKEN'));
@@ -25,7 +30,18 @@ const createSocketServer = (httpServer) => {
   });
 
   io.on('connection', (socket) => {
-    console.log('Socket connected:', socket.id);
+    console.log('Socket connected:', socket.id, 'User:', socket.user.email);
+
+    // Join organization room for tenant-scoped broadcasts
+    if (socket.user.organizationId) {
+      const orgRoom = `org:${socket.user.organizationId}`;
+      socket.join(orgRoom);
+      console.log(`User ${socket.user.email} joined organization room: ${orgRoom}`);
+    }
+
+    socket.on('disconnect', () => {
+      console.log('Socket disconnected:', socket.id);
+    });
   });
 
   setIO(io);

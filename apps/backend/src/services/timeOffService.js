@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { mapTimeOffRequest } = require('../utils/transform');
 const { broadcastTimeOff } = require('../realtime/events');
@@ -16,7 +15,7 @@ const calculateTotalDays = (startDate, endDate) => {
   return diff >= 0 ? diff + 1 : 0;
 };
 
-const listTimeOffRequests = async (filters = {}, currentUser) => {
+const listTimeOffRequests = async (prisma, filters = {}, currentUser) => {
   const isAdmin = currentUser.roles?.some((role) => ['admin'].includes(role));
   const managerial = currentUser.roles?.some((role) => ['admin', 'manager'].includes(role));
 
@@ -57,7 +56,7 @@ const listTimeOffRequests = async (filters = {}, currentUser) => {
   return requests.map(mapTimeOffRequest);
 };
 
-const createTimeOffRequest = async (payload, currentUser) => {
+const createTimeOffRequest = async (prisma, payload, currentUser) => {
   const startDate = new Date(payload.startDate);
   const endDate = new Date(payload.endDate);
 
@@ -125,7 +124,7 @@ const createTimeOffRequest = async (payload, currentUser) => {
 
   await Promise.all(
     adminsAndManagers.map((admin) =>
-      createNotification({
+      createNotification(prisma, {
         recipientId: admin.id,
         title: 'Cerere de concediu noua',
         message: `${employeeName} a solicitat concediu pentru ${dateRange} (${totalDays} ${totalDays === 1 ? 'zi' : 'zile'})`,
@@ -156,7 +155,7 @@ const createTimeOffRequest = async (payload, currentUser) => {
   return mapped;
 };
 
-const approveTimeOffRequest = async (requestId, reviewer, { reviewNotes }) => {
+const approveTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes }) => {
   const request = await prisma.timeOffRequest.findUnique({
     where: { id: requestId },
     include: {
@@ -282,7 +281,7 @@ const approveTimeOffRequest = async (requestId, reviewer, { reviewNotes }) => {
   const reviewerName = `${reviewer.firstName} ${reviewer.lastName}`;
   const dateRange = `${start.toLocaleDateString('ro-RO')} - ${end.toLocaleDateString('ro-RO')}`;
 
-  await createNotification({
+  await createNotification(prisma, {
     recipientId: request.employeeId,
     title: 'Cerere de concediu aprobata',
     message: `Cererea ta de concediu pentru ${dateRange} a fost aprobata de ${reviewerName}${reviewNotes ? `: ${reviewNotes}` : ''}`,
@@ -310,7 +309,7 @@ const approveTimeOffRequest = async (requestId, reviewer, { reviewNotes }) => {
   return mapped;
 };
 
-const rejectTimeOffRequest = async (requestId, reviewer, { reviewNotes }) => {
+const rejectTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes }) => {
   if (!reviewNotes) {
     throw new AppError('Review notes required when rejecting', 400);
   }
@@ -364,7 +363,7 @@ const rejectTimeOffRequest = async (requestId, reviewer, { reviewNotes }) => {
   const end = new Date(request.endDate);
   const dateRange = `${start.toLocaleDateString('ro-RO')} - ${end.toLocaleDateString('ro-RO')}`;
 
-  await createNotification({
+  await createNotification(prisma, {
     recipientId: request.employeeId,
     title: 'Cerere de concediu respinsa',
     message: `Cererea ta de concediu pentru ${dateRange} a fost respinsa de ${reviewerName}: ${reviewNotes}`,
@@ -400,7 +399,7 @@ const rejectTimeOffRequest = async (requestId, reviewer, { reviewNotes }) => {
  * - Not visible to the employee themselves
  * - Auto-approved
  */
-const createMedicalLeave = async (payload, adminUser) => {
+const createMedicalLeave = async (prisma, payload, adminUser) => {
   const { employeeId, startDate, endDate, reason } = payload;
 
   const start = new Date(startDate);

@@ -1,5 +1,4 @@
 const path = require('path');
-const prisma = require('../../lib/prisma');
 const {AppError} = require('../utils/errors');
 const {broadcastServiceOrder} = require('../realtime/events');
 const {mapUser} = require('../utils/transform');
@@ -136,7 +135,7 @@ const includeConfig = {
     },
 };
 
-const generateOrderNumber = async (client = prisma) => {
+const generateOrderNumber = async (client) => {
     const count = await client.serviceOrder.count();
     const sequence = String(count + 1).padStart(5, '0');
     return `CS-${sequence}`;
@@ -184,7 +183,7 @@ const persistPdfForOrder = async ({
                                       previousPath,
                                       updateRecord = false,
                                       companySettings,
-                                      client = prisma,
+                                      client,
                                   }) => {
     const buffer = await buildServiceOrderPdf(mappedOrder, companySettings);
     await writeFile(relativePath, buffer);
@@ -367,7 +366,7 @@ const sanitizePayload = (payload = {}, existing) => {
     };
 };
 
-const getServiceOrder = async (appointmentId) => {
+const getServiceOrder = async (prisma, appointmentId) => {
     const order = await prisma.serviceOrder.findUnique({
         where: {appointmentId},
         include: includeConfig,
@@ -376,7 +375,7 @@ const getServiceOrder = async (appointmentId) => {
     return mapServiceOrder(order);
 };
 
-const generateServiceOrderPdf = async (appointmentId, {refresh = false} = {}) => {
+const generateServiceOrderPdf = async (prisma, appointmentId, {refresh = false} = {}) => {
     const order = await prisma.serviceOrder.findUnique({
         where: {appointmentId},
         include: includeConfig,
@@ -415,7 +414,7 @@ const generateServiceOrderPdf = async (appointmentId, {refresh = false} = {}) =>
     return {buffer, filename};
 };
 
-const upsertServiceOrder = async (appointmentId, payload, options = {}) => {
+const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) => {
     const {tx, skipBroadcast = false, onResult} = options;
     const client = tx || prisma;
 

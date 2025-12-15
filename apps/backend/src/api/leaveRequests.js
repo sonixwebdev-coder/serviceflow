@@ -45,7 +45,7 @@ router.get(
   authenticate,
   validate(listQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const requests = await listTimeOffRequests(req.query, req.user);
+    const requests = await listTimeOffRequests(req.tenantPrisma, req.query, req.user);
     return ok(res, requests);
   })
 );
@@ -55,7 +55,7 @@ router.post(
   authenticate,
   validate(createSchema),
   asyncHandler(async (req, res) => {
-    const request = await createTimeOffRequest(req.body, req.user);
+    const request = await createTimeOffRequest(req.tenantPrisma, req.body, req.user);
     return created(res, request, 'Leave request submitted');
   })
 );
@@ -66,7 +66,7 @@ router.put(
   authorize({ roles: ['admin'] }),
   validate(reviewSchema),
   asyncHandler(async (req, res) => {
-    const request = await approveTimeOffRequest(req.params.requestId, req.user, req.body || {});
+    const request = await approveTimeOffRequest(req.tenantPrisma, req.params.requestId, req.user, req.body || {});
     return ok(res, request, 'Leave request approved');
   })
 );
@@ -77,7 +77,7 @@ router.put(
   authorize({ roles: ['admin'] }),
   validate(reviewSchema),
   asyncHandler(async (req, res) => {
-    const request = await rejectTimeOffRequest(req.params.requestId, req.user, req.body || {});
+    const request = await rejectTimeOffRequest(req.tenantPrisma, req.params.requestId, req.user, req.body || {});
     return ok(res, request, 'Leave request rejected');
   })
 );
@@ -89,7 +89,7 @@ router.post(
   authorize({ roles: ['admin'] }),
   validate(createMedicalLeaveSchema),
   asyncHandler(async (req, res) => {
-    const request = await createMedicalLeave(req.body, req.user);
+    const request = await createMedicalLeave(req.tenantPrisma, req.body, req.user);
     return created(res, request, 'Medical leave created');
   })
 );

@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { broadcastAppointment, broadcastServiceOrder } = require('../realtime/events');
 const { getCompanySettings } = require('./companySettingService');
@@ -308,7 +307,7 @@ const resolveVehicle = async (tx, clientId, vehiclePayload, fallbackId) => {
   });
 };
 
-const listAppointments = async (filters = {}, options = {}) => {
+const listAppointments = async (prisma, filters = {}, options = {}) => {
   const { status, from, to, clientId, assigneeId } = filters;
   const where = {};
 
@@ -369,7 +368,7 @@ const listAppointments = async (filters = {}, options = {}) => {
   return appointments;
 };
 
-const createAppointment = async (payload, currentUser) => {
+const createAppointment = async (prisma, payload, currentUser) => {
   const scheduledStart = new Date(payload.scheduledStart);
   const scheduledEnd = new Date(payload.scheduledEnd);
 
@@ -589,7 +588,7 @@ const createAppointment = async (payload, currentUser) => {
   return appointment;
 };
 
-const getAppointmentById = async (appointmentId) => {
+const getAppointmentById = async (prisma, appointmentId) => {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: includeConfig,
@@ -602,7 +601,7 @@ const getAppointmentById = async (appointmentId) => {
   return appointment;
 };
 
-const updateAppointment = async (appointmentId, payload, currentUser) => {
+const updateAppointment = async (prisma, appointmentId, payload, currentUser) => {
   const existing = await prisma.appointment.findUnique({
     where: { id: appointmentId },
   });
@@ -813,7 +812,7 @@ const updateAppointment = async (appointmentId, payload, currentUser) => {
   return updated;
 };
 
-const cancelAppointment = async (appointmentId, reason, currentUser) => {
+const cancelAppointment = async (prisma, appointmentId, reason, currentUser) => {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
   });
@@ -864,7 +863,7 @@ const calculateAppointmentTotal = (appointment) => {
   return roundCurrency(total);
 };
 
-const recordAdvancePayment = async (appointmentId, amount, userId) => {
+const recordAdvancePayment = async (prisma, appointmentId, amount, userId) => {
   if (!amount || amount <= 0) {
     throw new AppError('Suma avansului trebuie sa fie mai mare decat 0.', 400);
   }
@@ -935,7 +934,7 @@ const recordAdvancePayment = async (appointmentId, amount, userId) => {
   };
 };
 
-const recordFinalPayment = async (appointmentId, amount, userId) => {
+const recordFinalPayment = async (prisma, appointmentId, amount, userId) => {
   if (!amount || amount <= 0) {
     throw new AppError('Suma platii finale trebuie sa fie mai mare decat 0.', 400);
   }
@@ -1001,7 +1000,7 @@ const recordFinalPayment = async (appointmentId, amount, userId) => {
   };
 };
 
-const getPaymentStatus = async (appointmentId) => {
+const getPaymentStatus = async (prisma, appointmentId) => {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import useAuth from '../context/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -87,6 +87,12 @@ const Login = () => {
 
           {/* Footer */}
           <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600 mb-2">
+              Don't have an account?{' '}
+              <Link to="/signup" className="text-viperx-primary hover:underline font-medium">
+                Sign up
+              </Link>
+            </p>
             <p className="text-xs text-gray-500">
               ServiceFlow © 2025
             </p>

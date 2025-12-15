@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import CreateFirstAdmin from './pages/CreateFirstAdmin';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
@@ -12,6 +13,8 @@ import TimeTracking from './pages/TimeTracking';
 import Employees from './pages/Employees';
 import Clients from './pages/Clients.jsx';
 import OnlineClients from './pages/OnlineClients.jsx';
+import Assets from './pages/Assets.jsx';
+import Resources from './pages/Resources.jsx';
 import Appointments from './pages/Appointments.jsx';
 import Invoices from './pages/Invoices.jsx';
 import Profile from './pages/Profile.jsx';
@@ -31,6 +34,7 @@ function App() {
           <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/create-admin" element={<CreateFirstAdmin />} />
           <Route path="/anaf/callback" element={<AnafCallback />} />
 
@@ -107,6 +111,28 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <OnlineClients />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/crm/assets"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Assets />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/crm/resources"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Resources />
                 </DashboardLayout>
               </ProtectedRoute>
             }

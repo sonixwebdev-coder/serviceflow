@@ -357,7 +357,7 @@ const sanitizePayload = (payload = {}, existing, companySettings = null) => {
   };
 };
 
-const getInvoiceById = async (id) => {
+const getInvoiceById = async (prisma, id) => {
   const includeConfig = getIncludeConfig();
 
   const invoice = await prisma.invoice.findUnique({
@@ -372,7 +372,7 @@ const getInvoiceById = async (id) => {
   return mapInvoice(invoice);
 };
 
-const listInvoices = async (filters = {}, options = {}) => {
+const listInvoices = async (prisma, filters = {}, options = {}) => {
   const { paginate = false } = options;
   const where = {};
 
@@ -437,7 +437,7 @@ const listInvoices = async (filters = {}, options = {}) => {
   return createPaginatedResponse(invoices.map(mapInvoice), total, pagination);
 };
 
-const createInvoice = async (payload, options = {}) => {
+const createInvoice = async (prisma, payload, options = {}) => {
   const { tx, skipBroadcast = false } = options;
   const client = tx || prisma;
 
@@ -549,7 +549,7 @@ const createInvoice = async (payload, options = {}) => {
   return mapped;
 };
 
-const updateInvoice = async (id, payload, options = {}) => {
+const updateInvoice = async (prisma, id, payload, options = {}) => {
   const { tx, skipBroadcast = false, userId } = options;
   const client = tx || prisma;
 
@@ -687,7 +687,7 @@ const updateInvoice = async (id, payload, options = {}) => {
   return mapped;
 };
 
-const deleteInvoice = async (id, options = {}) => {
+const deleteInvoice = async (prisma, id, options = {}) => {
   const { tx, skipBroadcast = false } = options;
   const client = tx || prisma;
 

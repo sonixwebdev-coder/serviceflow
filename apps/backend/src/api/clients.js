@@ -78,7 +78,7 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
-    const results = await searchClients(q, { limit: limit ? parseInt(limit) : 20 });
+    const results = await searchClients(req.tenantPrisma, q, { limit: limit ? parseInt(limit) : 20 });
     return ok(res, results);
   })
 );
@@ -88,7 +88,7 @@ router.get(
   authenticate,
   validate(listClientQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const result = await listClients(req.query);
+    const result = await listClients(req.tenantPrisma, req.query);
     return ok(res, result);
   })
 );
@@ -99,7 +99,7 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(createClientSchema),
   asyncHandler(async (req, res) => {
-    const client = await createClient(req.body);
+    const client = await createClient(req.tenantPrisma, req.body);
     return created(res, client, 'Client created successfully');
   })
 );
@@ -108,7 +108,7 @@ router.get(
   '/:clientId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const client = await getClientById(req.params.clientId);
+    const client = await getClientById(req.tenantPrisma, req.params.clientId);
     return ok(res, client);
   })
 );
@@ -119,7 +119,7 @@ router.patch(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(updateClientSchema),
   asyncHandler(async (req, res) => {
-    const client = await updateClient(req.params.clientId, req.body);
+    const client = await updateClient(req.tenantPrisma, req.params.clientId, req.body);
     return ok(res, client, 'Client updated successfully');
   })
 );
@@ -129,7 +129,7 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
-    await prisma.client.delete({
+    await req.tenantPrisma.client.delete({
       where: { id: req.params.clientId },
     });
     return ok(res, null, 'Client deleted successfully');
@@ -142,7 +142,7 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const vehicle = await prisma.vehicle.create({
+    const vehicle = await req.tenantPrisma.vehicle.create({
       data: {
         clientId: req.params.clientId,
         make: req.body.make,
@@ -164,7 +164,7 @@ router.patch(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const vehicle = await prisma.vehicle.update({
+    const vehicle = await req.tenantPrisma.vehicle.update({
       where: { id: req.params.vehicleId },
       data: {
         make: req.body.make,
@@ -186,7 +186,7 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    await prisma.vehicle.delete({
+    await req.tenantPrisma.vehicle.delete({
       where: { id: req.params.vehicleId },
     });
     return ok(res, null, 'Vehicle deleted successfully');

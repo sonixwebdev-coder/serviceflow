@@ -1,7 +1,6 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 
-const listClients = async ({ search, page = 1, limit = 20, isOnline }) => {
+const listClients = async (prisma, { search, page = 1, limit = 20, isOnline }) => {
   const take = Math.min(limit, 100);
   const skip = (page - 1) * take;
 
@@ -59,7 +58,7 @@ const listClients = async ({ search, page = 1, limit = 20, isOnline }) => {
   };
 };
 
-const createClient = async (data) => {
+const createClient = async (prisma, data) => {
   const type = (data.type || 'PF').toUpperCase();
   if (!['PF', 'SRL'].includes(type)) {
     throw new AppError('Invalid client type', 400);
@@ -119,7 +118,7 @@ const createClient = async (data) => {
   }
 };
 
-const getClientById = async (clientId) => {
+const getClientById = async (prisma, clientId) => {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: {
@@ -146,7 +145,7 @@ const getClientById = async (clientId) => {
   return client;
 };
 
-const updateClient = async (clientId, data) => {
+const updateClient = async (prisma, clientId, data) => {
   const type = data.type ? data.type.toUpperCase() : undefined;
   if (type && !['PF', 'SRL'].includes(type)) {
     throw new AppError('Invalid client type', 400);
@@ -183,7 +182,7 @@ const updateClient = async (clientId, data) => {
  * @param {object} options - Search options
  * @returns {Promise<Array>} - Array of matching clients with vehicles
  */
-const searchClients = async (query, options = {}) => {
+const searchClients = async (prisma, query, options = {}) => {
   const { limit = 20 } = options;
 
   if (!query || query.trim().length === 0) {

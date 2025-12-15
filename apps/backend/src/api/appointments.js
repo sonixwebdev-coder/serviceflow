@@ -37,7 +37,7 @@ router.get(
   asyncHandler(async (req, res) => {
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
-    const appointments = await listAppointments(req.query, { paginate });
+    const appointments = await listAppointments(req.tenantPrisma, req.query, { paginate });
     return ok(res, appointments);
   })
 );
@@ -47,7 +47,7 @@ router.post(
   authenticate,
   validate(createAppointmentSchema),
   asyncHandler(async (req, res) => {
-    const appointment = await createAppointment(req.body, req.user);
+    const appointment = await createAppointment(req.tenantPrisma, req.body, req.user);
     return created(res, appointment, 'Appointment created successfully');
   })
 );
@@ -56,7 +56,7 @@ router.get(
   '/:appointmentId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const appointment = await getAppointmentById(req.params.appointmentId);
+    const appointment = await getAppointmentById(req.tenantPrisma, req.params.appointmentId);
     return ok(res, appointment);
   })
 );
@@ -66,7 +66,7 @@ router.patch(
   authenticate,
   validate(updateAppointmentSchema),
   asyncHandler(async (req, res) => {
-    const appointment = await updateAppointment(req.params.appointmentId, req.body, req.user);
+    const appointment = await updateAppointment(req.tenantPrisma, req.params.appointmentId, req.body, req.user);
     return ok(res, appointment, 'Appointment updated successfully');
   })
 );
@@ -76,7 +76,7 @@ router.post(
   authenticate,
   validate(z.object({ reason: z.string().optional() })),
   asyncHandler(async (req, res) => {
-    const appointment = await cancelAppointment(req.params.appointmentId, req.body.reason, req.user);
+    const appointment = await cancelAppointment(req.tenantPrisma, req.params.appointmentId, req.body.reason, req.user);
     return ok(res, appointment, 'Appointment cancelled');
   })
 );
@@ -85,7 +85,7 @@ router.get(
   '/:appointmentId/messages',
   authenticate,
   asyncHandler(async (req, res) => {
-    const messages = await listMessages(req.params.appointmentId, req.user);
+    const messages = await listMessages(req.tenantPrisma, req.params.appointmentId, req.user);
     return ok(res, messages);
   })
 );
@@ -95,7 +95,7 @@ router.post(
   authenticate,
   validate(createMessageSchema),
   asyncHandler(async (req, res) => {
-    const message = await createMessage(req.params.appointmentId, req.user, req.body);
+    const message = await createMessage(req.tenantPrisma, req.params.appointmentId, req.user, req.body);
     return created(res, message, 'Message sent');
   })
 );
@@ -104,7 +104,7 @@ router.post(
   '/:appointmentId/messages/mark-read',
   authenticate,
   asyncHandler(async (req, res) => {
-    const result = await markMessagesAsRead(req.params.appointmentId, req.user);
+    const result = await markMessagesAsRead(req.tenantPrisma, req.params.appointmentId, req.user);
     return ok(res, result, 'Messages marked as read');
   })
 );
@@ -113,7 +113,7 @@ router.get(
   '/:appointmentId/messages/unread-count',
   authenticate,
   asyncHandler(async (req, res) => {
-    const count = await getUnreadMessageCount(req.params.appointmentId, req.user);
+    const count = await getUnreadMessageCount(req.tenantPrisma, req.params.appointmentId, req.user);
     return ok(res, { count });
   })
 );
@@ -132,7 +132,7 @@ router.get(
   '/:appointmentId/service-order',
   authenticate,
   asyncHandler(async (req, res) => {
-    const serviceOrder = await getServiceOrder(req.params.appointmentId);
+    const serviceOrder = await getServiceOrder(req.tenantPrisma, req.params.appointmentId);
     return ok(res, serviceOrder);
   })
 );
@@ -142,7 +142,7 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const refresh = ['1', 'true', 'yes'].includes(String(req.query.refresh || '').toLowerCase());
-    const { buffer, filename } = await generateServiceOrderPdf(req.params.appointmentId, { refresh });
+    const { buffer, filename } = await generateServiceOrderPdf(req.tenantPrisma, req.params.appointmentId, { refresh });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
@@ -192,7 +192,7 @@ router.put(
     })
   ),
   asyncHandler(async (req, res) => {
-    const order = await upsertServiceOrder(req.params.appointmentId, req.body);
+    const order = await upsertServiceOrder(req.tenantPrisma, req.params.appointmentId, req.body);
     return ok(res, order, 'Service order saved');
   })
 );
@@ -203,7 +203,7 @@ router.post(
   authorize({ roles: ['admin', 'sales'] }),
   validate(recordPaymentSchema),
   asyncHandler(async (req, res) => {
-    const result = await recordAdvancePayment(req.params.appointmentId, req.body.amount, req.user.id);
+    const result = await recordAdvancePayment(req.tenantPrisma, req.params.appointmentId, req.body.amount, req.user.id);
     return ok(res, result, 'Advance payment recorded successfully');
   })
 );
@@ -214,7 +214,7 @@ router.post(
   authorize({ roles: ['admin', 'sales'] }),
   validate(recordPaymentSchema),
   asyncHandler(async (req, res) => {
-    const result = await recordFinalPayment(req.params.appointmentId, req.body.amount, req.user.id);
+    const result = await recordFinalPayment(req.tenantPrisma, req.params.appointmentId, req.body.amount, req.user.id);
     return ok(res, result, 'Final payment recorded successfully');
   })
 );
@@ -223,7 +223,7 @@ router.get(
   '/:appointmentId/payment-status',
   authenticate,
   asyncHandler(async (req, res) => {
-    const status = await getPaymentStatus(req.params.appointmentId);
+    const status = await getPaymentStatus(req.tenantPrisma, req.params.appointmentId);
     return ok(res, status);
   })
 );

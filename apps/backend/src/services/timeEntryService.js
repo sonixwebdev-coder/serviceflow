@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { mapTimeEntry } = require('../utils/transform');
 const { createNotification } = require('./notificationService');
@@ -8,7 +7,7 @@ const { parsePaginationParams, createPaginatedResponse } = require('../utils/pag
 
 const isManagerial = ({ roles }) => roles?.some((role) => ['admin', 'manager'].includes(role));
 
-const listTimeEntries = async (filters = {}, currentUser, options = {}) => {
+const listTimeEntries = async (prisma, filters = {}, currentUser, options = {}) => {
   const managerial = isManagerial(currentUser);
   const where = {};
 
@@ -63,7 +62,7 @@ const listTimeEntries = async (filters = {}, currentUser, options = {}) => {
   return entries.map(mapTimeEntry);
 };
 
-const clockIn = async (payload = {}, currentUser) => {
+const clockIn = async (prisma, payload = {}, currentUser) => {
   const openEntry = await prisma.timeEntry.findFirst({
     where: { employeeId: currentUser.id, clockOut: null },
   });
@@ -141,7 +140,7 @@ const clockIn = async (payload = {}, currentUser) => {
   return mapped;
 };
 
-const clockOut = async (entryId, payload = {}, currentUser) => {
+const clockOut = async (prisma, entryId, payload = {}, currentUser) => {
   const entry = await prisma.timeEntry.findUnique({ where: { id: entryId } });
 
   if (!entry) {
@@ -246,7 +245,7 @@ const clockOut = async (entryId, payload = {}, currentUser) => {
   return mapped;
 };
 
-const deleteTimeEntry = async (entryId) => {
+const deleteTimeEntry = async (prisma, entryId) => {
   await prisma.timeEntry.delete({ where: { id: entryId } });
   broadcastTimeEntry('deleted', { id: entryId, _id: entryId });
 };

@@ -12,7 +12,6 @@ const {
   deletePayment,
 } = require('../services/paymentService');
 const { generateServiceOrderPdf } = require('../services/serviceOrderService');
-const prisma = require('../../lib/prisma');
 
 // Validation schemas
 const createPaymentSchema = z.object({
@@ -37,7 +36,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const validated = createPaymentSchema.parse(req.body);
 
-    const payment = await createPayment({
+    const payment = await createPayment(req.tenantPrisma, {
       ...validated,
       paymentDate: validated.paymentDate ? new Date(validated.paymentDate) : new Date(),
       createdById: req.user.id,
@@ -47,8 +46,7 @@ router.post(
     setImmediate(async () => {
       try {
         // Force PDF regeneration with refresh flag
-        await generateServiceOrderPdf(payment.appointmentId, { refresh: true });
-        console.log(`✅ Service order PDF regenerated for appointment ${payment.appointmentId}`);
+        await generateServiceOrderPdf(req.tenantPrisma, payment.appointmentId, { refresh: true });
       } catch (pdfError) {
         console.error('❌ Failed to regenerate service order PDF after payment creation:', pdfError);
       }
@@ -67,7 +65,7 @@ router.get(
   '/appointment/:appointmentId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const payments = await getPaymentsByAppointment(req.params.appointmentId);
+    const payments = await getPaymentsByAppointment(req.tenantPrisma, req.params.appointmentId);
     return ok(res, payments);
   })
 );
@@ -81,7 +79,7 @@ router.get(
   '/:id',
   authenticate,
   asyncHandler(async (req, res) => {
-    const payment = await getPaymentById(req.params.id);
+    const payment = await getPaymentById(req.tenantPrisma, req.params.id);
     return ok(res, payment);
   })
 );
@@ -97,17 +95,16 @@ router.delete(
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
     // Get payment first to access appointmentId
-    const paymentToDelete = await getPaymentById(req.params.id);
+    const paymentToDelete = await getPaymentById(req.tenantPrisma, req.params.id);
     const appointmentId = paymentToDelete.appointmentId;
 
-    const payment = await deletePayment(req.params.id);
+    const payment = await deletePayment(req.tenantPrisma, req.params.id);
 
     // Regenerate service order PDF to reflect payment deletion (async, don't block response)
     setImmediate(async () => {
       try {
         // Force PDF regeneration with refresh flag
-        await generateServiceOrderPdf(appointmentId, { refresh: true });
-        console.log(`✅ Service order PDF regenerated after payment deletion for appointment ${appointmentId}`);
+        await generateServiceOrderPdf(req.tenantPrisma, appointmentId, { refresh: true });
       } catch (pdfError) {
         console.error('❌ Failed to regenerate service order PDF after payment deletion:', pdfError);
       }

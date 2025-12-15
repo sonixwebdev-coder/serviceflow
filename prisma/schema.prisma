@@ -147,49 +147,104 @@ enum RegistrationRequestStatus {
   REJECTED
 }
 
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  CANCELLED
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model Organization {
+  id                 String             @id @default(cuid())
+  name               String
+  slug               String             @unique
+  status             OrganizationStatus @default(TRIAL)
+  plan               SubscriptionPlan   @default(FREE)
+  trialEndsAt        DateTime?
+  trialStartedAt     DateTime           @default(now())
+  subscriptionId     String?            @unique
+  subscriptionEndsAt DateTime?
+  settings           Json?
+  maxUsers           Int                @default(5)
+  maxClients         Int                @default(100)
+  maxAppointments    Int                @default(500)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Relations
+  users                User[]
+  clients              Client[]
+  vehicles             Vehicle[]
+  assets               Asset[]
+  resources            Resource[]
+  appointments         Appointment[]
+  serviceOrders        ServiceOrder[]
+  invoices             Invoice[]
+  payments             Payment[]
+  schedules            Schedule[]
+  tasks                Task[]
+  timeEntries          TimeEntry[]
+  timeOffRequests      TimeOffRequest[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  registrationRequests RegistrationRequest[]
+
+  @@index([slug])
+  @@index([status])
+}
+
 model User {
-  id                     String                @id @default(cuid())
-  email                  String                @unique
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
   password               String
   firstName              String
   lastName               String
   phoneNumber            String?
   dateOfBirth            DateTime?
-  employmentType         EmploymentType        @default(FULL_TIME)
-  hourlyRate             Decimal?              @db.Decimal(10, 2)
-  hireDate               DateTime?             @default(now())
-  isActive               Boolean               @default(true)
+  employmentType         EmploymentType          @default(FULL_TIME)
+  hourlyRate             Decimal?                @db.Decimal(10, 2)
+  hireDate               DateTime?               @default(now())
+  isActive               Boolean                 @default(true)
   avatarUrl              String?
-  leaveBalanceVacation   Int                   @default(21)
-  leaveBalanceSick       Int                   @default(15)
-  leaveBalancePersonal   Int                   @default(5)
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
+  leaveBalanceVacation   Int                     @default(21)
+  leaveBalanceSick       Int                     @default(15)
+  leaveBalancePersonal   Int                     @default(5)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
   roles                  UserRole[]
   refreshTokens          RefreshToken[]
-  schedules              Schedule[]            @relation("ScheduleEmployee")
-  schedulesCreated       Schedule[]            @relation("ScheduleCreatedBy")
-  schedulesUpdated       Schedule[]            @relation("ScheduleUpdatedBy")
-  tasksCreated           Task[]                @relation("TaskCreatedBy")
-  tasksUpdated           Task[]                @relation("TaskUpdatedBy")
+  schedules              Schedule[]              @relation("ScheduleEmployee")
+  schedulesCreated       Schedule[]              @relation("ScheduleCreatedBy")
+  schedulesUpdated       Schedule[]              @relation("ScheduleUpdatedBy")
+  tasksCreated           Task[]                  @relation("TaskCreatedBy")
+  tasksUpdated           Task[]                  @relation("TaskUpdatedBy")
   taskAssignments        TaskAssignment[]
   taskComments           TaskComment[]
   timeEntries            TimeEntry[]
-  timeOffRequests        TimeOffRequest[]      @relation("TimeOffEmployee")
-  timeOffReviews         TimeOffRequest[]      @relation("TimeOffReviewer")
-  notifications          Notification[]        @relation("NotificationRecipient")
+  timeOffRequests        TimeOffRequest[]        @relation("TimeOffEmployee")
+  timeOffReviews         TimeOffRequest[]        @relation("TimeOffReviewer")
+  notifications          Notification[]          @relation("NotificationRecipient")
   messages               Message[]
   messageReadReceipts    MessageReadReceipt[]
-  appointmentsCreated    Appointment[]         @relation("AppointmentCreatedBy")
-  appointmentsUpdated    Appointment[]         @relation("AppointmentUpdatedBy")
+  appointmentsCreated    Appointment[]           @relation("AppointmentCreatedBy")
+  appointmentsUpdated    Appointment[]           @relation("AppointmentUpdatedBy")
   appointmentAssignees   AppointmentAssignee[]
   auditLogs              AuditLog[]
-  roleAssignmentsGranted UserRole[]               @relation("RoleAssignedBy")
-  registrationReviews    RegistrationRequest[]    @relation("RegistrationReviewer")
+  roleAssignmentsGranted UserRole[]              @relation("RoleAssignedBy")
+  registrationReviews    RegistrationRequest[]   @relation("RegistrationReviewer")
   personalTodos          PersonalTodo[]
   pushSubscriptions      PushSubscription[]
   notificationPreference NotificationPreference?
   paymentsCreated        Payment[]
+  organization           Organization?           @relation(fields: [organizationId], references: [id])
+  organizationId         String?
 
   @@index([isActive])
   @@index([email])
@@ -272,7 +327,9 @@ model RegistrationRequest {
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
 
-  reviewer User? @relation("RegistrationReviewer", fields: [reviewerId], references: [id])
+  reviewer       User?         @relation("RegistrationReviewer", fields: [reviewerId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([email])
   @@index([status])
@@ -303,6 +360,9 @@ model Client {
   vehicles           Vehicle[]
   appointments       Appointment[]
   invoices           Invoice[]
+  organization       Organization? @relation(fields: [organizationId], references: [id])
+  organizationId     String?
+  assets             Asset[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -326,11 +386,62 @@ model Vehicle {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  client       Client        @relation(fields: [clientId], references: [id])
-  appointments Appointment[]
+  client         Client        @relation(fields: [clientId], references: [id])
+  appointments   Appointment[]
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([clientId])
   @@index([plateNumber])
+}
+
+model Asset {
+  id             String @id @default(cuid())
+  organizationId String
+
+  // Generic fields for any asset type
+  name         String // "2019 Toyota Camry" or "Bosch Washing Machine"
+  identifier   String? // VIN, Serial Number, License Plate, etc.
+  type         String? // "vehicle", "appliance", "hvac_unit", "equipment"
+  manufacturer String? // Toyota, Bosch, Carrier, etc.
+  model        String?
+  year         Int?
+
+  // Flexible metadata for type-specific fields
+  metadata Json? // { odometerKm: 50000, fuelType: "diesel", warrantyExpiry: "2025-01-01" }
+
+  // Relations
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([identifier])
+}
+
+model Resource {
+  id             String @id @default(cuid())
+  organizationId String
+
+  name        String // "Service Bay 1", "Ramp 2", "Technician Room A"
+  type        String // "workspace", "equipment", "room", "bay"
+  description String?
+  capacity    Int     @default(1)
+  isActive    Boolean @default(true)
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([isActive])
 }
 
 model Appointment {
@@ -342,7 +453,9 @@ model Appointment {
   scheduledEnd       DateTime
   location           String?
   clientId           String?
-  vehicleId          String?
+  vehicleId          String? // Keep for backward compatibility
+  assetId            String? // NEW: Generic asset
+  resourceId         String? // NEW: Scheduling resource
   createdById        String
   updatedById        String?
   cancellationReason String?
@@ -355,18 +468,24 @@ model Appointment {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  client       Client?               @relation(fields: [clientId], references: [id])
-  vehicle      Vehicle?              @relation(fields: [vehicleId], references: [id])
-  createdBy    User                  @relation("AppointmentCreatedBy", fields: [createdById], references: [id])
-  updatedBy    User?                 @relation("AppointmentUpdatedBy", fields: [updatedById], references: [id])
-  assignees    AppointmentAssignee[]
-  messages     Message[]
-  serviceOrder ServiceOrder?
-  invoices     Invoice[]
-  payments     Payment[]
+  client         Client?               @relation(fields: [clientId], references: [id])
+  vehicle        Vehicle?              @relation(fields: [vehicleId], references: [id])
+  asset          Asset?                @relation(fields: [assetId], references: [id])
+  resource       Resource?             @relation(fields: [resourceId], references: [id])
+  createdBy      User                  @relation("AppointmentCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User?                 @relation("AppointmentUpdatedBy", fields: [updatedById], references: [id])
+  assignees      AppointmentAssignee[]
+  messages       Message[]
+  serviceOrder   ServiceOrder?
+  invoices       Invoice[]
+  payments       Payment[]
+  organization   Organization?         @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([clientId])
   @@index([vehicleId])
+  @@index([assetId])
+  @@index([resourceId])
   @@index([status, scheduledStart])
   @@index([createdById])
   @@index([scheduledStart, scheduledEnd])
@@ -401,9 +520,11 @@ model Payment {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  invoice     Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  createdBy   User        @relation(fields: [createdById], references: [id])
+  appointment    Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  invoice        Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  createdBy      User          @relation(fields: [createdById], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([appointmentId])
   @@index([invoiceId])
@@ -468,9 +589,11 @@ model ServiceOrder {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
-  appointment Appointment            @relation(fields: [appointmentId], references: [id])
-  lineItems   ServiceOrderLineItem[]
-  invoices    Invoice[]
+  appointment    Appointment            @relation(fields: [appointmentId], references: [id])
+  lineItems      ServiceOrderLineItem[]
+  invoices       Invoice[]
+  organization   Organization?          @relation(fields: [organizationId], references: [id])
+  organizationId String?
 }
 
 model ServiceOrderLineItem {
@@ -515,12 +638,14 @@ model Invoice {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  appointment   Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  serviceOrder  ServiceOrder?     @relation(fields: [serviceOrderId], references: [id])
-  client        Client            @relation(fields: [clientId], references: [id])
-  lineItems     InvoiceLineItem[]
-  anafSync      AnafInvoiceSync?
-  payments      Payment[]
+  appointment    Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  serviceOrder   ServiceOrder?     @relation(fields: [serviceOrderId], references: [id])
+  client         Client            @relation(fields: [clientId], references: [id])
+  lineItems      InvoiceLineItem[]
+  anafSync       AnafInvoiceSync?
+  payments       Payment[]
+  organization   Organization?     @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([appointmentId])
   @@index([clientId])
@@ -581,10 +706,12 @@ model Schedule {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  employee    User        @relation("ScheduleEmployee", fields: [employeeId], references: [id])
-  createdBy   User        @relation("ScheduleCreatedBy", fields: [createdById], references: [id])
-  updatedBy   User?       @relation("ScheduleUpdatedBy", fields: [updatedById], references: [id])
-  timeEntries TimeEntry[]
+  employee       User          @relation("ScheduleEmployee", fields: [employeeId], references: [id])
+  createdBy      User          @relation("ScheduleCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User?         @relation("ScheduleUpdatedBy", fields: [updatedById], references: [id])
+  timeEntries    TimeEntry[]
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([employeeId, date])
   @@index([date, status])
@@ -608,11 +735,13 @@ model Task {
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
 
-  createdBy   User             @relation("TaskCreatedBy", fields: [createdById], references: [id])
-  updatedBy   User?            @relation("TaskUpdatedBy", fields: [updatedById], references: [id])
-  assignments TaskAssignment[]
-  products    TaskProduct[]
-  comments    TaskComment[]
+  createdBy      User             @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User?            @relation("TaskUpdatedBy", fields: [updatedById], references: [id])
+  assignments    TaskAssignment[]
+  products       TaskProduct[]
+  comments       TaskComment[]
+  organization   Organization?    @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([status, priority])
   @@index([dueDate])
@@ -673,8 +802,10 @@ model TimeEntry {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  employee User      @relation(fields: [employeeId], references: [id])
-  schedule Schedule? @relation(fields: [scheduleId], references: [id])
+  employee       User          @relation(fields: [employeeId], references: [id])
+  schedule       Schedule?     @relation(fields: [scheduleId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([employeeId, clockIn])
 }
@@ -695,8 +826,10 @@ model TimeOffRequest {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  employee User  @relation("TimeOffEmployee", fields: [employeeId], references: [id])
-  reviewer User? @relation("TimeOffReviewer", fields: [reviewerId], references: [id])
+  employee       User          @relation("TimeOffEmployee", fields: [employeeId], references: [id])
+  reviewer       User?         @relation("TimeOffReviewer", fields: [reviewerId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([employeeId, status])
   @@index([status, startDate])
@@ -717,7 +850,9 @@ model Notification {
   readAt      DateTime?
   createdAt   DateTime         @default(now())
 
-  recipient User @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  recipient      User          @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([recipientId, isRead])
 }
@@ -733,7 +868,9 @@ model AuditLog {
   ipAddress   String?
   createdAt   DateTime    @default(now())
 
-  actor User? @relation(fields: [actorId], references: [id])
+  actor          User?         @relation(fields: [actorId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
 
   @@index([entityType, entityId])
   @@index([actorId, createdAt])
@@ -766,40 +903,40 @@ model PersonalTodo {
 }
 
 model Company {
-  id              String   @id @default(cuid())
-  name            String
-  vatNumber       String   @unique
+  id                 String   @id @default(cuid())
+  name               String
+  vatNumber          String   @unique
   registrationNumber String?
-  address         String?
-  city            String?
-  county          String?
-  country         String   @default("RO")
-  phone           String?
-  email           String?
-  bankAccount     String?
-  bankName        String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  address            String?
+  city               String?
+  county             String?
+  country            String   @default("RO")
+  phone              String?
+  email              String?
+  bankAccount        String?
+  bankName           String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  anafConfig      AnafConfig?
+  anafConfig AnafConfig?
 }
 
 model AnafConfig {
-  id            String   @id @default(cuid())
-  companyId     String   @unique
-  clientId      String
-  clientSecret  String   @db.Text
-  redirectUri   String
-  cif           String
-  isActive      Boolean  @default(true)
-  environment   String   @default("test") // "test" or "production"
-  demoMode      Boolean  @default(false)  // Deprecated: kept for backward compatibility
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  companyId    String   @unique
+  clientId     String
+  clientSecret String   @db.Text
+  redirectUri  String
+  cif          String
+  isActive     Boolean  @default(true)
+  environment  String   @default("test") // "test" or "production"
+  demoMode     Boolean  @default(false) // Deprecated: kept for backward compatibility
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  company       Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  tokens        AnafToken[]
+  company Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tokens  AnafToken[]
 
   @@index([cif])
   @@index([environment])
@@ -818,7 +955,7 @@ model AnafToken {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  config           AnafConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  config AnafConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
 
   @@index([configId])
   @@index([expiresAt])
@@ -836,25 +973,25 @@ enum AnafInvoiceStatus {
 }
 
 model AnafInvoiceSync {
-  id              String             @id @default(cuid())
-  invoiceId       String             @unique
-  uploadIndex     String?
-  downloadId      String?
-  status          AnafInvoiceStatus  @default(PENDING)
-  anafStatus      String?
-  errorMessage    String?            @db.Text
-  uploadedAt      DateTime?
-  processedAt     DateTime?
-  lastCheckedAt   DateTime?
-  retryCount      Int                @default(0)
-  maxRetries      Int                @default(3)
-  xmlContent      String?            @db.Text
-  responseData    Json?
-  isDemoData      Boolean            @default(false)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id            String            @id @default(cuid())
+  invoiceId     String            @unique
+  uploadIndex   String?
+  downloadId    String?
+  status        AnafInvoiceStatus @default(PENDING)
+  anafStatus    String?
+  errorMessage  String?           @db.Text
+  uploadedAt    DateTime?
+  processedAt   DateTime?
+  lastCheckedAt DateTime?
+  retryCount    Int               @default(0)
+  maxRetries    Int               @default(3)
+  xmlContent    String?           @db.Text
+  responseData  Json?
+  isDemoData    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
-  invoice         Invoice            @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
   @@index([status])
@@ -864,20 +1001,20 @@ model AnafInvoiceSync {
 }
 
 model AnafMessage {
-  id              String   @id @default(cuid())
-  anafMessageId   String   @unique
-  cif             String
-  solicitareId    String?
-  tip             String
-  dataCreare      String
-  downloadId      String?
-  downloaded      Boolean  @default(false)
-  downloadedAt    DateTime?
-  content         String?  @db.Text
-  metadata        Json?
-  isDemoData      Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String    @id @default(cuid())
+  anafMessageId String    @unique
+  cif           String
+  solicitareId  String?
+  tip           String
+  dataCreare    String
+  downloadId    String?
+  downloaded    Boolean   @default(false)
+  downloadedAt  DateTime?
+  content       String?   @db.Text
+  metadata      Json?
+  isDemoData    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([cif])
   @@index([tip])
@@ -888,16 +1025,16 @@ model AnafMessage {
 
 // Push Notifications System
 model PushSubscription {
-  id          String   @id @default(cuid())
-  userId      String
-  endpoint    String   @unique
-  keys        Json     // Contains p256dh and auth keys
-  userAgent   String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  keys      Json // Contains p256dh and auth keys
+  userAgent String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isActive])
@@ -917,7 +1054,7 @@ model NotificationPreference {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
-  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
 }

@@ -110,6 +110,7 @@ const loginUser = async ({ email, password }) => {
     email: user.email,
     name: `${user.firstName} ${user.lastName}`,
     roles: user.roles.map((assignment) => assignment.role.key),
+    organizationId: user.organizationId,
   };
 
   const accessToken = signAccessToken(payload);
@@ -169,6 +170,7 @@ const refreshSession = async ({ token }) => {
     email: stored.user.email,
     name: `${stored.user.firstName} ${stored.user.lastName}`,
     roles: stored.user.roles.map((assignment) => assignment.role.key),
+    organizationId: stored.user.organizationId,
   };
 
   const accessToken = signAccessToken(payload);

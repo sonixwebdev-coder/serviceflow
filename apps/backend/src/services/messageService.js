@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { mapUser } = require('../utils/transform');
 const { broadcastMessage } = require('../realtime/events');
@@ -22,7 +21,7 @@ const includeConfig = {
   },
 };
 
-const ensureAppointmentAccess = async (appointmentId, currentUser) => {
+const ensureAppointmentAccess = async (prisma, appointmentId, currentUser) => {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: {
@@ -49,7 +48,7 @@ const ensureAppointmentAccess = async (appointmentId, currentUser) => {
   return appointment;
 };
 
-const listMessages = async (appointmentId, currentUser) => {
+const listMessages = async (prisma, appointmentId, currentUser) => {
   await ensureAppointmentAccess(appointmentId, currentUser);
 
   const messages = await prisma.message.findMany({
@@ -77,7 +76,7 @@ const listMessages = async (appointmentId, currentUser) => {
   }));
 };
 
-const createMessage = async (appointmentId, currentUser, { body, type, metadata }) => {
+const createMessage = async (prisma, appointmentId, currentUser, { body, type, metadata }) => {
   if (!body?.trim()) {
     throw new AppError('Message body is required', 400);
   }
@@ -161,7 +160,7 @@ const createMessage = async (appointmentId, currentUser, { body, type, metadata 
 
     // Create notifications
     const notificationPromises = Array.from(recipientIds).map((recipientId) =>
-      createNotification({
+      createNotification(prisma, {
         recipientId,
         title: 'Mesaj nou',
         message: `${authorName} in "${appointmentTitle}": ${messagePreview}${body.length > 80 ? '...' : ''}`,
@@ -192,7 +191,7 @@ const createMessage = async (appointmentId, currentUser, { body, type, metadata 
   return payload;
 };
 
-const markMessagesAsRead = async (appointmentId, currentUser) => {
+const markMessagesAsRead = async (prisma, appointmentId, currentUser) => {
   await ensureAppointmentAccess(appointmentId, currentUser);
 
   // Get all messages in this appointment that aren't authored by the current user
@@ -232,7 +231,7 @@ const markMessagesAsRead = async (appointmentId, currentUser) => {
   return { markedCount: messages.length };
 };
 
-const getUnreadMessageCount = async (appointmentId, currentUser) => {
+const getUnreadMessageCount = async (prisma, appointmentId, currentUser) => {
   await ensureAppointmentAccess(appointmentId, currentUser);
 
   const count = await prisma.message.count({

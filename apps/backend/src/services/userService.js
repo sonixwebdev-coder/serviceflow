@@ -1,5 +1,4 @@
 const bcrypt = require('bcryptjs');
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { mapUser } = require('../utils/transform');
 const { normalizeEmploymentType } = require('../utils/normalize');
@@ -20,13 +19,13 @@ const hasRole = (user, roleKey) => {
   return false;
 };
 
-const listUsers = async ({ search, role, isActive }, currentUser, options = {}) => {
+const listUsers = async (prisma, { search, role, isActive }, currentUser, options = {}) => {
   const { skipCache = false } = options;
   const isAdmin = hasRole(currentUser, ADMIN_ROLE);
   const isManager = hasRole(currentUser, 'manager');
 
-  // Build cache key
-  const filters = { search, role, isActive };
+  // Build cache key with organizationId to ensure tenant isolation
+  const filters = { search, role, isActive, organizationId: currentUser.organizationId };
   const cacheKey = cache.userListKey(filters);
 
   // Try cache first (only for non-search queries - search results change frequently)
@@ -122,7 +121,7 @@ const listUsers = async ({ search, role, isActive }, currentUser, options = {}) 
   return result;
 };
 
-const getUserById = async (userId, options = {}) => {
+const getUserById = async (prisma, userId, options = {}) => {
   const { skipCache = false } = options;
 
   // Try cache first (unless explicitly skipped)
@@ -164,7 +163,7 @@ const getUserById = async (userId, options = {}) => {
   return mapped;
 };
 
-const updateUserStatus = async ({ userId, isActive }) => {
+const updateUserStatus = async (prisma, { userId, isActive }) => {
   const user = await prisma.user.update({
     where: { id: userId },
     data: { isActive },
@@ -186,7 +185,7 @@ const updateUserStatus = async ({ userId, isActive }) => {
   return mapUser(user);
 };
 
-const getCurrentUser = async (userId) => {
+const getCurrentUser = async (prisma, userId) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -211,7 +210,7 @@ const coerceHourlyRate = (value, fallback = 0) => {
   return Number.isFinite(num) ? num : fallback;
 };
 
-const createUser = async (payload) => {
+const createUser = async (prisma, payload) => {
   const {
     firstName,
     lastName,
@@ -304,7 +303,7 @@ const createUser = async (payload) => {
   }
 };
 
-const updateUser = async (userId, payload) => {
+const updateUser = async (prisma, userId, payload) => {
   const {
     firstName,
     lastName,
@@ -401,7 +400,7 @@ const updateUser = async (userId, payload) => {
   }
 };
 
-const deactivateUser = async (userId) => {
+const deactivateUser = async (prisma, userId) => {
   const user = await prisma.user.update({
     where: { id: userId },
     data: { isActive: false },
@@ -429,7 +428,7 @@ const deactivateUser = async (userId) => {
  * Role changes are explicitly prevented
  * SECURITY: Email addresses are normalized to lowercase
  */
-const updateProfile = async (userId, payload) => {
+const updateProfile = async (prisma, userId, payload) => {
   const { firstName, lastName, email, phoneNumber } = payload;
 
   // SECURITY: Normalize email to lowercase
@@ -479,7 +478,7 @@ const updateProfile = async (userId, payload) => {
  * Requires verification of current password for security
  * SECURITY: Protected against timing attacks and brute force
  */
-const changePassword = async (userId, { currentPassword, newPassword }) => {
+const changePassword = async (prisma, userId, { currentPassword, newPassword }) => {
   // SECURITY: Check for account lockout due to failed attempts
   const lockoutKey = `password_lockout:${userId}`;
   const failedAttemptsKey = `password_failed:${userId}`;

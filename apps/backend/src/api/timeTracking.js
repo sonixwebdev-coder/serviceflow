@@ -39,7 +39,7 @@ router.get(
   asyncHandler(async (req, res) => {
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
-    const entries = await listTimeEntries(req.query, req.user, { paginate });
+    const entries = await listTimeEntries(req.tenantPrisma, req.query, req.user, { paginate });
     return ok(res, entries);
   })
 );
@@ -49,7 +49,7 @@ router.post(
   authenticate,
   validate(clockInSchema),
   asyncHandler(async (req, res) => {
-    const entry = await clockIn(req.body, req.user);
+    const entry = await clockIn(req.tenantPrisma, req.body, req.user);
     return created(res, entry, 'Clock-in recorded successfully');
   })
 );
@@ -59,7 +59,7 @@ router.put(
   authenticate,
   validate(clockOutSchema),
   asyncHandler(async (req, res) => {
-    const entry = await clockOut(req.params.entryId, req.body, req.user);
+    const entry = await clockOut(req.tenantPrisma, req.params.entryId, req.body, req.user);
     return ok(res, entry, 'Clock-out recorded successfully');
   })
 );
@@ -69,7 +69,7 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
-    await deleteTimeEntry(req.params.entryId);
+    await deleteTimeEntry(req.tenantPrisma, req.params.entryId);
     return noContent(res);
   })
 );

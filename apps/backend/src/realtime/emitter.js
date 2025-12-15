@@ -28,9 +28,15 @@ const emitToUser = (userId, event, payload) => {
   ioInstance.to(`user:${userId}`).emit(event, payload);
 };
 
+const emitToOrganization = (organizationId, event, payload) => {
+  if (!ioInstance || !organizationId) return;
+  ioInstance.to(`org:${organizationId}`).emit(event, payload);
+};
+
 module.exports = {
   setIO,
   getIO,
   emit,
   emitToUser,
+  emitToOrganization,
 };

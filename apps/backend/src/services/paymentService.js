@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 
 /**
@@ -17,7 +16,7 @@ const { AppError } = require('../utils/errors');
  * @param {Object} options.tx - Transaction client
  * @returns {Promise<Object>} Created payment
  */
-const createPayment = async (data, options = {}) => {
+const createPayment = async (prisma, data, options = {}) => {
   const { tx } = options;
   const client = tx || prisma;
 
@@ -103,7 +102,7 @@ const createPayment = async (data, options = {}) => {
  * @param {string} appointmentId - Appointment ID
  * @returns {Promise<Array>} List of payments
  */
-const getPaymentsByAppointment = async (appointmentId) => {
+const getPaymentsByAppointment = async (prisma, appointmentId) => {
   const payments = await prisma.payment.findMany({
     where: { appointmentId },
     include: {
@@ -127,7 +126,7 @@ const getPaymentsByAppointment = async (appointmentId) => {
  * @param {string} invoiceId - Invoice ID
  * @returns {Promise<Array>} List of payments
  */
-const getPaymentsByInvoice = async (invoiceId) => {
+const getPaymentsByInvoice = async (prisma, invoiceId) => {
   const payments = await prisma.payment.findMany({
     where: { invoiceId },
     include: {
@@ -153,7 +152,7 @@ const getPaymentsByInvoice = async (invoiceId) => {
  * @param {Object} options.tx - Transaction client
  * @returns {Promise<number>} Total paid amount
  */
-const calculateTotalPaid = async (appointmentId, options = {}) => {
+const calculateTotalPaid = async (prisma, appointmentId, options = {}) => {
   const { tx } = options;
   const client = tx || prisma;
 
@@ -174,7 +173,7 @@ const calculateTotalPaid = async (appointmentId, options = {}) => {
  * @param {Object} options.tx - Transaction client
  * @returns {Promise<Object>} Updated appointment
  */
-const updateAppointmentPaymentStatus = async (appointmentId, options = {}) => {
+const updateAppointmentPaymentStatus = async (prisma, appointmentId, options = {}) => {
   const { tx } = options;
   const client = tx || prisma;
 
@@ -250,7 +249,7 @@ const updateAppointmentPaymentStatus = async (appointmentId, options = {}) => {
  * @param {Object} options.tx - Transaction client
  * @returns {Promise<Object>} Updated invoice
  */
-const updateInvoicePaymentStatus = async (invoiceId, options = {}) => {
+const updateInvoicePaymentStatus = async (prisma, invoiceId, options = {}) => {
   const { tx } = options;
   const client = tx || prisma;
 
@@ -310,7 +309,7 @@ const updateInvoicePaymentStatus = async (invoiceId, options = {}) => {
  * @param {Object} options.tx - Transaction client
  * @returns {Promise<Object>} Deleted payment
  */
-const deletePayment = async (paymentId, options = {}) => {
+const deletePayment = async (prisma, paymentId, options = {}) => {
   const { tx } = options;
   const client = tx || prisma;
 
@@ -345,7 +344,7 @@ const deletePayment = async (paymentId, options = {}) => {
  * @param {string} paymentId - Payment ID
  * @returns {Promise<Object>} Payment
  */
-const getPaymentById = async (paymentId) => {
+const getPaymentById = async (prisma, paymentId) => {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {

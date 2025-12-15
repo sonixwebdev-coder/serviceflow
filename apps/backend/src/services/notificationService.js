@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { mapNotification } = require('../utils/transform');
 const { AppError } = require('../utils/errors');
 const { broadcastNotification } = require('../realtime/events');
@@ -32,7 +31,7 @@ const createNotification = async ({ recipientId, title, message, type, entityTyp
   return mapped;
 };
 
-const listNotifications = async (userId, { isRead } = {}) => {
+const listNotifications = async (prisma, userId, { isRead } = {}) => {
   const notifications = await prisma.notification.findMany({
     where: {
       recipientId: userId,
@@ -55,7 +54,7 @@ const listNotifications = async (userId, { isRead } = {}) => {
   return notifications.map(mapNotification);
 };
 
-const markNotificationRead = async (notificationId, userId) => {
+const markNotificationRead = async (prisma, notificationId, userId) => {
   const notification = await prisma.notification.findUnique({ where: { id: notificationId } });
   if (!notification || notification.recipientId !== userId) {
     throw new AppError('Notification not found', 404);

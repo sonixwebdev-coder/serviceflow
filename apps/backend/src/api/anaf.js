@@ -167,7 +167,6 @@ router.post(
             isActive: true,
           },
         });
-        console.log('[ANAF CONFIG] Auto-created company:', company.id, company.name);
       }
 
       data.companyId = company.id;

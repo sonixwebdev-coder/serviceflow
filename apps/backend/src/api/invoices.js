@@ -32,7 +32,7 @@ router.get(
   validate(listInvoicesQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
     const paginate = Boolean(req.query.page || req.query.limit);
-    const invoices = await listInvoices(req.query, { paginate });
+    const invoices = await listInvoices(req.tenantPrisma, req.query, { paginate });
     return ok(res, invoices);
   })
 );
@@ -44,7 +44,7 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(createInvoiceSchema),
   asyncHandler(async (req, res) => {
-    const invoice = await createInvoice(req.body);
+    const invoice = await createInvoice(req.tenantPrisma, req.body);
     return created(res, invoice, 'Invoice created successfully');
   })
 );
@@ -55,7 +55,7 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const invoice = await createInvoiceFromServiceOrder(req.params.serviceOrderId);
+    const invoice = await createInvoiceFromServiceOrder(req.tenantPrisma, req.params.serviceOrderId);
     return created(res, invoice, 'Invoice created from service order successfully');
   })
 );
@@ -66,7 +66,7 @@ router.get(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
-    const invoice = await getInvoiceById(req.params.id);
+    const invoice = await getInvoiceById(req.tenantPrisma, req.params.id);
     return ok(res, invoice);
   })
 );
@@ -78,7 +78,7 @@ router.put(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(updateInvoiceSchema),
   asyncHandler(async (req, res) => {
-    const invoice = await updateInvoice(req.params.id, req.body, { userId: req.user.id });
+    const invoice = await updateInvoice(req.tenantPrisma, req.params.id, req.body, { userId: req.user.id });
     return ok(res, invoice, 'Invoice updated successfully');
   })
 );
@@ -89,7 +89,7 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
-    await deleteInvoice(req.params.id);
+    await deleteInvoice(req.tenantPrisma, req.params.id);
     return ok(res, { success: true }, 'Invoice deleted successfully');
   })
 );
@@ -101,7 +101,7 @@ router.get(
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
     const refresh = ['1', 'true', 'yes'].includes(String(req.query.refresh || '').toLowerCase());
-    const { buffer, filename } = await generateInvoicePdf(req.params.id, { refresh });
+    const { buffer, filename } = await generateInvoicePdf(req.tenantPrisma, req.params.id, { refresh });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Cache-Control', 'no-store');
@@ -117,7 +117,7 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const invoice = await markInvoiceAsSent(req.params.id);
+    const invoice = await markInvoiceAsSent(req.tenantPrisma, req.params.id);
     return ok(res, invoice, 'Invoice marked as sent');
   })
 );
@@ -128,7 +128,7 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const invoice = await markInvoiceAsPaid(req.params.id, { userId: req.user.id });
+    const invoice = await markInvoiceAsPaid(req.tenantPrisma, req.params.id, { userId: req.user.id });
     return ok(res, invoice, 'Invoice marked as paid');
   })
 );
@@ -139,7 +139,7 @@ router.get(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
-    const invoices = await getInvoicesByAppointment(req.params.appointmentId);
+    const invoices = await getInvoicesByAppointment(req.tenantPrisma, req.params.appointmentId);
     return ok(res, invoices);
   })
 );

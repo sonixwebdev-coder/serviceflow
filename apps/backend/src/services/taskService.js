@@ -1,4 +1,3 @@
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { mapTask } = require('../utils/transform');
 const { createNotification } = require('./notificationService');
@@ -52,7 +51,7 @@ const buildTaskWhere = (filters, currentUser) => {
   return where;
 };
 
-const listTasks = async (filters = {}, currentUser, options = {}) => {
+const listTasks = async (prisma, filters = {}, currentUser, options = {}) => {
   const where = buildTaskWhere(filters, currentUser);
   const orderBy = [{ dueDate: 'asc' }, { priority: 'desc' }];
 
@@ -95,7 +94,7 @@ const listTasks = async (filters = {}, currentUser, options = {}) => {
   return tasks.map(mapTask);
 };
 
-const getTaskById = async (taskId, currentUser) => {
+const getTaskById = async (prisma, taskId, currentUser) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     include: withTaskIncludes,
@@ -116,7 +115,7 @@ const getTaskById = async (taskId, currentUser) => {
   return mapped;
 };
 
-const createTask = async (payload, currentUser) => {
+const createTask = async (prisma, payload, currentUser) => {
   const assignments = Array.isArray(payload.assignedTo) ? payload.assignedTo : [];
 
   const task = await prisma.task.create({
@@ -154,7 +153,7 @@ const createTask = async (payload, currentUser) => {
 
   await Promise.all(
     assignments.map((userId) =>
-      createNotification({
+      createNotification(prisma, {
         recipientId: userId,
         title: 'Task nou asignat',
         message: `Ai fost asignat la: ${payload.title}`,
@@ -178,7 +177,7 @@ const createTask = async (payload, currentUser) => {
   return mapped;
 };
 
-const updateTask = async (taskId, payload, currentUser) => {
+const updateTask = async (prisma, taskId, payload, currentUser) => {
   const existing = await prisma.task.findUnique({
     where: { id: taskId },
     include: {
@@ -262,7 +261,7 @@ const updateTask = async (taskId, payload, currentUser) => {
 
     await Promise.all(
       Array.from(recipients).map((recipientId) =>
-        createNotification({
+        createNotification(prisma, {
           recipientId,
           title: 'Status task actualizat',
           message: `${currentUser.name || 'Un coleg'} a schimbat status-ul task-ului "${existing.title}" in ${statusLabels[data.status] || data.status}`,
@@ -287,7 +286,7 @@ const updateTask = async (taskId, payload, currentUser) => {
   return mapped;
 };
 
-const addTaskComment = async (taskId, { text }, currentUser) => {
+const addTaskComment = async (prisma, taskId, { text }, currentUser) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     include: {
@@ -321,7 +320,7 @@ const addTaskComment = async (taskId, { text }, currentUser) => {
 
   await Promise.all(
     Array.from(recipients).map((recipientId) =>
-      createNotification({
+      createNotification(prisma, {
         recipientId,
         title: 'Comentariu nou la task',
         message: `${currentUser.name || 'Un coleg'} a comentat la ${task.title}`,
@@ -347,7 +346,7 @@ const addTaskComment = async (taskId, { text }, currentUser) => {
   return mapped;
 };
 
-const getTaskComments = async (taskId, currentUser) => {
+const getTaskComments = async (prisma, taskId, currentUser) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: {
@@ -402,7 +401,7 @@ const getTaskComments = async (taskId, currentUser) => {
   }));
 };
 
-const deleteTask = async (taskId, currentUser) => {
+const deleteTask = async (prisma, taskId, currentUser) => {
   // Check if task exists and user has permission
   const task = await prisma.task.findUnique({
     where: { id: taskId },
