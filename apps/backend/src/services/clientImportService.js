@@ -334,7 +334,7 @@ const transformRowData = (row, isOnlineOverride = null) => {
  * @returns {Object} Import summary with statistics and errors
  */
 const importClientsFromCSV = async (fileBuffer, options = {}) => {
-  const { isOnlineOverride } = options;
+  const { isOnlineOverride, organizationId } = options;
   let parsedData;
 
   try {
@@ -396,6 +396,9 @@ const importClientsFromCSV = async (fileBuffer, options = {}) => {
       });
     } else {
       const transformedData = transformRowData(row, isOnlineOverride);
+      if (organizationId) {
+        transformedData.organizationId = organizationId;
+      }
       clientsToCreate.push({ data: transformedData, rowNumber });
     }
   }

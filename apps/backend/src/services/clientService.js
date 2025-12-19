@@ -36,7 +36,7 @@ const listClients = async (prisma, { search, page = 1, limit = 20, isOnline }) =
     prisma.client.findMany({
       where,
       include: {
-        vehicles: true,
+        assets: true,
       },
       orderBy: {
         updatedAt: 'desc',
@@ -88,31 +88,16 @@ const createClient = async (prisma, data) => {
         isOnline: data.isOnline,
         fidelityCardSerie: data.fidelityCardSerie,
         notes: data.notes,
-        vehicles: data.vehicles?.length
-          ? {
-              create: data.vehicles.map((vehicle) => ({
-                make: vehicle.make,
-                model: vehicle.model,
-                year: vehicle.year ? Number(vehicle.year) : null,
-                vin: vehicle.vin,
-                plateNumber: vehicle.plateNumber,
-                carId: vehicle.carId,
-                odometerKm: vehicle.odometerKm ? Number(vehicle.odometerKm) : null,
-                color: vehicle.color,
-                notes: vehicle.notes,
-              })),
-            }
-          : undefined,
       },
       include: {
-        vehicles: true,
+        assets: true,
       },
     });
 
     return client;
   } catch (error) {
     if (error.code === 'P2002') {
-      throw new AppError('Vehicle VIN must be unique', 409);
+      throw new AppError('Unique constraint violation', 409);
     }
     throw error;
   }
@@ -122,7 +107,7 @@ const getClientById = async (prisma, clientId) => {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     include: {
-      vehicles: true,
+      assets: true,
       appointments: {
         orderBy: { scheduledStart: 'desc' },
         take: 20,
@@ -132,6 +117,7 @@ const getClientById = async (prisma, clientId) => {
               user: true,
             },
           },
+          asset: true,
           serviceOrder: true,
         },
       },
@@ -169,7 +155,7 @@ const updateClient = async (prisma, clientId, data) => {
       notes: data.notes,
     },
     include: {
-      vehicles: true,
+      assets: true,
     },
   });
 
@@ -177,10 +163,10 @@ const updateClient = async (prisma, clientId, data) => {
 };
 
 /**
- * Search clients across multiple fields including vehicle plate numbers
+ * Search clients across multiple fields including asset identifiers
  * @param {string} query - Search query
  * @param {object} options - Search options
- * @returns {Promise<Array>} - Array of matching clients with vehicles
+ * @returns {Promise<Array>} - Array of matching clients with assets
  */
 const searchClients = async (prisma, query, options = {}) => {
   const { limit = 20 } = options;
@@ -202,13 +188,14 @@ const searchClients = async (prisma, query, options = {}) => {
         { companyName: { contains: searchTerm, mode: 'insensitive' } },
         { contactName: { contains: searchTerm, mode: 'insensitive' } },
         { fidelityCardSerie: { contains: searchTerm, mode: 'insensitive' } },
-        // Search by vehicle plate number
+        // Search by asset identifier and name
         {
-          vehicles: {
+          assets: {
             some: {
               OR: [
-                { plateNumber: { contains: searchTerm, mode: 'insensitive' } },
-                { make: { contains: searchTerm, mode: 'insensitive' } },
+                { identifier: { contains: searchTerm, mode: 'insensitive' } },
+                { manufacturer: { contains: searchTerm, mode: 'insensitive' } },
+                { name: { contains: searchTerm, mode: 'insensitive' } },
               ],
             },
           },
@@ -216,7 +203,7 @@ const searchClients = async (prisma, query, options = {}) => {
       ],
     },
     include: {
-      vehicles: {
+      assets: {
         orderBy: {
           updatedAt: 'desc',
         },
@@ -255,13 +242,16 @@ const searchClients = async (prisma, query, options = {}) => {
       matches.push({ field: 'fidelityCardSerie', label: 'Card fidelitate' });
     }
 
-    // Check vehicle matches
-    client.vehicles.forEach((vehicle) => {
-      if (vehicle.plateNumber?.toLowerCase().includes(lowerQuery)) {
-        matches.push({ field: 'plateNumber', label: 'Numar inmatriculare', vehicleId: vehicle.id });
+    // Check asset matches
+    client.assets?.forEach((asset) => {
+      if (asset.identifier?.toLowerCase().includes(lowerQuery)) {
+        matches.push({ field: 'identifier', label: 'Identificator', assetId: asset.id });
       }
-      if (vehicle.make?.toLowerCase().includes(lowerQuery)) {
-        matches.push({ field: 'make', label: 'Marca', vehicleId: vehicle.id });
+      if (asset.manufacturer?.toLowerCase().includes(lowerQuery)) {
+        matches.push({ field: 'manufacturer', label: 'Producator', assetId: asset.id });
+      }
+      if (asset.name?.toLowerCase().includes(lowerQuery)) {
+        matches.push({ field: 'name', label: 'Nume activ', assetId: asset.id });
       }
     });
 

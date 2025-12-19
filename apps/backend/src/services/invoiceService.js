@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { broadcastInvoice } = require('../realtime/events');
@@ -7,6 +8,38 @@ const { writeFile, readFile, removeFile, exists } = require('../utils/storage');
 const { getCompanySettings } = require('./companySettingService');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
 const { calculateTotalPaid, updateInvoicePaymentStatus } = require('./paymentService');
+
+// Debug logging to file
+const LOG_FILE = path.join(__dirname, '../../logs/invoice-debug.log');
+const debugLog = (message, data = null) => {
+  const timestamp = new Date().toISOString();
+  let dataString = '';
+
+  if (data) {
+    try {
+      // Handle circular references by using a custom replacer
+      const seen = new WeakSet();
+      dataString = '\n' + JSON.stringify(data, (key, value) => {
+        // Skip circular references and Prisma client objects
+        if (key === '_originalClient' || key === 'client' || key === 'tx') {
+          return '[Prisma Client]';
+        }
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular]';
+          }
+          seen.add(value);
+        }
+        return value;
+      }, 2);
+    } catch (error) {
+      dataString = '\n[Error stringifying data: ' + error.message + ']';
+    }
+  }
+
+  const logEntry = `${timestamp} - ${message}${dataString}\n\n`;
+  fs.appendFileSync(LOG_FILE, logEntry, 'utf8');
+};
 
 const VALID_STATUSES = ['DRAFT', 'GENERATED', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
 const IMMUTABLE_STATUSES = new Set(['PAID', 'CANCELLED']);
@@ -76,14 +109,15 @@ const mapInvoice = (invoice) => {
           scheduledStart: invoice.appointment.scheduledStart,
           scheduledEnd: invoice.appointment.scheduledEnd,
           status: invoice.appointment.status?.toLowerCase(),
-          vehicle: invoice.appointment.vehicle
+          asset: invoice.appointment.asset
             ? {
-                id: invoice.appointment.vehicle.id,
-                make: invoice.appointment.vehicle.make,
-                model: invoice.appointment.vehicle.model,
-                year: invoice.appointment.vehicle.year,
-                plateNumber: invoice.appointment.vehicle.plateNumber,
-                carId: invoice.appointment.vehicle.carId,
+                id: invoice.appointment.asset.id,
+                name: invoice.appointment.asset.name,
+                manufacturer: invoice.appointment.asset.manufacturer,
+                model: invoice.appointment.asset.model,
+                year: invoice.appointment.asset.year,
+                identifier: invoice.appointment.asset.identifier,
+                type: invoice.appointment.asset.type,
               }
             : null,
         }
@@ -126,12 +160,41 @@ const includeConfig = {
     },
   },
   appointment: {
-    include: {
-      vehicle: true,
+    select: {
+      id: true,
+      title: true,
+      scheduledStart: true,
+      scheduledEnd: true,
+      status: true,
+      asset: {
+        select: {
+          id: true,
+          name: true,
+          manufacturer: true,
+          model: true,
+          year: true,
+          identifier: true,
+          type: true,
+          metadata: true,
+        },
+      },
     },
   },
-  client: true,
-  anafSync: true,
+  client: {
+    select: {
+      id: true,
+      type: true,
+      firstName: true,
+      lastName: true,
+      companyName: true,
+      contactName: true,
+      phone: true,
+      email: true,
+      address: true,
+      vatNumber: true,
+      registrationNumber: true,
+    },
+  },
 };
 
 /**
@@ -145,12 +208,41 @@ const getIncludeConfig = () => {
       },
     },
     appointment: {
-      include: {
-        vehicle: true,
+      select: {
+        id: true,
+        title: true,
+        scheduledStart: true,
+        scheduledEnd: true,
+        status: true,
+        asset: {
+          select: {
+            id: true,
+            name: true,
+            manufacturer: true,
+            model: true,
+            year: true,
+            identifier: true,
+            type: true,
+            metadata: true,
+          },
+        },
       },
     },
-    client: true,
-    anafSync: true,
+    client: {
+      select: {
+        id: true,
+        type: true,
+        firstName: true,
+        lastName: true,
+        companyName: true,
+        contactName: true,
+        phone: true,
+        email: true,
+        address: true,
+        vatNumber: true,
+        registrationNumber: true,
+      },
+    },
   };
 };
 
@@ -192,21 +284,36 @@ const persistPdfForInvoice = async ({
   companySettings,
   client = prisma,
 }) => {
-  const buffer = await buildInvoicePdf(mappedInvoice, companySettings);
-  await writeFile(relativePath, buffer);
+  debugLog('persistPdfForInvoice starting', { invoiceId: mappedInvoice?.id, relativePath });
 
-  if (previousPath && previousPath !== relativePath) {
-    await removeFile(previousPath);
+  try {
+    debugLog('Building invoice PDF...');
+    const buffer = await buildInvoicePdf(mappedInvoice, companySettings);
+    debugLog('PDF buffer created', { bufferSize: buffer?.length });
+
+    debugLog('Writing PDF file...');
+    await writeFile(relativePath, buffer);
+    debugLog('PDF file written');
+
+    if (previousPath && previousPath !== relativePath) {
+      debugLog('Removing old PDF file', { previousPath });
+      await removeFile(previousPath);
+    }
+
+    if (updateRecord) {
+      debugLog('Updating invoice record with PDF path');
+      await client.invoice.update({
+        where: { id: mappedInvoice.id },
+        data: { pdfUrl: relativePath },
+      });
+    }
+
+    debugLog('persistPdfForInvoice completed');
+    return { buffer, relativePath };
+  } catch (error) {
+    debugLog('ERROR in persistPdfForInvoice', { error: error.message, stack: error.stack });
+    throw error;
   }
-
-  if (updateRecord) {
-    await client.invoice.update({
-      where: { id: mappedInvoice.id },
-      data: { pdfUrl: relativePath },
-    });
-  }
-
-  return { buffer, relativePath };
 };
 
 const sanitizeLineItems = (lineItems = []) => {
@@ -438,17 +545,52 @@ const listInvoices = async (prisma, filters = {}, options = {}) => {
 };
 
 const createInvoice = async (prisma, payload, options = {}) => {
+  debugLog('Starting createInvoice...', { payload });
   const { tx, skipBroadcast = false } = options;
   const client = tx || prisma;
 
+  debugLog('Validating appointment...', { appointmentId: payload.appointmentId });
   // Validate appointment exists and is completed
   const appointment = await client.appointment.findUnique({
     where: { id: payload.appointmentId },
-    include: {
-      client: true,
-      vehicle: true,
+    select: {
+      id: true,
+      title: true,
+      scheduledStart: true,
+      scheduledEnd: true,
+      status: true,
+      clientId: true,
+      client: {
+        select: {
+          id: true,
+          type: true,
+          firstName: true,
+          lastName: true,
+          companyName: true,
+          contactName: true,
+          phone: true,
+          email: true,
+          address: true,
+          vatNumber: true,
+          registrationNumber: true,
+        },
+      },
+      asset: {
+        select: {
+          id: true,
+          name: true,
+          manufacturer: true,
+          model: true,
+          year: true,
+          identifier: true,
+          type: true,
+          metadata: true,
+        },
+      },
     },
   });
+
+  debugLog('Appointment fetched', { hasAppointment: !!appointment });
 
   if (!appointment) {
     throw new AppError('Appointment not found', 404);
@@ -458,21 +600,28 @@ const createInvoice = async (prisma, payload, options = {}) => {
     throw new AppError('Cannot create invoice for appointment that is not completed', 400);
   }
 
+  debugLog('Getting client ID...', { appointmentClientId: appointment.clientId });
   // Use appointment's client if not provided
   const clientId = payload.clientId || appointment.clientId;
   if (!clientId) {
     throw new AppError('Client is required for invoice', 400);
   }
 
+  debugLog('Fetching company settings...');
   // Fetch company settings for TVA calculation
   const companySettings = await getCompanySettings();
 
+  debugLog('Generating invoice number...');
   const invoiceNumber = await generateInvoiceNumber(client);
+
+  debugLog('Sanitizing payload...');
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, null, companySettings);
+
+  debugLog('Building PDF path...');
   const relativePdfPath = buildRelativePdfPath(payload.appointmentId, invoiceNumber);
 
   // Payment tracking from Payment records (not just advance payment)
-  const totalPaid = await calculateTotalPaid(payload.appointmentId, { tx: client });
+  const totalPaid = await calculateTotalPaid(prisma, payload.appointmentId, { tx: client });
   const remainingBalance = roundCurrency(totals.total - totalPaid);
   const paymentStatus = totalPaid === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
 
@@ -486,66 +635,120 @@ const createInvoice = async (prisma, payload, options = {}) => {
     ? payments[payments.length - 1].paymentDate
     : null;
 
-  const includeConfig = getIncludeConfig();
+  debugLog('Creating invoice in database...', { invoiceNumber, clientId });
 
-  const invoice = await client.invoice.create({
-    data: {
-      invoiceNumber,
-      appointmentId: payload.appointmentId,
-      serviceOrderId: payload.serviceOrderId || null,
-      clientId,
-      status,
-      issueDate,
-      dueDate,
-      subtotal: totals.subtotal,
-      tax: totals.tax,
-      total: totals.total,
-      notes,
-      pdfUrl: relativePdfPath,
-      // Payment tracking (from Payment records, not appointment fields)
-      advancePayment: totalPaid,
-      remainingBalance,
-      paymentStatus,
-      advancePaidAt,
-      finalPaidAt,
-      lineItems: {
-        create: sanitizedItems.map((item) => ({
-          name: item.name,
-          description: item.description,
-          // Enhanced quantity and price tracking
-          hardwareQuantity: item.hardwareQuantity,
-          laborQuantity: item.laborQuantity,
-          hardwarePrice: item.hardwarePrice,
-          laborPrice: item.laborPrice,
-          hardwareUnit: item.hardwareUnit,
-          laborUnit: item.laborUnit,
-          totalPrice: item.totalPrice,
-          // Legacy fields
-          quantity: item.quantity,
-          order: item.order,
-        })),
+  let invoice;
+  try {
+    invoice = await client.invoice.create({
+      data: {
+        invoiceNumber,
+        appointmentId: payload.appointmentId,
+        serviceOrderId: payload.serviceOrderId || null,
+        clientId,
+        status,
+        issueDate,
+        dueDate,
+        subtotal: totals.subtotal,
+        tax: totals.tax,
+        total: totals.total,
+        notes,
+        pdfUrl: relativePdfPath,
+        // Payment tracking (from Payment records, not appointment fields)
+        advancePayment: totalPaid,
+        remainingBalance,
+        paymentStatus,
+        advancePaidAt,
+        finalPaidAt,
+        lineItems: {
+          create: sanitizedItems.map((item) => ({
+            name: item.name,
+            description: item.description,
+            // Enhanced quantity and price tracking
+            hardwareQuantity: item.hardwareQuantity,
+            laborQuantity: item.laborQuantity,
+            hardwarePrice: item.hardwarePrice,
+            laborPrice: item.laborPrice,
+            hardwareUnit: item.hardwareUnit,
+            laborUnit: item.laborUnit,
+            totalPrice: item.totalPrice,
+            // Legacy fields
+            quantity: item.quantity,
+            order: item.order,
+          })),
+        },
       },
-    },
-    include: includeConfig,
-  });
+    });
+    debugLog('Invoice created in DB successfully', { invoiceId: invoice.id });
+  } catch (error) {
+    debugLog('ERROR creating invoice in DB', { error: error.message, stack: error.stack });
+    throw error;
+  }
 
-  const mapped = mapInvoice(invoice);
+  debugLog('Mapping invoice...');
 
-  await persistPdfForInvoice({
-    mappedInvoice: mapped,
-    relativePath: relativePdfPath,
-    previousPath: null,
-    updateRecord: false,
-    companySettings,
-    client,
-  });
+  // Manually construct the mapped invoice from data we already have
+  // to avoid circular reference issues
+  const mapped = {
+    id: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    appointmentId: invoice.appointmentId,
+    serviceOrderId: invoice.serviceOrderId,
+    clientId: invoice.clientId,
+    status: invoice.status?.toLowerCase(),
+    issueDate: invoice.issueDate,
+    dueDate: invoice.dueDate,
+    subtotal: Number(invoice.subtotal),
+    tax: Number(invoice.tax),
+    total: Number(invoice.total),
+    notes: invoice.notes,
+    sentAt: invoice.sentAt,
+    paidAt: invoice.paidAt,
+    createdAt: invoice.createdAt,
+    updatedAt: invoice.updatedAt,
+    advancePayment: invoice.advancePayment ? Number(invoice.advancePayment) : 0,
+    remainingBalance: invoice.remainingBalance ? Number(invoice.remainingBalance) : 0,
+    paymentStatus: invoice.paymentStatus?.toLowerCase(),
+    advancePaidAt: invoice.advancePaidAt,
+    finalPaidAt: invoice.finalPaidAt,
+    lineItems: sanitizedItems,
+    appointment: appointment ? {
+      id: appointment.id,
+      title: appointment.title,
+      scheduledStart: appointment.scheduledStart,
+      scheduledEnd: appointment.scheduledEnd,
+      status: appointment.status?.toLowerCase(),
+      asset: appointment.asset || null,
+    } : null,
+    client: appointment?.client || null,
+    pdfUrl: invoice.pdfUrl ? `/files/${invoice.pdfUrl.replace(/\\/g, '/')}` : null,
+  };
+
+  debugLog('Invoice mapped successfully');
+  debugLog('Persisting PDF...');
+
+  try {
+    await persistPdfForInvoice({
+      mappedInvoice: mapped,
+      relativePath: relativePdfPath,
+      previousPath: null,
+      updateRecord: false,
+      companySettings,
+      client,
+    });
+    debugLog('PDF persisted successfully');
+  } catch (error) {
+    debugLog('ERROR persisting PDF', { error: error.message, stack: error.stack });
+    throw error;
+  }
 
   mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
   if (!skipBroadcast) {
+    debugLog('Broadcasting invoice creation...');
     broadcastInvoice('created', mapped);
   }
 
+  debugLog('createInvoice completed successfully');
   return mapped;
 };
 
@@ -573,7 +776,7 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
 
   // If changing status to PAID, check for TVA adjustment need
   if (changingToPaid && userId) {
-    const totalPaidBeforeAdjustment = await calculateTotalPaid(existing.appointmentId, { tx: client });
+    const totalPaidBeforeAdjustment = await calculateTotalPaid(prisma, existing.appointmentId, { tx: client });
     const invoiceTotal = Number(totals.total);
     const remainingAmount = roundCurrency(invoiceTotal - totalPaidBeforeAdjustment);
 
@@ -612,7 +815,7 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
   }
 
   // Recalculate payment status from Payment records (after potential TVA adjustment)
-  const totalPaid = await calculateTotalPaid(existing.appointmentId, { tx: client });
+  const totalPaid = await calculateTotalPaid(prisma, existing.appointmentId, { tx: client });
   const remainingBalance = roundCurrency(totals.total - totalPaid);
   const paymentStatus = totalPaid === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
 
@@ -802,7 +1005,7 @@ const markInvoiceAsPaid = async (id, options = {}) => {
   }
 
   // Calculate total paid from existing payments
-  const totalPaid = await calculateTotalPaid(invoice.appointmentId, { tx: client });
+  const totalPaid = await calculateTotalPaid(prisma, invoice.appointmentId, { tx: client });
   const invoiceTotal = Number(invoice.total);
   const remainingAmount = roundCurrency(invoiceTotal - totalPaid);
 
@@ -841,7 +1044,7 @@ const markInvoiceAsPaid = async (id, options = {}) => {
   }
 
   // Recalculate payment totals after potentially adding TVA adjustment
-  const newTotalPaid = await calculateTotalPaid(invoice.appointmentId, { tx: client });
+  const newTotalPaid = await calculateTotalPaid(prisma, invoice.appointmentId, { tx: client });
   const newRemainingBalance = roundCurrency(invoiceTotal - newTotalPaid);
   const newPaymentStatus = newTotalPaid === 0 ? 'UNPAID' : (newRemainingBalance <= 0 ? 'PAID' : 'PARTIAL');
 
@@ -903,18 +1106,44 @@ const getInvoicesByAppointment = async (appointmentId) => {
  * Create an invoice from a service order
  * This automatically copies all line items from the service order to the invoice
  */
-const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
+const createInvoiceFromServiceOrder = async (prisma, serviceOrderId, options = {}) => {
+  debugLog('Starting createInvoiceFromServiceOrder', { serviceOrderId });
   const { tx, skipBroadcast = false } = options;
   const client = tx || prisma;
 
+  debugLog('Fetching service order...');
   // Get service order with all related data
   const serviceOrder = await client.serviceOrder.findUnique({
     where: { id: serviceOrderId },
     include: {
       appointment: {
-        include: {
-          client: true,
-          vehicle: true,
+        select: {
+          id: true,
+          clientId: true,
+          status: true,
+          client: {
+            select: {
+              id: true,
+              type: true,
+              firstName: true,
+              lastName: true,
+              companyName: true,
+              vatNumber: true,
+              registrationNumber: true,
+            },
+          },
+          asset: {
+            select: {
+              id: true,
+              name: true,
+              manufacturer: true,
+              model: true,
+              year: true,
+              identifier: true,
+              type: true,
+              metadata: true,
+            },
+          },
         },
       },
       lineItems: {
@@ -922,6 +1151,8 @@ const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
       },
     },
   });
+
+  debugLog('Service order fetched', { hasServiceOrder: !!serviceOrder });
 
   if (!serviceOrder) {
     throw new AppError('Service order not found', 404);
@@ -931,6 +1162,7 @@ const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
     throw new AppError('Service order must have an associated appointment', 400);
   }
 
+  debugLog('Mapping line items...', { lineItemsCount: serviceOrder.lineItems.length });
   // Map service order line items to invoice line items
   const lineItems = serviceOrder.lineItems.map((item, index) => ({
     name: item.name,
@@ -945,6 +1177,7 @@ const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
   }));
 
   // Create invoice with service order data
+  debugLog('Creating invoice payload...');
   const payload = {
     appointmentId: serviceOrder.appointmentId,
     serviceOrderId: serviceOrder.id,
@@ -955,7 +1188,8 @@ const createInvoiceFromServiceOrder = async (serviceOrderId, options = {}) => {
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default: 30 days from now
   };
 
-  return createInvoice(payload, { tx: client, skipBroadcast });
+  debugLog('Calling createInvoice with payload...', { payload });
+  return createInvoice(prisma, payload, { tx: client, skipBroadcast });
 };
 
 module.exports = {

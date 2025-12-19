@@ -22,8 +22,12 @@ const includeConfig = {
 };
 
 const ensureAppointmentAccess = async (prisma, appointmentId, currentUser) => {
-  const appointment = await prisma.appointment.findUnique({
-    where: { id: appointmentId },
+  const where = currentUser.organizationId
+    ? { id: appointmentId, organizationId: currentUser.organizationId }
+    : { id: appointmentId };
+
+  const appointment = await prisma.appointment.findFirst({
+    where,
     include: {
       assignees: true,
     },
@@ -49,7 +53,7 @@ const ensureAppointmentAccess = async (prisma, appointmentId, currentUser) => {
 };
 
 const listMessages = async (prisma, appointmentId, currentUser) => {
-  await ensureAppointmentAccess(appointmentId, currentUser);
+  await ensureAppointmentAccess(prisma, appointmentId, currentUser);
 
   const messages = await prisma.message.findMany({
     where: { appointmentId },
@@ -81,7 +85,7 @@ const createMessage = async (prisma, appointmentId, currentUser, { body, type, m
     throw new AppError('Message body is required', 400);
   }
 
-  const appointment = await ensureAppointmentAccess(appointmentId, currentUser);
+  const appointment = await ensureAppointmentAccess(prisma, appointmentId, currentUser);
 
   const message = await prisma.message.create({
     data: {
@@ -192,7 +196,7 @@ const createMessage = async (prisma, appointmentId, currentUser, { body, type, m
 };
 
 const markMessagesAsRead = async (prisma, appointmentId, currentUser) => {
-  await ensureAppointmentAccess(appointmentId, currentUser);
+  await ensureAppointmentAccess(prisma, appointmentId, currentUser);
 
   // Get all messages in this appointment that aren't authored by the current user
   // and that the user hasn't already read
@@ -232,7 +236,7 @@ const markMessagesAsRead = async (prisma, appointmentId, currentUser) => {
 };
 
 const getUnreadMessageCount = async (prisma, appointmentId, currentUser) => {
-  await ensureAppointmentAccess(appointmentId, currentUser);
+  await ensureAppointmentAccess(prisma, appointmentId, currentUser);
 
   const count = await prisma.message.count({
     where: {

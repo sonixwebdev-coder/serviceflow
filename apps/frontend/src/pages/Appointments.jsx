@@ -19,8 +19,11 @@ import DatePicker from '../components/ui/DatePicker.jsx';
 import ClientAutocomplete from '../components/ui/ClientAutocomplete.jsx';
 import Pagination from '../components/Pagination.jsx';
 import ExportButton from '../components/ExportButton.jsx';
+import DynamicAssetFields from '../components/DynamicAssetFields';
+import { getAvailableAssetTypes } from '../constants/assetFieldTemplates';
 import useToast from '../context/useToast';
 import useAuth from '../context/useAuth';
+import { useTerminology } from '../context/TerminologyContext';
 import { USER_ROLES } from '../utils/constants.js';
 import { getErrorMessage } from '../utils/errorUtils.js';
 import { createAppointment, downloadServiceOrderPdf } from '../services/appointmentService';
@@ -92,7 +95,7 @@ const defaultForm = {
   endTime: '10:00',
   assigneeIds: [],
   clientId: '',
-  vehicleId: '',
+  assetId: '',
   advancePayment: '',
 };
 
@@ -110,14 +113,9 @@ const defaultClientForm = {
   fidelityCardSerie: '',
 };
 
-const defaultVehicleForm = {
-  make: '',
-  model: '',
-  year: '',
-  plateNumber: '',
-  vin: '',
-  odometerKm: '',
-  color: '',
+const defaultAssetForm = {
+  assetType: 'vehicle', // Default asset type
+  metadata: {}, // Dynamic fields will be stored here
   notes: '',
 };
 
@@ -187,9 +185,9 @@ const Appointments = () => {
   const [formState, setFormState] = useState(defaultForm);
   const [formErrors, setFormErrors] = useState([]);
   const [clientForm, setClientForm] = useState(defaultClientForm);
-  const [vehicleForm, setVehicleForm] = useState(defaultVehicleForm);
+  const [assetForm, setAssetForm] = useState(defaultAssetForm);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [selectedAsset, setSelectedAsset] = useState(null);
   const [showManualClientEntry, setShowManualClientEntry] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [messageDraft, setMessageDraft] = useState('');
@@ -219,6 +217,7 @@ const Appointments = () => {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { user } = useAuth();
+  const { assetSingular, assetPlural } = useTerminology();
   const modalRef = useRef(null);
   const calendarRef = useRef(null);
   const pendingPdfWindowRef = useRef(null);
@@ -228,21 +227,28 @@ const Appointments = () => {
   const resetCreateForm = useCallback(() => {
     setFormState(defaultForm);
     setClientForm(defaultClientForm);
-    setVehicleForm(defaultVehicleForm);
+    setAssetForm(defaultAssetForm);
     setOrderDraft(createDefaultOrderDraft());
     setFormErrors([]);
     setSelectedClient(null);
-    setSelectedVehicle(null);
+    setSelectedAsset(null);
     setShowManualClientEntry(false);
   }, []);
 
   /**
    * Handle client selection from autocomplete
    */
-  const handleClientSelect = useCallback((client, vehicle) => {
+  const handleClientSelect = useCallback((client, asset) => {
     setSelectedClient(client);
-    setSelectedVehicle(vehicle);
+    setSelectedAsset(asset);
     setShowManualClientEntry(false);
+
+    // Update form state with client and asset IDs
+    setFormState(prev => ({
+      ...prev,
+      clientId: client.id,
+      assetId: asset?.id || '',
+    }));
 
     // Auto-fill client form
     setClientForm({
@@ -259,48 +265,89 @@ const Appointments = () => {
       fidelityCardSerie: client.fidelityCardSerie || '',
     });
 
-    // Auto-fill vehicle form with selected vehicle (most recent by default)
-    if (vehicle) {
-      setVehicleForm({
-        make: vehicle.make || '',
-        model: vehicle.model || '',
-        year: vehicle.year || '',
-        plateNumber: vehicle.plateNumber || '',
-        vin: vehicle.vin || '',
-        carId: vehicle.carId || '',
-        odometerKm: vehicle.odometerKm || '',
-        color: vehicle.color || '',
-        notes: vehicle.notes || '',
+    // Auto-fill asset form with selected asset (most recent by default)
+    if (asset) {
+      // Reconstruct metadata from both asset.metadata and top-level fields
+      const reconstructedMetadata = {
+        ...(asset.metadata || {}),
+      };
+
+      // Add top-level fields to metadata based on asset type
+      if (asset.manufacturer) {
+        // For vehicles, use 'make', for others use 'brand'
+        if (asset.type === 'vehicle') {
+          reconstructedMetadata.make = asset.manufacturer;
+        } else {
+          reconstructedMetadata.brand = asset.manufacturer;
+        }
+      }
+      if (asset.model) reconstructedMetadata.model = asset.model;
+      if (asset.year) reconstructedMetadata.year = asset.year;
+      if (asset.identifier) {
+        // For vehicles, use 'plateNumber', for others use 'serialNumber'
+        if (asset.type === 'vehicle') {
+          reconstructedMetadata.plateNumber = asset.identifier;
+        } else {
+          reconstructedMetadata.serialNumber = asset.identifier;
+        }
+      }
+
+      setAssetForm({
+        assetType: asset.type || 'vehicle',
+        metadata: reconstructedMetadata,
+        notes: asset.notes || '',
       });
     }
   }, []);
 
   /**
-   * Handle vehicle selection from dropdown
+   * Handle asset selection from dropdown
    */
-  const handleVehicleSelect = useCallback((vehicleId) => {
-    if (!selectedClient || !selectedClient.vehicles) return;
+  const handleAssetSelect = useCallback((assetId) => {
+    if (!selectedClient || !selectedClient.assets) return;
 
-    if (vehicleId === 'new') {
-      // Clear vehicle form for new vehicle entry
-      setVehicleForm(defaultVehicleForm);
-      setSelectedVehicle(null);
+    if (assetId === 'new') {
+      // Clear asset form for new asset entry
+      setAssetForm(defaultAssetForm);
+      setSelectedAsset(null);
+      setFormState(prev => ({ ...prev, assetId: '' }));
       return;
     }
 
-    const vehicle = selectedClient.vehicles.find(v => v.id === vehicleId);
-    if (vehicle) {
-      setSelectedVehicle(vehicle);
-      setVehicleForm({
-        make: vehicle.make || '',
-        model: vehicle.model || '',
-        year: vehicle.year || '',
-        plateNumber: vehicle.plateNumber || '',
-        vin: vehicle.vin || '',
-        carId: vehicle.carId || '',
-        odometerKm: vehicle.odometerKm || '',
-        color: vehicle.color || '',
-        notes: vehicle.notes || '',
+    const asset = selectedClient.assets.find(a => a.id === assetId);
+    if (asset) {
+      setSelectedAsset(asset);
+      setFormState(prev => ({ ...prev, assetId: asset.id }));
+
+      // Reconstruct metadata from both asset.metadata and top-level fields
+      const reconstructedMetadata = {
+        ...(asset.metadata || {}),
+      };
+
+      // Add top-level fields to metadata based on asset type
+      if (asset.manufacturer) {
+        // For vehicles, use 'make', for others use 'brand'
+        if (asset.type === 'vehicle') {
+          reconstructedMetadata.make = asset.manufacturer;
+        } else {
+          reconstructedMetadata.brand = asset.manufacturer;
+        }
+      }
+      if (asset.model) reconstructedMetadata.model = asset.model;
+      if (asset.year) reconstructedMetadata.year = asset.year;
+      if (asset.identifier) {
+        // For vehicles, use 'plateNumber', for others use 'serialNumber'
+        if (asset.type === 'vehicle') {
+          reconstructedMetadata.plateNumber = asset.identifier;
+        } else {
+          reconstructedMetadata.serialNumber = asset.identifier;
+        }
+      }
+
+      setAssetForm({
+        assetType: asset.type || 'vehicle',
+        metadata: reconstructedMetadata,
+        notes: asset.notes || '',
       });
     }
   }, [selectedClient]);
@@ -1032,7 +1079,7 @@ useEffect(() => {
       scheduledEnd: endDateTime ? endDateTime.toISOString() : undefined,
       assigneeIds: Array.from(new Set(formState.assigneeIds)),
       clientId: formState.clientId || undefined,
-      vehicleId: formState.vehicleId || undefined,
+      assetId: formState.assetId || undefined,
       client: {
         type: clientType,
         firstName: clientForm.firstName?.trim() || undefined,
@@ -1046,15 +1093,15 @@ useEffect(() => {
         notes: clientForm.notes?.trim() || undefined,
         fidelityCardSerie: clientForm.fidelityCardSerie?.trim() || undefined,
       },
-      vehicle: {
-        make: vehicleForm.make?.trim() || undefined,
-        model: vehicleForm.model?.trim() || undefined,
-        year: vehicleForm.year ? Number(vehicleForm.year) : undefined,
-        plateNumber: vehicleForm.plateNumber?.trim() || undefined,
-        vin: vehicleForm.vin?.trim() || undefined,
-        odometerKm: vehicleForm.odometerKm ? Number(vehicleForm.odometerKm) : undefined,
-        color: vehicleForm.color?.trim() || undefined,
-        notes: vehicleForm.notes?.trim() || undefined,
+      asset: {
+        assetType: assetForm.assetType,
+        // Extract common fields from metadata for backend
+        manufacturer: assetForm.metadata?.make || assetForm.metadata?.brand || undefined,
+        model: assetForm.metadata?.model || undefined,
+        year: assetForm.metadata?.year ? parseInt(assetForm.metadata.year) : undefined,
+        identifier: assetForm.metadata?.plateNumber || assetForm.metadata?.serialNumber || assetForm.metadata?.identifier || undefined,
+        metadata: assetForm.metadata,
+        notes: assetForm.notes?.trim() || undefined,
       },
       serviceOrder: {
         notes: orderDraft.notes?.trim() || undefined,
@@ -1480,9 +1527,9 @@ useEffect(() => {
                       setShowManualClientEntry(!showManualClientEntry);
                       if (!showManualClientEntry) {
                         setSelectedClient(null);
-                        setSelectedVehicle(null);
+                        setSelectedAsset(null);
                         setClientForm(defaultClientForm);
-                        setVehicleForm(defaultVehicleForm);
+                        setAssetForm(defaultAssetForm);
                       }
                     }}
                     className="text-xs text-blue-600 hover:text-blue-700 underline"
@@ -1517,23 +1564,23 @@ useEffect(() => {
                               {selectedClient.email && <span>Email: {selectedClient.email}</span>}
                             </div>
 
-                            {selectedClient.vehicles && selectedClient.vehicles.length > 0 && (
+                            {selectedClient.assets && selectedClient.assets.length > 0 && (
                               <div className="mt-3">
                                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Selecteaza vehicul:
+                                  Selecteaza {assetSingular.toLowerCase()}:
                                 </label>
                                 <select
-                                  value={selectedVehicle?.id || ''}
-                                  onChange={(e) => handleVehicleSelect(e.target.value)}
+                                  value={selectedAsset?.id || ''}
+                                  onChange={(e) => handleAssetSelect(e.target.value)}
                                   className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 >
-                                  {selectedClient.vehicles.map((vehicle) => (
-                                    <option key={vehicle.id} value={vehicle.id}>
-                                      {vehicle.plateNumber || 'Fara nr'} - {vehicle.make} {vehicle.model}
-                                      {vehicle.year && ` (${vehicle.year})`}
+                                  {selectedClient.assets.map((asset) => (
+                                    <option key={asset.id} value={asset.id}>
+                                      {asset.identifier || asset.name || 'Fara identificator'} - {asset.manufacturer} {asset.model}
+                                      {asset.year && ` (${asset.year})`}
                                     </option>
                                   ))}
-                                  <option value="new">+ Adauga vehicul nou</option>
+                                  <option value="new">+ Adauga {assetSingular.toLowerCase()} nou</option>
                                 </select>
                               </div>
                             )}
@@ -1542,9 +1589,9 @@ useEffect(() => {
                             type="button"
                             onClick={() => {
                               setSelectedClient(null);
-                              setSelectedVehicle(null);
+                              setSelectedAsset(null);
                               setClientForm(defaultClientForm);
-                              setVehicleForm(defaultVehicleForm);
+                              setAssetForm(defaultAssetForm);
                             }}
                             className="ml-2 text-gray-400 hover:text-gray-600"
                           >
@@ -1685,79 +1732,96 @@ useEffect(() => {
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <h3 className="text-base font-semibold text-gray-900">Detalii vehicul</h3>
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <p className="md:col-span-2 text-xs text-gray-500">Completeaza cel putin numarul de inmatriculare sau VIN.</p>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Marca</label>
-                    <input
-                      type="text"
-                      value={vehicleForm.make}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, make: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                <h3 className="text-base font-semibold text-gray-900">Detalii {assetSingular.toLowerCase()}</h3>
+                <div className="mt-4">
+                  <p className="text-xs text-gray-500 mb-4">Completeaza informatiile despre {assetSingular.toLowerCase()}.</p>
+
+                  {/* Asset Type Selector */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tip {assetSingular.toLowerCase()} *
+                    </label>
+                    <select
+                      value={assetForm.assetType}
+                      onChange={(event) => setAssetForm((prev) => ({
+                        ...prev,
+                        assetType: event.target.value,
+                        metadata: {} // Reset metadata when changing type
+                      }))}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    >
+                      {getAvailableAssetTypes().map((type) => (
+                        <option key={type.key} value={type.key}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Appliance-specific fields */}
+                  {assetForm.assetType === 'appliance' && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Categorie *</label>
+                      <select
+                        value={assetForm.metadata?.category || ''}
+                        onChange={(e) => setAssetForm(prev => ({
+                          ...prev,
+                          metadata: { ...prev.metadata, category: e.target.value }
+                        }))}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      >
+                        <option value="">Selecteaza</option>
+                        <option value="Frigider">Frigider</option>
+                        <option value="Masina de spalat">Masina de spalat</option>
+                        <option value="Cuptor">Cuptor</option>
+                        <option value="Aragaz">Aragaz</option>
+                        <option value="Aspirator">Aspirator</option>
+                        <option value="Altele">Altele</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* HVAC-specific fields */}
+                  {assetForm.assetType === 'hvac_unit' && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Tip unitate *</label>
+                      <select
+                        value={assetForm.metadata?.unitType || ''}
+                        onChange={(e) => setAssetForm(prev => ({
+                          ...prev,
+                          metadata: { ...prev.metadata, unitType: e.target.value }
+                        }))}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      >
+                        <option value="">Selecteaza</option>
+                        <option value="Aer conditionat">Aer conditionat</option>
+                        <option value="Centrala termica">Centrala termica</option>
+                        <option value="Pompa de caldura">Pompa de caldura</option>
+                        <option value="Ventilatie">Ventilatie</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Dynamic Asset Fields */}
+                  <div className="mb-4">
+                    <DynamicAssetFields
+                      assetType={assetForm.assetType}
+                      formData={assetForm}
+                      onChange={setAssetForm}
                     />
                   </div>
+
+                  {/* Notes field */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Model</label>
-                    <input
-                      type="text"
-                      value={vehicleForm.model}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, model: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">An</label>
-                    <input
-                      type="number"
-                      value={vehicleForm.year}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, year: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Numar inmatriculare</label>
-                    <input
-                      type="text"
-                      value={vehicleForm.plateNumber}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, plateNumber: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">VIN</label>
-                    <input
-                      type="text"
-                      value={vehicleForm.vin}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, vin: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Kilometraj (km)</label>
-                    <input
-                      type="number"
-                      value={vehicleForm.odometerKm}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, odometerKm: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Culoare</label>
-                    <input
-                      type="text"
-                      value={vehicleForm.color}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, color: event.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">Note vehicul</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Note {assetSingular.toLowerCase()}
+                    </label>
                     <textarea
-                      value={vehicleForm.notes}
-                      onChange={(event) => setVehicleForm((prev) => ({ ...prev, notes: event.target.value }))}
+                      value={assetForm.notes}
+                      onChange={(event) => setAssetForm((prev) => ({ ...prev, notes: event.target.value }))}
                       rows={2}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      placeholder={`Observatii sau detalii suplimentare despre ${assetSingular.toLowerCase()}`}
                     />
                   </div>
                 </div>
@@ -2305,44 +2369,50 @@ useEffect(() => {
                   </div>
 
                   <div className="rounded-xl border border-gray-100 bg-white p-4">
-                    <h3 className="text-base font-semibold text-gray-900">Vehicul</h3>
-                    {selectedAppointment.vehicle ? (
+                    <h3 className="text-base font-semibold text-gray-900">{assetSingular}</h3>
+                    {selectedAppointment.asset ? (
                       <dl className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-                        <div>
-                          <dt className="text-gray-500">Vehicul</dt>
-                          <dd className="font-medium text-gray-900">
-                            {`${selectedAppointment.vehicle.make || ''} ${selectedAppointment.vehicle.model || ''}`.trim() || '—'}
-                          </dd>
+                        {/* Show asset name */}
+                        <div className="md:col-span-2">
+                          <dt className="text-gray-500">Nume</dt>
+                          <dd className="font-medium text-gray-900">{selectedAppointment.asset.name}</dd>
                         </div>
-                        <div>
-                          <dt className="text-gray-500">An</dt>
-                          <dd className="font-medium text-gray-900">{selectedAppointment.vehicle.year || '—'}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-gray-500">Nr. inmatriculare</dt>
-                          <dd className="font-medium text-gray-900">{selectedAppointment.vehicle.plateNumber || '—'}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-gray-500">VIN</dt>
-                          <dd className="font-medium text-gray-900">{selectedAppointment.vehicle.vin || '—'}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-gray-500">Kilometraj</dt>
-                          <dd className="font-medium text-gray-900">
-                            {selectedAppointment.vehicle.odometerKm
-                              ? `${numberFormatter.format(selectedAppointment.vehicle.odometerKm)} km`
-                              : '—'}
-                          </dd>
-                        </div>
-                        {selectedAppointment.vehicle.notes ? (
-                          <div className="md:col-span-2">
-                            <dt className="text-gray-500">Observatii</dt>
-                            <dd className="text-gray-700">{selectedAppointment.vehicle.notes}</dd>
+
+                        {/* Show asset type */}
+                        {selectedAppointment.asset.type && (
+                          <div>
+                            <dt className="text-gray-500">Tip</dt>
+                            <dd className="font-medium text-gray-900">
+                              {getAvailableAssetTypes().find(t => t.key === selectedAppointment.asset.type)?.name || selectedAppointment.asset.type}
+                            </dd>
                           </div>
-                        ) : null}
+                        )}
+
+                        {/* Show identifier */}
+                        {selectedAppointment.asset.identifier && (
+                          <div>
+                            <dt className="text-gray-500">Identificator</dt>
+                            <dd className="font-medium text-gray-900">{selectedAppointment.asset.identifier}</dd>
+                          </div>
+                        )}
+
+                        {/* Dynamically render metadata fields */}
+                        {selectedAppointment.asset.metadata && Object.entries(selectedAppointment.asset.metadata).map(([key, value]) => {
+                          if (!value) return null;
+
+                          // Format the label nicely
+                          const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+                          return (
+                            <div key={key}>
+                              <dt className="text-gray-500">{label}</dt>
+                              <dd className="font-medium text-gray-900">{value}</dd>
+                            </div>
+                          );
+                        })}
                       </dl>
                     ) : (
-                      <p className="mt-3 text-sm text-gray-500">Nu exista informatii despre vehicul.</p>
+                      <p className="mt-3 text-sm text-gray-500">Nu exista informatii despre {assetSingular.toLowerCase()}.</p>
                     )}
                   </div>
 

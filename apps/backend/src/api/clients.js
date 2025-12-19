@@ -62,7 +62,9 @@ router.post(
     }
 
     // Get isOnline override from query parameter
-    const options = {};
+    const options = {
+      organizationId: req.user.organizationId,
+    };
     if (req.query.isOnline !== undefined) {
       options.isOnlineOverride = req.query.isOnline === 'true';
     }

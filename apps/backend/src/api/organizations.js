@@ -2,12 +2,26 @@ const express = require('express');
 const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
+const validate = require('../middleware/validate');
 const {
   createOrganization,
   getOrganizationById,
   updateOrganization,
   getOrganizationStats,
 } = require('../services/organizationService');
+const {
+  getOrganizationSettings,
+  updateOrganizationSettings,
+  updateTerminology,
+  updateFeatures,
+  updateAssetFieldConfig,
+} = require('../services/organizationSettingsService');
+const {
+  updateOrganizationSettingsSchema,
+  terminologySchema,
+  featuresSchema,
+  assetFieldConfigSchema,
+} = require('../schemas/organizationSettingsSchema');
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();
@@ -59,6 +73,94 @@ router.patch(
   asyncHandler(async (req, res) => {
     const organization = await updateOrganization(req.user.organizationId, req.body);
     return ok(res, organization, 'Organization updated successfully');
+  })
+);
+
+/**
+ * Get organization settings (terminology, features, etc.)
+ */
+router.get(
+  '/me/settings',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const settings = await getOrganizationSettings(req.tenantPrisma, req.user.organizationId);
+    return ok(res, settings);
+  })
+);
+
+/**
+ * Update organization settings (complete)
+ * Only admins can update settings
+ */
+router.put(
+  '/me/settings',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(updateOrganizationSettingsSchema),
+  asyncHandler(async (req, res) => {
+    const settings = await updateOrganizationSettings(
+      req.tenantPrisma,
+      req.user.organizationId,
+      req.body
+    );
+    return ok(res, settings, 'Settings updated successfully');
+  })
+);
+
+/**
+ * Update only terminology settings
+ * Only admins can update terminology
+ */
+router.patch(
+  '/me/settings/terminology',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(terminologySchema),
+  asyncHandler(async (req, res) => {
+    const settings = await updateTerminology(
+      req.tenantPrisma,
+      req.user.organizationId,
+      req.body
+    );
+    return ok(res, settings, 'Terminology updated successfully');
+  })
+);
+
+/**
+ * Update only feature flags
+ * Only admins can update features
+ */
+router.patch(
+  '/me/settings/features',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(featuresSchema),
+  asyncHandler(async (req, res) => {
+    const settings = await updateFeatures(
+      req.tenantPrisma,
+      req.user.organizationId,
+      req.body
+    );
+    return ok(res, settings, 'Features updated successfully');
+  })
+);
+
+/**
+ * Update asset field configuration
+ * Only admins can update asset field config
+ */
+router.patch(
+  '/me/settings/assetFieldConfig',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(assetFieldConfigSchema),
+  asyncHandler(async (req, res) => {
+    const settings = await updateAssetFieldConfig(
+      req.tenantPrisma,
+      req.user.organizationId,
+      req.body
+    );
+    return ok(res, settings, 'Asset field configuration updated successfully');
   })
 );
 

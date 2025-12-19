@@ -95,9 +95,10 @@ const transformAppointmentData = (appointments) => {
       : '',
     'client.phone': appt.client?.phone || '',
     'client.email': appt.client?.email || '',
-    'vehicle.plateNumber': appt.vehicle?.plateNumber || '',
-    'vehicle.make': appt.vehicle?.make || '',
-    'vehicle.model': appt.vehicle?.model || '',
+    'asset.identifier': appt.asset?.identifier || '',
+    'asset.manufacturer': appt.asset?.manufacturer || '',
+    'asset.model': appt.asset?.model || '',
+    'asset.name': appt.asset?.name || '',
     'createdBy.name': appt.createdBy
       ? `${appt.createdBy.firstName || ''} ${appt.createdBy.lastName || ''}`.trim()
       : '',
@@ -152,7 +153,7 @@ const exportAppointments = async (format, filters = {}, userId, userRoles) => {
       where,
       include: {
         client: true,
-        vehicle: true,
+        asset: true,
         createdBy: {
           select: {
             id: true,

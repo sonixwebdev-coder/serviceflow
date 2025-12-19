@@ -7,6 +7,8 @@ import { useClients } from '../hooks/useClients.js';
 import ExportButton from '../components/ExportButton.jsx';
 import API from '../utils/api.js';
 import useToast from '../context/useToast.js';
+import { useTerminology } from '../context/TerminologyContext';
+import DatePicker from '../components/ui/DatePicker';
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -40,15 +42,16 @@ const Clients = () => {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
-  const [editingVehicleId, setEditingVehicleId] = useState(null);
-  const [vehicleForm, setVehicleForm] = useState({});
-  const [isAddingVehicle, setIsAddingVehicle] = useState(false);
+  const [editingAssetId, setEditingAssetId] = useState(null);
+  const [assetForm, setAssetForm] = useState({});
+  const [isAddingAsset, setIsAddingAsset] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [importResults, setImportResults] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { assetSingular, assetPlural } = useTerminology();
 
   const { data, isLoading } = useClients(
     search ? { search } : undefined
@@ -82,57 +85,58 @@ const Clients = () => {
     },
   });
 
-  const updateVehicleMutation = useMutation({
-    mutationFn: async ({ clientId, vehicleId, data }) => {
-      const response = await API.patch(`/clients/${clientId}/vehicles/${vehicleId}`, data);
+  const updateAssetMutation = useMutation({
+    mutationFn: async ({ assetId, data }) => {
+      const response = await API.patch(`/assets/${assetId}`, data);
       return response.data?.data || response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
-      setEditingVehicleId(null);
-      setVehicleForm({});
-      showToast({ title: 'Vehicul actualizat cu succes', type: 'success' });
+      setEditingAssetId(null);
+      setAssetForm({});
+      showToast({ title: `${assetSingular} actualizat cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Eroare la actualizare vehicul',
+        title: `Eroare la actualizare ${assetSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
     },
   });
 
-  const addVehicleMutation = useMutation({
+  const addAssetMutation = useMutation({
     mutationFn: async ({ clientId, data }) => {
-      const response = await API.post(`/clients/${clientId}/vehicles`, data);
+      const response = await API.post(`/assets`, { ...data, clientId });
       return response.data?.data || response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
-      setIsAddingVehicle(false);
-      setVehicleForm({});
-      showToast({ title: 'Vehicul adaugat cu succes', type: 'success' });
+      setIsAddingAsset(false);
+      setAssetForm({});
+      showToast({ title: `${assetSingular} adaugat cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Eroare la adaugare vehicul',
+        title: `Eroare la adaugare ${assetSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
     },
   });
 
-  const deleteVehicleMutation = useMutation({
-    mutationFn: async ({ clientId, vehicleId }) => {
-      await API.delete(`/clients/${clientId}/vehicles/${vehicleId}`);
+  const deleteAssetMutation = useMutation({
+    mutationFn: async ({ assetId }) => {
+      await API.delete(`/assets/${assetId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
-      showToast({ title: 'Vehicul sters cu succes', type: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      showToast({ title: `${assetSingular} sters cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Eroare la stergere vehicul',
+        title: `Eroare la stergere ${assetSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
@@ -160,9 +164,9 @@ const Clients = () => {
     setSelectedClientId(null);
     setIsEditing(false);
     setEditForm({});
-    setEditingVehicleId(null);
-    setVehicleForm({});
-    setIsAddingVehicle(false);
+    setEditingAssetId(null);
+    setAssetForm({});
+    setIsAddingAsset(false);
   };
 
   const startEditing = () => {
@@ -203,66 +207,84 @@ const Clients = () => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const startEditingVehicle = (vehicle) => {
-    setVehicleForm({
-      make: vehicle.make || '',
-      model: vehicle.model || '',
-      year: vehicle.year || '',
-      vin: vehicle.vin || '',
-      plateNumber: vehicle.plateNumber || '',
-      color: vehicle.color || '',
-      odometerKm: vehicle.odometerKm || '',
-      notes: vehicle.notes || '',
+  const startEditingAsset = (asset) => {
+    setAssetForm({
+      name: asset.name || '',
+      type: asset.type || 'vehicle',
+      manufacturer: asset.manufacturer || '',
+      model: asset.model || '',
+      year: asset.year || '',
+      identifier: asset.identifier || '',
+      metadata: {
+        ...(asset.metadata || {}),
+        // Ensure common metadata fields are accessible
+        vin: asset.metadata?.vin || '',
+        color: asset.metadata?.color || '',
+        odometerKm: asset.metadata?.odometerKm || '',
+        fuelType: asset.metadata?.fuelType || '',
+        category: asset.metadata?.category || '',
+        warrantyExpiry: asset.metadata?.warrantyExpiry || '',
+        unitType: asset.metadata?.unitType || '',
+        capacity: asset.metadata?.capacity || '',
+        refrigerant: asset.metadata?.refrigerant || '',
+        installationDate: asset.metadata?.installationDate || '',
+        equipmentCategory: asset.metadata?.equipmentCategory || '',
+        location: asset.metadata?.location || '',
+      },
     });
-    setEditingVehicleId(vehicle.id);
+    setEditingAssetId(asset.id);
   };
 
-  const startAddingVehicle = () => {
-    setVehicleForm({
-      make: '',
+  const startAddingAsset = () => {
+    setAssetForm({
+      name: '',
+      type: 'vehicle',
+      manufacturer: '',
       model: '',
       year: '',
-      vin: '',
-      plateNumber: '',
-      color: '',
-      odometerKm: '',
-      notes: '',
+      identifier: '',
+      metadata: {},
     });
-    setIsAddingVehicle(true);
+    setIsAddingAsset(true);
   };
 
-  const handleVehicleInputChange = (field, value) => {
-    setVehicleForm((prev) => ({ ...prev, [field]: value }));
+  const handleAssetInputChange = (field, value) => {
+    setAssetForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveVehicle = () => {
-    if (isAddingVehicle) {
-      addVehicleMutation.mutate({
+  const handleAssetMetadataChange = (field, value) => {
+    setAssetForm((prev) => ({
+      ...prev,
+      metadata: { ...(prev.metadata || {}), [field]: value }
+    }));
+  };
+
+  const handleSaveAsset = () => {
+    if (isAddingAsset) {
+      addAssetMutation.mutate({
         clientId: selectedClientId,
-        data: vehicleForm,
+        data: assetForm,
       });
-    } else if (editingVehicleId) {
-      updateVehicleMutation.mutate({
-        clientId: selectedClientId,
-        vehicleId: editingVehicleId,
-        data: vehicleForm,
-      });
-    }
-  };
-
-  const handleDeleteVehicle = (vehicleId) => {
-    if (window.confirm('Sigur doresti sa stergi acest vehicul?')) {
-      deleteVehicleMutation.mutate({
-        clientId: selectedClientId,
-        vehicleId,
+    } else if (editingAssetId) {
+      updateAssetMutation.mutate({
+        assetId: editingAssetId,
+        data: assetForm,
       });
     }
   };
 
-  const cancelVehicleEdit = () => {
-    setEditingVehicleId(null);
-    setIsAddingVehicle(false);
-    setVehicleForm({});
+  const handleDeleteAsset = (assetId) => {
+    if (window.confirm(`Sigur doresti sa stergi acest ${assetSingular.toLowerCase()}?`)) {
+      deleteAssetMutation.mutate({
+        assetId,
+      });
+    }
+  };
+
+  const cancelAssetEdit = () => {
+    setEditingAssetId(null);
+    setIsAddingAsset(false);
+    setAssetForm({});
   };
 
   const handleDeleteClient = (clientId, clientName) => {
@@ -405,7 +427,7 @@ const Clients = () => {
             <span>Telefon</span>
             <span>Companie</span>
             <span>Card fidelitate</span>
-            <span>Vehicule</span>
+            <span>{assetPlural}</span>
             <span>Ultima actualizare</span>
             <span>Actiuni</span>
           </div>
@@ -443,7 +465,7 @@ const Clients = () => {
                       <span className="text-gray-400">—</span>
                     )}
                   </div>
-                  <div>{client.vehicles?.length || 0}</div>
+                  <div>{client.assets?.length || 0}</div>
                   <div>{formatDateTime(client.updatedAt)}</div>
                   <div>
                     <button
@@ -507,7 +529,7 @@ const Clients = () => {
                       )}
                       <div className="flex items-center gap-1.5">
                         <Car size={14} className="text-gray-400" />
-                        <span>{client.vehicles?.length || 0} vehicule</span>
+                        <span>{client.assets?.length || 0} {assetPlural.toLowerCase()}</span>
                       </div>
                       {client.companyName && client.type === 'PF' && (
                         <div className="flex items-center gap-1.5">
@@ -866,36 +888,65 @@ const Clients = () => {
                     </div>
                   </div>
 
-                      {/* Vehicles */}
+                      {/* Assets */}
                       <div className="rounded-xl border border-gray-200 bg-white p-6">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900">
                             <Car size={18} className="text-viperx-primary" />
-                            Vehicule ({selectedClient.vehicles?.length || 0})
+                            {assetPlural} ({selectedClient.assets?.length || 0})
                           </h3>
-                          {!isEditing && !isAddingVehicle && (
+                          {!isEditing && !isAddingAsset && (
                             <button
                               type="button"
-                              onClick={startAddingVehicle}
+                              onClick={startAddingAsset}
                               className="inline-flex items-center gap-1 rounded-lg border border-viperx-primary bg-viperx-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-viperx-primary/90 transition-colors"
                             >
                               <Plus size={14} />
-                              Adauga Vehicul
+                              Adauga {assetSingular}
                             </button>
                           )}
                         </div>
 
-                        {isAddingVehicle ? (
-                          /* Add Vehicle Form */
+                        {isAddingAsset ? (
+                          /* Add Asset Form */
                           <div className="rounded-lg border-2 border-viperx-primary bg-blue-50 p-4">
-                            <h4 className="font-semibold text-gray-900 mb-3">Vehicul Nou</h4>
+                            <h4 className="font-semibold text-gray-900 mb-3">{assetSingular} Nou</h4>
                             <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Marca *</label>
+                              {/* Type Selector */}
+                              <div className="col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Tip *</label>
+                                <select
+                                  value={assetForm.type}
+                                  onChange={(e) => handleAssetInputChange('type', e.target.value)}
+                                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                  required
+                                >
+                                  <option value="vehicle">Vehicul</option>
+                                  <option value="appliance">Aparat electrocasnic</option>
+                                  <option value="hvac_unit">Unitate HVAC</option>
+                                  <option value="equipment">Echipament</option>
+                                  <option value="other">Altele</option>
+                                </select>
+                              </div>
+
+                              <div className="col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Nume (generat automat daca e gol)</label>
                                 <input
                                   type="text"
-                                  value={vehicleForm.make}
-                                  onChange={(e) => handleVehicleInputChange('make', e.target.value)}
+                                  value={assetForm.name}
+                                  onChange={(e) => handleAssetInputChange('name', e.target.value)}
+                                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                  placeholder="Ex: Toyota Camry 2019"
+                                />
+                              </div>
+
+                              {/* Common Fields */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Producator *</label>
+                                <input
+                                  type="text"
+                                  value={assetForm.manufacturer}
+                                  onChange={(e) => handleAssetInputChange('manufacturer', e.target.value)}
                                   className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                   required
                                 />
@@ -904,8 +955,8 @@ const Clients = () => {
                                 <label className="block text-xs font-medium text-gray-700 mb-1">Model *</label>
                                 <input
                                   type="text"
-                                  value={vehicleForm.model}
-                                  onChange={(e) => handleVehicleInputChange('model', e.target.value)}
+                                  value={assetForm.model}
+                                  onChange={(e) => handleAssetInputChange('model', e.target.value)}
                                   className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                   required
                                 />
@@ -914,85 +965,237 @@ const Clients = () => {
                                 <label className="block text-xs font-medium text-gray-700 mb-1">An</label>
                                 <input
                                   type="number"
-                                  value={vehicleForm.year}
-                                  onChange={(e) => handleVehicleInputChange('year', e.target.value)}
+                                  value={assetForm.year}
+                                  onChange={(e) => handleAssetInputChange('year', e.target.value)}
                                   className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Numar inmatriculare</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  {assetForm.type === 'vehicle' ? 'Numar inmatriculare' : 'Numar de serie'}
+                                </label>
                                 <input
                                   type="text"
-                                  value={vehicleForm.plateNumber}
-                                  onChange={(e) => handleVehicleInputChange('plateNumber', e.target.value)}
+                                  value={assetForm.identifier}
+                                  onChange={(e) => handleAssetInputChange('identifier', e.target.value)}
                                   className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                 />
                               </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">VIN</label>
-                                <input
-                                  type="text"
-                                  value={vehicleForm.vin}
-                                  onChange={(e) => handleVehicleInputChange('vin', e.target.value)}
-                                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Culoare</label>
-                                <input
-                                  type="text"
-                                  value={vehicleForm.color}
-                                  onChange={(e) => handleVehicleInputChange('color', e.target.value)}
-                                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                />
-                              </div>
-                              <div className="col-span-2">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Kilometraj (km)</label>
-                                <input
-                                  type="number"
-                                  value={vehicleForm.odometerKm}
-                                  onChange={(e) => handleVehicleInputChange('odometerKm', e.target.value)}
-                                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                />
-                              </div>
+
+                              {/* Vehicle-specific fields */}
+                              {assetForm.type === 'vehicle' && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">VIN</label>
+                                    <input
+                                      type="text"
+                                      value={assetForm.metadata?.vin || ''}
+                                      onChange={(e) => handleAssetMetadataChange('vin', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Culoare</label>
+                                    <input
+                                      type="text"
+                                      value={assetForm.metadata?.color || ''}
+                                      onChange={(e) => handleAssetMetadataChange('color', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Kilometraj (km)</label>
+                                    <input
+                                      type="number"
+                                      value={assetForm.metadata?.odometerKm || ''}
+                                      onChange={(e) => handleAssetMetadataChange('odometerKm', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Combustibil</label>
+                                    <select
+                                      value={assetForm.metadata?.fuelType || ''}
+                                      onChange={(e) => handleAssetMetadataChange('fuelType', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    >
+                                      <option value="">Selecteaza</option>
+                                      <option value="benzina">Benzina</option>
+                                      <option value="diesel">Diesel</option>
+                                      <option value="electric">Electric</option>
+                                      <option value="hibrid">Hibrid</option>
+                                      <option value="gpl">GPL</option>
+                                    </select>
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Appliance-specific fields */}
+                              {assetForm.type === 'appliance' && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Categorie</label>
+                                    <select
+                                      value={assetForm.metadata?.category || ''}
+                                      onChange={(e) => handleAssetMetadataChange('category', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    >
+                                      <option value="">Selecteaza</option>
+                                      <option value="frigider">Frigider</option>
+                                      <option value="masina_spalat">Masina de spalat</option>
+                                      <option value="cuptor">Cuptor</option>
+                                      <option value="aragaz">Aragaz</option>
+                                      <option value="aspirator">Aspirator</option>
+                                      <option value="altele">Altele</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <DatePicker
+                                      label="Data garantiei"
+                                      value={assetForm.metadata?.warrantyExpiry ? new Date(assetForm.metadata.warrantyExpiry) : null}
+                                      onChange={(date) => handleAssetMetadataChange('warrantyExpiry', date ? date.toISOString().split('T')[0] : '')}
+                                      placeholder="Selecteaza data"
+                                    />
+                                  </div>
+                                </>
+                              )}
+
+                              {/* HVAC-specific fields */}
+                              {assetForm.type === 'hvac_unit' && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Tip unitate</label>
+                                    <select
+                                      value={assetForm.metadata?.unitType || ''}
+                                      onChange={(e) => handleAssetMetadataChange('unitType', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    >
+                                      <option value="">Selecteaza</option>
+                                      <option value="aer_conditionat">Aer conditionat</option>
+                                      <option value="centrala">Centrala termica</option>
+                                      <option value="pompa_caldura">Pompa de caldura</option>
+                                      <option value="ventilatie">Ventilatie</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Capacitate (BTU)</label>
+                                    <input
+                                      type="number"
+                                      value={assetForm.metadata?.capacity || ''}
+                                      onChange={(e) => handleAssetMetadataChange('capacity', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Refrigerent</label>
+                                    <input
+                                      type="text"
+                                      value={assetForm.metadata?.refrigerant || ''}
+                                      onChange={(e) => handleAssetMetadataChange('refrigerant', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                      placeholder="Ex: R410A"
+                                    />
+                                  </div>
+                                  <div>
+                                    <DatePicker
+                                      label="Data instalarii"
+                                      value={assetForm.metadata?.installationDate ? new Date(assetForm.metadata.installationDate) : null}
+                                      onChange={(date) => handleAssetMetadataChange('installationDate', date ? date.toISOString().split('T')[0] : '')}
+                                      placeholder="Selecteaza data"
+                                    />
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Equipment-specific fields */}
+                              {assetForm.type === 'equipment' && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Categorie echipament</label>
+                                    <input
+                                      type="text"
+                                      value={assetForm.metadata?.equipmentCategory || ''}
+                                      onChange={(e) => handleAssetMetadataChange('equipmentCategory', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Locatie</label>
+                                    <input
+                                      type="text"
+                                      value={assetForm.metadata?.location || ''}
+                                      onChange={(e) => handleAssetMetadataChange('location', e.target.value)}
+                                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                    />
+                                  </div>
+                                </>
+                              )}
                             </div>
                             <div className="flex gap-2 mt-3">
                               <button
                                 type="button"
-                                onClick={handleSaveVehicle}
-                                disabled={addVehicleMutation.isPending}
+                                onClick={handleSaveAsset}
+                                disabled={addAssetMutation.isPending}
                                 className="inline-flex items-center gap-1 rounded-lg bg-viperx-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-viperx-primary/90 disabled:opacity-50"
                               >
                                 <Save size={14} />
-                                {addVehicleMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
+                                {addAssetMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
                               </button>
                               <button
                                 type="button"
-                                onClick={cancelVehicleEdit}
-                                disabled={addVehicleMutation.isPending}
+                                onClick={cancelAssetEdit}
+                                disabled={addAssetMutation.isPending}
                                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                               >
                                 Anuleaza
                               </button>
                             </div>
                           </div>
-                        ) : !selectedClient.vehicles?.length ? (
-                          <p className="text-sm text-gray-500">Niciun vehicul inregistrat.</p>
+                        ) : !selectedClient.assets?.length ? (
+                          <p className="text-sm text-gray-500">Niciun {assetSingular.toLowerCase()} inregistrat.</p>
                         ) : (
                           <div className="space-y-3">
-                            {selectedClient.vehicles.map((vehicle) => (
-                              <div key={vehicle.id} className={`rounded-lg border p-4 ${editingVehicleId === vehicle.id ? 'border-2 border-viperx-primary bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
-                                {editingVehicleId === vehicle.id ? (
-                                  /* Edit Vehicle Form */
+                            {selectedClient.assets.map((asset) => (
+                              <div key={asset.id} className={`rounded-lg border p-4 ${editingAssetId === asset.id ? 'border-2 border-viperx-primary bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                                {editingAssetId === asset.id ? (
+                                  /* Edit Asset Form */
                                   <>
-                                    <h4 className="font-semibold text-gray-900 mb-3">Editeaza Vehicul</h4>
+                                    <h4 className="font-semibold text-gray-900 mb-3">Editeaza {assetSingular}</h4>
                                     <div className="grid grid-cols-2 gap-3">
-                                      <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Marca *</label>
+                                      {/* Type Selector */}
+                                      <div className="col-span-2">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tip *</label>
+                                        <select
+                                          value={assetForm.type}
+                                          onChange={(e) => handleAssetInputChange('type', e.target.value)}
+                                          className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                          required
+                                        >
+                                          <option value="vehicle">Vehicul</option>
+                                          <option value="appliance">Aparat electrocasnic</option>
+                                          <option value="hvac_unit">Unitate HVAC</option>
+                                          <option value="equipment">Echipament</option>
+                                          <option value="other">Altele</option>
+                                        </select>
+                                      </div>
+
+                                      <div className="col-span-2">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Nume</label>
                                         <input
                                           type="text"
-                                          value={vehicleForm.make}
-                                          onChange={(e) => handleVehicleInputChange('make', e.target.value)}
+                                          value={assetForm.name}
+                                          onChange={(e) => handleAssetInputChange('name', e.target.value)}
+                                          className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                        />
+                                      </div>
+
+                                      {/* Common Fields */}
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Producator *</label>
+                                        <input
+                                          type="text"
+                                          value={assetForm.manufacturer}
+                                          onChange={(e) => handleAssetInputChange('manufacturer', e.target.value)}
                                           className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                         />
                                       </div>
@@ -1000,8 +1203,8 @@ const Clients = () => {
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Model *</label>
                                         <input
                                           type="text"
-                                          value={vehicleForm.model}
-                                          onChange={(e) => handleVehicleInputChange('model', e.target.value)}
+                                          value={assetForm.model}
+                                          onChange={(e) => handleAssetInputChange('model', e.target.value)}
                                           className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                         />
                                       </div>
@@ -1009,62 +1212,186 @@ const Clients = () => {
                                         <label className="block text-xs font-medium text-gray-700 mb-1">An</label>
                                         <input
                                           type="number"
-                                          value={vehicleForm.year}
-                                          onChange={(e) => handleVehicleInputChange('year', e.target.value)}
+                                          value={assetForm.year}
+                                          onChange={(e) => handleAssetInputChange('year', e.target.value)}
                                           className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                         />
                                       </div>
                                       <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Numar inmatriculare</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                                          {assetForm.type === 'vehicle' ? 'Numar inmatriculare' : 'Numar de serie'}
+                                        </label>
                                         <input
                                           type="text"
-                                          value={vehicleForm.plateNumber}
-                                          onChange={(e) => handleVehicleInputChange('plateNumber', e.target.value)}
+                                          value={assetForm.identifier}
+                                          onChange={(e) => handleAssetInputChange('identifier', e.target.value)}
                                           className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                                         />
                                       </div>
-                                      <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">VIN</label>
-                                        <input
-                                          type="text"
-                                          value={vehicleForm.vin}
-                                          onChange={(e) => handleVehicleInputChange('vin', e.target.value)}
-                                          className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Culoare</label>
-                                        <input
-                                          type="text"
-                                          value={vehicleForm.color}
-                                          onChange={(e) => handleVehicleInputChange('color', e.target.value)}
-                                          className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                        />
-                                      </div>
-                                      <div className="col-span-2">
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Kilometraj (km)</label>
-                                        <input
-                                          type="number"
-                                          value={vehicleForm.odometerKm}
-                                          onChange={(e) => handleVehicleInputChange('odometerKm', e.target.value)}
-                                          className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                        />
-                                      </div>
+
+                                      {/* Vehicle-specific fields */}
+                                      {assetForm.type === 'vehicle' && (
+                                        <>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">VIN</label>
+                                            <input
+                                              type="text"
+                                              value={assetForm.metadata?.vin || ''}
+                                              onChange={(e) => handleAssetMetadataChange('vin', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Culoare</label>
+                                            <input
+                                              type="text"
+                                              value={assetForm.metadata?.color || ''}
+                                              onChange={(e) => handleAssetMetadataChange('color', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Kilometraj (km)</label>
+                                            <input
+                                              type="number"
+                                              value={assetForm.metadata?.odometerKm || ''}
+                                              onChange={(e) => handleAssetMetadataChange('odometerKm', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Combustibil</label>
+                                            <select
+                                              value={assetForm.metadata?.fuelType || ''}
+                                              onChange={(e) => handleAssetMetadataChange('fuelType', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            >
+                                              <option value="">Selecteaza</option>
+                                              <option value="benzina">Benzina</option>
+                                              <option value="diesel">Diesel</option>
+                                              <option value="electric">Electric</option>
+                                              <option value="hibrid">Hibrid</option>
+                                              <option value="gpl">GPL</option>
+                                            </select>
+                                          </div>
+                                        </>
+                                      )}
+
+                                      {/* Appliance-specific fields */}
+                                      {assetForm.type === 'appliance' && (
+                                        <>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Categorie</label>
+                                            <select
+                                              value={assetForm.metadata?.category || ''}
+                                              onChange={(e) => handleAssetMetadataChange('category', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            >
+                                              <option value="">Selecteaza</option>
+                                              <option value="frigider">Frigider</option>
+                                              <option value="masina_spalat">Masina de spalat</option>
+                                              <option value="cuptor">Cuptor</option>
+                                              <option value="aragaz">Aragaz</option>
+                                              <option value="aspirator">Aspirator</option>
+                                              <option value="altele">Altele</option>
+                                            </select>
+                                          </div>
+                                          <div>
+                                            <DatePicker
+                                              label="Data garantiei"
+                                              value={assetForm.metadata?.warrantyExpiry ? new Date(assetForm.metadata.warrantyExpiry) : null}
+                                              onChange={(date) => handleAssetMetadataChange('warrantyExpiry', date ? date.toISOString().split('T')[0] : '')}
+                                              placeholder="Selecteaza data"
+                                            />
+                                          </div>
+                                        </>
+                                      )}
+
+                                      {/* HVAC-specific fields */}
+                                      {assetForm.type === 'hvac_unit' && (
+                                        <>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Tip unitate</label>
+                                            <select
+                                              value={assetForm.metadata?.unitType || ''}
+                                              onChange={(e) => handleAssetMetadataChange('unitType', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            >
+                                              <option value="">Selecteaza</option>
+                                              <option value="aer_conditionat">Aer conditionat</option>
+                                              <option value="centrala">Centrala termica</option>
+                                              <option value="pompa_caldura">Pompa de caldura</option>
+                                              <option value="ventilatie">Ventilatie</option>
+                                            </select>
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Capacitate (BTU)</label>
+                                            <input
+                                              type="number"
+                                              value={assetForm.metadata?.capacity || ''}
+                                              onChange={(e) => handleAssetMetadataChange('capacity', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Refrigerent</label>
+                                            <input
+                                              type="text"
+                                              value={assetForm.metadata?.refrigerant || ''}
+                                              onChange={(e) => handleAssetMetadataChange('refrigerant', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                              placeholder="Ex: R410A"
+                                            />
+                                          </div>
+                                          <div>
+                                            <DatePicker
+                                              label="Data instalarii"
+                                              value={assetForm.metadata?.installationDate ? new Date(assetForm.metadata.installationDate) : null}
+                                              onChange={(date) => handleAssetMetadataChange('installationDate', date ? date.toISOString().split('T')[0] : '')}
+                                              placeholder="Selecteaza data"
+                                            />
+                                          </div>
+                                        </>
+                                      )}
+
+                                      {/* Equipment-specific fields */}
+                                      {assetForm.type === 'equipment' && (
+                                        <>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Categorie echipament</label>
+                                            <input
+                                              type="text"
+                                              value={assetForm.metadata?.equipmentCategory || ''}
+                                              onChange={(e) => handleAssetMetadataChange('equipmentCategory', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">Locatie</label>
+                                            <input
+                                              type="text"
+                                              value={assetForm.metadata?.location || ''}
+                                              onChange={(e) => handleAssetMetadataChange('location', e.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                                            />
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
                                     <div className="flex gap-2 mt-3">
                                       <button
                                         type="button"
-                                        onClick={handleSaveVehicle}
-                                        disabled={updateVehicleMutation.isPending}
+                                        onClick={handleSaveAsset}
+                                        disabled={updateAssetMutation.isPending}
                                         className="inline-flex items-center gap-1 rounded-lg bg-viperx-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-viperx-primary/90 disabled:opacity-50"
                                       >
                                         <Save size={14} />
-                                        {updateVehicleMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
+                                        {updateAssetMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={cancelVehicleEdit}
-                                        disabled={updateVehicleMutation.isPending}
+                                        onClick={cancelAssetEdit}
+                                        disabled={updateAssetMutation.isPending}
                                         className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                       >
                                         Anuleaza
@@ -1072,44 +1399,38 @@ const Clients = () => {
                                     </div>
                                   </>
                                 ) : (
-                                  /* Read-only Vehicle Display */
+                                  /* Read-only Asset Display */
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                       <p className="font-semibold text-gray-900">
-                                        {vehicle.make} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}
+                                        {asset.name || `${asset.manufacturer} ${asset.model} ${asset.year ? `(${asset.year})` : ''}`}
                                       </p>
                                       <div className="mt-2 space-y-1 text-sm text-gray-600">
-                                        {vehicle.plateNumber && (
+                                        {asset.identifier && (
                                           <p className="flex items-center gap-2">
                                             <Hash size={14} />
-                                            Numar: {vehicle.plateNumber}
+                                            Identificator: {asset.identifier}
                                           </p>
                                         )}
-                                        {vehicle.vin && (
-                                          <p className="flex items-center gap-2">
-                                            <Hash size={14} />
-                                            VIN: {vehicle.vin}
-                                          </p>
-                                        )}
-                                        {vehicle.color && <p>Culoare: {vehicle.color}</p>}
-                                        {vehicle.odometerKm && <p>Kilometraj: {vehicle.odometerKm.toLocaleString('ro-RO')} km</p>}
+                                        {asset.metadata?.color && <p>Culoare: {asset.metadata?.color}</p>}
+                                        {asset.metadata?.odometerKm && <p>Kilometraj: {asset.metadata?.odometerKm.toLocaleString('ro-RO')} km</p>}
                                       </div>
                                     </div>
                                     {!isEditing && (
                                       <div className="flex gap-1 ml-2">
                                         <button
                                           type="button"
-                                          onClick={() => startEditingVehicle(vehicle)}
+                                          onClick={() => startEditingAsset(asset)}
                                           className="rounded-lg border border-gray-200 p-1.5 text-gray-600 hover:bg-white hover:text-viperx-primary transition-colors"
-                                          title="Editeaza vehicul"
+                                          title={`Editeaza ${assetSingular.toLowerCase()}`}
                                         >
                                           <Edit2 size={14} />
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => handleDeleteVehicle(vehicle.id)}
+                                          onClick={() => handleDeleteAsset(asset.id)}
                                           className="rounded-lg border border-gray-200 p-1.5 text-gray-600 hover:bg-white hover:text-red-600 transition-colors"
-                                          title="Sterge vehicul"
+                                          title={`Sterge ${assetSingular.toLowerCase()}`}
                                         >
                                           <Trash2 size={14} />
                                         </button>
@@ -1149,10 +1470,13 @@ const Clients = () => {
                                   {formatDateTime(appointment.scheduledStart)}
                                   {appointment.scheduledEnd && ` - ${format(new Date(appointment.scheduledEnd), 'HH:mm')}`}
                                 </p>
-                                {appointment.vehicle && (
+                                {(appointment.asset || appointment.vehicle) && (
                                   <p className="flex items-center gap-2">
                                     <Car size={14} />
-                                    {appointment.vehicle.make} {appointment.vehicle.model} ({appointment.vehicle.plateNumber || 'fara nr.'})
+                                    {appointment.asset
+                                      ? `${appointment.asset.name || `${appointment.asset.manufacturer} ${appointment.asset.model}`} (${appointment.asset.identifier || 'fara nr.'})`
+                                      : `${appointment.vehicle.make} ${appointment.vehicle.model} (${appointment.vehicle.plateNumber || 'fara nr.'})`
+                                    }
                                   </p>
                                 )}
                                 {appointment.assignees?.length > 0 && (

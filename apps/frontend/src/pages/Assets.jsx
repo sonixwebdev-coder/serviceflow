@@ -3,6 +3,9 @@ import { Search, Plus, Edit2, Trash2, Package } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchAssets, createAsset, updateAsset, deleteAsset } from '../services/assetService';
 import useToast from '../context/useToast';
+import { useTerminology } from '../context/TerminologyContext';
+import DynamicAssetFields from '../components/DynamicAssetFields';
+import { getAvailableAssetTypes } from '../constants/assetFieldTemplates';
 
 const Assets = () => {
   const [search, setSearch] = useState('');
@@ -12,14 +15,13 @@ const Assets = () => {
     name: '',
     identifier: '',
     type: 'vehicle',
-    manufacturer: '',
-    model: '',
-    year: '',
     clientId: '',
+    metadata: {},
   });
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { assetSingular, assetPlural, assetIdentifier } = useTerminology();
 
   const { data, isLoading } = useQuery({
     queryKey: ['assets', { search }],
@@ -31,12 +33,12 @@ const Assets = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setIsCreating(false);
-      setAssetForm({ name: '', identifier: '', type: 'vehicle', manufacturer: '', model: '', year: '', clientId: '' });
-      showToast({ title: 'Asset created successfully', type: 'success' });
+      setAssetForm({ name: '', identifier: '', type: 'vehicle', clientId: '', metadata: {} });
+      showToast({ title: `${assetSingular} adaugat cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Error creating asset',
+        title: `Eroare la adaugarea ${assetSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
@@ -48,11 +50,11 @@ const Assets = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setEditingAsset(null);
-      showToast({ title: 'Asset updated successfully', type: 'success' });
+      showToast({ title: `${assetSingular} actualizat cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Error updating asset',
+        title: `Eroare la actualizarea ${assetSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
@@ -63,11 +65,11 @@ const Assets = () => {
     mutationFn: deleteAsset,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
-      showToast({ title: 'Asset deleted successfully', type: 'success' });
+      showToast({ title: `${assetSingular} sters cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Error deleting asset',
+        title: `Eroare la stergerea ${assetSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
@@ -89,15 +91,15 @@ const Assets = () => {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Assets</h1>
-          <p className="text-gray-600 mt-1">Manage client assets (vehicles, equipment, appliances)</p>
+          <h1 className="text-3xl font-bold text-gray-900">{assetPlural}</h1>
+          <p className="text-gray-600 mt-1">Gestioneaza {assetPlural.toLowerCase()} pentru clienti (vehicule, echipamente, aparate)</p>
         </div>
         <button
           onClick={() => setIsCreating(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition"
         >
           <Plus size={20} />
-          Add Asset
+          Adauga {assetSingular}
         </button>
       </div>
 
@@ -107,7 +109,7 @@ const Assets = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="Search assets by name, identifier, manufacturer..."
+            placeholder={`Cauta ${assetPlural.toLowerCase()} dupa nume, identificator, producator...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
@@ -118,77 +120,54 @@ const Assets = () => {
       {/* Create/Edit Form */}
       {(isCreating || editingAsset) && (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">{editingAsset ? 'Edit Asset' : 'Create New Asset'}</h2>
+          <h2 className="text-lg font-semibold mb-4">{editingAsset ? `Editeaza ${assetSingular}` : `Adauga ${assetSingular} nou`}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nume *</label>
               <input
                 type="text"
                 required
                 value={assetForm.name}
                 onChange={(e) => setAssetForm({ ...assetForm, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
-                placeholder="2019 Toyota Camry"
+                placeholder="ex: 2019 Toyota Camry"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Identifier</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{assetIdentifier}</label>
               <input
                 type="text"
                 value={assetForm.identifier}
                 onChange={(e) => setAssetForm({ ...assetForm, identifier: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
-                placeholder="VIN, Serial Number, Plate Number"
+                placeholder="VIN, Numar serie, Nr. inmatriculare"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tip *</label>
               <select
                 required
                 value={assetForm.type}
-                onChange={(e) => setAssetForm({ ...assetForm, type: e.target.value })}
+                onChange={(e) => setAssetForm({ ...assetForm, type: e.target.value, metadata: {} })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
               >
-                <option value="vehicle">Vehicle</option>
-                <option value="appliance">Appliance</option>
-                <option value="hvac_unit">HVAC Unit</option>
-                <option value="equipment">Equipment</option>
-                <option value="other">Other</option>
+                {getAvailableAssetTypes().map((type) => (
+                  <option key={type.key} value={type.key}>
+                    {type.name}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer</label>
-              <input
-                type="text"
-                value={assetForm.manufacturer}
-                onChange={(e) => setAssetForm({ ...assetForm, manufacturer: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
-                placeholder="Toyota, Bosch, etc."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-              <input
-                type="text"
-                value={assetForm.model}
-                onChange={(e) => setAssetForm({ ...assetForm, model: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
-                placeholder="Camry, Series 5, etc."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-              <input
-                type="number"
-                value={assetForm.year}
-                onChange={(e) => setAssetForm({ ...assetForm, year: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
-                placeholder="2019"
+            {/* Dynamic Asset Fields */}
+            <div className="md:col-span-2">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Detalii specifice</h3>
+              <DynamicAssetFields
+                assetType={assetForm.type}
+                formData={assetForm}
+                onChange={setAssetForm}
               />
             </div>
 
@@ -198,18 +177,18 @@ const Assets = () => {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition disabled:opacity-50"
               >
-                {editingAsset ? 'Update Asset' : 'Create Asset'}
+                {editingAsset ? `Actualizeaza ${assetSingular}` : `Adauga ${assetSingular}`}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setIsCreating(false);
                   setEditingAsset(null);
-                  setAssetForm({ name: '', identifier: '', type: 'vehicle', manufacturer: '', model: '', year: '', clientId: '' });
+                  setAssetForm({ name: '', identifier: '', type: 'vehicle', clientId: '', metadata: {} });
                 }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
               >
-                Cancel
+                Anuleaza
               </button>
             </div>
           </form>
@@ -225,20 +204,20 @@ const Assets = () => {
         ) : assets.length === 0 ? (
           <div className="text-center py-12">
             <Package className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <p className="text-gray-600">{search ? 'No assets found' : 'No assets yet. Create your first asset!'}</p>
+            <p className="text-gray-600">{search ? `Nu s-au gasit ${assetPlural.toLowerCase()}` : `Nu exista ${assetPlural.toLowerCase()} inca. Adauga primul ${assetSingular.toLowerCase()}!`}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Identifier</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Manufacturer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nume</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{assetIdentifier}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tip</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producator</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Model</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actiuni</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -269,10 +248,8 @@ const Assets = () => {
                               name: asset.name,
                               identifier: asset.identifier || '',
                               type: asset.type || 'vehicle',
-                              manufacturer: asset.manufacturer || '',
-                              model: asset.model || '',
-                              year: asset.year || '',
                               clientId: asset.clientId || '',
+                              metadata: asset.metadata || {},
                             });
                           }}
                           className="text-blue-600 hover:text-blue-800"
@@ -281,7 +258,7 @@ const Assets = () => {
                         </button>
                         <button
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this asset?')) {
+                            if (window.confirm(`Esti sigur ca vrei sa stergi acest ${assetSingular.toLowerCase()}?`)) {
                               deleteMutation.mutate(asset.id);
                             }
                           }}

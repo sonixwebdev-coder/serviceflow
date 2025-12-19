@@ -91,7 +91,7 @@ router.post(
   authorize({ roles: ['admin'] }),
   validate(createUserSchema),
   asyncHandler(async (req, res) => {
-    const user = await createUser(req.tenantPrisma, req.body);
+    const user = await createUser(req.tenantPrisma, req.body, req.user.organizationId);
     return created(res, user, 'User created successfully');
   })
 );
@@ -102,7 +102,7 @@ router.put(
   authorize({ roles: ['admin', 'manager'] }),
   validate(updateUserSchema),
   asyncHandler(async (req, res) => {
-    const user = await updateUser(req.tenantPrisma, req.params.userId, req.body);
+    const user = await updateUser(req.tenantPrisma, req.params.userId, req.body, req.user.organizationId);
     return ok(res, user, 'User updated successfully');
   })
 );

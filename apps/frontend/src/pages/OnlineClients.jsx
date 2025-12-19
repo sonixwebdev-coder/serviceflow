@@ -24,6 +24,7 @@ import ExportButton from '../components/ExportButton.jsx';
 import API from '../utils/api.js';
 import useToast from '../context/useToast.js';
 import { getErrorMessage } from '../utils/errorUtils.js';
+import { useTerminology } from '../context/TerminologyContext';
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -87,6 +88,7 @@ const OnlineClients = () => {
   });
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { assetSingular } = useTerminology();
 
   // Fetch online clients
   const { data, isLoading } = useClients(
@@ -135,11 +137,11 @@ const OnlineClients = () => {
       queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
       setEditingVehicleId(null);
       setVehicleForm({});
-      showToast({ title: 'Vehicul actualizat cu succes', type: 'success' });
+      showToast({ title: `${assetSingular} actualizat cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Eroare la actualizare vehicul',
+        title: `Eroare la actualizare ${assetSingular.toLowerCase()}`,
         description: getErrorMessage(error),
         type: 'error'
       });
@@ -155,11 +157,11 @@ const OnlineClients = () => {
       queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
       setIsAddingVehicle(false);
       setVehicleForm({});
-      showToast({ title: 'Vehicul adaugat cu succes', type: 'success' });
+      showToast({ title: `${assetSingular} adaugat cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Eroare la adaugare vehicul',
+        title: `Eroare la adaugare ${assetSingular.toLowerCase()}`,
         description: getErrorMessage(error),
         type: 'error'
       });
@@ -172,11 +174,11 @@ const OnlineClients = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
-      showToast({ title: 'Vehicul sters cu succes', type: 'success' });
+      showToast({ title: `${assetSingular} sters cu succes`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Eroare la stergere vehicul',
+        title: `Eroare la stergere ${assetSingular.toLowerCase()}`,
         description: getErrorMessage(error),
         type: 'error'
       });

@@ -153,11 +153,15 @@ const getPaymentsByInvoice = async (prisma, invoiceId) => {
  * @returns {Promise<number>} Total paid amount
  */
 const calculateTotalPaid = async (prisma, appointmentId, options = {}) => {
-  const { tx } = options;
+  const { tx, organizationId } = options;
   const client = tx || prisma;
 
+  const where = organizationId
+    ? { appointmentId, organizationId }
+    : { appointmentId };
+
   const result = await client.payment.aggregate({
-    where: { appointmentId },
+    where,
     _sum: {
       amount: true,
     },
@@ -205,7 +209,7 @@ const updateAppointmentPaymentStatus = async (prisma, appointmentId, options = {
   }
 
   // Calculate total paid
-  const totalPaid = await calculateTotalPaid(appointmentId, { tx: client });
+  const totalPaid = await calculateTotalPaid(prisma, appointmentId, { tx: client });
 
   // Calculate remaining balance
   const remainingBalance = Math.round((total - totalPaid) * 100) / 100;
@@ -263,7 +267,7 @@ const updateInvoicePaymentStatus = async (prisma, invoiceId, options = {}) => {
   }
 
   // Calculate total paid for this invoice's appointment
-  const totalPaid = await calculateTotalPaid(invoice.appointmentId, { tx: client });
+  const totalPaid = await calculateTotalPaid(prisma, invoice.appointmentId, { tx: client });
 
   // Calculate remaining balance
   const total = Number(invoice.total);

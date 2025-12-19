@@ -91,17 +91,16 @@ const mapServiceOrder = (order) => {
                         registrationNumber: order.appointment.client.registrationNumber,
                     }
                     : null,
-                vehicle: order.appointment.vehicle
+                asset: order.appointment.asset
                     ? {
-                        id: order.appointment.vehicle.id,
-                        make: order.appointment.vehicle.make,
-                        model: order.appointment.vehicle.model,
-                        year: order.appointment.vehicle.year,
-                        plateNumber: order.appointment.vehicle.plateNumber,
-                        carId: order.appointment.vehicle.carId,
-                        odometerKm: order.appointment.vehicle.odometerKm,
-                        vin: order.appointment.vehicle.vin,
-                        color: order.appointment.vehicle.color,
+                        id: order.appointment.asset.id,
+                        name: order.appointment.asset.name,
+                        manufacturer: order.appointment.asset.manufacturer,
+                        model: order.appointment.asset.model,
+                        year: order.appointment.asset.year,
+                        identifier: order.appointment.asset.identifier,
+                        type: order.appointment.asset.type,
+                        metadata: order.appointment.asset.metadata,
                     }
                     : null,
             }
@@ -116,7 +115,7 @@ const includeConfig = {
     appointment: {
         include: {
             client: true,
-            vehicle: true,
+            asset: true,
             createdBy: true,
             assignees: {
                 include: {
@@ -135,8 +134,9 @@ const includeConfig = {
     },
 };
 
-const generateOrderNumber = async (client) => {
-    const count = await client.serviceOrder.count();
+const generateOrderNumber = async (client, organizationId) => {
+    const where = organizationId ? { organizationId } : {};
+    const count = await client.serviceOrder.count({ where });
     const sequence = String(count + 1).padStart(5, '0');
     return `CS-${sequence}`;
 };
@@ -162,13 +162,13 @@ const buildDownloadFilename = (order) => {
     }
     clientName = sanitizeFilename(clientName, 'Client');
 
-    // Extract vehicle plate number (primary vehicle identifier)
-    let plateNumber = 'NoPlate';
-    if (order.appointment?.vehicle?.plateNumber) {
-        plateNumber = sanitizeFilename(order.appointment.vehicle.plateNumber, 'NoPlate');
+    // Extract asset identifier (plate number, serial number, etc.)
+    let assetIdentifier = 'NoAsset';
+    if (order.appointment?.asset?.identifier) {
+        assetIdentifier = sanitizeFilename(order.appointment.asset.identifier, 'NoAsset');
     }
 
-    return `${orderNum}_${clientName}_${plateNumber}.pdf`;
+    return `${orderNum}_${clientName}_${assetIdentifier}.pdf`;
 };
 
 const buildRelativePdfPath = (appointmentId, orderNumber, orderId) => {
@@ -415,11 +415,16 @@ const generateServiceOrderPdf = async (prisma, appointmentId, {refresh = false} 
 };
 
 const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) => {
-    const {tx, skipBroadcast = false, onResult} = options;
+    const {tx, skipBroadcast = false, onResult, organizationId} = options;
     const client = tx || prisma;
 
-    const appointment = await client.appointment.findUnique({
-        where: {id: appointmentId},
+    // Build where clause with organizationId if provided (needed for transaction queries)
+    const where = organizationId
+        ? { id: appointmentId, organizationId }
+        : { id: appointmentId };
+
+    const appointment = await client.appointment.findFirst({
+        where,
         include: {
             assignees: true,
         },
@@ -434,7 +439,7 @@ const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) 
         include: {lineItems: true},
     });
 
-    const orderNumber = existing?.orderNumber || (await generateOrderNumber(client));
+    const orderNumber = existing?.orderNumber || (await generateOrderNumber(client, appointment.organizationId));
     const relativePdfPath = buildRelativePdfPath(appointmentId, orderNumber, existing?.id);
     const {status, notes, metadata, totals, sanitizedItems} = sanitizePayload(payload, existing);
 
@@ -442,6 +447,7 @@ const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) 
         where: {appointmentId},
         create: {
             appointmentId,
+            organizationId: appointment.organizationId,
             orderNumber,
             status,
             subtotal: totals.subtotal,
@@ -521,10 +527,17 @@ const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) 
         });
 
         // Refetch the order to get updated appointment payment data
-        orderWithLatestAppointment = await client.serviceOrder.findUnique({
-            where: {appointmentId},
+        const refetchWhere = organizationId
+            ? { appointmentId, organizationId }
+            : { appointmentId };
+        orderWithLatestAppointment = await client.serviceOrder.findFirst({
+            where: refetchWhere,
             include: includeConfig,
         });
+    }
+
+    if (!orderWithLatestAppointment) {
+        throw new AppError('Failed to retrieve service order after creation', 500);
     }
 
     const mapped = mapServiceOrder(orderWithLatestAppointment);

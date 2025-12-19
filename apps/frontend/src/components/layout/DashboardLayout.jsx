@@ -18,7 +18,10 @@ import {
   User,
   FileCheck,
   Globe,
-  CheckSquare
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  Briefcase
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { USER_ROLES } from '../../utils/constants';
@@ -40,6 +43,11 @@ const DashboardLayout = ({ children }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [markingReadIds, setMarkingReadIds] = useState(new Set());
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    crm: true,
+    echipa: false,
+    setari: false,
+  });
 
   const { user, logout, hasRole } = useAuth();
   const { showToast } = useToast();
@@ -58,25 +66,84 @@ const DashboardLayout = ({ children }) => {
   );
   const unreadCount = unreadNotifications.length;
 
-  const navigation = [
-    { name: 'Tablou de bord', href: '/dashboard', icon: LayoutDashboard, roles: [] },
-    { name: 'Task-uri', href: '/tasks', icon: ClipboardList, roles: [] },
-    { name: 'Todo-uri Personale', href: '/personal-todos', icon: CheckSquare, roles: [] },
-    { name: 'CRM Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },
-    { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
-    { name: 'CRM Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
-    { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
-    { name: 'ANAF E-Factura', href: '/anaf', icon: FileCheck, roles: [USER_ROLES.ADMIN] },
-    { name: 'Cereri concediu', href: '/leaves', icon: Umbrella, roles: [] },
-    { name: 'Pontaj', href: '/time-tracking', icon: Clock, roles: [] },
-    { name: 'Angajati', href: '/employees', icon: Users, roles: [USER_ROLES.ADMIN] },
-    { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
-  ];
+  const navigation = useMemo(() => [
+    {
+      name: 'Tablou de bord',
+      href: '/dashboard',
+      icon: LayoutDashboard,
+      roles: []
+    },
+    {
+      name: 'CRM',
+      key: 'crm',
+      icon: Briefcase,
+      roles: [],
+      children: [
+        { name: 'Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },
+        { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
+        { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
+        { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
+      ]
+    },
+    {
+      name: 'Echipa & Pontaj',
+      key: 'echipa',
+      icon: Users,
+      roles: [],
+      children: [
+        { name: 'Task-uri', href: '/tasks', icon: ClipboardList, roles: [] },
+        { name: 'Todo-uri Personale', href: '/personal-todos', icon: CheckSquare, roles: [] },
+        { name: 'Pontaj', href: '/time-tracking', icon: Clock, roles: [] },
+        { name: 'Cereri concediu', href: '/leaves', icon: Umbrella, roles: [] },
+        { name: 'Angajati', href: '/employees', icon: Users, roles: [USER_ROLES.ADMIN] },
+      ]
+    },
+    {
+      name: 'ANAF E-Factura',
+      href: '/anaf',
+      icon: FileCheck,
+      roles: [USER_ROLES.ADMIN]
+    },
+    {
+      name: 'Setari',
+      key: 'setari',
+      icon: Settings,
+      roles: [USER_ROLES.ADMIN],
+      children: [
+        { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
+        { name: 'Setari organizatie', href: '/settings/organization', icon: Settings, roles: [USER_ROLES.ADMIN] },
+      ]
+    },
+  ], []);
 
   const filteredNavigation = navigation.filter((item) => {
     if (item.roles.length === 0) return true;
     return hasRole(...item.roles);
   });
+
+  // Auto-expand section containing active page (only on route change)
+  useEffect(() => {
+    let activeSectionKey = null;
+
+    // Find which section contains the active page
+    navigation.forEach((item) => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(child => location.pathname === child.href);
+        if (hasActiveChild) {
+          activeSectionKey = item.key;
+        }
+      }
+    });
+
+    // If an active section was found, expand only that one (accordion behavior)
+    if (activeSectionKey) {
+      setExpandedSections({
+        crm: activeSectionKey === 'crm',
+        echipa: activeSectionKey === 'echipa',
+        setari: activeSectionKey === 'setari',
+      });
+    }
+  }, [location.pathname, navigation]);
 
   useEffect(() => {
     if (notificationsOpen) {
@@ -129,6 +196,25 @@ const DashboardLayout = ({ children }) => {
     }
   };
 
+  const toggleSection = (key) => {
+    setExpandedSections((prev) => {
+      const isCurrentlyExpanded = prev[key];
+
+      // If clicking to expand, close all other sections (accordion behavior)
+      if (!isCurrentlyExpanded) {
+        const newState = { crm: false, echipa: false, setari: false };
+        newState[key] = true;
+        return newState;
+      }
+
+      // If clicking to collapse, just collapse this one
+      return {
+        ...prev,
+        [key]: false,
+      };
+    });
+  };
+
   const renderSidebarContent = (onNavigate) => (
     <div className="flex h-full flex-col text-white">
       <div className="flex h-16 items-center justify-between px-6">
@@ -141,17 +227,69 @@ const DashboardLayout = ({ children }) => {
           <X size={22} />
         </button>
       </div>
-      <nav className="flex-1 space-y-1 px-4 py-4">
+      <nav className="flex-1 space-y-1 px-4 py-4 overflow-y-auto">
         {filteredNavigation.map((item) => {
           const Icon = item.icon;
+
+          // Item with children (collapsible section)
+          if (item.children) {
+            const isExpanded = expandedSections[item.key];
+            const hasActiveChild = item.children.some(child => location.pathname === child.href);
+
+            return (
+              <div key={item.name}>
+                <button
+                  type="button"
+                  onClick={() => toggleSection(item.key)}
+                  className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                    hasActiveChild
+                      ? 'bg-gray-700 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon size={20} />
+                    <span>{item.name}</span>
+                  </div>
+                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </button>
+
+                {isExpanded && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {item.children
+                      .filter(child => child.roles.length === 0 || hasRole(...child.roles))
+                      .map((child) => {
+                        const ChildIcon = child.icon;
+                        const isActive = location.pathname === child.href;
+                        return (
+                          <Link
+                            key={child.name}
+                            to={child.href}
+                            onClick={() => onNavigate?.()}
+                            className={`flex items-center gap-3 rounded-lg px-4 py-2 text-sm transition-colors ${
+                              isActive
+                                ? 'bg-viperx-primary text-white'
+                                : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                            }`}
+                          >
+                            <ChildIcon size={18} />
+                            <span>{child.name}</span>
+                          </Link>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Regular item (no children)
           const isActive = location.pathname === item.href;
           return (
             <Link
               key={item.name}
               to={item.href}
-              onClick={() => {
-                onNavigate?.();
-              }}
+              onClick={() => onNavigate?.()}
               className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-viperx-primary text-white'

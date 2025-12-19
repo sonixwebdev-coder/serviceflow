@@ -69,6 +69,23 @@ const vehicleSchema = z.object({
   notes: z.string().optional(),
 }).optional();
 
+// Generic asset schema for the new asset model
+const assetSchema = z.object({
+  id: z.string().optional(),
+  assetType: z.string().optional(), // vehicle, appliance, hvac_unit, equipment, other
+  name: z.string().optional(),
+  manufacturer: z.string().optional(), // Replaces 'make' for vehicles, 'brand' for others
+  model: z.string().optional(),
+  year: z.number({ invalid_type_error: 'Anul trebuie sa fie un numar' })
+    .int('Anul trebuie sa fie un numar intreg')
+    .min(1900, 'Anul trebuie sa fie dupa 1900')
+    .max(2100, 'Anul trebuie sa fie inainte de 2100')
+    .optional(),
+  identifier: z.string().optional(), // Replaces 'plateNumber' for vehicles, 'serialNumber' for others
+  metadata: z.record(z.any()).optional(), // Flexible metadata for type-specific fields
+  notes: z.string().optional(),
+}).optional();
+
 const baseAppointmentSchema = z.object({
   title: z.string().min(1, 'Titlul programarii este obligatoriu'),
   description: z.string().optional(),
@@ -78,6 +95,7 @@ const baseAppointmentSchema = z.object({
   location: z.string().optional(),
   clientId: z.string().min(1, 'ID-ul clientului este obligatoriu').optional(),
   vehicleId: z.string().min(1, 'ID-ul vehiculului este obligatoriu').optional(),
+  assetId: z.string().optional(),
   assigneeIds: z.array(z.string().min(1, 'ID-ul tehnicianului este invalid'), {
     invalid_type_error: 'Lista de tehnicieni trebuie sa fie un array'
   }).optional(),
@@ -87,6 +105,7 @@ const baseAppointmentSchema = z.object({
     .optional(),
   client: clientSchema,
   vehicle: vehicleSchema,
+  asset: assetSchema,
   serviceOrder: serviceOrderSchema,
 });
 

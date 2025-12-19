@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
+import { TerminologyProvider } from './context/TerminologyContext.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -24,14 +25,16 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import { USER_ROLES } from './utils/constants';
 import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
 import CompanySettings from './pages/CompanySettings.jsx';
+import OrganizationSettings from './pages/OrganizationSettings.jsx';
 
 function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
-          <RealtimeBridge />
-          <Routes>
+          <TerminologyProvider>
+            <RealtimeBridge />
+            <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -195,6 +198,17 @@ function App() {
           />
 
           <Route
+            path="/settings/organization"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <OrganizationSettings />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/anaf"
             element={
               <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
@@ -210,7 +224,8 @@ function App() {
 
           {/* 404 */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+            </Routes>
+          </TerminologyProvider>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>

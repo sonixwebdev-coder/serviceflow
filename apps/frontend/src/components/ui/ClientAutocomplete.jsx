@@ -1,20 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, User, Phone, Mail, Car, X, Loader2, CreditCard } from 'lucide-react';
+import { Search, User, Phone, Mail, Package, X, Loader2, CreditCard } from 'lucide-react';
 import { useClientSearch } from '../../hooks/useClients';
+import { useTerminology } from '../../context/TerminologyContext';
 
 /**
  * ClientAutocomplete - Smart client search component with multi-field search
  *
  * Features:
- * - Searches across: firstName, lastName, phone, email, plate number, vehicle make
+ * - Searches across: firstName, lastName, phone, email, asset identifier, asset name
  * - Debounced search (300ms)
  * - Keyboard navigation (Arrow keys, Enter, Escape)
- * - Auto-fills client and vehicle data on selection
+ * - Auto-fills client and asset data on selection
  * - Shows which field matched
- * - Displays client vehicles with recent first
+ * - Displays client assets with recent first
  *
  * @param {Object} props
- * @param {Function} props.onClientSelect - Callback when client is selected (client, vehicle)
+ * @param {Function} props.onClientSelect - Callback when client is selected (client, asset)
  * @param {string} props.placeholder - Input placeholder text
  * @param {string} props.className - Additional CSS classes
  */
@@ -28,6 +29,7 @@ const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", c
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const { assetPlural } = useTerminology();
 
   // Debounced search query - updates 300ms after user stops typing
   useEffect(() => {
@@ -96,14 +98,14 @@ const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", c
     setSearchQuery('');
     setIsOpen(false);
 
-    // Get most recent vehicle
-    const mostRecentVehicle = client.vehicles && client.vehicles.length > 0
-      ? client.vehicles[0]
+    // Get most recent asset
+    const mostRecentAsset = client.assets && client.assets.length > 0
+      ? client.assets[0]
       : null;
 
-    // Callback with client and most recent vehicle
+    // Callback with client and most recent asset
     if (onClientSelect) {
-      onClientSelect(client, mostRecentVehicle);
+      onClientSelect(client, mostRecentAsset);
     }
   }, [onClientSelect]);
 
@@ -276,21 +278,25 @@ const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", c
                     )}
                   </div>
 
-                  {/* Vehicles */}
-                  {client.vehicles && client.vehicles.length > 0 && (
+                  {/* Assets */}
+                  {client.assets && client.assets.length > 0 && (
                     <div className="ml-6 space-y-1">
-                      {client.vehicles.slice(0, 2).map((vehicle) => (
-                        <div key={vehicle.id} className="flex items-center gap-1 text-xs text-gray-600">
-                          <Car className="h-3 w-3" />
-                          <span className="font-medium">{vehicle.plateNumber || 'Fara nr'}</span>
-                          <span>-</span>
-                          <span>{vehicle.make} {vehicle.model}</span>
-                          {vehicle.year && <span className="text-gray-400">({vehicle.year})</span>}
+                      {client.assets.slice(0, 2).map((asset) => (
+                        <div key={asset.id} className="flex items-center gap-1 text-xs text-gray-600">
+                          <Package className="h-3 w-3" />
+                          <span className="font-medium">{asset.identifier || asset.name || 'Fara identificator'}</span>
+                          {asset.manufacturer && (
+                            <>
+                              <span>-</span>
+                              <span>{asset.manufacturer} {asset.model}</span>
+                            </>
+                          )}
+                          {asset.year && <span className="text-gray-400">({asset.year})</span>}
                         </div>
                       ))}
-                      {client.vehicles.length > 2 && (
+                      {client.assets.length > 2 && (
                         <p className="text-xs text-gray-400 ml-4">
-                          + {client.vehicles.length - 2} vehicule
+                          + {client.assets.length - 2} {assetPlural.toLowerCase()}
                         </p>
                       )}
                     </div>

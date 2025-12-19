@@ -97,17 +97,16 @@ const optimizedAppointmentIncludes = {
       notes: true,
     },
   },
-  vehicle: {
+  asset: {
     select: {
       id: true,
-      make: true,
+      name: true,
+      type: true,
+      identifier: true,
+      manufacturer: true,
       model: true,
       year: true,
-      plateNumber: true,
-      vin: true,
-      odometerKm: true,
-      color: true,
-      notes: true,
+      metadata: true,
     },
   },
   assignees: {
@@ -129,12 +128,12 @@ const minimalAppointmentIncludes = {
       companyName: true,
     },
   },
-  vehicle: {
+  asset: {
     select: {
       id: true,
-      make: true,
-      model: true,
-      plateNumber: true,
+      name: true,
+      type: true,
+      identifier: true,
     },
   },
   assignees: {

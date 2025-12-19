@@ -835,22 +835,26 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
     return Math.max(80, lines * 15 + 30);
   };
 
-  const calculateVehicleBoxHeight = (vehicle) => {
+  const calculateAssetBoxHeight = (asset) => {
     let lines = 2; // Header + base spacing
-    if (!vehicle) return 80;
+    if (!asset) return 80;
 
-    if (vehicle.make || vehicle.model) lines += 1;
-    if (vehicle.plateNumber) lines += 1;
-    if (vehicle.vin) lines += 1;
-    if (vehicle.odometerKm) lines += 1;
-    if (vehicle.year || vehicle.color) lines += 1;
+    if (asset.name || (asset.manufacturer && asset.model)) lines += 1;
+    if (asset.identifier) lines += 1;
+    if (asset.type) lines += 1;
+    if (asset.year) lines += 1;
+    // Count metadata fields
+    if (asset.metadata) {
+      const metadataCount = Object.keys(asset.metadata).length;
+      lines += Math.min(metadataCount, 3); // Limit to 3 metadata fields
+    }
 
     return Math.max(80, lines * 15 + 30);
   };
 
   const clientBoxHeight = calculateClientBoxHeight(serviceOrder.appointment?.client);
-  const vehicleBoxHeight = calculateVehicleBoxHeight(serviceOrder.appointment?.vehicle);
-  const twoColumnBoxHeight = Math.max(clientBoxHeight, vehicleBoxHeight);
+  const assetBoxHeight = calculateAssetBoxHeight(serviceOrder.appointment?.asset);
+  const twoColumnBoxHeight = Math.max(clientBoxHeight, assetBoxHeight);
 
   // Ensure space for the boxes
   ensureSpace(context, twoColumnBoxHeight + 20, pdfDoc);
@@ -960,8 +964,8 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
     }
   }
 
-  // RIGHT BOX: INFORMATII VEHICUL
-  context.page.drawText(sanitizeForPdf('INFORMATII VEHICUL'), {
+  // RIGHT BOX: INFORMATII ACTIV
+  context.page.drawText(sanitizeForPdf('INFORMATII ACTIV'), {
     x: rightColX + 10,
     y: boxStartY - 18,
     size: 11,
@@ -970,11 +974,13 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
   });
 
   let rightY = boxStartY - 38;
-  if (serviceOrder.appointment?.vehicle) {
-    const vehicle = serviceOrder.appointment.vehicle;
-    const makeModel = `${vehicle.make || ''} ${vehicle.model || ''}`.trim();
-    if (makeModel) {
-      context.page.drawText(sanitizeForPdf(makeModel), {
+  if (serviceOrder.appointment?.asset) {
+    const asset = serviceOrder.appointment.asset;
+
+    // Display name or manufacturer/model
+    const assetName = asset.name || `${asset.manufacturer || ''} ${asset.model || ''}`.trim();
+    if (assetName) {
+      context.page.drawText(sanitizeForPdf(assetName), {
         x: rightColX + 10,
         y: rightY,
         size: 10,
@@ -984,8 +990,9 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
       rightY -= 14;
     }
 
-    if (vehicle.plateNumber) {
-      context.page.drawText(sanitizeForPdf(`Nr: ${vehicle.plateNumber}`), {
+    // Display identifier (plate number, serial number, etc.)
+    if (asset.identifier) {
+      context.page.drawText(sanitizeForPdf(`ID: ${asset.identifier}`), {
         x: rightColX + 10,
         y: rightY,
         size: 9,
@@ -995,8 +1002,16 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
       rightY -= 13;
     }
 
-    if (vehicle.vin) {
-      context.page.drawText(sanitizeForPdf(`VIN: ${vehicle.vin}`), {
+    // Display type
+    if (asset.type) {
+      const typeLabels = {
+        vehicle: 'Vehicul',
+        appliance: 'Electrocasnic',
+        hvac_unit: 'HVAC',
+        equipment: 'Echipament',
+        other: 'Altele'
+      };
+      context.page.drawText(sanitizeForPdf(`Tip: ${typeLabels[asset.type] || asset.type}`), {
         x: rightColX + 10,
         y: rightY,
         size: 9,
@@ -1006,20 +1021,9 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
       rightY -= 13;
     }
 
-    if (vehicle.odometerKm) {
-      context.page.drawText(sanitizeForPdf(`Kilometraj: ${vehicle.odometerKm} km`), {
-        x: rightColX + 10,
-        y: rightY,
-        size: 9,
-        font: fonts.regular,
-        color: rgb(0.3, 0.3, 0.3),
-      });
-      rightY -= 13;
-    }
-
-    const yearColor = vehicle.year && vehicle.color ? `${vehicle.year} | ${vehicle.color}` : vehicle.year || vehicle.color;
-    if (yearColor) {
-      context.page.drawText(sanitizeForPdf(yearColor), {
+    // Display year
+    if (asset.year) {
+      context.page.drawText(sanitizeForPdf(`An: ${asset.year}`), {
         x: rightColX + 10,
         y: rightY,
         size: 9,
@@ -1744,11 +1748,11 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
     });
     context.cursor -= 16;
 
-    if (invoice.appointment.vehicle) {
-      const vehicle = invoice.appointment.vehicle;
-      const vehicleText = `${vehicle.make || ''} ${vehicle.model || ''} ${vehicle.plateNumber ? `(${vehicle.plateNumber})` : ''}`.trim();
-      if (vehicleText) {
-        context.page.drawText(sanitizeForPdf(vehicleText), {
+    if (invoice.appointment.asset) {
+      const asset = invoice.appointment.asset;
+      const assetText = asset.name || `${asset.manufacturer || ''} ${asset.model || ''} ${asset.identifier ? `(${asset.identifier})` : ''}`.trim();
+      if (assetText) {
+        context.page.drawText(sanitizeForPdf(assetText), {
           x: context.margin,
           y: context.cursor,
           size: 9,

@@ -3,6 +3,7 @@ import { Search, Plus, Edit2, Trash2, Boxes } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchResources, createResource, updateResource, deleteResource } from '../services/resourceService';
 import useToast from '../context/useToast';
+import { useTerminology } from '../context/TerminologyContext';
 
 const Resources = () => {
   const [search, setSearch] = useState('');
@@ -18,6 +19,7 @@ const Resources = () => {
 
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { resourceSingular, resourcePlural } = useTerminology();
 
   const { data, isLoading } = useQuery({
     queryKey: ['resources', { search }],
@@ -30,11 +32,11 @@ const Resources = () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setIsCreating(false);
       setResourceForm({ name: '', type: 'workspace', description: '', capacity: '1', isActive: true });
-      showToast({ title: 'Resource created successfully', type: 'success' });
+      showToast({ title: `${resourceSingular} created successfully`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Error creating resource',
+        title: `Error creating ${resourceSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
@@ -46,11 +48,11 @@ const Resources = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setEditingResource(null);
-      showToast({ title: 'Resource updated successfully', type: 'success' });
+      showToast({ title: `${resourceSingular} updated successfully`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Error updating resource',
+        title: `Error updating ${resourceSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
@@ -61,11 +63,11 @@ const Resources = () => {
     mutationFn: deleteResource,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
-      showToast({ title: 'Resource deleted successfully', type: 'success' });
+      showToast({ title: `${resourceSingular} deleted successfully`, type: 'success' });
     },
     onError: (error) => {
       showToast({
-        title: 'Error deleting resource',
+        title: `Error deleting ${resourceSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
         type: 'error'
       });
@@ -87,15 +89,15 @@ const Resources = () => {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Resources</h1>
-          <p className="text-gray-600 mt-1">Manage scheduling resources (workspaces, service bays, equipment)</p>
+          <h1 className="text-3xl font-bold text-gray-900">{resourcePlural}</h1>
+          <p className="text-gray-600 mt-1">Manage scheduling {resourcePlural.toLowerCase()} (workspaces, service bays, equipment)</p>
         </div>
         <button
           onClick={() => setIsCreating(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition"
         >
           <Plus size={20} />
-          Add Resource
+          Add {resourceSingular}
         </button>
       </div>
 
@@ -105,7 +107,7 @@ const Resources = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="Search resources by name, type..."
+            placeholder={`Search ${resourcePlural.toLowerCase()} by name, type...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
@@ -116,7 +118,7 @@ const Resources = () => {
       {/* Create/Edit Form */}
       {(isCreating || editingResource) && (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">{editingResource ? 'Edit Resource' : 'Create New Resource'}</h2>
+          <h2 className="text-lg font-semibold mb-4">{editingResource ? `Edit ${resourceSingular}` : `Create New ${resourceSingular}`}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
@@ -188,7 +190,7 @@ const Resources = () => {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition disabled:opacity-50"
               >
-                {editingResource ? 'Update Resource' : 'Create Resource'}
+                {editingResource ? `Update ${resourceSingular}` : `Create ${resourceSingular}`}
               </button>
               <button
                 type="button"
@@ -215,7 +217,7 @@ const Resources = () => {
         ) : resources.length === 0 ? (
           <div className="text-center py-12">
             <Boxes className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <p className="text-gray-600">{search ? 'No resources found' : 'No resources yet. Create your first resource!'}</p>
+            <p className="text-gray-600">{search ? `No ${resourcePlural.toLowerCase()} found` : `No ${resourcePlural.toLowerCase()} yet. Create your first ${resourceSingular.toLowerCase()}!`}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -269,7 +271,7 @@ const Resources = () => {
                         </button>
                         <button
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this resource?')) {
+                            if (window.confirm(`Are you sure you want to delete this ${resourceSingular.toLowerCase()}?`)) {
                               deleteMutation.mutate(resource.id);
                             }
                           }}

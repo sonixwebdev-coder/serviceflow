@@ -7,6 +7,7 @@ const { sendAppointmentNotification } = require('./pushNotificationService');
 const { optimizedAppointmentIncludes, minimalAppointmentIncludes } = require('../utils/optimizedIncludes');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
 const { createPayment } = require('./paymentService');
+const { resolveAsset } = require('./assetService');
 const logger = require('../utils/logger');
 
 const STATUS_MAP = new Map([
@@ -176,20 +177,22 @@ const ensureRampAvailability = async (tx, scheduledStart, scheduledEnd, excludeA
   }
 };
 
-const resolveClient = async (tx, clientPayload, fallbackId) => {
+const resolveClient = async (tx, clientPayload, fallbackId, organizationId) => {
   if (!clientPayload && !fallbackId) return null;
 
   let client = null;
 
   if (fallbackId) {
-    client = await tx.client.findUnique({ where: { id: fallbackId } });
+    const where = organizationId ? { id: fallbackId, organizationId } : { id: fallbackId };
+    client = await tx.client.findFirst({ where });
     if (!client) {
       throw new AppError('Clientul nu a fost gasit. Va rugam selectati un client valid sau creati unul nou.', 404);
     }
   }
 
   if (clientPayload?.id && (!client || client.id !== clientPayload.id)) {
-    client = await tx.client.findUnique({ where: { id: clientPayload.id } });
+    const where = organizationId ? { id: clientPayload.id, organizationId } : { id: clientPayload.id };
+    client = await tx.client.findFirst({ where });
     if (!client) {
       throw new AppError('Clientul specificat nu a fost gasit. Va rugam verificati datele clientului.', 404);
     }
@@ -200,17 +203,29 @@ const resolveClient = async (tx, clientPayload, fallbackId) => {
   if (!client && clientPayload) {
     if (type === 'SRL') {
       if (clientPayload.vatNumber) {
-        client = await tx.client.findFirst({ where: { vatNumber: clientPayload.vatNumber } });
+        const where = organizationId
+          ? { vatNumber: clientPayload.vatNumber, organizationId }
+          : { vatNumber: clientPayload.vatNumber };
+        client = await tx.client.findFirst({ where });
       }
       if (!client && clientPayload.registrationNumber) {
-        client = await tx.client.findFirst({ where: { registrationNumber: clientPayload.registrationNumber } });
+        const where = organizationId
+          ? { registrationNumber: clientPayload.registrationNumber, organizationId }
+          : { registrationNumber: clientPayload.registrationNumber };
+        client = await tx.client.findFirst({ where });
       }
     } else {
       if (clientPayload.email) {
-        client = await tx.client.findFirst({ where: { email: clientPayload.email } });
+        const where = organizationId
+          ? { email: clientPayload.email, organizationId }
+          : { email: clientPayload.email };
+        client = await tx.client.findFirst({ where });
       }
       if (!client && clientPayload.phone) {
-        client = await tx.client.findFirst({ where: { phone: clientPayload.phone } });
+        const where = organizationId
+          ? { phone: clientPayload.phone, organizationId }
+          : { phone: clientPayload.phone };
+        client = await tx.client.findFirst({ where });
       }
     }
   }
@@ -242,70 +257,14 @@ const resolveClient = async (tx, clientPayload, fallbackId) => {
     throw new AppError('Numarul de telefon al clientului este obligatoriu.', 400);
   }
 
+  if (organizationId) {
+    data.organizationId = organizationId;
+  }
+
   return tx.client.create({ data });
 };
 
-const resolveVehicle = async (tx, clientId, vehiclePayload, fallbackId) => {
-  if (!vehiclePayload && !fallbackId) return null;
-
-  let vehicle = null;
-
-  if (fallbackId) {
-    vehicle = await tx.vehicle.findUnique({ where: { id: fallbackId } });
-    if (!vehicle) {
-      throw new AppError('Vehiculul nu a fost gasit. Va rugam selectati un vehicul valid sau creati unul nou.', 404);
-    }
-  }
-
-  if (vehiclePayload?.id && (!vehicle || vehicle.id !== vehiclePayload.id)) {
-    vehicle = await tx.vehicle.findUnique({ where: { id: vehiclePayload.id } });
-    if (!vehicle) {
-      throw new AppError('Vehiculul specificat nu a fost gasit. Va rugam verificati datele vehiculului.', 404);
-    }
-  }
-
-  if (!vehicle && vehiclePayload?.vin) {
-    vehicle = await tx.vehicle.findUnique({ where: { vin: vehiclePayload.vin } });
-  }
-
-  if (!vehicle && clientId && vehiclePayload?.plateNumber) {
-    vehicle = await tx.vehicle.findFirst({ where: { clientId, plateNumber: vehiclePayload.plateNumber } });
-  }
-
-  const data = {};
-  const fields = ['make', 'model', 'plateNumber', 'vin', 'carId', 'color', 'notes'];
-  fields.forEach((field) => assignIfProvided(data, vehiclePayload, field));
-  assignNumberIfProvided(data, vehiclePayload, 'year', (value) => {
-    const int = Number(value);
-    return Number.isFinite(int) ? Math.round(int) : undefined;
-  });
-  assignNumberIfProvided(data, vehiclePayload, 'odometerKm', (value) => {
-    const int = Number(value);
-    return Number.isFinite(int) ? Math.max(0, Math.round(int)) : undefined;
-  });
-
-  if (clientId) {
-    data.clientId = clientId;
-  }
-
-  if (vehicle) {
-    if (Object.keys(data).length > 0) {
-      vehicle = await tx.vehicle.update({ where: { id: vehicle.id }, data });
-    }
-    return vehicle;
-  }
-
-  if (!clientId) {
-    throw new AppError('Vehiculul trebuie sa fie asociat cu un client. Va rugam selectati un client mai intai.', 400);
-  }
-
-  return tx.vehicle.create({
-    data: {
-      clientId,
-      ...data,
-    },
-  });
-};
+// resolveVehicle removed - now using Asset model via resolveAsset from assetService.js
 
 const listAppointments = async (prisma, filters = {}, options = {}) => {
   const { status, from, to, clientId, assigneeId } = filters;
@@ -389,8 +348,18 @@ const createAppointment = async (prisma, payload, currentUser) => {
     await ensureAssigneePermissions(tx, payload.assigneeIds, currentUser);
     await ensureRampAvailability(tx, scheduledStart, scheduledEnd);
 
-    const client = await resolveClient(tx, payload.client, payload.clientId);
-    const vehicle = await resolveVehicle(tx, client?.id || payload.clientId || null, payload.vehicle, payload.vehicleId);
+    const client = await resolveClient(tx, payload.client, payload.clientId, currentUser.organizationId);
+    logger.info('✅ Client resolved', { clientId: client?.id });
+
+    // Resolve asset from payload
+    const asset = await resolveAsset(
+      tx,
+      client?.id || payload.clientId || null,
+      payload.asset,
+      payload.assetId,
+      currentUser.organizationId
+    );
+    logger.info('✅ Asset resolved', { assetId: asset?.id, assetName: asset?.name });
 
     const data = {
       title: payload.title,
@@ -400,7 +369,7 @@ const createAppointment = async (prisma, payload, currentUser) => {
       scheduledEnd,
       location: payload.location,
       clientId: client?.id || null,
-      vehicleId: vehicle?.id || null,
+      assetId: asset?.id || null, // Use Asset instead of Vehicle
       createdById: currentUser.id,
       updatedById: currentUser.id,
       metadata: payload.metadata,
@@ -423,6 +392,8 @@ const createAppointment = async (prisma, payload, currentUser) => {
         data,
         include: includeConfig,
       });
+
+      logger.info('✅ Appointment created', { appointmentId: appointment.id, hasServiceOrder: !!payload.serviceOrder });
     } catch (error) {
       if (error.code === 'P2003') {
         throw new AppError('Related entity not found', 400);
@@ -431,21 +402,32 @@ const createAppointment = async (prisma, payload, currentUser) => {
     }
 
     if (payload.serviceOrder) {
-      await upsertServiceOrder(appointment.id, payload.serviceOrder, {
-        tx,
-        skipBroadcast: true,
-        onResult: (order, action) => {
-          serviceOrderEvent = { order, action };
-        },
-      });
+      logger.info('📝 Creating service order for appointment', { appointmentId: appointment.id });
+      try {
+        await upsertServiceOrder(tx, appointment.id, payload.serviceOrder, {
+          skipBroadcast: true,
+          organizationId: currentUser.organizationId,
+          onResult: (order, action) => {
+            serviceOrderEvent = { order, action };
+          },
+        });
+        logger.info('✅ Service order created successfully');
+      } catch (error) {
+        logger.error('❌ Service order creation failed:', {
+          error: error.message,
+          stack: error.stack,
+          appointmentId: appointment.id
+        });
+        throw error;
+      }
 
-      appointment = await tx.appointment.findUnique({
-        where: { id: appointment.id },
+      appointment = await tx.appointment.findFirst({
+        where: { id: appointment.id, organizationId: currentUser.organizationId },
         include: includeConfig,
       });
 
       // Calculate payment status if advance payment was provided
-      if (payload.advancePayment && payload.advancePayment > 0 && appointment.serviceOrder) {
+      if (payload.advancePayment && payload.advancePayment > 0 && appointment?.serviceOrder) {
         const total = calculateAppointmentTotal(appointment);
         const advancePayment = roundCurrency(Number(payload.advancePayment));
 
@@ -637,12 +619,13 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     }
     await ensureRampAvailability(tx, scheduledStart, scheduledEnd, appointmentId);
 
-    const client = await resolveClient(tx, payload.client, payload.clientId ?? existing.clientId);
-    const vehicle = await resolveVehicle(
+    const client = await resolveClient(tx, payload.client, payload.clientId ?? existing.clientId, currentUser.organizationId);
+    const asset = await resolveAsset(
       tx,
       client?.id || payload.clientId || existing.clientId,
-      payload.vehicle,
-      payload.vehicleId ?? existing.vehicleId
+      payload.asset,
+      payload.assetId ?? existing.assetId,
+      currentUser.organizationId
     );
 
     const data = {
@@ -653,7 +636,7 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
       scheduledEnd,
       location: payload.location ?? existing.location,
       clientId: client?.id ?? existing.clientId,
-      vehicleId: vehicle?.id ?? existing.vehicleId,
+      assetId: asset?.id ?? existing.assetId,
       metadata: payload.metadata ?? existing.metadata,
       updatedById: currentUser.id,
       cancellationReason: payload.cancellationReason ?? existing.cancellationReason,
@@ -674,16 +657,26 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     });
 
     if (payload.serviceOrder) {
-      await upsertServiceOrder(appointmentId, payload.serviceOrder, {
-        tx,
-        skipBroadcast: true,
-        onResult: (order, action) => {
-          serviceOrderEvent = { order, action };
-        },
-      });
+      try {
+        await upsertServiceOrder(tx, appointmentId, payload.serviceOrder, {
+          skipBroadcast: true,
+          organizationId: currentUser.organizationId,
+          onResult: (order, action) => {
+            serviceOrderEvent = { order, action };
+          },
+        });
+        logger.info('✅ Service order updated successfully');
+      } catch (error) {
+        logger.error('❌ Service order update failed:', {
+          error: error.message,
+          stack: error.stack,
+          appointmentId: appointmentId
+        });
+        throw error;
+      }
 
-      updated = await tx.appointment.findUnique({
-        where: { id: appointmentId },
+      updated = await tx.appointment.findFirst({
+        where: { id: appointmentId, organizationId: currentUser.organizationId },
         include: includeConfig,
       });
     }
@@ -702,8 +695,8 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     const relevantFieldsChanged =
       payload.client ||
       payload.clientId ||
-      payload.vehicle ||
-      payload.vehicleId ||
+      payload.asset ||
+      payload.assetId ||
       payload.title ||
       payload.scheduledStart ||
       payload.scheduledEnd;
@@ -1020,7 +1013,7 @@ const getPaymentStatus = async (prisma, appointmentId) => {
 
   // Calculate total paid from Payment records
   const { calculateTotalPaid } = require('./paymentService');
-  const totalPaid = await calculateTotalPaid(appointmentId);
+  const totalPaid = await calculateTotalPaid(prisma, appointmentId);
 
   const remaining = Number(appointment.remainingBalance || 0);
 

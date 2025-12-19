@@ -48,6 +48,10 @@ export const AuthProvider = ({ children }) => {
       const response = await API.post('/auth/login', { email, password });
       const payload = response.data?.data || response.data;
       persistSession(payload);
+
+      // Trigger event to refresh terminology settings
+      window.dispatchEvent(new Event('userLoggedIn'));
+
       return { success: true };
     } catch (error) {
       const message = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';

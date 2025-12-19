@@ -210,7 +210,7 @@ const coerceHourlyRate = (value, fallback = 0) => {
   return Number.isFinite(num) ? num : fallback;
 };
 
-const createUser = async (prisma, payload) => {
+const createUser = async (prisma, payload, organizationId) => {
   const {
     firstName,
     lastName,
@@ -243,7 +243,10 @@ const createUser = async (prisma, payload) => {
   try {
     const data = await prisma.$transaction(async (tx) => {
       // Check for existing email inside transaction to prevent race condition
-      const existing = await tx.user.findUnique({ where: { email: normalizedEmail } });
+      const existingWhere = organizationId
+        ? { email: normalizedEmail, organizationId }
+        : { email: normalizedEmail };
+      const existing = await tx.user.findFirst({ where: existingWhere });
       if (existing) {
         throw new AppError('Email already in use', 409);
       }
@@ -259,7 +262,8 @@ const createUser = async (prisma, payload) => {
           phoneNumber,
           dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
           employmentType: normalizeEmploymentType(employmentType) || undefined,
-        hourlyRate: coerceHourlyRate(hourlyRate, 0),
+          hourlyRate: coerceHourlyRate(hourlyRate, 0),
+          organizationId,
         },
       });
 
@@ -270,8 +274,11 @@ const createUser = async (prisma, payload) => {
         },
       });
 
-      return tx.user.findUnique({
-        where: { id: user.id },
+      const userWhere = organizationId
+        ? { id: user.id, organizationId }
+        : { id: user.id };
+      return tx.user.findFirst({
+        where: userWhere,
         include: {
           roles: {
             include: {
@@ -303,7 +310,7 @@ const createUser = async (prisma, payload) => {
   }
 };
 
-const updateUser = async (prisma, userId, payload) => {
+const updateUser = async (prisma, userId, payload, organizationId) => {
   const {
     firstName,
     lastName,
@@ -329,8 +336,11 @@ const updateUser = async (prisma, userId, payload) => {
       // Check if email is being changed and if it's already taken by another user
       if (email) {
         const normalizedEmail = email.toLowerCase().trim();
-        const existingUser = await tx.user.findUnique({
-          where: { email: normalizedEmail },
+        const emailWhere = organizationId
+          ? { email: normalizedEmail, organizationId }
+          : { email: normalizedEmail };
+        const existingUser = await tx.user.findFirst({
+          where: emailWhere,
         });
 
         if (existingUser && existingUser.id !== userId) {
@@ -352,19 +362,25 @@ const updateUser = async (prisma, userId, payload) => {
         updates.password = await bcrypt.hash(password, parseInt(process.env.HASH_SALT_ROUNDS || '10', 10));
       }
 
-      const user = await tx.user.update({
-        where: { id: userId },
+      const updateWhere = organizationId
+        ? { id: userId, organizationId }
+        : { id: userId };
+      const user = await tx.user.updateMany({
+        where: updateWhere,
         data: updates,
       });
 
       if (role) {
         const roleRecord = await ensureRole(normalizeRoleKey(role), tx);
-        await tx.userRole.deleteMany({ where: { userId: user.id } });
-        await tx.userRole.create({ data: { userId: user.id, roleId: roleRecord.id } });
+        await tx.userRole.deleteMany({ where: { userId } });
+        await tx.userRole.create({ data: { userId, roleId: roleRecord.id } });
       }
 
-      return tx.user.findUnique({
-        where: { id: user.id },
+      const userWhere = organizationId
+        ? { id: userId, organizationId }
+        : { id: userId };
+      return tx.user.findFirst({
+        where: userWhere,
         include: {
           roles: {
             include: {
