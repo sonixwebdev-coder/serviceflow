@@ -36,7 +36,6 @@ export const connectSocket = (token) => {
   });
 
   socket.on('connect', () => {
-    console.log('Socket connected:', socket.id);
   });
 
   return socket;

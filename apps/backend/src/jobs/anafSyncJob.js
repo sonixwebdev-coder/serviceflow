@@ -21,11 +21,9 @@ function scheduleStatusSync() {
   // Run every 5 minutes
   const job = cron.schedule('*/5 * * * *', async () => {
     try {
-      console.log('[ANAF Job] Starting status sync...');
 
       const result = await syncPendingInvoices({ limit: 20 });
 
-      console.log('[ANAF Job] Status sync completed:', {
         checked: result.checked,
         completed: result.completed,
         errors: result.errors,
@@ -57,7 +55,6 @@ function scheduleStatusSync() {
 function scheduleTokenRefresh() {
   const job = cron.schedule('0 2 * * *', async () => {
     try {
-      console.log('[ANAF Job] Starting token refresh check...');
 
       const configs = await prisma.anafConfig.findMany({
         where: { isActive: true },
@@ -77,7 +74,6 @@ function scheduleTokenRefresh() {
           const token = config.tokens[0];
 
           if (!token) {
-            console.log(`[ANAF Job] No token found for config ${config.id}, skipping`);
             continue;
           }
 
@@ -87,12 +83,10 @@ function scheduleTokenRefresh() {
 
           // Refresh if less than 5 days until expiry
           if (daysUntilExpiry <= 5 && daysUntilExpiry >= 0) {
-            console.log(`[ANAF Job] Refreshing token for config ${config.id} (expires in ${daysUntilExpiry} days)`);
 
             await refreshAccessToken(token.refreshToken, config);
             refreshed++;
 
-            console.log(`[ANAF Job] Token refreshed successfully for config ${config.id}`);
           } else if (daysUntilExpiry < 0) {
             console.warn(`[ANAF Job] Token expired for config ${config.id}. Manual re-authentication required.`);
             errors++;
@@ -103,7 +97,6 @@ function scheduleTokenRefresh() {
         }
       }
 
-      console.log('[ANAF Job] Token refresh completed:', {
         total: configs.length,
         refreshed,
         errors,
@@ -126,11 +119,9 @@ function scheduleTokenRefresh() {
 function scheduleMessageDownload() {
   const job = cron.schedule('0 3 * * *', async () => {
     try {
-      console.log('[ANAF Job] Starting message download...');
 
       const result = await downloadAnafMessages({ days: 7, filter: 'T' });
 
-      console.log('[ANAF Job] Message download completed:', {
         total: result.totalMessages,
         new: result.newMessages,
       });
@@ -152,7 +143,6 @@ function scheduleMessageDownload() {
 function scheduleRetryFailed() {
   const job = cron.schedule('0 4 * * *', async () => {
     try {
-      console.log('[ANAF Job] Starting retry of failed invoices...');
 
       // Find failed invoices that haven't exceeded max retries
       const failedSyncs = await prisma.anafInvoiceSync.findMany({
@@ -181,7 +171,6 @@ function scheduleRetryFailed() {
 
       for (const sync of failedSyncs) {
         try {
-          console.log(`[ANAF Job] Retrying invoice ${sync.invoice.invoiceNumber}`);
 
           const { submitInvoiceToAnaf } = require('../services/anaf/anafInvoiceService');
           await submitInvoiceToAnaf(sync.invoiceId, { forceResubmit: true });
@@ -189,7 +178,6 @@ function scheduleRetryFailed() {
           retried++;
           succeeded++;
 
-          console.log(`[ANAF Job] Successfully retried invoice ${sync.invoice.invoiceNumber}`);
         } catch (error) {
           console.error(`[ANAF Job] Failed to retry invoice ${sync.invoice.invoiceNumber}:`, error.message);
           retried++;
@@ -197,7 +185,6 @@ function scheduleRetryFailed() {
         }
       }
 
-      console.log('[ANAF Job] Retry completed:', {
         total: failedSyncs.length,
         retried,
         succeeded,
@@ -221,7 +208,6 @@ function scheduleRetryFailed() {
 function scheduleAutoSubmit() {
   const job = cron.schedule('*/15 * * * *', async () => {
     try {
-      console.log('[ANAF Job] Starting auto-submit...');
 
       // Find invoices that are SENT but not yet submitted to ANAF
       const eligibleInvoices = await prisma.invoice.findMany({
@@ -244,13 +230,11 @@ function scheduleAutoSubmit() {
 
       for (const invoice of eligibleInvoices) {
         try {
-          console.log(`[ANAF Job] Auto-submitting invoice ${invoice.invoiceNumber}`);
 
           const { submitInvoiceToAnaf } = require('../services/anaf/anafInvoiceService');
           await submitInvoiceToAnaf(invoice.id);
 
           submitted++;
-          console.log(`[ANAF Job] Successfully submitted invoice ${invoice.invoiceNumber}`);
         } catch (error) {
           console.error(`[ANAF Job] Failed to auto-submit invoice ${invoice.invoiceNumber}:`, error.message);
           errors++;
@@ -258,7 +242,6 @@ function scheduleAutoSubmit() {
       }
 
       if (eligibleInvoices.length > 0) {
-        console.log('[ANAF Job] Auto-submit completed:', {
           eligible: eligibleInvoices.length,
           submitted,
           errors,
@@ -288,56 +271,46 @@ function startAllJobs(options = {}) {
     enableAutoSubmit = false, // Disabled by default for safety
   } = options;
 
-  console.log('[ANAF Job] Starting ANAF background jobs...');
 
   if (enableStatusSync) {
     const statusJob = scheduleStatusSync();
     statusJob.start();
-    console.log('[ANAF Job] Status sync job started (every 5 minutes)');
   }
 
   if (enableTokenRefresh) {
     const tokenJob = scheduleTokenRefresh();
     tokenJob.start();
-    console.log('[ANAF Job] Token refresh job started (daily at 2 AM)');
   }
 
   if (enableMessageDownload) {
     const messageJob = scheduleMessageDownload();
     messageJob.start();
-    console.log('[ANAF Job] Message download job started (daily at 3 AM)');
   }
 
   if (enableRetryFailed) {
     const retryJob = scheduleRetryFailed();
     retryJob.start();
-    console.log('[ANAF Job] Retry failed job started (daily at 4 AM)');
   }
 
   if (enableAutoSubmit) {
     const autoSubmitJob = scheduleAutoSubmit();
     autoSubmitJob.start();
-    console.log('[ANAF Job] Auto-submit job started (every 15 minutes)');
   }
 
-  console.log('[ANAF Job] All enabled jobs started successfully');
 }
 
 /**
  * Stop all ANAF background jobs
  */
 function stopAllJobs() {
-  console.log('[ANAF Job] Stopping all ANAF background jobs...');
 
   Object.keys(jobs).forEach(jobName => {
     if (jobs[jobName]) {
       jobs[jobName].stop();
-      console.log(`[ANAF Job] Stopped ${jobName}`);
     }
   });
 
   jobs = {};
-  console.log('[ANAF Job] All jobs stopped');
 }
 
 /**

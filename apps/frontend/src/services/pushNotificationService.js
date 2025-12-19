@@ -55,7 +55,6 @@ export const registerServiceWorker = async () => {
     const registration = await navigator.serviceWorker.register('/service-worker.js', {
       scope: '/',
     });
-    console.log('Service Worker registered:', registration);
     return registration;
   } catch (error) {
     console.error('Service Worker registration failed:', error);
@@ -96,10 +95,8 @@ export const subscribeToPush = async () => {
     for (const registration of registrations) {
       const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
-        console.log('Clearing existing subscription...');
         await existingSubscription.unsubscribe();
       }
-      console.log('Unregistering service worker...');
       await registration.unregister();
     }
 
@@ -134,7 +131,6 @@ export const subscribeToPush = async () => {
       userAgent: navigator.userAgent,
     });
 
-    console.log('Successfully subscribed to push notifications');
     return response.data.data;
   } catch (error) {
     console.error('Failed to subscribe to push notifications:', error);
@@ -175,7 +171,6 @@ export const unsubscribeFromPush = async () => {
       endpoint: subscription.endpoint,
     });
 
-    console.log('Successfully unsubscribed from push notifications');
     return { success: true };
   } catch (error) {
     console.error('Failed to unsubscribe from push notifications:', error);

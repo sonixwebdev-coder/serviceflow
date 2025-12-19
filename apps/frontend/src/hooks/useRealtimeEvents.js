@@ -109,7 +109,6 @@ export const useRealtimeEvents = () => {
     };
 
     const handleDisconnect = (reason) => {
-      console.log('Socket disconnected:', reason);
 
       if (authErrorCodes.has(reason) || reason === 'client namespace disconnect') {
         lastAuthError = null;
@@ -135,7 +134,6 @@ export const useRealtimeEvents = () => {
     };
 
     const handleConnect = () => {
-      console.log('Socket connected successfully');
       // Reset toast flags on successful connection
       hasShownConnectionErrorToast = false;
       hasShownDisconnectToast = false;

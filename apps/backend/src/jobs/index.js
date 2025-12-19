@@ -4,8 +4,6 @@ const anafJobs = require('./anafSyncJob');
  * Initialize all background jobs
  */
 function initializeJobs() {
-  console.log('[Jobs] Initializing background jobs...');
-
   // Start ANAF jobs based on environment configuration
   const anafConfig = {
     enableAutoSubmit: process.env.ANAF_ENABLE_AUTO_SUBMIT === 'true',
@@ -16,17 +14,13 @@ function initializeJobs() {
   };
 
   anafJobs.startAllJobs(anafConfig);
-
-  console.log('[Jobs] All background jobs initialized');
 }
 
 /**
  * Stop all background jobs
  */
 function stopAllJobs() {
-  console.log('[Jobs] Stopping all background jobs...');
   anafJobs.stopAllJobs();
-  console.log('[Jobs] All background jobs stopped');
 }
 
 /**

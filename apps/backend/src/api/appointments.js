@@ -123,7 +123,7 @@ router.post(
   authenticate,
   validate(z.object({ isTyping: z.boolean() })),
   asyncHandler(async (req, res) => {
-    broadcastTyping(req.params.appointmentId, req.user, req.body.isTyping);
+    broadcastTyping(req.user.organizationId, req.params.appointmentId, req.user, req.body.isTyping);
     return ok(res, { success: true });
   })
 );

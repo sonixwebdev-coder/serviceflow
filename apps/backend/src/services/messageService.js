@@ -113,7 +113,7 @@ const createMessage = async (prisma, appointmentId, currentUser, { body, type, m
     updatedAt: message.updatedAt,
   };
 
-  broadcastMessage(appointmentId, payload);
+  broadcastMessage(appointment.organizationId, appointmentId, payload);
 
   // Create notifications for all users with access except the author
   try {

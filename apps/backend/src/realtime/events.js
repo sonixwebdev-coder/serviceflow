@@ -1,35 +1,21 @@
-const { emit, emitToUser } = require('./emitter');
+const { emit, emitToUser, emitToOrganization } = require('./emitter');
 
 const broadcastTask = (action, task) => {
-  if (!task) return;
+  if (!task || !task.organizationId) return;
   const event = `task:${action}`;
-  const rooms = ['tasks'];
-
-  task.assignedTo?.forEach?.((assignee) => {
-    const id = assignee?._id || assignee?.id || assignee;
-    if (id) {
-      rooms.push(`user:${id}`);
-    }
-  });
-
-  if (task.createdBy?._id || task.createdBy?.id) {
-    rooms.push(`user:${task.createdBy._id || task.createdBy.id}`);
-  }
-
-  emit(event, task, rooms);
+  emitToOrganization(task.organizationId, event, task);
 };
 
 const broadcastTimeEntry = (action, entry) => {
-  if (!entry) return;
+  if (!entry || !entry.organizationId) return;
   const event = `time-entry:${action}`;
-  emit(event, entry, ['time-entries', `user:${entry.employee?._id || entry.employeeId}`]);
+  emitToOrganization(entry.organizationId, event, entry);
 };
 
 const broadcastTimeOff = (action, request) => {
-  if (!request) return;
+  if (!request || !request.organizationId) return;
   const event = `timeoff:${action}`;
-  const rooms = ['timeoff', `user:${request.employee?._id || request.employeeId}`];
-  emit(event, request, rooms);
+  emitToOrganization(request.organizationId, event, request);
 };
 
 const broadcastNotification = (notification) => {
@@ -38,37 +24,24 @@ const broadcastNotification = (notification) => {
 };
 
 const broadcastAppointment = (action, appointment) => {
-  if (!appointment) return;
+  if (!appointment || !appointment.organizationId) return;
   const event = `appointment:${action}`;
-  const rooms = ['appointments', 'role:admin', 'role:ADMIN', 'role:Admin'];
-  appointment.assignees?.forEach?.((assignee) => {
-    const id = assignee?.user?._id || assignee?.userId || assignee?.user?.id;
-    if (id) rooms.push(`user:${id}`);
-  });
-  if (appointment.client?.id || appointment.clientId) {
-    rooms.push(`client:${appointment.client?.id || appointment.clientId}`);
-  }
-  emit(event, appointment, rooms);
+  emitToOrganization(appointment.organizationId, event, appointment);
 };
 
-const broadcastMessage = (appointmentId, message) => {
-  if (!message) return;
-  const rooms = [`appointment:${appointmentId}`];
-  const authorId = message.author?._id || message.authorId;
-  if (authorId) {
-    rooms.push(`user:${authorId}`);
-  }
-  emit('message:new', message, rooms);
+const broadcastMessage = (organizationId, appointmentId, message) => {
+  if (!message || !organizationId) return;
+  emitToOrganization(organizationId, 'message:new', message);
 };
 
-const broadcastTyping = (appointmentId, user, isTyping) => {
-  if (!user || !appointmentId) return;
+const broadcastTyping = (organizationId, appointmentId, user, isTyping) => {
+  if (!user || !appointmentId || !organizationId) return;
 
   const userId = user._id || user.id;
   const firstName = user.firstName || '';
   const lastName = user.lastName || '';
 
-  emit('message:typing', {
+  emitToOrganization(organizationId, 'message:typing', {
     appointmentId,
     user: {
       id: userId,
@@ -76,33 +49,19 @@ const broadcastTyping = (appointmentId, user, isTyping) => {
       lastName,
     },
     isTyping
-  }, [`appointment:${appointmentId}`]);
+  });
 };
 
 const broadcastServiceOrder = (action, serviceOrder) => {
-  if (!serviceOrder) return;
+  if (!serviceOrder || !serviceOrder.organizationId) return;
   const event = `service-order:${action}`;
-  const rooms = ['service-orders', 'role:admin', 'role:ADMIN', 'role:Admin'];
-  if (serviceOrder.appointmentId) {
-    rooms.push(`appointment:${serviceOrder.appointmentId}`);
-  }
-  serviceOrder.assigneeIds?.forEach?.((id) => {
-    if (id) rooms.push(`user:${id}`);
-  });
-  emit(event, serviceOrder, rooms);
+  emitToOrganization(serviceOrder.organizationId, event, serviceOrder);
 };
 
 const broadcastInvoice = (action, invoice) => {
-  if (!invoice) return;
+  if (!invoice || !invoice.organizationId) return;
   const event = `invoice:${action}`;
-  const rooms = ['invoices', 'role:admin', 'role:ADMIN', 'role:Admin'];
-  if (invoice.appointmentId) {
-    rooms.push(`appointment:${invoice.appointmentId}`);
-  }
-  if (invoice.clientId || invoice.client?.id) {
-    rooms.push(`client:${invoice.clientId || invoice.client.id}`);
-  }
-  emit(event, invoice, rooms);
+  emitToOrganization(invoice.organizationId, event, invoice);
 };
 
 module.exports = {

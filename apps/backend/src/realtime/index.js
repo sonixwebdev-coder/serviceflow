@@ -30,17 +30,14 @@ const createSocketServer = (httpServer) => {
   });
 
   io.on('connection', (socket) => {
-    console.log('Socket connected:', socket.id, 'User:', socket.user.email);
 
     // Join organization room for tenant-scoped broadcasts
     if (socket.user.organizationId) {
       const orgRoom = `org:${socket.user.organizationId}`;
       socket.join(orgRoom);
-      console.log(`User ${socket.user.email} joined organization room: ${orgRoom}`);
     }
 
     socket.on('disconnect', () => {
-      console.log('Socket disconnected:', socket.id);
     });
   });
 

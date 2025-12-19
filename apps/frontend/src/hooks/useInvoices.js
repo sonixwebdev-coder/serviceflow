@@ -78,11 +78,9 @@ export const useCreateInvoice = () => {
     mutationFn: (payload) => {
       // If only serviceOrderId is provided, use the dedicated endpoint
       if (payload.serviceOrderId && Object.keys(payload).length === 1) {
-        console.log('🧾 [HOOK] Creating invoice from service order:', payload.serviceOrderId);
         return createInvoiceFromServiceOrder(payload.serviceOrderId);
       }
       // Otherwise use the regular creation endpoint
-      console.log('🧾 [HOOK] Creating invoice with full payload');
       return createInvoice(payload);
     },
     onSuccess: (data) => {

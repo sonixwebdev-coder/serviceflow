@@ -1040,8 +1040,6 @@ useEffect(() => {
       }))
       .filter((item) => item.name.length > 0);
 
-    console.log('📋 [FRONTEND - CREATE] ORDER DRAFT LINE ITEMS (raw):', orderDraft.lineItems);
-    console.log('✂️ [FRONTEND - CREATE] TRIMMED ITEMS (filtered):', trimmedItems);
 
     // Phone, email, vehicle details are all optional now
 
@@ -1070,7 +1068,6 @@ useEffect(() => {
       laborUnit: item.laborUnit?.trim() || undefined,
     }));
 
-    console.log('🚀 [FRONTEND - CREATE] MAPPED LINE ITEMS (sending to API):', mappedLineItems);
 
     const payload = {
       title,
@@ -1112,7 +1109,6 @@ useEffect(() => {
         : undefined,
     };
 
-    console.log('📦 [FRONTEND - CREATE] FULL PAYLOAD:', JSON.stringify(payload.serviceOrder, null, 2));
     createMutation.mutate(payload);
   };
 
@@ -2826,7 +2822,6 @@ useEffect(() => {
                                 })),
                                 notes: orderDraft.notes,
                               };
-                              console.log('💾 Saving service order with payload:', payload);
                               try {
                                 await saveOrderMutation.mutateAsync(payload);
                                 showToast({ title: 'Comanda de service salvata', type: 'success' });
