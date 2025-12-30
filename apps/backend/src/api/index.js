@@ -20,7 +20,8 @@ const settingsRouter = require('./settings');
 const invoicesRouter = require('./invoices');
 const exportsRouter = require('./exports');
 const pushNotificationsRouter = require('./pushNotifications');
-const anafRouter = require('./anaf');
+// ANAF functionality temporarily disabled
+// const anafRouter = require('./anaf');
 const paymentsRouter = require('./payments');
 
 const router = express.Router();
@@ -53,7 +54,8 @@ router.use('/settings', settingsRouter);
 router.use('/invoices', invoicesRouter);
 router.use('/exports', exportsRouter);
 router.use('/push-notifications', pushNotificationsRouter);
-router.use('/anaf', anafRouter);
+// ANAF functionality temporarily disabled
+// router.use('/anaf', anafRouter);
 router.use('/payments', paymentsRouter);
 
 module.exports = router;

@@ -19,8 +19,9 @@ import Resources from './pages/Resources.jsx';
 import Appointments from './pages/Appointments.jsx';
 import Invoices from './pages/Invoices.jsx';
 import Profile from './pages/Profile.jsx';
-import AnafManagement from './pages/AnafManagement.jsx';
-import AnafCallback from './pages/AnafCallback.jsx';
+// ANAF functionality temporarily disabled
+// import AnafManagement from './pages/AnafManagement.jsx';
+// import AnafCallback from './pages/AnafCallback.jsx';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { USER_ROLES } from './utils/constants';
 import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
@@ -39,7 +40,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/create-admin" element={<CreateFirstAdmin />} />
-          <Route path="/anaf/callback" element={<AnafCallback />} />
+          {/* ANAF functionality temporarily disabled */}
+          {/* <Route path="/anaf/callback" element={<AnafCallback />} /> */}
 
           {/* Protected Routes */}
           <Route
@@ -208,7 +210,8 @@ function App() {
             }
           />
 
-          <Route
+          {/* ANAF functionality temporarily disabled */}
+          {/* <Route
             path="/anaf"
             element={
               <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
@@ -217,7 +220,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             }
-          />
+          /> */}
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -14,43 +14,71 @@ const ANAF_TOKEN_URL = process.env.ANAF_TOKEN_URL ||
   'https://logincert.anaf.ro/anaf-oauth2/v1/token';
 
 /**
- * Encrypt sensitive data (client_secret)
- * @param {string} text - Text to encrypt
- * @returns {string} Encrypted text
+ * Get encryption key from environment
+ * @returns {Buffer} 32-byte encryption key
  */
-function encrypt(text) {
-  const algorithm = 'aes-256-cbc';
-  const key = crypto.scryptSync(process.env.JWT_ACCESS_SECRET || 'default-key', 'salt', 32);
-  const iv = crypto.randomBytes(16);
+function getEncryptionKey() {
+  const key = process.env.ENCRYPTION_KEY;
+  if (!key) {
+    throw new AppError('ENCRYPTION_KEY not configured. Please set ENCRYPTION_KEY environment variable.', 500);
+  }
 
-  const cipher = crypto.createCipheriv(algorithm, key, iv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
+  // Ensure key is 32 bytes (64 hex characters)
+  if (key.length !== 64) {
+    throw new AppError('ENCRYPTION_KEY must be 64 hex characters (32 bytes). Generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"', 500);
+  }
 
-  return `${iv.toString('hex')}:${encrypted}`;
+  return Buffer.from(key, 'hex');
 }
 
 /**
- * Decrypt sensitive data
- * @param {string} encryptedText - Text to decrypt
+ * Encrypt sensitive data using AES-256-GCM
+ * @param {string} text - Text to encrypt
+ * @returns {string} Encrypted text with format: iv:authTag:encryptedData
+ */
+function encrypt(text) {
+  const key = getEncryptionKey();
+  const iv = crypto.randomBytes(16); // 128-bit IV for GCM
+
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+
+  // Get authentication tag
+  const authTag = cipher.getAuthTag();
+
+  // Return: iv:authTag:encryptedData
+  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+}
+
+/**
+ * Decrypt sensitive data encrypted with AES-256-GCM
+ * @param {string} encryptedText - Text to decrypt (format: iv:authTag:encryptedData)
  * @returns {string} Decrypted text
  */
 function decrypt(encryptedText) {
   try {
-    const algorithm = 'aes-256-cbc';
-    const key = crypto.scryptSync(process.env.JWT_ACCESS_SECRET || 'default-key', 'salt', 32);
-
+    const key = getEncryptionKey();
     const parts = encryptedText.split(':');
-    const iv = Buffer.from(parts[0], 'hex');
-    const encrypted = parts[1];
 
-    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    if (parts.length !== 3) {
+      throw new Error('Invalid encrypted data format. Expected format: iv:authTag:encryptedData');
+    }
+
+    const iv = Buffer.from(parts[0], 'hex');
+    const authTag = Buffer.from(parts[1], 'hex');
+    const encrypted = parts[2];
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
 
     return decrypted;
   } catch (error) {
-    throw new AppError('Failed to decrypt client secret', 500);
+    console.error('Decryption error:', error.message);
+    throw new AppError('Failed to decrypt client secret. Data may be corrupted or encryption key may have changed.', 500);
   }
 }
 

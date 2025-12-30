@@ -16,6 +16,7 @@ const API = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Required for CSRF cookie
 });
 
 const refreshClient = axios.create({
@@ -23,9 +24,28 @@ const refreshClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Required for CSRF cookie
 });
 
 let refreshPromise = null;
+let csrfToken = null;
+
+// Fetch CSRF token from server
+const fetchCsrfToken = async () => {
+  try {
+    const { data } = await axios.get(`${API_BASE_URL}/csrf-token`, {
+      withCredentials: true, // Required to receive CSRF cookie
+    });
+    csrfToken = data.csrfToken;
+    return csrfToken;
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+    return null;
+  }
+};
+
+// Initialize CSRF token on app load
+fetchCsrfToken();
 
 const clearSession = () => {
   const { clear } = useAuthStore.getState();
@@ -79,6 +99,12 @@ API.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token for state-changing requests
+    if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+      config.headers['x-csrf-token'] = csrfToken;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -95,6 +121,34 @@ API.interceptors.response.use(
     // Don't try to refresh token on login/register endpoints
     if (config.url?.includes('/auth/login') || config.url?.includes('/auth/register')) {
       return Promise.reject(response.data || error);
+    }
+
+    // Handle CSRF token errors (403 Forbidden)
+    if (response.status === 403 && !config._csrfRetry) {
+      const isCSRFError =
+        response.data?.code === 'CSRF_VALIDATION_FAILED' ||
+        response.data?.message?.toLowerCase().includes('csrf');
+
+      if (isCSRFError) {
+        try {
+          // Fetch fresh CSRF token
+          await fetchCsrfToken();
+          config._csrfRetry = true;
+
+          // Retry request with new token
+          if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+            config.headers['x-csrf-token'] = csrfToken;
+          }
+
+          return API(config);
+        } catch (csrfError) {
+          console.error('CSRF token refresh failed:', csrfError);
+          return Promise.reject(response.data || {
+            message: 'Security validation failed. Please refresh the page and try again.',
+            code: 'CSRF_VALIDATION_FAILED'
+          });
+        }
+      }
     }
 
     if (response.status !== 401 || config._retry) {
@@ -115,5 +169,6 @@ API.interceptors.response.use(
 );
 
 export const refreshAuthSession = async () => queueTokenRefresh();
+export const refreshCsrfToken = fetchCsrfToken;
 
 export default API;

@@ -5,6 +5,7 @@ const path = require('path');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const prisma = require('./lib/prisma');
 const { initRedis, closeRedis } = require('./src/lib/redis');
 const apiRouter = require('./src/api');
@@ -71,6 +72,18 @@ app.use(cors(corsOptions));
 // Body parser middleware with size limits
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// Cookie parser middleware (required for CSRF protection)
+app.use(cookieParser());
+
+// CSRF Protection - Import middleware
+const { csrfProtection, generateToken } = require('./src/middleware/csrfProtection');
+
+// CSRF token endpoint (must be before CSRF protection middleware)
+app.get('/api/csrf-token', generateToken);
+
+// Apply CSRF protection to all routes
+app.use(csrfProtection);
 
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({

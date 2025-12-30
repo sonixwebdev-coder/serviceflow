@@ -4,7 +4,6 @@ const prisma = require('../../lib/prisma');
 const TENANT_MODELS = [
   'user',
   'client',
-  'vehicle',
   'asset',
   'resource',
   'appointment',

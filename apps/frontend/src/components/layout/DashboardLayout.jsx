@@ -16,7 +16,7 @@ import {
   Settings,
   FileText,
   User,
-  FileCheck,
+  // FileCheck, // ANAF functionality temporarily disabled
   Globe,
   CheckSquare,
   ChevronDown,
@@ -98,12 +98,13 @@ const DashboardLayout = ({ children }) => {
         { name: 'Angajati', href: '/employees', icon: Users, roles: [USER_ROLES.ADMIN] },
       ]
     },
-    {
-      name: 'ANAF E-Factura',
-      href: '/anaf',
-      icon: FileCheck,
-      roles: [USER_ROLES.ADMIN]
-    },
+    // ANAF functionality temporarily disabled
+    // {
+    //   name: 'ANAF E-Factura',
+    //   href: '/anaf',
+    //   icon: FileCheck,
+    //   roles: [USER_ROLES.ADMIN]
+    // },
     {
       name: 'Setari',
       key: 'setari',

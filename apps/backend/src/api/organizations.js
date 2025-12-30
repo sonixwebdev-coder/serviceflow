@@ -3,6 +3,8 @@ const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
+const rateLimit = require('express-rate-limit');
+const { z } = require('zod');
 const {
   createOrganization,
   getOrganizationById,
@@ -25,6 +27,27 @@ const {
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();
+
+// Rate limiter for slug check (prevent enumeration attacks)
+const slugCheckLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 20, // 20 requests per minute
+  message: 'Too many slug check requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Validation schema for slug
+const slugSchema = z.object({
+  slug: z
+    .string()
+    .min(3, 'Slug must be at least 3 characters')
+    .max(63, 'Slug must be at most 63 characters')
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens')
+    .regex(/^[a-z0-9]/, 'Slug must start with a letter or number')
+    .regex(/[a-z0-9]$/, 'Slug must end with a letter or number')
+    .refine((val) => !val.includes('--'), 'Slug cannot contain consecutive hyphens'),
+});
 
 /**
  * Organization signup endpoint
@@ -167,12 +190,19 @@ router.patch(
 /**
  * Check if organization slug is available
  * This is public - allows checking slug availability during signup
+ * Rate limited and includes timing attack prevention
  */
 router.get(
   '/check-slug/:slug',
+  slugCheckLimiter,
+  validate(slugSchema, 'params'),
   asyncHandler(async (req, res) => {
     const prisma = require('../../lib/prisma');
     const { slug } = req.params;
+
+    // Add random delay (50-100ms) to prevent timing attacks
+    const delay = 50 + Math.random() * 50;
+    await new Promise((resolve) => setTimeout(resolve, delay));
 
     const existing = await prisma.organization.findUnique({
       where: { slug },

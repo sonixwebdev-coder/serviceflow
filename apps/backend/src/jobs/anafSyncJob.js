@@ -21,13 +21,7 @@ function scheduleStatusSync() {
   // Run every 5 minutes
   const job = cron.schedule('*/5 * * * *', async () => {
     try {
-
       const result = await syncPendingInvoices({ limit: 20 });
-
-        checked: result.checked,
-        completed: result.completed,
-        errors: result.errors,
-      });
 
       // Log errors if any
       if (result.errors > 0) {
@@ -96,11 +90,6 @@ function scheduleTokenRefresh() {
           errors++;
         }
       }
-
-        total: configs.length,
-        refreshed,
-        errors,
-      });
     } catch (error) {
       console.error('[ANAF Job] Token refresh job failed:', error.message);
     }
@@ -119,12 +108,7 @@ function scheduleTokenRefresh() {
 function scheduleMessageDownload() {
   const job = cron.schedule('0 3 * * *', async () => {
     try {
-
       const result = await downloadAnafMessages({ days: 7, filter: 'T' });
-
-        total: result.totalMessages,
-        new: result.newMessages,
-      });
     } catch (error) {
       console.error('[ANAF Job] Message download failed:', error.message);
     }
@@ -184,12 +168,6 @@ function scheduleRetryFailed() {
           failed++;
         }
       }
-
-        total: failedSyncs.length,
-        retried,
-        succeeded,
-        failed,
-      });
     } catch (error) {
       console.error('[ANAF Job] Retry job failed:', error.message);
     }
@@ -239,13 +217,6 @@ function scheduleAutoSubmit() {
           console.error(`[ANAF Job] Failed to auto-submit invoice ${invoice.invoiceNumber}:`, error.message);
           errors++;
         }
-      }
-
-      if (eligibleInvoices.length > 0) {
-          eligible: eligibleInvoices.length,
-          submitted,
-          errors,
-        });
       }
     } catch (error) {
       console.error('[ANAF Job] Auto-submit job failed:', error.message);
