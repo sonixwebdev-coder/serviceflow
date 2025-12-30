@@ -15,66 +15,171 @@
 }
 
 @layer components {
-  .fc-viperx .fc-daygrid-day-frame {
-    min-height: 120px !important;
+  /* React Big Calendar Custom Styles */
+  .rbc-calendar {
+    @apply rounded-lg bg-white;
   }
 
-  .fc-viperx .fc-daygrid-event.fc-appointment {
-    @apply rounded-lg border px-2 py-1 text-left text-xs font-semibold shadow-sm transition-all;
-    margin-bottom: 2px !important;
+  .rbc-header {
+    @apply border-b border-gray-200 bg-gray-50 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600;
   }
 
-  .fc-viperx .fc-daygrid-event.fc-appointment .fc-event-title {
+  .rbc-today {
+    @apply bg-orange-50;
+  }
+
+  .rbc-off-range-bg {
+    @apply bg-gray-50;
+  }
+
+  .rbc-toolbar {
+    @apply mb-4 flex flex-wrap items-center justify-between gap-2;
+  }
+
+  .rbc-toolbar button {
+    @apply rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50;
+  }
+
+  .rbc-toolbar button:active,
+  .rbc-toolbar button.rbc-active {
+    @apply border-viperx-primary bg-viperx-primary text-white;
+  }
+
+  .rbc-toolbar-label {
+    @apply text-lg font-semibold text-gray-900;
+  }
+
+  /* Event Styles */
+  .rbc-event {
+    @apply cursor-pointer rounded-lg border px-2 py-1 text-xs font-semibold shadow-sm transition-all;
+  }
+
+  .rbc-event:hover {
+    @apply shadow-md;
+  }
+
+  .rbc-event.rbc-selected {
+    @apply ring-2 ring-viperx-primary ring-offset-1;
+  }
+
+  .rbc-event-label {
+    @apply text-[11px] font-medium opacity-90;
+  }
+
+  .rbc-event-content {
     @apply truncate text-xs font-semibold;
   }
 
-  .fc-viperx .fc-daygrid-event.fc-appointment .fc-event-time {
-    @apply mb-0 text-[11px] font-medium;
-  }
-
-  .fc-viperx .status-pending {
+  /* Status-specific colors */
+  .rbc-event.status-pending {
     @apply border-yellow-400 bg-yellow-100 text-yellow-900;
-    background-color: rgb(254 249 195) !important;
-    border-color: rgb(250 204 21) !important;
-    color: rgb(113 63 18) !important;
   }
 
-  .fc-viperx .status-approved {
+  .rbc-event.status-prezentat {
     @apply border-blue-400 bg-blue-100 text-blue-900;
-    background-color: rgb(219 234 254) !important;
-    border-color: rgb(96 165 250) !important;
-    color: rgb(30 58 138) !important;
   }
 
-  .fc-viperx .status-in-progress {
+  .rbc-event.status-in_progress {
     @apply border-amber-400 bg-amber-100 text-amber-900;
-    background-color: rgb(254 243 199) !important;
-    border-color: rgb(251 191 36) !important;
-    color: rgb(120 53 15) !important;
   }
 
-  .fc-viperx .status-completed {
+  .rbc-event.status-completed {
     @apply border-emerald-400 bg-emerald-100 text-emerald-900;
-    background-color: rgb(209 250 229) !important;
-    border-color: rgb(52 211 153) !important;
-    color: rgb(6 78 59) !important;
   }
 
-  .fc-viperx .status-cancelled {
+  .rbc-event.status-cancelled {
     @apply border-red-400 bg-red-100 text-red-900;
-    background-color: rgb(254 226 226) !important;
-    border-color: rgb(248 113 113) !important;
-    color: rgb(127 29 29) !important;
   }
 
-  .fc-viperx .status-unknown {
-    @apply border-gray-200 bg-gray-100 text-gray-700;
-    background-color: rgb(243 244 246) !important;
-    border-color: rgb(229 231 235) !important;
-    color: rgb(55 65 81) !important;
-  }
-
-  .fc-viperx .fc-daygrid-event.fc-appointment.is-selected {
+  .rbc-event.is-selected {
     @apply ring-2 ring-viperx-primary ring-offset-1 ring-offset-white;
+  }
+
+  /* Time slots */
+  .rbc-time-slot {
+    @apply border-gray-100;
+  }
+
+  .rbc-time-header-content {
+    @apply border-gray-200;
+  }
+
+  .rbc-day-slot .rbc-time-slot {
+    @apply border-t border-gray-100;
+  }
+
+  .rbc-current-time-indicator {
+    @apply bg-viperx-primary;
+  }
+
+  /* Month view */
+  .rbc-month-view {
+    @apply border border-gray-200;
+  }
+
+  .rbc-month-row {
+    @apply border-gray-200;
+  }
+
+  .rbc-day-bg {
+    @apply border-r border-gray-200;
+  }
+
+  .rbc-date-cell {
+    @apply px-2 py-1 text-right;
+  }
+
+  .rbc-date-cell.rbc-now {
+    @apply font-bold;
+  }
+
+  .rbc-date-cell > a {
+    @apply text-sm text-gray-700;
+  }
+
+  .rbc-date-cell.rbc-now > a {
+    @apply text-viperx-primary;
+  }
+
+  /* Week/Day view */
+  .rbc-time-view {
+    @apply border border-gray-200;
+  }
+
+  .rbc-time-header {
+    @apply border-b border-gray-200;
+  }
+
+  .rbc-time-content {
+    @apply border-t-0;
+  }
+
+  .rbc-timeslot-group {
+    @apply border-b border-gray-100;
+  }
+
+  .rbc-time-gutter {
+    @apply text-xs text-gray-500;
+  }
+
+  .rbc-label {
+    @apply pr-2 text-right;
+  }
+
+  /* Remove default backgrounds for cleaner look */
+  .rbc-selected-cell {
+    @apply bg-orange-50;
+  }
+
+  .rbc-show-more {
+    @apply cursor-pointer text-xs font-medium text-viperx-primary hover:underline;
+  }
+
+  .rbc-overlay {
+    @apply z-50 rounded-lg border border-gray-200 bg-white p-4 shadow-xl;
+  }
+
+  .rbc-overlay-header {
+    @apply mb-2 border-b border-gray-200 pb-2 font-semibold text-gray-900;
   }
 }

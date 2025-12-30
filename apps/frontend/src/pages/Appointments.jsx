@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MessageSquare, X, Send, Plus, Trash2, FileText, CheckCircle2, Clock, AlertCircle, Edit2, Save } from 'lucide-react';
-import { format, isBefore, startOfDay } from 'date-fns';
+import { format, isBefore, startOfDay, parse, startOfWeek, getDay } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import roCalendarLocale from '@fullcalendar/core/locales/ro';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useAppointments } from '../hooks/useAppointments.js';
 import { useAppointment, useCancelAppointment, useUpdateAppointment } from '../hooks/useAppointment.js';
 import { useAppointmentMessages } from '../hooks/useAppointmentMessages.js';
@@ -36,6 +33,17 @@ const formatDateTime = (value, pattern = 'Pp') =>
 
 const currencyFormatter = new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' });
 const numberFormatter = new Intl.NumberFormat('ro-RO');
+
+// Configure React Big Calendar localizer
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: () => startOfWeek(new Date(), { locale: roDateLocale }),
+  getDay,
+  locales: {
+    'ro': roDateLocale,
+  },
+});
 
 const STATUS_FILTERS = [
   { label: 'Toate', value: undefined },
@@ -194,6 +202,10 @@ const Appointments = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [isEditingOrder, setIsEditingOrder] = useState(false);
   const [orderDraft, setOrderDraft] = useState(createDefaultOrderDraft);
+
+  // Calendar state
+  const [calendarView, setCalendarView] = useState('week');
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [unreadCount, setUnreadCount] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [sendError, setSendError] = useState(null);
@@ -219,7 +231,6 @@ const Appointments = () => {
   const { user } = useAuth();
   const { assetSingular, assetPlural } = useTerminology();
   const modalRef = useRef(null);
-  const calendarRef = useRef(null);
   const pendingPdfWindowRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -646,10 +657,6 @@ const createMutation = useMutation({
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       resetCreateForm();
       setIsCreateOpen(false);
-       if (calendarRef.current && data?.scheduledStart) {
-         const api = calendarRef.current.getApi();
-         api.gotoDate(new Date(data.scheduledStart));
-       }
       if (data?.id) {
         queryClient.invalidateQueries({ queryKey: ['appointment', data.id] });
         queryClient.invalidateQueries({ queryKey: ['service-order', data.id] });
@@ -1154,46 +1161,71 @@ useEffect(() => {
     () =>
       appointments.map((appointment) => {
         const meta = getStatusMeta(appointment.status);
-        const colors = getStatusColors(appointment.status);
-        const classList = ['fc-appointment', meta.calendarClass];
-        if (appointment.id === selectedAppointmentId) {
-          classList.push('is-selected');
-        }
         return {
           id: appointment.id,
           title: appointment.title || 'Programare',
-          start: appointment.scheduledStart,
-          end: appointment.scheduledEnd,
-          backgroundColor: colors.bg,
-          borderColor: colors.border,
-          textColor: colors.text,
-          classNames: classList,
-          extendedProps: {
+          start: new Date(appointment.scheduledStart),
+          end: new Date(appointment.scheduledEnd),
+          resource: {
             status: appointment.status,
             client: appointment.client,
             assignees: appointment.assignees,
+            isSelected: appointment.id === selectedAppointmentId,
+            className: meta.calendarClass,
           },
         };
       }),
     [appointments, selectedAppointmentId]
   );
 
-  const handleDateClick = (info) => {
+  const handleSelectSlot = (slotInfo) => {
     const today = startOfDay(new Date());
-    const clickedDate = startOfDay(info.date);
+    const clickedDate = startOfDay(slotInfo.start);
     if (isBefore(clickedDate, today)) {
       showToast({ title: 'Nu poti crea programari in trecut', type: 'warning' });
       return;
     }
-    openCreateModal(info.date);
+    openCreateModal(slotInfo.start);
   };
 
-  const handleEventClick = (info) => {
-    info.jsEvent.preventDefault();
-    if (info.event.id) {
-      setSelectedAppointmentId(info.event.id);
+  const handleSelectEvent = (event) => {
+    if (event.id) {
+      setSelectedAppointmentId(event.id);
       setActiveTab('details');
     }
+  };
+
+  const eventStyleGetter = (event) => {
+    const className = event.resource?.className || '';
+    const isSelected = event.resource?.isSelected || false;
+
+    return {
+      className: `${className} ${isSelected ? 'is-selected' : ''}`.trim(),
+    };
+  };
+
+  const handleNavigate = (newDate) => {
+    setCalendarDate(newDate);
+  };
+
+  const handleViewChange = (newView) => {
+    setCalendarView(newView);
+  };
+
+  const calendarMessages = {
+    allDay: 'Toată ziua',
+    previous: 'Anterior',
+    next: 'Următor',
+    today: 'Astăzi',
+    month: 'Lună',
+    week: 'Săptămână',
+    day: 'Zi',
+    agenda: 'Agendă',
+    date: 'Data',
+    time: 'Ora',
+    event: 'Programare',
+    noEventsInRange: 'Nu există programări în acest interval.',
+    showMore: (total) => `+${total} mai multe`,
   };
 
   return (
@@ -1301,53 +1333,38 @@ useEffect(() => {
           <div className="py-10 text-center text-sm text-gray-500">Se incarca programarile...</div>
         ) : (
           <>
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView="timeGridWeek"
-              height={750}
-              weekends
-              locales={[roCalendarLocale]}
-              locale="ro"
+            <Calendar
+              localizer={localizer}
               events={calendarEvents}
-              eventDisplay="block"
-              eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-              eventClick={handleEventClick}
-              dateClick={handleDateClick}
-              headerToolbar={{
-                left: 'title',
-                center: 'dayGridMonth,timeGridWeek,timeGridDay',
-                right: 'prev,next today'
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: 750 }}
+              view={calendarView}
+              date={calendarDate}
+              onView={handleViewChange}
+              onNavigate={handleNavigate}
+              views={['month', 'week', 'day']}
+              onSelectSlot={handleSelectSlot}
+              onSelectEvent={handleSelectEvent}
+              selectable
+              eventPropGetter={eventStyleGetter}
+              messages={calendarMessages}
+              culture="ro"
+              min={new Date(2024, 0, 1, 6, 0, 0)}
+              max={new Date(2024, 0, 1, 20, 0, 0)}
+              step={30}
+              timeslots={2}
+              formats={{
+                timeGutterFormat: 'HH:mm',
+                eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
+                  `${localizer.format(start, 'HH:mm', culture)} - ${localizer.format(end, 'HH:mm', culture)}`,
+                dayHeaderFormat: (date, culture, localizer) =>
+                  localizer.format(date, 'EEEE, dd MMM', culture),
+                dayRangeHeaderFormat: ({ start, end }, culture, localizer) =>
+                  `${localizer.format(start, 'dd MMM', culture)} - ${localizer.format(end, 'dd MMM yyyy', culture)}`,
+                monthHeaderFormat: (date, culture, localizer) =>
+                  localizer.format(date, 'MMMM yyyy', culture),
               }}
-              buttonText={{
-                today: 'Astazi',
-                month: 'Luna',
-                week: 'Saptamana',
-                day: 'Zi'
-              }}
-              titleFormat={{ month: 'long', year: 'numeric' }}
-              dayMaxEvents={5}
-              slotMinTime="06:00:00"
-              slotMaxTime="20:00:00"
-              allDaySlot={false}
-              eventContent={(arg) => {
-                const event = arg.event;
-                return (
-                  <div className="w-full overflow-hidden px-1">
-                    <div className="text-[11px] font-medium opacity-90">{arg.timeText}</div>
-                    <div className="truncate text-xs font-semibold">{event.title}</div>
-                  </div>
-                );
-              }}
-              dayHeaderClassNames={() => ['!text-[11px]', '!font-semibold', '!uppercase', '!tracking-wide', '!text-gray-400']}
-              dayCellClassNames={({ isToday }) => {
-                const classes = ['!border-0', '!p-1', '!align-top', 'fc-daygrid-day-viperx'];
-                if (isToday) {
-                  classes.push('!bg-viperx-primary/5', '!rounded-lg');
-                }
-                return classes;
-              }}
-              eventClassNames={() => ['cursor-pointer']}
             />
             {calendarEvents.length === 0 ? (
               <p className="mt-4 text-center text-sm text-gray-400">Nu exista programari pentru filtrul selectat.</p>

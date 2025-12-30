@@ -12,10 +12,6 @@
     "test": "echo 'No tests configured yet' && exit 0"
   },
   "dependencies": {
-    "@fullcalendar/daygrid": "^6.1.14",
-    "@fullcalendar/interaction": "^6.1.14",
-    "@fullcalendar/react": "^6.1.14",
-    "@fullcalendar/timegrid": "^6.1.19",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.66.2",
     "axios": "^1.12.2",
@@ -24,6 +20,7 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
+    "react-big-calendar": "^1.19.4",
     "react-datepicker": "^8.8.0",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.63.0",
