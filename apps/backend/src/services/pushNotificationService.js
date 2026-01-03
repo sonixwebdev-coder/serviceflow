@@ -408,6 +408,78 @@ const sendReminderNotification = async (todo) => {
   });
 };
 
+/**
+ * Send notification for chat message
+ * @param {Object} message - The chat message object
+ * @param {Object} channel - The chat channel object
+ * @param {Array} recipientIds - User IDs to notify (excluding message author)
+ */
+const sendChatMessageNotification = async (message, channel, recipientIds) => {
+  if (!recipientIds || recipientIds.length === 0) return;
+
+  const authorName = `${message.author?.firstName || ''} ${message.author?.lastName || ''}`.trim() || 'Cineva';
+  const channelName = channel.name || (channel.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
+
+  let title = '';
+  let body = '';
+  const icon = '/icons/message.png';
+
+  // Customize message based on channel type
+  if (channel.type === 'DIRECT') {
+    title = authorName;
+    body = message.type === 'TEXT' ? message.body : getMessageTypeLabel(message.type);
+  } else {
+    title = `${channelName}`;
+    body = `${authorName}: ${message.type === 'TEXT' ? message.body : getMessageTypeLabel(message.type)}`;
+  }
+
+  // Truncate body if too long
+  if (body.length > 100) {
+    body = body.substring(0, 97) + '...';
+  }
+
+  for (const userId of recipientIds) {
+    try {
+      const preferences = await getNotificationPreferences(userId);
+      if (!preferences.enablePushNotifications || !preferences.enableMessages) {
+        continue;
+      }
+
+      await sendPushToUser(userId, {
+        title,
+        body,
+        icon,
+        badge: '/icons/badge.png',
+        tag: `chat-${channel.id}`, // Group notifications from same channel
+        data: {
+          type: 'chat',
+          channelId: channel.id,
+          messageId: message.id,
+          url: `/chat?channel=${channel.id}`,
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to send chat notification to user ${userId}:`, error);
+    }
+  }
+};
+
+/**
+ * Get human-readable label for message type
+ */
+const getMessageTypeLabel = (type) => {
+  switch (type) {
+    case 'IMAGE':
+      return 'A trimis o imagine';
+    case 'FILE':
+      return 'A trimis un fișier';
+    case 'VOICE':
+      return 'A trimis un mesaj vocal';
+    default:
+      return 'A trimis un mesaj';
+  }
+};
+
 module.exports = {
   getVapidPublicKey,
   subscribeToPush,
@@ -421,4 +493,5 @@ module.exports = {
   sendLeaveRequestNotification,
   sendTaskNotification,
   sendReminderNotification,
+  sendChatMessageNotification,
 };

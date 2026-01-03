@@ -23,6 +23,7 @@ const pushNotificationsRouter = require('./pushNotifications');
 // ANAF functionality temporarily disabled
 // const anafRouter = require('./anaf');
 const paymentsRouter = require('./payments');
+const chatRouter = require('./chat');
 
 const router = express.Router();
 
@@ -57,5 +58,6 @@ router.use('/push-notifications', pushNotificationsRouter);
 // ANAF functionality temporarily disabled
 // router.use('/anaf', anafRouter);
 router.use('/payments', paymentsRouter);
+router.use('/chat', chatRouter);
 
 module.exports = router;

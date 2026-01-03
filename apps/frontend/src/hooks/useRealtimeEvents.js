@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { connectSocket, disconnectSocket, getSocket, updateSocketToken } from '../lib/socket.js';
 import { useAuthStore } from '../state/useAuthStore.js';
+import { useChatStore } from '../state/useChatStore.js';
 import useToast from '../context/useToast';
 import { refreshAuthSession } from '../utils/api.js';
 
@@ -271,6 +272,87 @@ export const useRealtimeEvents = () => {
       queryClient.invalidateQueries({ queryKey: ['appointment', message.appointmentId] });
     };
 
+    // Chat event handlers
+    const handleChatMessageNew = (data) => {
+      const { channelId, message } = data;
+
+      // Update store
+      useChatStore.getState().addMessage(channelId, message);
+
+      // Update unread count if not active channel
+      const activeChannelId = useChatStore.getState().activeChannelId;
+      if (activeChannelId !== channelId && message.author.id !== user?.id) {
+        useChatStore.getState().incrementUnreadCount(channelId);
+      }
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', channelId] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+    };
+
+    const handleChatMessageUpdated = (data) => {
+      const { channelId, message } = data;
+
+      // Update store
+      useChatStore.getState().updateMessage(channelId, message.id, message);
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', channelId] });
+    };
+
+    const handleChatMessageDeleted = (data) => {
+      const { channelId, messageId } = data;
+
+      // Update store
+      useChatStore.getState().deleteMessage(channelId, messageId);
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', channelId] });
+    };
+
+    const handleChatTyping = (data) => {
+      const { channelId, user: typingUser, isTyping } = data;
+
+      // Don't show own typing indicator
+      if (typingUser.id === user?.id) return;
+
+      // Update store
+      useChatStore.getState().setTyping(channelId, typingUser.id, isTyping);
+    };
+
+    const handleChatPresence = (data) => {
+      const { userId, isOnline } = data;
+
+      // Update store
+      useChatStore.getState().setUserOnline(userId, isOnline);
+    };
+
+    const handleChatChannelUpdated = (channel) => {
+      // Update store
+      useChatStore.getState().updateChannel(channel.id, channel);
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels', channel.id] });
+    };
+
+    const handleChatMemberChange = (data) => {
+      const { channelId } = data;
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels', channelId] });
+    };
+
+    const handleChatRead = (data) => {
+      const { channelId, userId } = data;
+
+      // If current user read, reset unread count
+      if (userId === user?.id) {
+        useChatStore.getState().resetUnreadCount(channelId);
+      }
+    };
+
     // Connection events
     socket.on('connect', handleConnect);
     socket.on('connect_error', handleConnectError);
@@ -305,6 +387,17 @@ export const useRealtimeEvents = () => {
     socket.on('invoice:paid', handleInvoiceChange);
     socket.on('invoice:deleted', handleInvoiceDeleted);
     socket.on('message:new', handleMessageCreated);
+
+    // Chat events
+    socket.on('chat:message:new', handleChatMessageNew);
+    socket.on('chat:message:updated', handleChatMessageUpdated);
+    socket.on('chat:message:deleted', handleChatMessageDeleted);
+    socket.on('chat:typing', handleChatTyping);
+    socket.on('chat:presence', handleChatPresence);
+    socket.on('chat:channel:updated', handleChatChannelUpdated);
+    socket.on('chat:member:added', handleChatMemberChange);
+    socket.on('chat:member:removed', handleChatMemberChange);
+    socket.on('chat:read', handleChatRead);
 
     return () => {
       lastAuthError = null;
@@ -344,8 +437,19 @@ export const useRealtimeEvents = () => {
       socket.off('invoice:paid', handleInvoiceChange);
       socket.off('invoice:deleted', handleInvoiceDeleted);
       socket.off('message:new', handleMessageCreated);
+
+      // Clean up chat event listeners
+      socket.off('chat:message:new', handleChatMessageNew);
+      socket.off('chat:message:updated', handleChatMessageUpdated);
+      socket.off('chat:message:deleted', handleChatMessageDeleted);
+      socket.off('chat:typing', handleChatTyping);
+      socket.off('chat:presence', handleChatPresence);
+      socket.off('chat:channel:updated', handleChatChannelUpdated);
+      socket.off('chat:member:added', handleChatMemberChange);
+      socket.off('chat:member:removed', handleChatMemberChange);
+      socket.off('chat:read', handleChatRead);
     };
-  }, [accessToken, queryClient, showToast]);
+  }, [accessToken, queryClient, showToast, user]);
 };
 
 export const useSocketInstance = () => getSocket();

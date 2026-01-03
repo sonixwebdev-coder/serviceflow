@@ -21,7 +21,8 @@ import {
   CheckSquare,
   ChevronDown,
   ChevronRight,
-  Briefcase
+  Briefcase,
+  MessageSquare
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { USER_ROLES } from '../../utils/constants';
@@ -71,6 +72,12 @@ const DashboardLayout = ({ children }) => {
       name: 'Tablou de bord',
       href: '/dashboard',
       icon: LayoutDashboard,
+      roles: []
+    },
+    {
+      name: 'Chat',
+      href: '/chat',
+      icon: MessageSquare,
       roles: []
     },
     {

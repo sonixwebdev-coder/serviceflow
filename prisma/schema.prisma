@@ -39,6 +39,7 @@ model Organization {
   timeOffRequests      TimeOffRequest[]
   users                User[]
   vehicles             Vehicle[]
+  chatChannels         ChatChannel[]
 
   @@index([slug])
   @@index([status])
@@ -89,6 +90,10 @@ model User {
   roles                  UserRole[]
   notificationPreference NotificationPreference?
   pushSubscriptions      PushSubscription[]
+  chatChannelsCreated    ChatChannel[]           @relation("ChatChannelCreatedBy")
+  chatMembers            ChatMember[]
+  chatMessages           ChatMessage[]
+  chatReadReceipts       ChatReadReceipt[]
 
   @@index([isActive])
   @@index([email])
@@ -394,6 +399,104 @@ model MessageReadReceipt {
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([messageId, userId])
+}
+
+model ChatChannel {
+  id              String            @id @default(cuid())
+  organizationId  String
+  name            String?
+  description     String?
+  type            ChatChannelType   @default(PUBLIC)
+  createdById     String
+  isArchived      Boolean           @default(false)
+  archivedAt      DateTime?
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  organization    Organization      @relation(fields: [organizationId], references: [id])
+  createdBy       User              @relation("ChatChannelCreatedBy", fields: [createdById], references: [id])
+  members         ChatMember[]
+  messages        ChatMessage[]
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([isArchived])
+}
+
+model ChatMember {
+  id              String           @id @default(cuid())
+  channelId       String
+  userId          String
+  role            ChatMemberRole   @default(MEMBER)
+  joinedAt        DateTime         @default(now())
+  lastReadAt      DateTime?
+  isMuted         Boolean          @default(false)
+  isOnline        Boolean          @default(false)
+  lastSeenAt      DateTime?
+  channel         ChatChannel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id])
+
+  @@unique([channelId, userId])
+  @@index([userId])
+  @@index([channelId])
+}
+
+model ChatMessage {
+  id              String              @id @default(cuid())
+  channelId       String
+  authorId        String
+  body            String
+  type            ChatMessageType     @default(TEXT)
+  metadata        Json?
+  isDeleted       Boolean             @default(false)
+  deletedAt       DateTime?
+  editedAt        DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  channel         ChatChannel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author          User                @relation(fields: [authorId], references: [id])
+  attachments     ChatAttachment[]
+  readReceipts    ChatReadReceipt[]
+
+  @@index([channelId, createdAt])
+  @@index([authorId])
+}
+
+model ChatAttachment {
+  id              String           @id @default(cuid())
+  messageId       String
+  fileName        String
+  fileUrl         String
+  fileType        String?
+  fileSize        Int?
+  duration        Int?
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  message         ChatMessage      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model ChatReadReceipt {
+  id              String           @id @default(cuid())
+  messageId       String
+  userId          String
+  readAt          DateTime         @default(now())
+  message         ChatMessage      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+}
+
+model ChatTypingIndicator {
+  id              String           @id @default(cuid())
+  channelId       String
+  userId          String
+  startedAt       DateTime         @default(now())
+
+  @@unique([channelId, userId])
+  @@index([startedAt])
 }
 
 model ServiceOrder {
@@ -1017,4 +1120,25 @@ enum AnafInvoiceStatus {
   OK
   ERROR
   REJECTED
+}
+
+enum ChatChannelType {
+  PUBLIC
+  PRIVATE
+  DIRECT
+  GROUP
+}
+
+enum ChatMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ChatMessageType {
+  TEXT
+  FILE
+  VOICE
+  SYSTEM
+  IMAGE
 }

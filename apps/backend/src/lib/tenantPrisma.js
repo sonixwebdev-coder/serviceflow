@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 
 // Models that require organization scoping
+// Only include models that have an organizationId field in the Prisma schema
 const TENANT_MODELS = [
   'user',
   'client',
@@ -17,6 +18,9 @@ const TENANT_MODELS = [
   'notification',
   'auditLog',
   'registrationRequest',
+  'chatChannel', // Only chatChannel has organizationId - other chat models are scoped via channel
+  // Note: chatMember, chatMessage, chatAttachment, chatReadReceipt, chatTypingIndicator
+  // do NOT have organizationId - they are scoped through their parent chatChannel
 ];
 
 /**
