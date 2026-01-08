@@ -1,15 +1,36 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useChatStore } from '../../state/useChatStore';
+import { useAuthStore } from '../../state/useAuthStore';
 import { useChannel } from '../../hooks/useChat';
 import { Users, Crown, Shield, User as UserIcon } from 'lucide-react';
+import UserHoverCard from './UserHoverCard';
 
 /**
  * Chat Member List Component
  * Displays channel members with online status and roles
  */
 export default function ChatMemberList() {
-  const { activeChannelId, isUserOnline } = useChatStore();
+  const { activeChannelId, isUserOnline, onlineUsers, initOnlineUsers } = useChatStore();
+  const { user: currentUser } = useAuthStore();
   const { data: channel, isLoading } = useChannel(activeChannelId);
+
+  // Initialize online users from channel members when channel data loads
+  useEffect(() => {
+    if (channel?.members) {
+      initOnlineUsers(channel.members);
+    }
+  }, [channel?.members, initOnlineUsers]);
+
+  // Check if user is online - prioritize socket updates, fall back to API data
+  const checkOnline = (member) => {
+    const userId = member.user.id;
+    // Check if we have tracked this user (socket update or initialized from API)
+    if (onlineUsers[userId] !== undefined) {
+      return onlineUsers[userId];
+    }
+    // Fall back to API response if not tracked yet
+    return member.isOnline || false;
+  };
 
   if (!activeChannelId || isLoading) {
     return null;
@@ -33,8 +54,8 @@ export default function ChatMemberList() {
 
   // Sort members: online first, then by role
   const sortedMembers = [...(channel.members || [])].sort((a, b) => {
-    const aOnline = isUserOnline(a.user.id);
-    const bOnline = isUserOnline(b.user.id);
+    const aOnline = checkOnline(a);
+    const bOnline = checkOnline(b);
 
     if (aOnline !== bOnline) {
       return bOnline ? 1 : -1;
@@ -44,7 +65,7 @@ export default function ChatMemberList() {
     return roleOrder[a.role] - roleOrder[b.role];
   });
 
-  const onlineCount = sortedMembers.filter((m) => isUserOnline(m.user.id)).length;
+  const onlineCount = sortedMembers.filter((m) => checkOnline(m)).length;
 
   return (
     <div className="flex w-64 flex-col border-l border-gray-200 bg-white">
@@ -63,44 +84,59 @@ export default function ChatMemberList() {
       <div className="flex-1 overflow-y-auto p-3">
         <div className="space-y-1">
           {sortedMembers.map((member) => {
-            const online = isUserOnline(member.user.id);
+            const online = checkOnline(member);
+            const isCurrentUser = member.user.id === currentUser?.id;
 
             return (
-              <div
+              <UserHoverCard
                 key={member.id}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50"
+                user={{ ...member.user, joinedAt: member.joinedAt }}
+                disabled={isCurrentUser}
               >
-                {/* Avatar with online status */}
-                <div className="relative flex-shrink-0">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-viperx-primary text-sm text-white">
-                    {member.user.firstName[0]}
-                    {member.user.lastName[0]}
+                <div
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer ${
+                    isCurrentUser
+                      ? 'bg-viperx-primary/5 border border-viperx-primary/20'
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
+                  {/* Avatar with online status */}
+                  <div className="relative flex-shrink-0">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm text-white ${
+                      isCurrentUser ? 'bg-viperx-primary ring-2 ring-viperx-primary/30' : 'bg-viperx-primary'
+                    }`}>
+                      {member.user.firstName[0]}
+                      {member.user.lastName[0]}
+                    </div>
+                    {online && (
+                      <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
+                    )}
                   </div>
-                  {online && (
-                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
+
+                  {/* User Info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                      <p className={`truncate text-sm font-medium ${
+                        isCurrentUser ? 'text-viperx-primary' : 'text-gray-900'
+                      }`}>
+                        {member.user.firstName} {member.user.lastName}
+                        {isCurrentUser && <span className="ml-1 text-xs font-normal text-gray-500">(tu)</span>}
+                      </p>
+                      {getRoleIcon(member.role)}
+                    </div>
+                    <p className="truncate text-xs text-gray-500">
+                      {online ? 'Online' : 'Deconectat'}
+                    </p>
+                  </div>
+
+                  {/* Role Badge */}
+                  {(member.role === 'OWNER' || member.role === 'ADMIN') && (
+                    <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      {getRoleLabel(member.role)}
+                    </span>
                   )}
                 </div>
-
-                {/* User Info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <p className="truncate text-sm font-medium text-gray-900">
-                      {member.user.firstName} {member.user.lastName}
-                    </p>
-                    {getRoleIcon(member.role)}
-                  </div>
-                  <p className="truncate text-xs text-gray-500">
-                    {online ? 'Online' : 'Deconectat'}
-                  </p>
-                </div>
-
-                {/* Role Badge */}
-                {(member.role === 'OWNER' || member.role === 'ADMIN') && (
-                  <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                    {getRoleLabel(member.role)}
-                  </span>
-                )}
-              </div>
+              </UserHoverCard>
             );
           })}
         </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useChatStore } from '../../state/useChatStore';
+import { useAuthStore } from '../../state/useAuthStore';
 import MessageItem from './MessageItem';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 
@@ -8,19 +9,30 @@ import { format, isToday, isYesterday, isSameDay } from 'date-fns';
  * Displays messages with date separators and auto-scroll
  */
 export default function MessageList({ channelId }) {
-  const { messagesByChannel, getTypingUsers } = useChatStore();
+  const { messagesByChannel, getTypingUsers, typingUsers, channels, pendingMessages } = useChatStore();
+  const { user: currentUser } = useAuthStore();
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
 
   const messages = messagesByChannel[channelId] || [];
+  const pending = pendingMessages[channelId] || [];
   const typingUserIds = getTypingUsers(channelId);
+
+  // Get typing user names for display
+  const activeChannel = channels.find((ch) => ch.id === channelId);
+  const typingUserNames = typingUserIds
+    .map((userId) => {
+      const member = activeChannel?.members?.find((m) => m.user?.id === userId);
+      return member?.user?.firstName || 'Cineva';
+    })
+    .slice(0, 3);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages.length]);
+  }, [messages.length, pending.length]);
 
   const getDateSeparator = (date) => {
     const messageDate = new Date(date);
@@ -102,10 +114,24 @@ export default function MessageList({ channelId }) {
               <MessageItem
                 message={message}
                 showAvatar={showAvatar}
+                isOwnMessage={message.authorId === currentUser?.id}
               />
             </div>
           );
         })}
+
+        {/* Pending Messages (Optimistic UI) */}
+        {pending.map((message) => (
+          <div key={message.tempId}>
+            <MessageItem
+              message={message}
+              showAvatar={true}
+              isOwnMessage={true}
+              isPending={true}
+              status={message.status}
+            />
+          </div>
+        ))}
 
         {/* Typing Indicator */}
         {typingUserIds.length > 0 && (
@@ -115,7 +141,13 @@ export default function MessageList({ channelId }) {
               <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.15s]"></div>
               <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></div>
             </div>
-            <span>Cineva scrie...</span>
+            <span>
+              {typingUserNames.length === 1
+                ? `${typingUserNames[0]} scrie...`
+                : typingUserNames.length === 2
+                  ? `${typingUserNames.join(' și ')} scriu...`
+                  : `${typingUserNames.slice(0, 2).join(', ')} și alții scriu...`}
+            </span>
           </div>
         )}
 

@@ -22,7 +22,8 @@ import {
   ChevronDown,
   ChevronRight,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  MoreVertical
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { USER_ROLES } from '../../utils/constants';
@@ -30,6 +31,7 @@ import useAuth from '../../context/useAuth';
 import useToast from '../../context/useToast';
 import useNotifications from '../../hooks/useNotifications';
 import { markNotificationRead, markNotificationsRead } from '../../services/notificationService';
+import FloatingChatWidget from '../chat/FloatingChatWidget';
 
 const formatRelativeTime = (value) => {
   try {
@@ -44,6 +46,7 @@ const DashboardLayout = ({ children }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [markingReadIds, setMarkingReadIds] = useState(new Set());
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     crm: true,
     echipa: false,
@@ -311,37 +314,60 @@ const DashboardLayout = ({ children }) => {
         })}
       </nav>
       <div className="border-t border-gray-700 px-4 py-4">
-        <div className="flex items-center gap-3 text-sm text-gray-200">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-viperx-primary font-semibold text-white">
-            {user?.firstName?.[0]}
-            {user?.lastName?.[0]}
+        <div className="relative flex items-center justify-between text-sm text-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-viperx-primary font-semibold text-white">
+              {user?.firstName?.[0]}
+              {user?.lastName?.[0]}
+            </div>
+            <div>
+              <p className="font-semibold text-white">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs capitalize text-gray-400">{user?.role}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-white">
-              {user?.firstName} {user?.lastName}
-            </p>
-            <p className="text-xs capitalize text-gray-400">{user?.role}</p>
-          </div>
-        </div>
-        <div className="mt-3 space-y-2">
-          <Link
-            to="/profile"
-            onClick={() => {
-              onNavigate?.();
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:bg-gray-600 hover:text-white"
-          >
-            <User size={18} />
-            Profil
-          </Link>
           <button
             type="button"
-            onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:bg-gray-600 hover:text-white"
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-700 hover:text-white"
           >
-            <LogOut size={18} />
-            Deconecteaza-te
+            <MoreVertical size={18} />
           </button>
+
+          {/* User Menu Dropdown */}
+          {userMenuOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setUserMenuOpen(false)}
+              />
+              <div className="absolute bottom-full right-0 z-20 mb-2 w-48 rounded-lg bg-gray-700 py-1 shadow-lg">
+                <Link
+                  to="/profile"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    onNavigate?.();
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-200 transition hover:bg-gray-600 hover:text-white"
+                >
+                  <User size={16} />
+                  Profil
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                  }}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-200 transition hover:bg-gray-600 hover:text-white"
+                >
+                  <LogOut size={16} />
+                  Deconecteaza-te
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -487,6 +513,9 @@ const DashboardLayout = ({ children }) => {
           </aside>
         </div>
       )}
+
+      {/* Floating Chat Widget */}
+      <FloatingChatWidget />
     </div>
   );
 };

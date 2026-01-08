@@ -19,9 +19,15 @@ export const useChatStore = create((set, get) => ({
     })),
 
   addChannel: (channel) =>
-    set((state) => ({
-      channels: [channel, ...state.channels],
-    })),
+    set((state) => {
+      // Prevent duplicates
+      if (state.channels.some((ch) => ch.id === channel.id)) {
+        return state;
+      }
+      return {
+        channels: [channel, ...state.channels],
+      };
+    }),
 
   removeChannel: (channelId) =>
     set((state) => ({
@@ -73,6 +79,40 @@ export const useChatStore = create((set, get) => ({
         [channelId]: (state.messagesByChannel[channelId] || []).filter((msg) => msg.id !== messageId),
       },
     })),
+
+  // Pending messages (optimistic UI for sending)
+  pendingMessages: {}, // { [channelId]: PendingMessage[] }
+
+  addPendingMessage: (channelId, message) =>
+    set((state) => ({
+      pendingMessages: {
+        ...state.pendingMessages,
+        [channelId]: [...(state.pendingMessages[channelId] || []), message],
+      },
+    })),
+
+  removePendingMessage: (channelId, tempId) =>
+    set((state) => ({
+      pendingMessages: {
+        ...state.pendingMessages,
+        [channelId]: (state.pendingMessages[channelId] || []).filter((msg) => msg.tempId !== tempId),
+      },
+    })),
+
+  updatePendingMessage: (channelId, tempId, updates) =>
+    set((state) => ({
+      pendingMessages: {
+        ...state.pendingMessages,
+        [channelId]: (state.pendingMessages[channelId] || []).map((msg) =>
+          msg.tempId === tempId ? { ...msg, ...updates } : msg
+        ),
+      },
+    })),
+
+  getPendingMessages: (channelId) => {
+    const state = get();
+    return state.pendingMessages[channelId] || [];
+  },
 
   // Typing indicators
   typingUsers: {}, // { [channelId]: Set<userId> }
@@ -127,23 +167,33 @@ export const useChatStore = create((set, get) => ({
       },
     })),
 
-  // Online presence
-  onlineUsers: new Set(),
+  // Online presence - use object for better Zustand reactivity
+  onlineUsers: {},
 
   setUserOnline: (userId, isOnline) =>
+    set((state) => ({
+      onlineUsers: {
+        ...state.onlineUsers,
+        [userId]: isOnline,
+      },
+    })),
+
+  // Initialize online users from API data (e.g., channel members)
+  initOnlineUsers: (members) =>
     set((state) => {
-      const newSet = new Set(state.onlineUsers);
-      if (isOnline) {
-        newSet.add(userId);
-      } else {
-        newSet.delete(userId);
-      }
-      return { onlineUsers: newSet };
+      const newOnlineUsers = { ...state.onlineUsers };
+      members.forEach((member) => {
+        // Only set if not already tracked (preserve socket updates)
+        if (newOnlineUsers[member.user?.id || member.userId] === undefined) {
+          newOnlineUsers[member.user?.id || member.userId] = member.isOnline || false;
+        }
+      });
+      return { onlineUsers: newOnlineUsers };
     }),
 
   isUserOnline: (userId) => {
     const state = get();
-    return state.onlineUsers.has(userId);
+    return state.onlineUsers[userId] === true;
   },
 
   // UI state
@@ -182,9 +232,10 @@ export const useChatStore = create((set, get) => ({
       activeChannelId: null,
       channels: [],
       messagesByChannel: {},
+      pendingMessages: {},
       typingUsers: {},
       unreadCounts: {},
-      onlineUsers: new Set(),
+      onlineUsers: {},
       searchQuery: '',
       isSidebarOpen: true,
       isMemberListOpen: true,

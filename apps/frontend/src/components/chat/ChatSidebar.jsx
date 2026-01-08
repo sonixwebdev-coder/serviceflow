@@ -1,8 +1,32 @@
 import React, { useState } from 'react';
 import { useChatStore } from '../../state/useChatStore';
+import { useAuthStore } from '../../state/useAuthStore';
+import { useChannels } from '../../hooks/useChat';
 import { Hash, Lock, MessageSquare, Plus, Search, Users, UserPlus } from 'lucide-react';
 import CreateDMDialog from './CreateDMDialog';
 import CreateChannelDialog from './CreateChannelDialog';
+
+// Skeleton component for channel items
+const ChannelSkeleton = () => (
+  <div className="flex items-center gap-2 px-3 py-2">
+    <div className="h-4 w-4 animate-pulse rounded bg-gray-200" />
+    <div className="h-4 flex-1 animate-pulse rounded bg-gray-200" />
+  </div>
+);
+
+// Skeleton for channel section
+const SectionSkeleton = () => (
+  <div className="mb-4">
+    <div className="mb-2 flex items-center gap-2 px-3">
+      <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
+    </div>
+    <div className="space-y-1">
+      <ChannelSkeleton />
+      <ChannelSkeleton />
+      <ChannelSkeleton />
+    </div>
+  </div>
+);
 
 /**
  * Chat Sidebar Component
@@ -18,6 +42,8 @@ export default function ChatSidebar() {
     filteredChannels,
     unreadCounts,
   } = useChatStore();
+  const { user: currentUser } = useAuthStore();
+  const { isLoading: channelsLoading } = useChannels();
 
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [showCreateDM, setShowCreateDM] = useState(false);
@@ -33,21 +59,26 @@ export default function ChatSidebar() {
   const getChannelName = (channel) => {
     if (channel.name) return channel.name;
 
-    // For DMs, show other user's name
+    // For DMs, show other user's name (not the current user)
     if (channel.type === 'DIRECT') {
-      const otherMember = channel.members.find((m) => m.user.id !== channel.createdById);
-      if (otherMember) {
+      const otherMember = channel.members?.find((m) => m.user?.id !== currentUser?.id);
+      if (otherMember?.user) {
         return `${otherMember.user.firstName} ${otherMember.user.lastName}`;
       }
     }
 
-    // For group DMs, show participant names
+    // For group DMs, show participant names (excluding current user)
     if (channel.type === 'GROUP') {
-      const names = channel.members.map((m) => m.user.firstName).join(', ');
-      return names || 'Group Chat';
+      const otherMembers = channel.members?.filter((m) => m.user?.id !== currentUser?.id) || [];
+      const names = otherMembers.slice(0, 3).map((m) => m.user.firstName).join(', ');
+      const remaining = otherMembers.length - 3;
+      if (remaining > 0) {
+        return `${names} +${remaining}`;
+      }
+      return names || 'Chat Grup';
     }
 
-    return 'Unnamed Channel';
+    return 'Canal fără nume';
   };
 
   const getChannelIcon = (channel) => {
@@ -126,15 +157,24 @@ export default function ChatSidebar() {
 
       {/* Channels List */}
       <div className="flex-1 overflow-y-auto p-3">
-        <ChannelSection title="Canale Publice" channels={publicChannels} icon={Hash} />
-        <ChannelSection title="Canale Private" channels={privateChannels} icon={Lock} />
-        <ChannelSection title="Mesaje Directe" channels={directMessages} icon={MessageSquare} />
-        <ChannelSection title="Mesaje Grup" channels={groupMessages} icon={Users} />
+        {channelsLoading ? (
+          <>
+            <SectionSkeleton />
+            <SectionSkeleton />
+          </>
+        ) : (
+          <>
+            <ChannelSection title="Canale Publice" channels={publicChannels} icon={Hash} />
+            <ChannelSection title="Canale Private" channels={privateChannels} icon={Lock} />
+            <ChannelSection title="Mesaje Directe" channels={directMessages} icon={MessageSquare} />
+            <ChannelSection title="Mesaje Grup" channels={groupMessages} icon={Users} />
 
-        {displayChannels.length === 0 && (
-          <div className="py-8 text-center text-sm text-gray-500">
-            {searchQuery ? 'Niciun canal găsit' : 'Niciun canal încă'}
-          </div>
+            {displayChannels.length === 0 && (
+              <div className="py-8 text-center text-sm text-gray-500">
+                {searchQuery ? 'Niciun canal găsit' : 'Niciun canal încă'}
+              </div>
+            )}
+          </>
         )}
       </div>
 

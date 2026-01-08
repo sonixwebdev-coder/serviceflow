@@ -4,7 +4,10 @@ import { getSocket } from '../../lib/socket';
 import { Send, Smile } from 'lucide-react';
 import FileUploadButton from './FileUploadButton';
 import VoiceRecordButton from './VoiceRecordButton';
+import EmojiPicker from './EmojiPicker';
 import useToast from '../../context/useToast';
+import { useChatStore } from '../../state/useChatStore';
+import { useAuthStore } from '../../state/useAuthStore';
 
 /**
  * Message Composer Component
@@ -13,12 +16,16 @@ import useToast from '../../context/useToast';
 export default function MessageComposer({ channelId }) {
   const [body, setBody] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const textareaRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const emojiButtonRef = useRef(null);
 
   const sendMessageMutation = useSendMessage(channelId);
   const socket = getSocket();
   const { showToast } = useToast();
+  const { user: currentUser } = useAuthStore();
+  const { addPendingMessage, removePendingMessage, updatePendingMessage } = useChatStore();
 
   // Auto-resize textarea
   useEffect(() => {
@@ -59,19 +66,37 @@ export default function MessageComposer({ channelId }) {
     if (!body.trim() || isSending) return;
 
     const messageBody = body.trim();
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Create pending message for optimistic UI
+    const pendingMessage = {
+      tempId,
+      body: messageBody,
+      type: 'TEXT',
+      status: 'sending',
+      createdAt: new Date().toISOString(),
+      author: currentUser,
+      authorId: currentUser?.id,
+    };
+
     setBody('');
     setIsSending(true);
     stopTyping();
+
+    // Add pending message immediately
+    addPendingMessage(channelId, pendingMessage);
 
     try {
       await sendMessageMutation.mutateAsync({
         body: messageBody,
         type: 'TEXT',
       });
+      // Remove pending message on success (real message comes via socket)
+      removePendingMessage(channelId, tempId);
     } catch (error) {
       console.error('Failed to send message:', error);
-      // Restore message on error
-      setBody(messageBody);
+      // Mark as failed
+      updatePendingMessage(channelId, tempId, { status: 'failed' });
       showToast({
         title: 'Eroare',
         description: error?.message || 'Nu s-a putut trimite mesajul. Te rugăm să încerci din nou.',
@@ -93,6 +118,25 @@ export default function MessageComposer({ channelId }) {
 
   const handleChange = (e) => {
     setBody(e.target.value);
+    handleTyping();
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newBody = body.slice(0, start) + emoji + body.slice(end);
+      setBody(newBody);
+
+      // Set cursor position after emoji
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+      }, 0);
+    } else {
+      setBody((prev) => prev + emoji);
+    }
     handleTyping();
   };
 
@@ -119,14 +163,26 @@ export default function MessageComposer({ channelId }) {
           />
         </div>
 
-        {/* Emoji Button (placeholder for future implementation) */}
-        <button
-          type="button"
-          className="flex-shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-          title="Adaugă emoji"
-        >
-          <Smile className="h-5 w-5" />
-        </button>
+        {/* Emoji Button */}
+        <div className="relative">
+          <button
+            ref={emojiButtonRef}
+            type="button"
+            onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+            className={`flex-shrink-0 rounded-lg p-2 hover:bg-gray-100 ${
+              isEmojiPickerOpen ? 'text-viperx-primary' : 'text-gray-500 hover:text-gray-700'
+            }`}
+            title="Adaugă emoji"
+          >
+            <Smile className="h-5 w-5" />
+          </button>
+          <EmojiPicker
+            isOpen={isEmojiPickerOpen}
+            onClose={() => setIsEmojiPickerOpen(false)}
+            onSelect={handleEmojiSelect}
+            anchorRef={emojiButtonRef}
+          />
+        </div>
 
         {/* Send Button */}
         <button

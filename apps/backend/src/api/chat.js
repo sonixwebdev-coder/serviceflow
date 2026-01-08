@@ -14,6 +14,7 @@ const {
   broadcastChatMessage,
   broadcastChatMessageUpdate,
   broadcastChatMessageDelete,
+  broadcastChannelCreated,
 } = require('../realtime/chatEvents');
 
 const {
@@ -103,6 +104,12 @@ router.post(
   validate(createChannelSchema),
   asyncHandler(async (req, res) => {
     const channel = await chatService.createChannel(req.tenantPrisma, req.body, req.user);
+
+    // Broadcast new channel to organization so other users see it
+    if (channel) {
+      broadcastChannelCreated(req.user.organizationId, channel);
+    }
+
     return created(res, channel);
   })
 );
@@ -443,7 +450,60 @@ router.post(
     );
 
     // Broadcast message with attachment
-    broadcastChatMessage(req.user.organizationId, req.params.channelId, { ...message, attachments: [attachment] });
+    const messageWithAttachment = { ...message, attachments: [attachment] };
+    broadcastChatMessage(req.user.organizationId, req.params.channelId, messageWithAttachment);
+
+    // Get channel info for notifications
+    const channel = await req.tenantPrisma.chatChannel.findUnique({
+      where: { id: req.params.channelId },
+      include: {
+        members: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (channel) {
+      // Get recipient IDs (all members except the author)
+      const recipientIds = channel.members
+        .map((m) => m.userId)
+        .filter((userId) => userId !== req.user.id);
+
+      // Create DB notifications and send push notifications in background
+      (async () => {
+        try {
+          const authorName = `${req.user.firstName} ${req.user.lastName}`;
+          const channelName = channel.name || (channel.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
+          const messagePreview = messageType === 'IMAGE' ? 'A trimis o imagine' : 'A trimis un fișier';
+
+          // Create DB notifications for each recipient
+          await Promise.all(
+            recipientIds.map((recipientId) =>
+              createNotification({
+                recipientId,
+                title: channel.type === 'DIRECT' ? authorName : channelName,
+                message: channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+                type: 'MESSAGE',
+                entityType: 'CHAT_MESSAGE',
+                entityId: message.id,
+                metadata: {
+                  channelId: channel.id,
+                  messageId: message.id,
+                  authorId: req.user.id,
+                  authorName,
+                },
+                organizationId: req.user.organizationId,
+              }).catch((err) => console.error('Failed to create chat notification:', err))
+            )
+          );
+
+          // Send push notifications
+          await sendChatMessageNotification(messageWithAttachment, channel, recipientIds);
+        } catch (error) {
+          console.error('Failed to send chat notifications:', error);
+        }
+      })();
+    }
 
     return created(res, { message, attachment });
   })
@@ -492,7 +552,60 @@ router.post(
     );
 
     // Broadcast voice message
-    broadcastChatMessage(req.user.organizationId, req.params.channelId, { ...message, attachments: [attachment] });
+    const messageWithAttachment = { ...message, attachments: [attachment] };
+    broadcastChatMessage(req.user.organizationId, req.params.channelId, messageWithAttachment);
+
+    // Get channel info for notifications
+    const channel = await req.tenantPrisma.chatChannel.findUnique({
+      where: { id: req.params.channelId },
+      include: {
+        members: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (channel) {
+      // Get recipient IDs (all members except the author)
+      const recipientIds = channel.members
+        .map((m) => m.userId)
+        .filter((userId) => userId !== req.user.id);
+
+      // Create DB notifications and send push notifications in background
+      (async () => {
+        try {
+          const authorName = `${req.user.firstName} ${req.user.lastName}`;
+          const channelName = channel.name || (channel.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
+          const messagePreview = 'A trimis un mesaj vocal';
+
+          // Create DB notifications for each recipient
+          await Promise.all(
+            recipientIds.map((recipientId) =>
+              createNotification({
+                recipientId,
+                title: channel.type === 'DIRECT' ? authorName : channelName,
+                message: channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+                type: 'MESSAGE',
+                entityType: 'CHAT_MESSAGE',
+                entityId: message.id,
+                metadata: {
+                  channelId: channel.id,
+                  messageId: message.id,
+                  authorId: req.user.id,
+                  authorName,
+                },
+                organizationId: req.user.organizationId,
+              }).catch((err) => console.error('Failed to create chat notification:', err))
+            )
+          );
+
+          // Send push notifications
+          await sendChatMessageNotification(messageWithAttachment, channel, recipientIds);
+        } catch (error) {
+          console.error('Failed to send chat notifications:', error);
+        }
+      })();
+    }
 
     return created(res, { message, attachment });
   })

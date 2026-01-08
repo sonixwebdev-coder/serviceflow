@@ -13,8 +13,12 @@ import useToast from '../context/useToast';
  */
 export default function Chat() {
   const { data: channels, isLoading, error } = useChannels();
-  const { activeChannelId, setChannels, isSidebarOpen, isMemberListOpen } = useChatStore();
+  const { activeChannelId, setChannels, isSidebarOpen, isMemberListOpen, channels: storeChannels } = useChatStore();
   const { showToast } = useToast();
+
+  // Get the active channel to check its type
+  const activeChannel = storeChannels.find((ch) => ch.id === activeChannelId);
+  const shouldShowMemberList = isMemberListOpen && activeChannelId && activeChannel?.type !== 'DIRECT';
 
   // Update channels in store when data changes
   useEffect(() => {
@@ -96,8 +100,8 @@ export default function Chat() {
         )}
       </div>
 
-      {/* Member List */}
-      {isMemberListOpen && activeChannelId && <ChatMemberList />}
+      {/* Member List - hidden for DM channels */}
+      {shouldShowMemberList && <ChatMemberList />}
     </div>
   );
 }

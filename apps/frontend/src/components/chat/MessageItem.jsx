@@ -2,25 +2,50 @@ import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useDeleteMessage, useUpdateMessage } from '../../hooks/useChat';
-import { MoreVertical, Edit2, Trash2, File, Image } from 'lucide-react';
+import { MoreVertical, Edit2, Trash2, File, Image, Mic, Clock, AlertCircle } from 'lucide-react';
 import useToast from '../../context/useToast';
+import ImagePreviewModal from './ImagePreviewModal';
+import UserHoverCard from './UserHoverCard';
 
 /**
  * Message Item Component
  * Displays individual message with avatar, content, and actions
  */
-export default function MessageItem({ message, showAvatar }) {
+export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPending, status }) {
   const { user: currentUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editedBody, setEditedBody] = useState(message.body);
   const [showActions, setShowActions] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const { showToast } = useToast();
 
   const updateMessageMutation = useUpdateMessage();
   const deleteMessageMutation = useDeleteMessage();
 
-  const isOwnMessage = message.author.id === currentUser?.id;
+  // Use prop if provided, otherwise compute
+  const isOwnMessage = isOwnMessageProp ?? (message.author?.id === currentUser?.id);
   const timestamp = format(new Date(message.createdAt), 'HH:mm');
+
+  // Get display body based on message type
+  const getDisplayBody = () => {
+    // Don't show body text for voice messages (audio player shows instead)
+    if (message.type === 'VOICE') {
+      return null;
+    }
+
+    // For file/image messages, show appropriate Romanian text
+    if (message.type === 'FILE' || message.type === 'IMAGE') {
+      const fileName = message.attachments?.[0]?.fileName || '';
+      if (message.type === 'IMAGE') {
+        return isOwnMessage ? `Ai trimis o imagine: ${fileName}` : `A trimis o imagine: ${fileName}`;
+      }
+      return isOwnMessage ? `Ai trimis un fișier: ${fileName}` : `A trimis un fișier: ${fileName}`;
+    }
+
+    return message.body;
+  };
+
+  const displayBody = getDisplayBody();
 
   const handleEdit = async () => {
     if (editedBody.trim() && editedBody !== message.body) {
@@ -75,12 +100,14 @@ export default function MessageItem({ message, showAvatar }) {
           const isVoice = message.type === 'VOICE';
 
           if (isImage) {
+            const imageSrc = `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/files/${attachment.fileUrl}`;
             return (
               <div key={attachment.id} className="max-w-sm">
                 <img
-                  src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/files/${attachment.fileUrl}`}
+                  src={imageSrc}
                   alt={attachment.fileName}
-                  className="rounded-lg"
+                  className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setPreviewImage({ src: imageSrc, fileName: attachment.fileName })}
                 />
               </div>
             );
@@ -88,14 +115,30 @@ export default function MessageItem({ message, showAvatar }) {
 
           if (isVoice) {
             return (
-              <audio
+              <div
                 key={attachment.id}
-                controls
-                className="max-w-sm"
-                src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/files/${attachment.fileUrl}`}
+                className={`flex items-center gap-3 rounded-xl p-3 ${
+                  isOwnMessage ? 'bg-orange-600/20' : 'bg-gray-100'
+                }`}
               >
-                Browserul tău nu suportă elementul audio.
-              </audio>
+                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                  isOwnMessage ? 'bg-white/30' : 'bg-viperx-primary/10'
+                }`}>
+                  <Mic className={`h-5 w-5 ${isOwnMessage ? 'text-white' : 'text-viperx-primary'}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-medium mb-1 ${isOwnMessage ? 'text-white/80' : 'text-gray-500'}`}>
+                    Mesaj vocal
+                  </p>
+                  <audio
+                    controls
+                    className="w-full max-w-[200px] h-8"
+                    src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/files/${attachment.fileUrl}`}
+                  >
+                    Browserul tău nu suportă elementul audio.
+                  </audio>
+                </div>
+              </div>
             );
           }
 
@@ -125,29 +168,36 @@ export default function MessageItem({ message, showAvatar }) {
 
   return (
     <div
-      className="group relative flex gap-3"
+      className={`group relative flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      {/* Avatar */}
-      {showAvatar ? (
-        <div className="flex-shrink-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-viperx-primary text-white">
-            {message.author.firstName[0]}
-            {message.author.lastName[0]}
-          </div>
-        </div>
-      ) : (
-        <div className="w-10 flex-shrink-0"></div>
+      {/* Avatar - only show for other users' messages */}
+      {!isOwnMessage && (
+        showAvatar ? (
+          <UserHoverCard user={message.author}>
+            <div className="flex-shrink-0 cursor-pointer">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-viperx-primary text-white">
+                {message.author?.firstName?.[0] || '?'}
+                {message.author?.lastName?.[0] || ''}
+              </div>
+            </div>
+          </UserHoverCard>
+        ) : (
+          <div className="w-10 flex-shrink-0"></div>
+        )
       )}
 
       {/* Message Content */}
-      <div className="min-w-0 flex-1">
-        {showAvatar && (
+      <div className={`min-w-0 max-w-[70%] ${isOwnMessage ? 'ml-auto' : ''}`}>
+        {/* Author name and timestamp */}
+        {showAvatar && !isOwnMessage && (
           <div className="mb-1 flex items-baseline gap-2">
-            <span className="font-semibold text-gray-900">
-              {message.author.firstName} {message.author.lastName}
-            </span>
+            <UserHoverCard user={message.author}>
+              <span className="font-semibold text-gray-900 cursor-pointer hover:underline">
+                {message.author?.firstName} {message.author?.lastName}
+              </span>
+            </UserHoverCard>
             <span className="text-xs text-gray-500">{timestamp}</span>
             {message.editedAt && (
               <span className="text-xs text-gray-400">(editat)</span>
@@ -184,23 +234,42 @@ export default function MessageItem({ message, showAvatar }) {
               </button>
             </div>
           </div>
-        ) : (
-          <div className="text-sm text-gray-900">
+        ) : displayBody ? (
+          <div
+            className={`inline-block rounded-2xl px-4 py-2 text-sm ${
+              isOwnMessage
+                ? 'bg-viperx-primary text-white rounded-br-md'
+                : 'bg-white text-gray-900 shadow-sm border border-gray-100 rounded-bl-md'
+            } ${isPending ? 'opacity-70' : ''}`}
+          >
             {message.isDeleted ? (
-              <span className="italic text-gray-400">{message.body}</span>
+              <span className="italic opacity-70">{displayBody}</span>
             ) : (
-              <p className="whitespace-pre-wrap break-words">{message.body}</p>
+              <p className="whitespace-pre-wrap break-words">{displayBody}</p>
+            )}
+            {/* Timestamp for own messages */}
+            {isOwnMessage && (
+              <div className="mt-1 flex items-center justify-end gap-1 text-xs opacity-70">
+                {isPending && status === 'sending' && (
+                  <Clock className="h-3 w-3 animate-pulse" />
+                )}
+                {isPending && status === 'failed' && (
+                  <AlertCircle className="h-3 w-3 text-red-300" />
+                )}
+                <span>{isPending ? (status === 'sending' ? 'Se trimite...' : 'Eroare') : timestamp}</span>
+                {!isPending && message.editedAt && <span>(editat)</span>}
+              </div>
             )}
           </div>
-        )}
+        ) : null}
 
         {/* Attachments */}
         {renderAttachments()}
       </div>
 
       {/* Actions Menu */}
-      {showActions && isOwnMessage && !message.isDeleted && !isEditing && (
-        <div className="absolute right-0 top-0 flex gap-1 rounded-lg bg-white shadow-sm border border-gray-200 p-1">
+      {showActions && isOwnMessage && !message.isDeleted && !isEditing && !isPending && (
+        <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} top-0 flex gap-1 rounded-lg bg-white shadow-sm border border-gray-200 p-1`}>
           <button
             onClick={() => setIsEditing(true)}
             className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
@@ -217,6 +286,14 @@ export default function MessageItem({ message, showAvatar }) {
           </button>
         </div>
       )}
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        isOpen={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        src={previewImage?.src}
+        fileName={previewImage?.fileName}
+      />
     </div>
   );
 }

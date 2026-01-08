@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Search, UserPlus, Users } from 'lucide-react';
-import { useCreateDM, useCreateGroupDM } from '../../hooks/useChat';
+import { X, Search, UserPlus, Users, MessageSquare } from 'lucide-react';
+import { useCreateDM, useCreateGroupDM, useSendMessage } from '../../hooks/useChat';
 import { useChatStore } from '../../state/useChatStore';
 import useUsers from '../../hooks/useUsers';
 import { useAuthStore } from '../../state/useAuthStore';
@@ -15,15 +15,18 @@ export default function CreateDMDialog({ isOpen, onClose }) {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [isGroupDM, setIsGroupDM] = useState(false);
   const [groupName, setGroupName] = useState('');
+  const [initialMessage, setInitialMessage] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [createdChannelId, setCreatedChannelId] = useState(null);
 
   const { user: currentUser } = useAuthStore();
   const { users, loading } = useUsers();
-  const { setActiveChannelId } = useChatStore();
+  const { setActiveChannelId, addChannel } = useChatStore();
   const { showToast } = useToast();
 
   const createDMMutation = useCreateDM();
   const createGroupDMMutation = useCreateGroupDM();
+  const sendMessageMutation = useSendMessage(createdChannelId);
 
   if (!isOpen) return null;
 
@@ -49,6 +52,8 @@ export default function CreateDMDialog({ isOpen, onClose }) {
     setIsCreating(true);
 
     try {
+      let channel;
+
       if (isGroupDM) {
         // Group DM
         if (!groupName.trim()) {
@@ -61,20 +66,10 @@ export default function CreateDMDialog({ isOpen, onClose }) {
           return;
         }
 
-        const channel = await createGroupDMMutation.mutateAsync({
+        channel = await createGroupDMMutation.mutateAsync({
           userIds: selectedUsers,
           name: groupName.trim(),
         });
-
-        showToast({
-          title: 'Succes',
-          description: 'Grupul a fost creat cu succes.',
-          type: 'success',
-        });
-
-        // Set as active channel and close dialog
-        setActiveChannelId(channel.id);
-        handleClose();
       } else {
         // 1-on-1 DM
         if (selectedUsers.length !== 1) {
@@ -87,18 +82,40 @@ export default function CreateDMDialog({ isOpen, onClose }) {
           return;
         }
 
-        const channel = await createDMMutation.mutateAsync(selectedUsers[0]);
-
-        showToast({
-          title: 'Succes',
-          description: 'Conversația a fost creată cu succes.',
-          type: 'success',
-        });
-
-        // Set as active channel and close dialog
-        setActiveChannelId(channel.id);
-        handleClose();
+        channel = await createDMMutation.mutateAsync(selectedUsers[0]);
       }
+
+      // Check if channel was created successfully
+      if (!channel?.id) {
+        throw new Error('Răspuns invalid de la server');
+      }
+
+      // Add channel to store and set as active
+      addChannel(channel);
+      setActiveChannelId(channel.id);
+
+      // Send initial message if provided
+      if (initialMessage.trim()) {
+        try {
+          // We need to send the message using the API directly since useSendMessage needs a static channelId
+          const API = (await import('../../utils/api')).default;
+          await API.post(`/chat/channels/${channel.id}/messages`, {
+            body: initialMessage.trim(),
+            type: 'TEXT',
+          });
+        } catch (msgError) {
+          console.warn('Failed to send initial message:', msgError);
+          // Don't fail the whole operation, just warn
+        }
+      }
+
+      showToast({
+        title: 'Succes',
+        description: isGroupDM ? 'Grupul a fost creat cu succes.' : 'Conversația a fost creată cu succes.',
+        type: 'success',
+      });
+
+      handleClose();
     } catch (error) {
       console.error('Failed to create DM:', error);
       showToast({
@@ -116,6 +133,8 @@ export default function CreateDMDialog({ isOpen, onClose }) {
     setSelectedUsers([]);
     setIsGroupDM(false);
     setGroupName('');
+    setInitialMessage('');
+    setCreatedChannelId(null);
     onClose();
   };
 
@@ -224,6 +243,23 @@ export default function CreateDMDialog({ isOpen, onClose }) {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Initial Message (shown when user is selected) */}
+        {selectedUsers.length > 0 && (
+          <div className="border-b border-gray-200 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare className="h-4 w-4 text-gray-400" />
+              <p className="text-xs font-medium text-gray-500">Mesaj inițial (opțional)</p>
+            </div>
+            <textarea
+              value={initialMessage}
+              onChange={(e) => setInitialMessage(e.target.value)}
+              placeholder="Scrie un mesaj de început..."
+              rows={3}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary resize-none"
+            />
           </div>
         )}
 

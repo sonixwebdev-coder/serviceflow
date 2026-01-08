@@ -177,6 +177,11 @@ export const useRealtimeEvents = () => {
 
     const handleNotification = (notification) => {
       invalidate([['notifications']]);
+      // Skip toast for chat-related notifications - handled by handleChatMessageNew
+      // to avoid duplicate toasts
+      if (notification?.type === 'CHAT_MESSAGE' || notification?.category === 'chat') {
+        return;
+      }
       // Always show notification toasts since backend filters recipients
       if (notification?.title) {
         showToast({
@@ -281,8 +286,36 @@ export const useRealtimeEvents = () => {
 
       // Update unread count if not active channel
       const activeChannelId = useChatStore.getState().activeChannelId;
-      if (activeChannelId !== channelId && message.author.id !== user?.id) {
+      const isFromOtherUser = message.author?.id !== user?.id;
+      const isNotActiveChannel = activeChannelId !== channelId;
+
+      if (isNotActiveChannel && isFromOtherUser) {
         useChatStore.getState().incrementUnreadCount(channelId);
+
+        // Show toast notification for chat message
+        const authorName = `${message.author?.firstName || ''} ${message.author?.lastName || ''}`.trim() || 'Cineva';
+        const channels = useChatStore.getState().channels;
+        const channel = channels.find((c) => c.id === channelId);
+        const channelName = channel?.name || (channel?.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
+
+        // Get message preview
+        let messagePreview = message.body || '';
+        if (message.type === 'IMAGE') {
+          messagePreview = 'A trimis o imagine';
+        } else if (message.type === 'FILE') {
+          messagePreview = 'A trimis un fișier';
+        } else if (message.type === 'VOICE') {
+          messagePreview = 'A trimis un mesaj vocal';
+        } else if (messagePreview.length > 50) {
+          messagePreview = messagePreview.substring(0, 47) + '...';
+        }
+
+        // Show toast
+        showToast({
+          title: channel?.type === 'DIRECT' ? authorName : channelName,
+          description: channel?.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+          type: 'info',
+        });
       }
 
       // Invalidate queries
@@ -353,6 +386,20 @@ export const useRealtimeEvents = () => {
       }
     };
 
+    const handleChatChannelCreated = (channel) => {
+      // Check if user is a member of this channel
+      const isMember = channel.members?.some((m) => m.user?.id === user?.id || m.userId === user?.id);
+      const isPublic = channel.type === 'PUBLIC';
+
+      // Add channel to store if user is a member or it's public
+      if (isMember || isPublic) {
+        useChatStore.getState().addChannel(channel);
+      }
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+    };
+
     // Connection events
     socket.on('connect', handleConnect);
     socket.on('connect_error', handleConnectError);
@@ -398,6 +445,7 @@ export const useRealtimeEvents = () => {
     socket.on('chat:member:added', handleChatMemberChange);
     socket.on('chat:member:removed', handleChatMemberChange);
     socket.on('chat:read', handleChatRead);
+    socket.on('chat:channel:created', handleChatChannelCreated);
 
     return () => {
       lastAuthError = null;
@@ -448,6 +496,7 @@ export const useRealtimeEvents = () => {
       socket.off('chat:member:added', handleChatMemberChange);
       socket.off('chat:member:removed', handleChatMemberChange);
       socket.off('chat:read', handleChatRead);
+      socket.off('chat:channel:created', handleChatChannelCreated);
     };
   }, [accessToken, queryClient, showToast, user]);
 };

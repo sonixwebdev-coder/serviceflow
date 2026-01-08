@@ -1,4 +1,5 @@
 const { AppError } = require('../utils/errors');
+const { broadcastMemberChange } = require('../realtime/chatEvents');
 
 /**
  * Chat Service - Channel Management
@@ -36,7 +37,7 @@ async function createChannel(prisma, data, currentUser) {
   }
 
   // Create channel and add members in a transaction
-  const channel = await prisma.$transaction(async (tx) => {
+  const channelId = await prisma.$transaction(async (tx) => {
     // Create the channel
     const newChannel = await tx.chatChannel.create({
       data: {
@@ -69,34 +70,44 @@ async function createChannel(prisma, data, currentUser) {
       });
     }
 
-    // Return channel with members
-    return tx.chatChannel.findUnique({
-      where: { id: newChannel.id },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            avatarUrl: true,
-          },
+    // Return just the ID - we'll fetch full data after transaction commits
+    return newChannel.id;
+  });
+
+  // Fetch the complete channel data after transaction is committed
+  const channel = await prisma.chatChannel.findUnique({
+    where: { id: channelId },
+    include: {
+      createdBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          avatarUrl: true,
         },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                avatarUrl: true,
-              },
+      },
+      members: {
+        select: {
+          id: true,
+          channelId: true,
+          userId: true,
+          role: true,
+          joinedAt: true,
+          isOnline: true,
+          lastSeenAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              avatarUrl: true,
             },
           },
         },
       },
-    });
+    },
   });
 
   return channel;
@@ -114,13 +125,25 @@ async function createChannel(prisma, data, currentUser) {
 async function listChannels(prisma, filters = {}, currentUser) {
   const { type, archived = false } = filters;
 
-  const where = {
-    isArchived: archived,
-    members: {
-      some: {
-        userId: currentUser.id,
+  // Build the OR conditions for channel visibility:
+  // 1. User is a member of the channel
+  // 2. Channel is PUBLIC (anyone in org can see)
+  const orConditions = [
+    {
+      members: {
+        some: {
+          userId: currentUser.id,
+        },
       },
     },
+    {
+      type: 'PUBLIC',
+    },
+  ];
+
+  const where = {
+    isArchived: archived,
+    OR: orConditions,
   };
 
   if (type) {
@@ -140,7 +163,14 @@ async function listChannels(prisma, filters = {}, currentUser) {
         },
       },
       members: {
-        include: {
+        select: {
+          id: true,
+          channelId: true,
+          userId: true,
+          role: true,
+          joinedAt: true,
+          isOnline: true,
+          lastSeenAt: true,
           user: {
             select: {
               id: true,
@@ -199,7 +229,14 @@ async function getChannelById(prisma, channelId, currentUser) {
         },
       },
       members: {
-        include: {
+        select: {
+          id: true,
+          channelId: true,
+          userId: true,
+          role: true,
+          joinedAt: true,
+          isOnline: true,
+          lastSeenAt: true,
           user: {
             select: {
               id: true,
@@ -243,7 +280,14 @@ async function updateChannel(prisma, channelId, updates, currentUser) {
     },
     include: {
       members: {
-        include: {
+        select: {
+          id: true,
+          channelId: true,
+          userId: true,
+          role: true,
+          joinedAt: true,
+          isOnline: true,
+          lastSeenAt: true,
           user: {
             select: {
               id: true,
@@ -460,7 +504,14 @@ async function getOrCreateDMChannel(prisma, participantIds, currentUser) {
     },
     include: {
       members: {
-        include: {
+        select: {
+          id: true,
+          channelId: true,
+          userId: true,
+          role: true,
+          joinedAt: true,
+          isOnline: true,
+          lastSeenAt: true,
           user: {
             select: {
               id: true,
@@ -530,12 +581,14 @@ async function getOrCreateGroupDM(prisma, participantIds, name, currentUser) {
 
 /**
  * Ensure user has access to a channel
+ * For PUBLIC channels, auto-join the user if not already a member
  * @param {PrismaClient} prisma - Tenant-scoped Prisma client
  * @param {string} channelId - Channel ID
  * @param {Object} currentUser - Current authenticated user
  * @throws {AppError} If user doesn't have access
  */
 async function ensureChannelAccess(prisma, channelId, currentUser) {
+  // First check if user is already a member
   const member = await prisma.chatMember.findUnique({
     where: {
       channelId_userId: {
@@ -545,9 +598,81 @@ async function ensureChannelAccess(prisma, channelId, currentUser) {
     },
   });
 
-  if (!member) {
-    throw new AppError('Access denied to this channel', 403);
+  if (member) {
+    return; // User is a member, access granted
   }
+
+  // Check if channel is PUBLIC - if so, auto-join the user
+  const channel = await prisma.chatChannel.findUnique({
+    where: { id: channelId },
+    select: { type: true, organizationId: true },
+  });
+
+  if (!channel) {
+    throw new AppError('Channel not found', 404);
+  }
+
+  // For PUBLIC channels in the same organization, auto-join the user
+  if (channel.type === 'PUBLIC' && channel.organizationId === currentUser.organizationId) {
+    let memberCreated = false;
+    try {
+      // Use upsert to handle race conditions (multiple parallel requests)
+      // Wrap in try-catch because Prisma upsert can still fail with P2002 in concurrent scenarios
+      await prisma.chatMember.upsert({
+        where: {
+          channelId_userId: {
+            channelId,
+            userId: currentUser.id,
+          },
+        },
+        create: {
+          channelId,
+          userId: currentUser.id,
+          role: 'MEMBER',
+        },
+        update: {}, // No update needed, just ensure membership exists
+      });
+      memberCreated = true;
+    } catch (error) {
+      // P2002 = unique constraint violation - user is already a member, which is fine
+      if (error.code !== 'P2002') {
+        throw error;
+      }
+    }
+
+    // Broadcast member added event so other users see the updated member list in real-time
+    if (memberCreated) {
+      // Fetch the member with user details for the broadcast
+      const newMember = await prisma.chatMember.findUnique({
+        where: {
+          channelId_userId: {
+            channelId,
+            userId: currentUser.id,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      });
+
+      if (newMember) {
+        broadcastMemberChange(currentUser.organizationId, channelId, 'added', newMember);
+      }
+    }
+
+    return; // Access granted after auto-join
+  }
+
+  // For non-public channels, deny access
+  throw new AppError('Access denied to this channel', 403);
 }
 
 /**

@@ -33,7 +33,6 @@ const createSocketServer = (httpServer) => {
   });
 
   io.on('connection', (socket) => {
-
     // Join organization room for tenant-scoped broadcasts
     if (socket.user.organizationId) {
       const orgRoom = `org:${socket.user.organizationId}`;

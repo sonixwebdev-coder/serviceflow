@@ -152,18 +152,30 @@ export default function VoiceRecordButton({ channelId }) {
               <p className="mt-2 text-3xl font-mono text-gray-900">{formatTime(recordingTime)}</p>
             </div>
 
-            {/* Waveform visualization placeholder */}
-            <div className="mb-4 flex h-16 items-center justify-center gap-1">
-              {[...Array(20)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-1 animate-pulse rounded-full bg-red-500"
-                  style={{
-                    height: `${Math.random() * 100}%`,
-                    animationDelay: `${i * 0.05}s`,
-                  }}
-                ></div>
-              ))}
+            {/* Waveform visualization */}
+            <div className="mb-4 flex h-16 items-center justify-center gap-[3px]">
+              {[...Array(24)].map((_, i) => {
+                // Create wave pattern with varying base heights
+                const baseHeight = [30, 50, 70, 90, 70, 50, 30, 60, 80, 100, 80, 60, 40, 70, 90, 70, 40, 55, 75, 95, 75, 55, 35, 65][i];
+                return (
+                  <div
+                    key={i}
+                    className="w-1 rounded-full bg-gradient-to-t from-red-600 to-red-400"
+                    style={{
+                      height: `${baseHeight}%`,
+                      animation: `voiceWave 0.8s ease-in-out infinite alternate`,
+                      animationDelay: `${i * 0.05}s`,
+                    }}
+                  ></div>
+                );
+              })}
+              <style>{`
+                @keyframes voiceWave {
+                  0% { transform: scaleY(0.4); opacity: 0.7; }
+                  50% { transform: scaleY(1); opacity: 1; }
+                  100% { transform: scaleY(0.6); opacity: 0.8; }
+                }
+              `}</style>
             </div>
 
             <button

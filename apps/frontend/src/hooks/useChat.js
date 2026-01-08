@@ -21,6 +21,9 @@ export function useChannels(filters = {}) {
       const res = await API.get(`/chat/channels?${params.toString()}`);
       return res.data.data;
     },
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Fallback polling every 30 seconds in case socket events are missed
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 }
 
