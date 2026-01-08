@@ -19,6 +19,7 @@ import Resources from './pages/Resources.jsx';
 import Appointments from './pages/Appointments.jsx';
 import Invoices from './pages/Invoices.jsx';
 import Profile from './pages/Profile.jsx';
+import Chat from './pages/Chat.jsx';
 // ANAF functionality temporarily disabled
 // import AnafManagement from './pages/AnafManagement.jsx';
 // import AnafCallback from './pages/AnafCallback.jsx';
@@ -171,6 +172,17 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <Profile />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Chat />
                 </DashboardLayout>
               </ProtectedRoute>
             }

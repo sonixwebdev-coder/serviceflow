@@ -1,8 +1,24 @@
+const prisma = require('../../lib/prisma');
 const { mapNotification } = require('../utils/transform');
 const { AppError } = require('../utils/errors');
 const { broadcastNotification } = require('../realtime/events');
 
-const createNotification = async ({ recipientId, title, message, type, entityType, entityId, metadata }) => {
+const createNotification = async ({ recipientId, title, message, type, entityType, entityId, metadata, organizationId }) => {
+  // Get organization ID from recipient if not provided
+  let orgId = organizationId;
+  if (!orgId) {
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { organizationId: true },
+    });
+    orgId = recipient?.organizationId;
+  }
+
+  if (!orgId) {
+    console.error('Cannot create notification without organizationId');
+    return null;
+  }
+
   const notification = await prisma.notification.create({
     data: {
       recipientId,
@@ -12,6 +28,7 @@ const createNotification = async ({ recipientId, title, message, type, entityTyp
       entityType,
       entityId,
       metadata,
+      organizationId: orgId,
     },
     include: {
       recipient: {

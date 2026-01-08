@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { connectSocket, disconnectSocket, getSocket, updateSocketToken } from '../lib/socket.js';
 import { useAuthStore } from '../state/useAuthStore.js';
+import { useChatStore } from '../state/useChatStore.js';
 import useToast from '../context/useToast';
 import { refreshAuthSession } from '../utils/api.js';
 
@@ -176,6 +177,11 @@ export const useRealtimeEvents = () => {
 
     const handleNotification = (notification) => {
       invalidate([['notifications']]);
+      // Skip toast for chat-related notifications - handled by handleChatMessageNew
+      // to avoid duplicate toasts
+      if (notification?.type === 'CHAT_MESSAGE' || notification?.category === 'chat') {
+        return;
+      }
       // Always show notification toasts since backend filters recipients
       if (notification?.title) {
         showToast({
@@ -271,6 +277,129 @@ export const useRealtimeEvents = () => {
       queryClient.invalidateQueries({ queryKey: ['appointment', message.appointmentId] });
     };
 
+    // Chat event handlers
+    const handleChatMessageNew = (data) => {
+      const { channelId, message } = data;
+
+      // Update store
+      useChatStore.getState().addMessage(channelId, message);
+
+      // Update unread count if not active channel
+      const activeChannelId = useChatStore.getState().activeChannelId;
+      const isFromOtherUser = message.author?.id !== user?.id;
+      const isNotActiveChannel = activeChannelId !== channelId;
+
+      if (isNotActiveChannel && isFromOtherUser) {
+        useChatStore.getState().incrementUnreadCount(channelId);
+
+        // Show toast notification for chat message
+        const authorName = `${message.author?.firstName || ''} ${message.author?.lastName || ''}`.trim() || 'Cineva';
+        const channels = useChatStore.getState().channels;
+        const channel = channels.find((c) => c.id === channelId);
+        const channelName = channel?.name || (channel?.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
+
+        // Get message preview
+        let messagePreview = message.body || '';
+        if (message.type === 'IMAGE') {
+          messagePreview = 'A trimis o imagine';
+        } else if (message.type === 'FILE') {
+          messagePreview = 'A trimis un fișier';
+        } else if (message.type === 'VOICE') {
+          messagePreview = 'A trimis un mesaj vocal';
+        } else if (messagePreview.length > 50) {
+          messagePreview = messagePreview.substring(0, 47) + '...';
+        }
+
+        // Show toast
+        showToast({
+          title: channel?.type === 'DIRECT' ? authorName : channelName,
+          description: channel?.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+          type: 'info',
+        });
+      }
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', channelId] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+    };
+
+    const handleChatMessageUpdated = (data) => {
+      const { channelId, message } = data;
+
+      // Update store
+      useChatStore.getState().updateMessage(channelId, message.id, message);
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', channelId] });
+    };
+
+    const handleChatMessageDeleted = (data) => {
+      const { channelId, messageId } = data;
+
+      // Update store
+      useChatStore.getState().deleteMessage(channelId, messageId);
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'messages', channelId] });
+    };
+
+    const handleChatTyping = (data) => {
+      const { channelId, user: typingUser, isTyping } = data;
+
+      // Don't show own typing indicator
+      if (typingUser.id === user?.id) return;
+
+      // Update store
+      useChatStore.getState().setTyping(channelId, typingUser.id, isTyping);
+    };
+
+    const handleChatPresence = (data) => {
+      const { userId, isOnline } = data;
+
+      // Update store
+      useChatStore.getState().setUserOnline(userId, isOnline);
+    };
+
+    const handleChatChannelUpdated = (channel) => {
+      // Update store
+      useChatStore.getState().updateChannel(channel.id, channel);
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels', channel.id] });
+    };
+
+    const handleChatMemberChange = (data) => {
+      const { channelId } = data;
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels', channelId] });
+    };
+
+    const handleChatRead = (data) => {
+      const { channelId, userId } = data;
+
+      // If current user read, reset unread count
+      if (userId === user?.id) {
+        useChatStore.getState().resetUnreadCount(channelId);
+      }
+    };
+
+    const handleChatChannelCreated = (channel) => {
+      // Check if user is a member of this channel
+      const isMember = channel.members?.some((m) => m.user?.id === user?.id || m.userId === user?.id);
+      const isPublic = channel.type === 'PUBLIC';
+
+      // Add channel to store if user is a member or it's public
+      if (isMember || isPublic) {
+        useChatStore.getState().addChannel(channel);
+      }
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
+    };
+
     // Connection events
     socket.on('connect', handleConnect);
     socket.on('connect_error', handleConnectError);
@@ -305,6 +434,18 @@ export const useRealtimeEvents = () => {
     socket.on('invoice:paid', handleInvoiceChange);
     socket.on('invoice:deleted', handleInvoiceDeleted);
     socket.on('message:new', handleMessageCreated);
+
+    // Chat events
+    socket.on('chat:message:new', handleChatMessageNew);
+    socket.on('chat:message:updated', handleChatMessageUpdated);
+    socket.on('chat:message:deleted', handleChatMessageDeleted);
+    socket.on('chat:typing', handleChatTyping);
+    socket.on('chat:presence', handleChatPresence);
+    socket.on('chat:channel:updated', handleChatChannelUpdated);
+    socket.on('chat:member:added', handleChatMemberChange);
+    socket.on('chat:member:removed', handleChatMemberChange);
+    socket.on('chat:read', handleChatRead);
+    socket.on('chat:channel:created', handleChatChannelCreated);
 
     return () => {
       lastAuthError = null;
@@ -344,8 +485,20 @@ export const useRealtimeEvents = () => {
       socket.off('invoice:paid', handleInvoiceChange);
       socket.off('invoice:deleted', handleInvoiceDeleted);
       socket.off('message:new', handleMessageCreated);
+
+      // Clean up chat event listeners
+      socket.off('chat:message:new', handleChatMessageNew);
+      socket.off('chat:message:updated', handleChatMessageUpdated);
+      socket.off('chat:message:deleted', handleChatMessageDeleted);
+      socket.off('chat:typing', handleChatTyping);
+      socket.off('chat:presence', handleChatPresence);
+      socket.off('chat:channel:updated', handleChatChannelUpdated);
+      socket.off('chat:member:added', handleChatMemberChange);
+      socket.off('chat:member:removed', handleChatMemberChange);
+      socket.off('chat:read', handleChatRead);
+      socket.off('chat:channel:created', handleChatChannelCreated);
     };
-  }, [accessToken, queryClient, showToast]);
+  }, [accessToken, queryClient, showToast, user]);
 };
 
 export const useSocketInstance = () => getSocket();

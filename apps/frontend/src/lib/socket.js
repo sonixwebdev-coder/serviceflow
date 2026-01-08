@@ -24,18 +24,16 @@ export const connectSocket = (token) => {
     auth: { token },
     timeout: 20000,
 
-    reconnection: false,
-    // reconnectionAttempts: 3, // încercări maxime
-    // reconnectionDelay: 5000, // pauza între încercări în ms
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 10000,
   });
 
   socket.connect();
 
   socket.on('connect_error', (err) => {
     console.error('Socket connection error:', err.message);
-  });
-
-  socket.on('connect', () => {
   });
 
   return socket;
