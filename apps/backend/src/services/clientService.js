@@ -1,4 +1,5 @@
 const { AppError } = require('../utils/errors');
+const { broadcastClientUpdate } = require('../realtime/events');
 
 const listClients = async (prisma, { search, page = 1, limit = 20, isOnline }) => {
   const take = Math.min(limit, 100);
@@ -158,6 +159,9 @@ const updateClient = async (prisma, clientId, data) => {
       assets: true,
     },
   });
+
+  // Broadcast to client portal
+  broadcastClientUpdate('updated', client);
 
   return client;
 };

@@ -5,13 +5,16 @@
   "type": "module",
   "workspaces": [
     "apps/frontend",
-    "apps/backend"
+    "apps/backend",
+    "apps/client-portal"
   ],
   "scripts": {
     "dev": "node scripts/start-all.js",
     "dev:frontend": "npm run dev --workspace apps/frontend",
     "dev:backend": "npm run dev --workspace apps/backend",
+    "dev:portal": "npm run dev --workspace apps/client-portal",
     "build": "npm run build --workspace apps/frontend",
+    "build:portal": "npm run build --workspace apps/client-portal",
     "lint": "npm run lint --workspace apps/frontend",
     "install:all": "npm install --workspaces",
     "db:seed": "node prisma/seed.js"

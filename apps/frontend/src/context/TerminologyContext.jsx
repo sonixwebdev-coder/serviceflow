@@ -52,10 +52,18 @@ const DEFAULT_ASSET_FIELD_CONFIG = {
   },
 };
 
+const DEFAULT_PUBLIC_BOOKING = {
+  serviceType: 'VEHICLE',
+  workingHours: { start: 9, end: 18 },
+  slotDuration: 60,
+  allowWeekends: false,
+};
+
 export const TerminologyProvider = ({ children }) => {
   const [terminology, setTerminology] = useState(DEFAULT_TERMINOLOGY);
   const [features, setFeatures] = useState(DEFAULT_FEATURES);
   const [assetFieldConfig, setAssetFieldConfig] = useState(DEFAULT_ASSET_FIELD_CONFIG);
+  const [publicBooking, setPublicBooking] = useState(DEFAULT_PUBLIC_BOOKING);
   const [loading, setLoading] = useState(true);
 
   // Fetch terminology from API
@@ -84,6 +92,10 @@ export const TerminologyProvider = ({ children }) => {
 
         if (settings.assetFieldConfig) {
           setAssetFieldConfig(settings.assetFieldConfig);
+        }
+
+        if (settings.publicBooking) {
+          setPublicBooking(settings.publicBooking);
         }
       } catch (error) {
         console.error('Failed to load organization settings:', error);
@@ -124,6 +136,10 @@ export const TerminologyProvider = ({ children }) => {
         setAssetFieldConfig(settings.assetFieldConfig);
       }
 
+      if (settings.publicBooking) {
+        setPublicBooking(settings.publicBooking);
+      }
+
       return settings;
     } catch (error) {
       console.error('Failed to refresh settings:', error);
@@ -135,6 +151,7 @@ export const TerminologyProvider = ({ children }) => {
     terminology,
     features,
     assetFieldConfig,
+    publicBooking,
     loading,
     refreshSettings,
 

@@ -17,12 +17,14 @@ const {
   updateTerminology,
   updateFeatures,
   updateAssetFieldConfig,
+  updatePublicBooking,
 } = require('../services/organizationSettingsService');
 const {
   updateOrganizationSettingsSchema,
   terminologySchema,
   featuresSchema,
   assetFieldConfigSchema,
+  publicBookingSchema,
 } = require('../schemas/organizationSettingsSchema');
 const { ok, created } = require('../utils/http');
 
@@ -184,6 +186,25 @@ router.patch(
       req.body
     );
     return ok(res, settings, 'Asset field configuration updated successfully');
+  })
+);
+
+/**
+ * Update public booking settings
+ * Only admins can update public booking settings
+ */
+router.patch(
+  '/me/settings/publicBooking',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(publicBookingSchema),
+  asyncHandler(async (req, res) => {
+    const settings = await updatePublicBooking(
+      req.tenantPrisma,
+      req.user.organizationId,
+      req.body
+    );
+    return ok(res, settings, 'Public booking settings updated successfully');
   })
 );
 

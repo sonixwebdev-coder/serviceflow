@@ -1,0 +1,481 @@
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
+const { signAccessToken, verifyAccessToken, generateRefreshToken, REFRESH_TOKEN_TTL_DAYS } = require('../utils/token');
+
+const SALT_ROUNDS = 10;
+const SESSION_DURATION_DAYS = 30; // Keep for backward compatibility during migration
+
+/**
+ * Hash a password
+ */
+const hashPassword = async (password) => {
+  return bcrypt.hash(password, SALT_ROUNDS);
+};
+
+/**
+ * Verify a password
+ */
+const verifyPassword = async (password, hash) => {
+  return bcrypt.compare(password, hash);
+};
+
+/**
+ * Generate a secure token
+ */
+const generateToken = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+/**
+ * Register a new client account
+ */
+const registerClient = async (prisma, { email, password, clientId }) => {
+  // Check if client exists
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+  });
+
+  if (!client) {
+    throw new AppError('Client not found', 404);
+  }
+
+  // Check if account already exists
+  const existingAccount = await prisma.clientAccount.findFirst({
+    where: {
+      OR: [
+        { email: email.toLowerCase() },
+        { clientId },
+      ],
+    },
+  });
+
+  if (existingAccount) {
+    if (existingAccount.clientId === clientId) {
+      throw new AppError('This client already has an account', 400);
+    }
+    throw new AppError('An account with this email already exists', 400);
+  }
+
+  const hashedPassword = await hashPassword(password);
+  const verificationToken = generateToken();
+
+  const account = await prisma.clientAccount.create({
+    data: {
+      clientId,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      verificationToken,
+    },
+    include: {
+      client: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          companyName: true,
+          type: true,
+          organizationId: true,
+        },
+      },
+    },
+  });
+
+  return {
+    id: account.id,
+    email: account.email,
+    isVerified: account.isVerified,
+    verificationToken,
+    client: account.client,
+  };
+};
+
+/**
+ * Login a client
+ */
+const loginClient = async (prisma, { email, password, userAgent, ipAddress }) => {
+  const account = await prisma.clientAccount.findUnique({
+    where: { email: email.toLowerCase() },
+    include: {
+      client: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          companyName: true,
+          type: true,
+          email: true,
+          phone: true,
+          organizationId: true,
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              settings: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!account) {
+    throw new AppError('Invalid email or password', 401);
+  }
+
+  const isValid = await verifyPassword(password, account.password);
+  if (!isValid) {
+    throw new AppError('Invalid email or password', 401);
+  }
+
+  // Create JWT access token with client-specific payload
+  const payload = {
+    sub: account.id,
+    clientId: account.client.id,
+    email: account.email,
+    organizationId: account.client.organizationId,
+    type: 'client', // Distinguish from CRM user tokens
+  };
+
+  const accessToken = signAccessToken(payload);
+  const { token: refreshToken, expiresAt } = generateRefreshToken();
+
+  // Store refresh token in database
+  await prisma.clientRefreshToken.create({
+    data: {
+      accountId: account.id,
+      token: refreshToken,
+      expiresAt,
+      userAgent,
+      ipAddress,
+    },
+  });
+
+  // Update last login
+  await prisma.clientAccount.update({
+    where: { id: account.id },
+    data: { lastLoginAt: new Date() },
+  });
+
+  // Extract service type from organization settings
+  const orgSettings = account.client.organization?.settings || {};
+  const serviceType = orgSettings.publicBooking?.serviceType || 'VEHICLE';
+
+  return {
+    accessToken,
+    refreshToken,
+    account: {
+      id: account.id,
+      email: account.email,
+      isVerified: account.isVerified,
+    },
+    client: {
+      ...account.client,
+      organization: {
+        ...account.client.organization,
+        serviceType,
+        settings: undefined, // Don't expose full settings
+      },
+    },
+  };
+};
+
+/**
+ * Logout a client - revokes refresh token
+ */
+const logoutClient = async (prisma, refreshToken) => {
+  await prisma.clientRefreshToken.updateMany({
+    where: { token: refreshToken, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  return { success: true };
+};
+
+/**
+ * Refresh client session - returns new access token and rotates refresh token
+ */
+const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => {
+  const stored = await prisma.clientRefreshToken.findUnique({
+    where: { token },
+    include: {
+      account: {
+        include: {
+          client: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              companyName: true,
+              type: true,
+              email: true,
+              phone: true,
+              organizationId: true,
+              organization: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  settings: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+    throw new AppError('Invalid or expired refresh token', 401);
+  }
+
+  // Rotate token - revoke old one
+  await prisma.clientRefreshToken.update({
+    where: { id: stored.id },
+    data: { revokedAt: new Date() },
+  });
+
+  // Create new JWT access token
+  const payload = {
+    sub: stored.account.id,
+    clientId: stored.account.client.id,
+    email: stored.account.email,
+    organizationId: stored.account.client.organizationId,
+    type: 'client',
+  };
+
+  const accessToken = signAccessToken(payload);
+  const { token: newRefreshToken, expiresAt } = generateRefreshToken();
+
+  // Store new refresh token
+  await prisma.clientRefreshToken.create({
+    data: {
+      accountId: stored.account.id,
+      token: newRefreshToken,
+      expiresAt,
+      userAgent,
+      ipAddress,
+    },
+  });
+
+  // Extract service type from organization settings
+  const orgSettings = stored.account.client.organization?.settings || {};
+  const serviceType = orgSettings.publicBooking?.serviceType || 'VEHICLE';
+
+  return {
+    accessToken,
+    refreshToken: newRefreshToken,
+    account: {
+      id: stored.account.id,
+      email: stored.account.email,
+      isVerified: stored.account.isVerified,
+    },
+    client: {
+      ...stored.account.client,
+      organization: {
+        ...stored.account.client.organization,
+        serviceType,
+        settings: undefined, // Don't expose full settings
+      },
+    },
+  };
+};
+
+/**
+ * Verify email
+ */
+const verifyEmail = async (prisma, verificationToken) => {
+  const account = await prisma.clientAccount.findFirst({
+    where: { verificationToken },
+  });
+
+  if (!account) {
+    throw new AppError('Invalid verification token', 400);
+  }
+
+  await prisma.clientAccount.update({
+    where: { id: account.id },
+    data: {
+      isVerified: true,
+      verificationToken: null,
+    },
+  });
+
+  return { success: true };
+};
+
+/**
+ * Request password reset
+ */
+const requestPasswordReset = async (prisma, email) => {
+  const account = await prisma.clientAccount.findUnique({
+    where: { email: email.toLowerCase() },
+  });
+
+  if (!account) {
+    // Don't reveal if account exists
+    return { success: true };
+  }
+
+  const resetToken = generateToken();
+  const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.clientAccount.update({
+    where: { id: account.id },
+    data: {
+      resetToken,
+      resetTokenExpiry,
+    },
+  });
+
+  // Here you would send an email with the reset link
+  logger.info(`Password reset requested for ${email}, token: ${resetToken}`);
+
+  return { success: true, resetToken };
+};
+
+/**
+ * Reset password
+ */
+const resetPassword = async (prisma, { resetToken, newPassword }) => {
+  const account = await prisma.clientAccount.findFirst({
+    where: {
+      resetToken,
+      resetTokenExpiry: { gt: new Date() },
+    },
+  });
+
+  if (!account) {
+    throw new AppError('Invalid or expired reset token', 400);
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  await prisma.clientAccount.update({
+    where: { id: account.id },
+    data: {
+      password: hashedPassword,
+      resetToken: null,
+      resetTokenExpiry: null,
+    },
+  });
+
+  // Invalidate all sessions
+  await prisma.clientSession.deleteMany({
+    where: { accountId: account.id },
+  });
+
+  return { success: true };
+};
+
+/**
+ * Verify JWT access token and get account/client data
+ */
+const getAccountByToken = async (prisma, accessToken) => {
+  try {
+    // Verify the JWT token
+    const payload = verifyAccessToken(accessToken);
+
+    // Ensure this is a client token
+    if (!payload || payload.type !== 'client' || !payload.clientId) {
+      return null;
+    }
+
+    // Fetch the account and client data
+    const account = await prisma.clientAccount.findUnique({
+      where: { id: payload.sub },
+      include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            companyName: true,
+            type: true,
+            email: true,
+            phone: true,
+            organizationId: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                settings: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!account || !account.client) {
+      return null;
+    }
+
+    // Extract service type from organization settings
+    const orgSettings = account.client.organization?.settings || {};
+    const serviceType = orgSettings.publicBooking?.serviceType || 'VEHICLE';
+
+    return {
+      account: {
+        id: account.id,
+        email: account.email,
+        isVerified: account.isVerified,
+      },
+      client: {
+        ...account.client,
+        organization: {
+          ...account.client.organization,
+          serviceType,
+        },
+      },
+    };
+  } catch (error) {
+    // Token verification failed (expired, invalid, etc.)
+    return null;
+  }
+};
+
+/**
+ * Change password
+ */
+const changePassword = async (prisma, { accountId, currentPassword, newPassword }) => {
+  const account = await prisma.clientAccount.findUnique({
+    where: { id: accountId },
+  });
+
+  if (!account) {
+    throw new AppError('Account not found', 404);
+  }
+
+  const isValid = await verifyPassword(currentPassword, account.password);
+  if (!isValid) {
+    throw new AppError('Current password is incorrect', 400);
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  await prisma.clientAccount.update({
+    where: { id: accountId },
+    data: { password: hashedPassword },
+  });
+
+  return { success: true };
+};
+
+module.exports = {
+  registerClient,
+  loginClient,
+  logoutClient,
+  refreshClientSession,
+  verifyEmail,
+  requestPasswordReset,
+  resetPassword,
+  getAccountByToken,
+  changePassword,
+  hashPassword,
+  verifyPassword,
+  generateToken,
+};

@@ -2864,7 +2864,7 @@ useEffect(() => {
                     ) : serviceOrder ? (
                       <div className="mt-4 space-y-4">
                         <div className="space-y-3">
-                          {serviceOrder.lineItems.map((item) => {
+                          {(serviceOrder.lineItems || []).map((item) => {
                             const hardware = item.hardwarePrice !== undefined ? item.hardwarePrice : (item.unitPrice || 0);
                             const labor = item.laborPrice || 0;
                             const hardwareQty = item.hardwareQuantity !== null && item.hardwareQuantity !== undefined ? item.hardwareQuantity : (item.quantity || 1);

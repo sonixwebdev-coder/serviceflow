@@ -20,6 +20,8 @@ import Appointments from './pages/Appointments.jsx';
 import Invoices from './pages/Invoices.jsx';
 import Profile from './pages/Profile.jsx';
 import Chat from './pages/Chat.jsx';
+import ActivityTimeline from './pages/ActivityTimeline.jsx';
+import Analytics from './pages/Analytics.jsx';
 // ANAF functionality temporarily disabled
 // import AnafManagement from './pages/AnafManagement.jsx';
 // import AnafCallback from './pages/AnafCallback.jsx';
@@ -28,6 +30,7 @@ import { USER_ROLES } from './utils/constants';
 import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
 import CompanySettings from './pages/CompanySettings.jsx';
 import OrganizationSettings from './pages/OrganizationSettings.jsx';
+import GlobalSearch from './components/search/GlobalSearch.jsx';
 
 function App() {
   return (
@@ -36,6 +39,7 @@ function App() {
         <AuthProvider>
           <TerminologyProvider>
             <RealtimeBridge />
+            <GlobalSearch />
             <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -183,6 +187,28 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <Chat />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/activity"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ActivityTimeline />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Analytics />
                 </DashboardLayout>
               </ProtectedRoute>
             }

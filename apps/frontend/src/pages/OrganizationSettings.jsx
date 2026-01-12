@@ -2,11 +2,17 @@ import { useState, useEffect } from 'react';
 import { useTerminology } from '../context/TerminologyContext';
 import useToast from '../context/useToast';
 import API from '../utils/api';
-import { Save, RefreshCw, Eye, EyeOff, CheckSquare, Square } from 'lucide-react';
+import { Save, RefreshCw, Eye, EyeOff, CheckSquare, Square, Globe, Car, Package, Calendar } from 'lucide-react';
 import { getAvailableAssetTypes, getAssetFieldTemplate } from '../constants/assetFieldTemplates';
 
+const SERVICE_TYPE_OPTIONS = [
+  { value: 'VEHICLE', label: 'Vehicule', icon: Car, description: 'Service auto, ITP, vulcanizare, spalatorie' },
+  { value: 'ASSET', label: 'Echipamente', icon: Package, description: 'IT, electrocasnice, HVAC, utilaje' },
+  { value: 'GENERAL', label: 'General', icon: Calendar, description: 'Servicii fara active specifice' },
+];
+
 const OrganizationSettings = () => {
-  const { terminology: currentTerminology, features: currentFeatures, assetFieldConfig: currentAssetFieldConfig, refreshSettings } = useTerminology();
+  const { terminology: currentTerminology, features: currentFeatures, assetFieldConfig: currentAssetFieldConfig, publicBooking: currentPublicBooking, refreshSettings } = useTerminology();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('terminology');
@@ -41,6 +47,14 @@ const OrganizationSettings = () => {
     other: { visibleFields: [], requiredFields: [], fieldLabels: {} },
   });
 
+  // Public booking settings state
+  const [publicBooking, setPublicBooking] = useState({
+    serviceType: 'VEHICLE',
+    workingHours: { start: 9, end: 18 },
+    slotDuration: 60,
+    allowWeekends: false,
+  });
+
   // Initialize form with current values
   useEffect(() => {
     if (currentTerminology) {
@@ -59,6 +73,12 @@ const OrganizationSettings = () => {
       setAssetFieldConfig(currentAssetFieldConfig);
     }
   }, [currentAssetFieldConfig]);
+
+  useEffect(() => {
+    if (currentPublicBooking) {
+      setPublicBooking(currentPublicBooking);
+    }
+  }, [currentPublicBooking]);
 
   const handleTerminologyChange = (category, field, value) => {
     setTerminology((prev) => ({
@@ -215,6 +235,45 @@ const OrganizationSettings = () => {
     }
   };
 
+  const handlePublicBookingChange = (field, value) => {
+    setPublicBooking((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleWorkingHoursChange = (field, value) => {
+    setPublicBooking((prev) => ({
+      ...prev,
+      workingHours: {
+        ...prev.workingHours,
+        [field]: parseInt(value, 10),
+      },
+    }));
+  };
+
+  const savePublicBooking = async () => {
+    setLoading(true);
+    try {
+      await API.patch('/organizations/me/settings/publicBooking', publicBooking);
+      await refreshSettings();
+
+      showToast({
+        title: 'Succes',
+        description: 'Setarile portalului public au fost actualizate cu succes',
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || 'Nu s-au putut actualiza setarile',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -256,6 +315,17 @@ const OrganizationSettings = () => {
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
           >
             Campuri Active
+          </button>
+          <button
+            onClick={() => setActiveTab('publicBooking')}
+            className={`${
+              activeTab === 'publicBooking'
+                ? 'border-viperx-primary text-viperx-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2`}
+          >
+            <Globe className="w-4 h-4" />
+            Portal Public
           </button>
         </nav>
       </div>
@@ -619,6 +689,159 @@ const OrganizationSettings = () => {
             <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
               <button
                 onClick={saveAssetFieldConfig}
+                disabled={loading}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-viperx-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {loading ? 'Se salveaza...' : 'Salveaza modificarile'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Public Booking Tab */}
+      {activeTab === 'publicBooking' && (
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Setari portal public</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Configureaza cum clientii noi pot face programari prin portalul public
+            </p>
+          </div>
+
+          <div className="px-6 py-6 space-y-8">
+            {/* Service Type Selection */}
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Tip serviciu</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Ce tip de active gestioneaza organizatia ta? Aceasta setare determina ce informatii cer clientilor la programare.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {SERVICE_TYPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handlePublicBookingChange('serviceType', option.value)}
+                    className={`p-4 rounded-lg border-2 text-left transition-all ${
+                      publicBooking.serviceType === option.value
+                        ? 'border-viperx-primary bg-orange-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <option.icon className={`w-6 h-6 ${
+                        publicBooking.serviceType === option.value ? 'text-viperx-primary' : 'text-gray-400'
+                      }`} />
+                      <span className="font-semibold text-gray-900">{option.label}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">{option.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Working Hours */}
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Program de lucru</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Intervalul orar in care clientii pot face programari
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="work-start" className="block text-sm font-medium text-gray-700 mb-1">
+                    Ora de inceput
+                  </label>
+                  <select
+                    id="work-start"
+                    value={publicBooking.workingHours?.start || 9}
+                    onChange={(e) => handleWorkingHoursChange('start', e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="work-end" className="block text-sm font-medium text-gray-700 mb-1">
+                    Ora de sfarsit
+                  </label>
+                  <select
+                    id="work-end"
+                    value={publicBooking.workingHours?.end || 18}
+                    onChange={(e) => handleWorkingHoursChange('end', e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Slot Duration */}
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Durata programarii</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Durata implicita a unei programari (in minute)
+              </p>
+
+              <select
+                value={publicBooking.slotDuration || 60}
+                onChange={(e) => handlePublicBookingChange('slotDuration', parseInt(e.target.value, 10))}
+                className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              >
+                <option value={15}>15 minute</option>
+                <option value={30}>30 minute</option>
+                <option value={45}>45 minute</option>
+                <option value={60}>1 ora</option>
+                <option value={90}>1 ora 30 min</option>
+                <option value={120}>2 ore</option>
+                <option value={180}>3 ore</option>
+                <option value={240}>4 ore</option>
+              </select>
+            </div>
+
+            {/* Allow Weekends */}
+            <div className="flex items-center justify-between py-4 border-t border-gray-100">
+              <div>
+                <label htmlFor="allow-weekends" className="text-sm font-medium text-gray-900 block">
+                  Permite programari in weekend
+                </label>
+                <p className="text-sm text-gray-600 mt-1">
+                  Clientii vor putea face programari si sambata/duminica
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                id="allow-weekends"
+                checked={publicBooking.allowWeekends || false}
+                onChange={(e) => handlePublicBookingChange('allowWeekends', e.target.checked)}
+                className="h-4 w-4 text-viperx-primary focus:ring-viperx-primary border-gray-300 rounded"
+              />
+            </div>
+
+            {/* Portal URL Info */}
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-900">
+                <strong>Link portal public:</strong>
+              </p>
+              <p className="text-sm text-blue-800 mt-2 font-mono">
+                {window.location.origin.replace('3001', '3002')}/book/{currentTerminology ? 'slug-organizatie' : '...'}
+              </p>
+              <p className="text-xs text-blue-700 mt-2">
+                Acest link poate fi distribuit clientilor noi pentru a face programari fara cont.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end pt-6 border-t border-gray-200">
+              <button
+                onClick={savePublicBooking}
                 disabled={loading}
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-viperx-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
               >

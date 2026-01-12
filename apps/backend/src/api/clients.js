@@ -11,6 +11,7 @@ const {
 } = require('../schemas/clientSchema');
 const { listClients, createClient, getClientById, updateClient, searchClients } = require('../services/clientService');
 const { importClientsFromCSV, generateCSVTemplate } = require('../services/clientImportService');
+const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 const { AppError } = require('../utils/errors');
 const prisma = require('../../lib/prisma');
@@ -102,6 +103,19 @@ router.post(
   validate(createClientSchema),
   asyncHandler(async (req, res) => {
     const client = await createClient(req.tenantPrisma, req.body);
+
+    // Log audit action
+    const clientName = client.type === 'PF'
+      ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
+      : client.companyName;
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.CLIENT,
+      entityId: client.id,
+      description: getActionDescription('CREATE', ENTITY_TYPES.CLIENT, clientName),
+      metadata: { clientType: client.type },
+    });
+
     return created(res, client, 'Client created successfully');
   })
 );
@@ -122,6 +136,19 @@ router.patch(
   validate(updateClientSchema),
   asyncHandler(async (req, res) => {
     const client = await updateClient(req.tenantPrisma, req.params.clientId, req.body);
+
+    // Log audit action
+    const clientName = client.type === 'PF'
+      ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
+      : client.companyName;
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.CLIENT,
+      entityId: client.id,
+      description: getActionDescription('UPDATE', ENTITY_TYPES.CLIENT, clientName),
+      metadata: { updatedFields: Object.keys(req.body) },
+    });
+
     return ok(res, client, 'Client updated successfully');
   })
 );
@@ -131,9 +158,29 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
+    // Get client info before deletion for audit log
+    const client = await req.tenantPrisma.client.findUnique({
+      where: { id: req.params.clientId },
+    });
+
     await req.tenantPrisma.client.delete({
       where: { id: req.params.clientId },
     });
+
+    // Log audit action
+    if (client) {
+      const clientName = client.type === 'PF'
+        ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
+        : client.companyName;
+      await logFromRequest(req, {
+        action: 'DELETE',
+        entityType: ENTITY_TYPES.CLIENT,
+        entityId: req.params.clientId,
+        description: getActionDescription('DELETE', ENTITY_TYPES.CLIENT, clientName),
+        metadata: { deletedClient: { id: client.id, name: clientName } },
+      });
+    }
+
     return ok(res, null, 'Client deleted successfully');
   })
 );

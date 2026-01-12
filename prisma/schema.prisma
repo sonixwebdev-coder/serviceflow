@@ -40,6 +40,8 @@ model Organization {
   users                User[]
   vehicles             Vehicle[]
   chatChannels         ChatChannel[]
+  emailLogs            EmailLog[]
+  emailTemplates       EmailTemplate[]
 
   @@index([slug])
   @@index([status])
@@ -94,6 +96,7 @@ model User {
   chatMembers            ChatMember[]
   chatMessages           ChatMessage[]
   chatReadReceipts       ChatReadReceipt[]
+  googleCalendarConfig   GoogleCalendarConfig?
 
   @@index([isActive])
   @@index([email])
@@ -203,6 +206,7 @@ model Client {
   organization       Organization? @relation(fields: [organizationId], references: [id])
   invoices           Invoice[]
   vehicles           Vehicle[]
+  account            ClientAccount?
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -1141,4 +1145,145 @@ enum ChatMessageType {
   VOICE
   SYSTEM
   IMAGE
+}
+
+model EmailLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  recipientEmail String
+  recipientType  String       // CLIENT, USER
+  recipientId    String?
+  subject        String
+  template       String
+  body           String?
+  status         EmailStatus  @default(PENDING)
+  errorMessage   String?
+  sentAt         DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([recipientEmail])
+  @@index([createdAt])
+}
+
+model EmailTemplate {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String       // appointment-reminder, invoice-created, welcome
+  subject        String
+  bodyHtml       String
+  bodyText       String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+enum EmailStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
+model GoogleCalendarConfig {
+  id           String             @id @default(cuid())
+  userId       String             @unique
+  accessToken  String             // encrypted
+  refreshToken String             // encrypted
+  expiresAt    DateTime
+  calendarId   String             @default("primary")
+  syncEnabled  Boolean            @default(true)
+  lastSyncAt   DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventSyncs   CalendarEventSync[]
+
+  @@index([userId])
+  @@index([syncEnabled])
+}
+
+model CalendarEventSync {
+  id            String             @id @default(cuid())
+  appointmentId String
+  googleEventId String
+  configId      String
+  syncStatus    CalendarSyncStatus @default(PENDING)
+  lastSyncAt    DateTime?
+  errorMessage  String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  config        GoogleCalendarConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([appointmentId, configId])
+  @@index([configId])
+  @@index([appointmentId])
+  @@index([syncStatus])
+}
+
+enum CalendarSyncStatus {
+  PENDING
+  SYNCED
+  CONFLICT
+  ERROR
+}
+
+model ClientAccount {
+  id                String               @id @default(cuid())
+  clientId          String               @unique
+  email             String
+  password          String
+  isVerified        Boolean              @default(false)
+  verificationToken String?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  client            Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sessions          ClientSession[]
+  refreshTokens     ClientRefreshToken[]
+
+  @@unique([email])
+  @@index([clientId])
+  @@index([email])
+  @@index([verificationToken])
+}
+
+model ClientSession {
+  id        String        @id @default(cuid())
+  accountId String
+  token     String        @unique
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime      @default(now())
+  account   ClientAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model ClientRefreshToken {
+  id        String        @id @default(cuid())
+  accountId String
+  token     String        @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime      @default(now())
+  account   ClientAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([token])
+  @@index([expiresAt])
 }

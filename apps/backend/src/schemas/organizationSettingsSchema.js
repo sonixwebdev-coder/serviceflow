@@ -42,17 +42,37 @@ const assetTypeFieldConfigSchema = z.object({
 const assetFieldConfigSchema = z.record(assetTypeFieldConfigSchema).optional();
 
 /**
+ * Schema for working hours
+ */
+const workingHoursSchema = z.object({
+  start: z.number().min(0).max(23).optional(),
+  end: z.number().min(0).max(23).optional(),
+});
+
+/**
+ * Schema for public booking settings
+ */
+const publicBookingSchema = z.object({
+  serviceType: z.enum(['VEHICLE', 'ASSET', 'GENERAL']).optional(),
+  workingHours: workingHoursSchema.optional(),
+  slotDuration: z.number().min(15).max(480).optional(), // 15 min to 8 hours
+  allowWeekends: z.boolean().optional(),
+});
+
+/**
  * Schema for updating organization settings
  */
 const updateOrganizationSettingsSchema = z.object({
   terminology: terminologySchema.optional(),
   features: featuresSchema.optional(),
   assetFieldConfig: assetFieldConfigSchema.optional(),
+  publicBooking: publicBookingSchema.optional(),
 });
 
 module.exports = {
   terminologySchema,
   featuresSchema,
   assetFieldConfigSchema,
+  publicBookingSchema,
   updateOrganizationSettingsSchema,
 };

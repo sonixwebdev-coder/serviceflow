@@ -23,7 +23,9 @@ import {
   ChevronRight,
   Briefcase,
   MessageSquare,
-  MoreVertical
+  MoreVertical,
+  Activity,
+  BarChart3,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { USER_ROLES } from '../../utils/constants';
@@ -81,6 +83,18 @@ const DashboardLayout = ({ children }) => {
       name: 'Chat',
       href: '/chat',
       icon: MessageSquare,
+      roles: []
+    },
+    {
+      name: 'Activitate',
+      href: '/activity',
+      icon: Activity,
+      roles: []
+    },
+    {
+      name: 'Statistici',
+      href: '/analytics',
+      icon: BarChart3,
       roles: []
     },
     {

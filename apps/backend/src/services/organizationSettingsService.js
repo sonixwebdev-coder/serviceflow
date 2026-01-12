@@ -27,6 +27,19 @@ const DEFAULT_FEATURES = {
 };
 
 /**
+ * Default public booking settings for client portal
+ */
+const DEFAULT_PUBLIC_BOOKING = {
+  serviceType: 'VEHICLE', // VEHICLE, ASSET, or GENERAL
+  workingHours: {
+    start: 9,  // 9 AM
+    end: 18,   // 6 PM
+  },
+  slotDuration: 60, // minutes
+  allowWeekends: false,
+};
+
+/**
  * Generate default asset field configuration for all asset types
  */
 const DEFAULT_ASSET_FIELD_CONFIG = {
@@ -63,6 +76,7 @@ const getOrganizationSettings = async (prisma, organizationId) => {
     terminology: settings.terminology || DEFAULT_TERMINOLOGY,
     features: settings.features || DEFAULT_FEATURES,
     assetFieldConfig: settings.assetFieldConfig || DEFAULT_ASSET_FIELD_CONFIG,
+    publicBooking: settings.publicBooking || DEFAULT_PUBLIC_BOOKING,
   };
 };
 
@@ -224,6 +238,48 @@ const updateAssetFieldConfig = async (prisma, organizationId, assetFieldConfig) 
 };
 
 /**
+ * Update public booking settings
+ * @param {Object} prisma - Prisma client
+ * @param {String} organizationId - Organization ID
+ * @param {Object} publicBooking - Public booking settings
+ * @returns {Object} Updated settings
+ */
+const updatePublicBooking = async (prisma, organizationId, publicBooking) => {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { settings: true },
+  });
+
+  if (!org) {
+    throw new AppError('Organization not found', 404);
+  }
+
+  const currentSettings = org.settings || {};
+
+  const updatedSettings = {
+    ...currentSettings,
+    publicBooking: {
+      ...DEFAULT_PUBLIC_BOOKING,
+      ...currentSettings.publicBooking,
+      ...publicBooking,
+      // Handle nested workingHours object
+      workingHours: {
+        ...DEFAULT_PUBLIC_BOOKING.workingHours,
+        ...(currentSettings.publicBooking?.workingHours || {}),
+        ...(publicBooking.workingHours || {}),
+      },
+    },
+  };
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: { settings: updatedSettings },
+  });
+
+  return updatedSettings;
+};
+
+/**
  * Initialize default settings for a new organization
  * @param {Object} prisma - Prisma client
  * @param {String} organizationId - Organization ID
@@ -234,6 +290,7 @@ const initializeDefaultSettings = async (prisma, organizationId) => {
     terminology: DEFAULT_TERMINOLOGY,
     features: DEFAULT_FEATURES,
     assetFieldConfig: DEFAULT_ASSET_FIELD_CONFIG,
+    publicBooking: DEFAULT_PUBLIC_BOOKING,
   };
 
   await prisma.organization.update({
@@ -249,9 +306,11 @@ module.exports = {
   updateTerminology,
   updateFeatures,
   updateAssetFieldConfig,
+  updatePublicBooking,
   updateOrganizationSettings,
   initializeDefaultSettings,
   DEFAULT_TERMINOLOGY,
   DEFAULT_FEATURES,
   DEFAULT_ASSET_FIELD_CONFIG,
+  DEFAULT_PUBLIC_BOOKING,
 };

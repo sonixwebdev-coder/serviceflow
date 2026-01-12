@@ -24,6 +24,12 @@ const pushNotificationsRouter = require('./pushNotifications');
 // const anafRouter = require('./anaf');
 const paymentsRouter = require('./payments');
 const chatRouter = require('./chat');
+const auditLogsRouter = require('./auditLogs');
+const analyticsRouter = require('./analytics');
+const emailsRouter = require('./emails');
+const integrationsRouter = require('./integrations');
+const searchRouter = require('./search');
+const portalRouter = require('./portal');
 
 const router = express.Router();
 
@@ -59,5 +65,11 @@ router.use('/push-notifications', pushNotificationsRouter);
 // router.use('/anaf', anafRouter);
 router.use('/payments', paymentsRouter);
 router.use('/chat', chatRouter);
+router.use('/audit-logs', auditLogsRouter);
+router.use('/analytics', analyticsRouter);
+router.use('/emails', emailsRouter);
+router.use('/integrations', integrationsRouter);
+router.use('/search', searchRouter);
+router.use('/portal', portalRouter);
 
 module.exports = router;

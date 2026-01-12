@@ -12,6 +12,19 @@ const apiRouter = require('./src/api');
 const errorHandler = require('./src/middleware/errorHandler');
 const createSocketServer = require('./src/realtime');
 
+// Handle uncaught exceptions to prevent server crashes
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.message);
+  console.error(err.stack);
+  // Don't exit - keep the server running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  // Don't exit - keep the server running
+});
+
 const app = express();
 
 const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname, 'storage');
@@ -19,8 +32,8 @@ const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname,
 // CORS configuration (defined early for use in multiple places)
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
-    ? 'https://viperx.online'
-    : 'http://localhost:5173',
+    ? ['https://viperx.online', 'https://portal.viperx.online']
+    : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 };
 
@@ -28,7 +41,11 @@ const corsOptions = {
 // This route is exempt from CSP headers to allow PDF embedding
 app.use('/files', (req, res, next) => {
   // Set CORS headers for cross-origin access
-  res.setHeader('Access-Control-Allow-Origin', corsOptions.origin);
+  const origin = req.headers.origin;
+  const allowedOrigins = Array.isArray(corsOptions.origin) ? corsOptions.origin : [corsOptions.origin];
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   // Don't set CSP headers for static files (PDFs, images)
@@ -129,6 +146,7 @@ const exportLimiter = rateLimit({
 
 // Apply rate limit to auth routes
 app.use('/api/auth', authLimiter);
+app.use('/api/portal/auth', authLimiter);
 
 // Apply rate limiting to profile endpoints (CRITICAL SECURITY)
 app.use('/api/users/profile', (req, res, next) => {

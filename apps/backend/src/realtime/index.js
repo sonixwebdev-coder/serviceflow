@@ -8,31 +8,64 @@ const { broadcastTyping, broadcastPresence } = require('./chatEvents');
 const createSocketServer = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'https://viperx.online',
+      origin: [
+        process.env.FRONTEND_URL || 'https://viperx.online',
+        process.env.CLIENT_PORTAL_URL || 'http://localhost:5174',
+      ],
       credentials: true,
     },
-    transports: ['websocket'], // doar websocket
+    transports: ['websocket'],
+    // Add connection state recovery for better stability
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+      skipMiddlewares: false,
+    },
   });
 
-  io.use((socket, next) => {
-    const token = socket.handshake.auth?.token;
-    if (!token) return next(new Error('AUTH_MISSING_TOKEN'));
+  // Global error handler for the IO server
+  io.engine.on('connection_error', (err) => {
+    console.error('[Socket.io Engine] Connection error:', err.code, err.message, err.context);
+  });
 
+  // ==========================================
+  // DEFAULT NAMESPACE (/) - CRM Users Only
+  // ==========================================
+  io.use(async (socket, next) => {
     try {
+      const token = socket.handshake.auth?.token;
+
+      if (!token) {
+        return next(new Error('AUTH_MISSING_TOKEN'));
+      }
+
+      // CRM user authentication - uses JWTs
       const payload = verifyAccessToken(token);
+      if (!payload || !payload.sub) {
+        return next(new Error('AUTH_INVALID_TOKEN'));
+      }
+
       socket.user = {
         id: payload.sub,
         email: payload.email,
         roles: payload.roles,
         organizationId: payload.organizationId,
       };
-      next();
+
+      return next();
     } catch (err) {
-      next(new Error('AUTH_INVALID_TOKEN'));
+      console.error('[Socket CRM] Auth error:', err.message);
+      return next(new Error('AUTH_INVALID_TOKEN'));
     }
   });
 
   io.on('connection', (socket) => {
+    if (!socket.user) {
+      console.error('[Socket CRM] Connection missing user data');
+      return;
+    }
+
+    console.log(`[CRM] User ${socket.user.id} connected`);
+
     // Join organization room for tenant-scoped broadcasts
     if (socket.user.organizationId) {
       const orgRoom = `org:${socket.user.organizationId}`;
@@ -55,7 +88,6 @@ const createSocketServer = (httpServer) => {
       try {
         await startTyping(prisma, channelId, socket.user.id);
 
-        // Get user details for broadcasting
         const user = await prisma.user.findUnique({
           where: { id: socket.user.id },
           select: { id: true, firstName: true, lastName: true },
@@ -71,7 +103,6 @@ const createSocketServer = (httpServer) => {
       try {
         await stopTyping(prisma, channelId, socket.user.id);
 
-        // Get user details for broadcasting
         const user = await prisma.user.findUnique({
           where: { id: socket.user.id },
           select: { id: true, firstName: true, lastName: true },
@@ -84,19 +115,19 @@ const createSocketServer = (httpServer) => {
     });
 
     socket.on('disconnect', () => {
-      // Update user presence to offline
-      if (socket.user.organizationId) {
+      console.log(`[CRM] User ${socket.user?.id || 'unknown'} disconnected`);
+      if (socket.user?.organizationId) {
         updatePresence(prisma, socket.user.id, false).catch((err) => {
           console.error('Error updating presence on disconnect:', err);
         });
-
-        // Broadcast user is offline
         broadcastPresence(socket.user.organizationId, socket.user.id, false);
       }
     });
   });
 
+  // Set IO instance for the emitter (CRM only)
   setIO(io);
+
   return io;
 };
 

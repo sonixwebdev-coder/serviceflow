@@ -145,6 +145,19 @@ export const useRealtimeEvents = () => {
 
     const handleTaskChange = () => invalidate([['tasks']]);
 
+    // Audit log handler
+    const handleAuditCreated = (auditLog) => {
+      // Invalidate audit log queries to show new entries
+      invalidate([['auditLogs'], ['activityFeed']]);
+
+      // Also invalidate entity-specific activity if we know the entity
+      if (auditLog?.entityType && auditLog?.entityId) {
+        queryClient.invalidateQueries({
+          queryKey: ['entityActivity', auditLog.entityType, auditLog.entityId],
+        });
+      }
+    };
+
     const syncAppointmentData = (appointment) => {
       if (!appointment?.id) return;
       const appointmentId = appointment.id;
@@ -400,6 +413,100 @@ export const useRealtimeEvents = () => {
       queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
     };
 
+    // Public booking handler
+    const handlePublicBooking = (data) => {
+      const { appointment, client, vehicle, asset } = data;
+
+      // Invalidate appointments queries to refresh the list
+      invalidate([['appointments']]);
+
+      // Format appointment time
+      const appointmentDate = new Date(appointment.scheduledStart);
+      const formattedDate = appointmentDate.toLocaleDateString('ro-RO', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      // Build description
+      const clientName = `${client.firstName} ${client.lastName}`;
+      let assetInfo = '';
+      if (vehicle) {
+        assetInfo = ` - ${vehicle.make || ''} ${vehicle.model || ''} ${vehicle.plateNumber || ''}`.trim();
+      } else if (asset) {
+        assetInfo = ` - ${asset.name || asset.identifier || ''}`.trim();
+      }
+
+      // Show in-app toast notification
+      showToast({
+        title: 'Programare nouă din portal',
+        description: `${clientName}${assetInfo} - ${formattedDate}`,
+        type: 'success',
+      });
+
+      // Show browser notification if permission granted
+      if (Notification.permission === 'granted') {
+        const notification = new Notification('Programare nouă din portal', {
+          body: `${clientName}${assetInfo}\n${formattedDate}`,
+          icon: '/favicon.ico',
+          tag: `public-booking-${appointment.id}`,
+        });
+
+        // Close notification after 10 seconds
+        setTimeout(() => notification.close(), 10000);
+
+        // Focus window on click
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+      } else if (Notification.permission === 'default') {
+        // Request permission for future notifications
+        Notification.requestPermission();
+      }
+    };
+
+    // Client updated from portal (bi-directional sync)
+    const handleClientUpdatedFromPortal = (data) => {
+      if (!data?.id) return;
+
+      // Only show toast if update came from portal
+      if (data.source === 'portal') {
+        const clientName = data.companyName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Client';
+        showToast({
+          title: 'Client actualizat din portal',
+          description: `${clientName} și-a actualizat profilul`,
+          type: 'info',
+        });
+      }
+
+      // Invalidate client queries to refresh data
+      invalidate([['clients'], ['client', data.id]]);
+    };
+
+    // Asset updated (bi-directional sync)
+    const handleAssetUpdated = (data) => {
+      if (!data?.id) return;
+
+      // Invalidate asset and client queries
+      invalidate([['assets'], ['asset', data.id]]);
+      if (data.clientId) {
+        invalidate([['client', data.clientId]]);
+      }
+
+      // Show toast if update came from portal
+      if (data.source === 'portal') {
+        const assetName = data.name || data.identifier || 'Activ';
+        showToast({
+          title: 'Activ actualizat din portal',
+          description: `${assetName} a fost actualizat`,
+          type: 'info',
+        });
+      }
+    };
+
     // Connection events
     socket.on('connect', handleConnect);
     socket.on('connect_error', handleConnectError);
@@ -417,6 +524,7 @@ export const useRealtimeEvents = () => {
     socket.on('appointment:created', handleAppointmentChange);
     socket.on('appointment:updated', handleAppointmentChange);
     socket.on('appointment:cancelled', handleAppointmentChange);
+    socket.on('appointment:public-booking', handlePublicBooking);
 
     socket.on('time-entry:created', handleTimeEntryChange);
     socket.on('time-entry:updated', handleTimeEntryChange);
@@ -447,6 +555,13 @@ export const useRealtimeEvents = () => {
     socket.on('chat:read', handleChatRead);
     socket.on('chat:channel:created', handleChatChannelCreated);
 
+    // Audit log events
+    socket.on('audit:created', handleAuditCreated);
+
+    // Bi-directional sync events (from client portal)
+    socket.on('client:updated', handleClientUpdatedFromPortal);
+    socket.on('asset:updated', handleAssetUpdated);
+
     return () => {
       lastAuthError = null;
       refreshingSocket = false;
@@ -468,6 +583,7 @@ export const useRealtimeEvents = () => {
       socket.off('appointment:created', handleAppointmentChange);
       socket.off('appointment:updated', handleAppointmentChange);
       socket.off('appointment:cancelled', handleAppointmentChange);
+      socket.off('appointment:public-booking', handlePublicBooking);
 
       socket.off('time-entry:created', handleTimeEntryChange);
       socket.off('time-entry:updated', handleTimeEntryChange);
@@ -497,6 +613,13 @@ export const useRealtimeEvents = () => {
       socket.off('chat:member:removed', handleChatMemberChange);
       socket.off('chat:read', handleChatRead);
       socket.off('chat:channel:created', handleChatChannelCreated);
+
+      // Clean up audit event listeners
+      socket.off('audit:created', handleAuditCreated);
+
+      // Clean up bi-directional sync event listeners
+      socket.off('client:updated', handleClientUpdatedFromPortal);
+      socket.off('asset:updated', handleAssetUpdated);
     };
   }, [accessToken, queryClient, showToast, user]);
 };

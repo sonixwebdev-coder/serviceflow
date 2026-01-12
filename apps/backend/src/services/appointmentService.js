@@ -1,5 +1,5 @@
 const { AppError } = require('../utils/errors');
-const { broadcastAppointment, broadcastServiceOrder } = require('../realtime/events');
+const { broadcastAppointment, broadcastServiceOrder, broadcastAppointmentToClient } = require('../realtime/events');
 const { getCompanySettings } = require('./companySettingService');
 const { upsertServiceOrder, generateServiceOrderPdf } = require('./serviceOrderService');
 const { createNotification } = require('./notificationService');
@@ -714,6 +714,9 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
 
   broadcastAppointment('updated', updated);
 
+  // Broadcast to client portal
+  broadcastAppointmentToClient('updated', updated);
+
   // Send notification when appointment status changes
   try {
     const statusChanged = existing.status !== updated.status;
@@ -825,6 +828,9 @@ const cancelAppointment = async (prisma, appointmentId, reason, currentUser) => 
   });
 
   broadcastAppointment('cancelled', updated);
+
+  // Broadcast to client portal
+  broadcastAppointmentToClient('cancelled', updated);
 
   // Send push notifications for cancellation
   try {
