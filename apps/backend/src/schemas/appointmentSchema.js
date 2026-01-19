@@ -49,27 +49,7 @@ const clientSchema = z.object({
   fidelityCardSerie: z.string().optional(),
 }).optional();
 
-const vehicleSchema = z.object({
-  id: z.string().optional(),
-  make: z.string().optional(),
-  model: z.string().optional(),
-  year: z.number({ invalid_type_error: 'Anul trebuie sa fie un numar' })
-    .int('Anul trebuie sa fie un numar intreg')
-    .min(1900, 'Anul trebuie sa fie dupa 1900')
-    .max(2100, 'Anul trebuie sa fie inainte de 2100')
-    .optional(),
-  vin: z.string().optional(),
-  plateNumber: z.string().optional(),
-  carId: z.string().optional(),
-  odometerKm: z.number({ invalid_type_error: 'Kilometrajul trebuie sa fie un numar' })
-    .int('Kilometrajul trebuie sa fie un numar intreg')
-    .nonnegative('Kilometrajul nu poate fi negativ')
-    .optional(),
-  color: z.string().optional(),
-  notes: z.string().optional(),
-}).optional();
-
-// Generic asset schema for the new asset model
+// Generic asset schema
 const assetSchema = z.object({
   id: z.string().optional(),
   assetType: z.string().optional(), // vehicle, appliance, hvac_unit, equipment, other
@@ -94,7 +74,6 @@ const baseAppointmentSchema = z.object({
   scheduledEnd: z.coerce.date({ invalid_type_error: 'Data de sfarsit invalida' }).optional(),
   location: z.string().optional(),
   clientId: z.string().min(1, 'ID-ul clientului este obligatoriu').optional(),
-  vehicleId: z.string().min(1, 'ID-ul vehiculului este obligatoriu').optional(),
   assetId: z.string().optional(),
   assigneeIds: z.array(z.string().min(1, 'ID-ul tehnicianului este invalid'), {
     invalid_type_error: 'Lista de tehnicieni trebuie sa fie un array'
@@ -104,7 +83,6 @@ const baseAppointmentSchema = z.object({
     .nonnegative('Avansul nu poate fi negativ')
     .optional(),
   client: clientSchema,
-  vehicle: vehicleSchema,
   asset: assetSchema,
   serviceOrder: serviceOrderSchema,
 });

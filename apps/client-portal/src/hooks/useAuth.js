@@ -2,6 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../state/useAuthStore';
 
+/**
+ * Simple hook to access current auth state
+ */
+export function useAuth() {
+  const { client, account, accessToken, isAuthenticated } = useAuthStore();
+  return { client, account, accessToken, isAuthenticated };
+}
+
 export function useLogin() {
   const setAuth = useAuthStore((state) => state.setAuth);
 

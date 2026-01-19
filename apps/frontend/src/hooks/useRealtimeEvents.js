@@ -282,8 +282,30 @@ export const useRealtimeEvents = () => {
     const handleMessageCreated = (message) => {
       if (!message?.appointmentId) return;
 
-      // Note: Toast notifications for messages are handled by the notification system
-      // to avoid duplicate toasts
+      // Show toast notification for appointment messages (especially from clients)
+      const isOwnMessage = message.authorId === user?.id;
+
+      if (!isOwnMessage) {
+        const isFromClient = !!message.clientAuthorId;
+        const authorName = message.author?.firstName
+          ? `${message.author.firstName} ${message.author.lastName || ''}`.trim()
+          : (isFromClient ? 'Client' : 'Utilizator');
+
+        // Get message preview
+        let messagePreview = message.body || '';
+        if (message.type === 'file') {
+          const isVoice = message.metadata?.isVoice;
+          messagePreview = isVoice ? 'A trimis un mesaj vocal' : 'A trimis un fișier';
+        } else if (messagePreview.length > 50) {
+          messagePreview = messagePreview.substring(0, 47) + '...';
+        }
+
+        showToast({
+          title: isFromClient ? 'Mesaj nou de la client' : 'Mesaj nou',
+          description: `${authorName}: ${messagePreview}`,
+          type: 'info',
+        });
+      }
 
       queryClient.invalidateQueries({ queryKey: ['appointment-messages', message.appointmentId] });
       queryClient.invalidateQueries({ queryKey: ['appointments'] });

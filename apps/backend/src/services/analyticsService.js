@@ -12,58 +12,54 @@ const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day' } 
   const end = endDate ? new Date(endDate) : now;
 
   // Get paid invoices within the date range
+  // Use OR logic: paidAt in range, OR status PAID with issueDate in range (fallback for older records)
   const invoices = await prisma.invoice.findMany({
     where: {
-      paidAt: {
-        gte: startOfDay(start),
-        lte: endOfDay(end),
-      },
       status: 'PAID',
+      OR: [
+        {
+          paidAt: {
+            gte: startOfDay(start),
+            lte: endOfDay(end),
+          },
+        },
+        {
+          paidAt: null,
+          issueDate: {
+            gte: startOfDay(start),
+            lte: endOfDay(end),
+          },
+        },
+      ],
     },
     select: {
       id: true,
       total: true,
       paidAt: true,
+      issueDate: true,
     },
     orderBy: {
       paidAt: 'asc',
     },
   });
 
-  // Get payments within the date range (for more granular tracking)
-  const payments = await prisma.payment.findMany({
-    where: {
-      paymentDate: {
-        gte: startOfDay(start),
-        lte: endOfDay(end),
-      },
-    },
-    select: {
-      id: true,
-      amount: true,
-      paymentDate: true,
-      type: true,
-    },
-    orderBy: {
-      paymentDate: 'asc',
-    },
-  });
-
-  // Group by period
+  // Group invoices by period
   const groupedRevenue = {};
   const dateFormat = groupBy === 'month' ? 'yyyy-MM' : groupBy === 'week' ? 'yyyy-ww' : 'yyyy-MM-dd';
 
-  payments.forEach((payment) => {
-    const periodKey = format(new Date(payment.paymentDate), dateFormat);
+  invoices.forEach((invoice) => {
+    // Use paidAt if available, otherwise fall back to issueDate
+    const dateToUse = invoice.paidAt || invoice.issueDate;
+    const periodKey = format(new Date(dateToUse), dateFormat);
     if (!groupedRevenue[periodKey]) {
       groupedRevenue[periodKey] = { period: periodKey, revenue: 0, count: 0 };
     }
-    groupedRevenue[periodKey].revenue += Number(payment.amount) || 0;
+    groupedRevenue[periodKey].revenue += Number(invoice.total) || 0;
     groupedRevenue[periodKey].count += 1;
   });
 
   // Calculate totals
-  const totalRevenue = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const totalRevenue = invoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
   const totalInvoices = invoices.length;
 
   // Get previous period for comparison
@@ -71,19 +67,31 @@ const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day' } 
   const prevStart = subDays(start, daysDiff);
   const prevEnd = subDays(end, daysDiff);
 
-  const prevPayments = await prisma.payment.findMany({
+  const prevInvoices = await prisma.invoice.findMany({
     where: {
-      paymentDate: {
-        gte: startOfDay(prevStart),
-        lte: endOfDay(prevEnd),
-      },
+      status: 'PAID',
+      OR: [
+        {
+          paidAt: {
+            gte: startOfDay(prevStart),
+            lte: endOfDay(prevEnd),
+          },
+        },
+        {
+          paidAt: null,
+          issueDate: {
+            gte: startOfDay(prevStart),
+            lte: endOfDay(prevEnd),
+          },
+        },
+      ],
     },
     select: {
-      amount: true,
+      total: true,
     },
   });
 
-  const prevRevenue = prevPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const prevRevenue = prevInvoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
   const revenueChange = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
 
   return {
@@ -400,12 +408,19 @@ const getDashboardOverview = async (prisma) => {
   const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 });
   const endOfThisWeek = endOfWeek(now, { weekStartsOn: 1 });
 
+  // Last month dates for comparison
+  const startOfLastMonth = startOfMonth(subDays(startOfThisMonth, 1));
+  const endOfLastMonth = endOfMonth(startOfLastMonth);
+
   // Run all queries in parallel
   const [
     totalClients,
     todayAppointments,
     weekAppointments,
     monthRevenue,
+    lastMonthRevenue,
+    paidInvoicesThisMonth,
+    pendingInvoicesAmount,
     pendingInvoices,
     overdueInvoices,
     activeTasks,
@@ -433,16 +448,88 @@ const getDashboardOverview = async (prisma) => {
       },
     }),
 
-    // This month's revenue
-    prisma.payment.aggregate({
+    // This month's revenue (from paid invoices)
+    // Use OR logic: paidAt in range, OR status PAID with issueDate in range (fallback for older records)
+    prisma.invoice.aggregate({
       where: {
-        paymentDate: {
-          gte: startOfThisMonth,
-          lte: endOfThisMonth,
+        status: 'PAID',
+        OR: [
+          {
+            paidAt: {
+              gte: startOfThisMonth,
+              lte: endOfThisMonth,
+            },
+          },
+          {
+            paidAt: null,
+            issueDate: {
+              gte: startOfThisMonth,
+              lte: endOfThisMonth,
+            },
+          },
+        ],
+      },
+      _sum: {
+        total: true,
+      },
+    }),
+
+    // Last month's revenue (for comparison)
+    prisma.invoice.aggregate({
+      where: {
+        status: 'PAID',
+        OR: [
+          {
+            paidAt: {
+              gte: startOfLastMonth,
+              lte: endOfLastMonth,
+            },
+          },
+          {
+            paidAt: null,
+            issueDate: {
+              gte: startOfLastMonth,
+              lte: endOfLastMonth,
+            },
+          },
+        ],
+      },
+      _sum: {
+        total: true,
+      },
+    }),
+
+    // Count of paid invoices this month
+    prisma.invoice.count({
+      where: {
+        status: 'PAID',
+        OR: [
+          {
+            paidAt: {
+              gte: startOfThisMonth,
+              lte: endOfThisMonth,
+            },
+          },
+          {
+            paidAt: null,
+            issueDate: {
+              gte: startOfThisMonth,
+              lte: endOfThisMonth,
+            },
+          },
+        ],
+      },
+    }),
+
+    // Pending invoices total amount (unpaid)
+    prisma.invoice.aggregate({
+      where: {
+        status: {
+          in: ['GENERATED', 'SENT', 'OVERDUE'],
         },
       },
       _sum: {
-        amount: true,
+        total: true,
       },
     }),
 
@@ -472,6 +559,18 @@ const getDashboardOverview = async (prisma) => {
     }),
   ]);
 
+  const thisMonthTotal = Math.round((Number(monthRevenue._sum.total) || 0) * 100) / 100;
+  const lastMonthTotal = Math.round((Number(lastMonthRevenue._sum.total) || 0) * 100) / 100;
+  const pendingTotal = Math.round((Number(pendingInvoicesAmount._sum.total) || 0) * 100) / 100;
+
+  // Calculate percentage change
+  let changePercent = null;
+  if (lastMonthTotal > 0) {
+    changePercent = Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 * 10) / 10;
+  } else if (thisMonthTotal > 0) {
+    changePercent = 100; // If last month was 0, show 100% increase
+  }
+
   return {
     clients: {
       total: totalClients,
@@ -481,7 +580,11 @@ const getDashboardOverview = async (prisma) => {
       thisWeek: weekAppointments,
     },
     revenue: {
-      thisMonth: Math.round((Number(monthRevenue._sum.amount) || 0) * 100) / 100,
+      thisMonth: thisMonthTotal,
+      lastMonth: lastMonthTotal,
+      changePercent,
+      paidInvoices: paidInvoicesThisMonth,
+      pendingTotal,
     },
     invoices: {
       pending: pendingInvoices,

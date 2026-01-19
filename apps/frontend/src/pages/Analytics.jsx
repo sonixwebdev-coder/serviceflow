@@ -8,6 +8,7 @@ import {
   FileText,
   TrendingUp,
   RefreshCw,
+  CheckSquare,
 } from 'lucide-react';
 import {
   useOverview,
@@ -18,6 +19,7 @@ import {
   useTopClients,
 } from '../hooks/useAnalytics';
 import MetricCard from '../components/analytics/MetricCard';
+import RevenueCard from '../components/analytics/RevenueCard';
 import RevenueChart from '../components/analytics/RevenueChart';
 import AppointmentMetrics from '../components/analytics/AppointmentMetrics';
 import ClientGrowthChart from '../components/analytics/ClientGrowthChart';
@@ -43,12 +45,12 @@ export default function Analytics() {
   );
 
   // Fetch all analytics data
-  const { data: overview, isLoading: overviewLoading, refetch: refetchOverview } = useOverview();
-  const { data: revenue, isLoading: revenueLoading, refetch: refetchRevenue } = useRevenueTrends(queryParams);
-  const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = useAppointmentStats(queryParams);
-  const { data: clients, isLoading: clientsLoading, refetch: refetchClients } = useClientAcquisition(queryParams);
-  const { data: invoiceAging, isLoading: agingLoading, refetch: refetchAging } = useInvoiceAging();
-  const { data: topClients, isLoading: topClientsLoading, refetch: refetchTopClients } = useTopClients(queryParams);
+  const { data: overview, isLoading: overviewLoading, isFetching: overviewFetching, refetch: refetchOverview } = useOverview();
+  const { data: revenue, isLoading: revenueLoading, isFetching: revenueFetching, refetch: refetchRevenue } = useRevenueTrends(queryParams);
+  const { data: appointments, isLoading: appointmentsLoading, isFetching: appointmentsFetching, refetch: refetchAppointments } = useAppointmentStats(queryParams);
+  const { data: clients, isLoading: clientsLoading, isFetching: clientsFetching, refetch: refetchClients } = useClientAcquisition(queryParams);
+  const { data: invoiceAging, isLoading: agingLoading, isFetching: agingFetching, refetch: refetchAging } = useInvoiceAging();
+  const { data: topClients, isLoading: topClientsLoading, isFetching: topClientsFetching, refetch: refetchTopClients } = useTopClients(queryParams);
 
   const handleRefreshAll = () => {
     refetchOverview();
@@ -59,6 +61,7 @@ export default function Analytics() {
     refetchTopClients();
   };
 
+  // isLoading = true only on initial load (no cached data)
   const isAnyLoading =
     overviewLoading ||
     revenueLoading ||
@@ -67,29 +70,38 @@ export default function Analytics() {
     agingLoading ||
     topClientsLoading;
 
+  // isFetching = true on initial load AND refetches
+  const isAnyFetching =
+    overviewFetching ||
+    revenueFetching ||
+    appointmentsFetching ||
+    clientsFetching ||
+    agingFetching ||
+    topClientsFetching;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="page-header">
+          <h1 className="page-title flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-viperx-primary" />
             Statistici
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="page-subtitle">
             Metrici si analize pentru afacerea ta
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleRefreshAll}
-            disabled={isAnyLoading}
-            className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition disabled:opacity-50"
+            disabled={isAnyFetching}
+            className="p-2.5 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 hover:shadow-md transition-all disabled:opacity-50"
             title="Reincarca datele"
           >
             <RefreshCw
-              className={`h-4 w-4 text-gray-600 ${isAnyLoading ? 'animate-spin' : ''}`}
+              className={`h-4 w-4 text-gray-600 ${isAnyFetching ? 'animate-spin' : ''}`}
             />
           </button>
         </div>
@@ -106,36 +118,51 @@ export default function Analytics() {
       </div>
 
       {/* Overview Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Venituri luna aceasta"
-          value={overview?.revenue?.thisMonth || 0}
-          format="currency"
-          icon={DollarSign}
-          iconColor="text-green-600"
-          iconBg="bg-green-100"
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Revenue Card - uses selected date range */}
+        <RevenueCard
+          data={revenue?.summary}
+          dateRange={dateRange}
+          isLoading={revenueLoading || revenueFetching}
         />
-        <MetricCard
-          title="Programari azi"
-          value={overview?.appointments?.today || 0}
-          icon={Calendar}
-          iconColor="text-blue-600"
-          iconBg="bg-blue-100"
-        />
-        <MetricCard
-          title="Total clienti"
-          value={overview?.clients?.total || 0}
-          icon={Users}
-          iconColor="text-viperx-primary"
-          iconBg="bg-viperx-primary/10"
-        />
-        <MetricCard
-          title="Facturi restante"
-          value={overview?.invoices?.overdue || 0}
-          icon={FileText}
-          iconColor="text-red-600"
-          iconBg="bg-red-100"
-        />
+
+        {/* Other metrics - 2x2 grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <MetricCard
+            title="Programari azi"
+            value={overview?.appointments?.today || 0}
+            subtitle={`${overview?.appointments?.thisWeek || 0} saptamana aceasta`}
+            icon={Calendar}
+            iconColor="text-blue-600"
+            iconBg="bg-blue-100"
+            isLoading={overviewLoading || overviewFetching}
+          />
+          <MetricCard
+            title="Total clienti"
+            value={overview?.clients?.total || 0}
+            icon={Users}
+            iconColor="text-viperx-primary"
+            iconBg="bg-viperx-primary/10"
+            isLoading={overviewLoading || overviewFetching}
+          />
+          <MetricCard
+            title="Facturi restante"
+            value={overview?.invoices?.overdue || 0}
+            subtitle={`${overview?.invoices?.pending || 0} in asteptare`}
+            icon={FileText}
+            iconColor="text-red-600"
+            iconBg="bg-red-100"
+            isLoading={overviewLoading || overviewFetching}
+          />
+          <MetricCard
+            title="Task-uri active"
+            value={overview?.tasks?.active || 0}
+            icon={CheckSquare}
+            iconColor="text-amber-600"
+            iconBg="bg-amber-100"
+            isLoading={overviewLoading || overviewFetching}
+          />
+        </div>
       </div>
 
       {/* Charts Row 1 */}
@@ -148,33 +175,7 @@ export default function Analytics() {
               Evolutia veniturilor
             </h2>
           </div>
-          {revenue?.summary && (
-            <div className="flex items-center gap-4 mb-4">
-              <div>
-                <p className="text-sm text-gray-500">Total perioada</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {new Intl.NumberFormat('ro-RO', {
-                    style: 'currency',
-                    currency: 'RON',
-                    minimumFractionDigits: 0,
-                  }).format(revenue.summary.totalRevenue)}
-                </p>
-              </div>
-              {revenue.summary.revenueChange !== undefined && (
-                <div
-                  className={`px-2 py-1 rounded text-sm font-medium ${
-                    revenue.summary.revenueChange >= 0
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
-                >
-                  {revenue.summary.revenueChange >= 0 ? '+' : ''}
-                  {revenue.summary.revenueChange.toFixed(1)}% vs perioada anterioara
-                </div>
-              )}
-            </div>
-          )}
-          <RevenueChart data={revenue?.data} isLoading={revenueLoading} />
+          <RevenueChart data={revenue?.data} isLoading={revenueLoading || revenueFetching} />
         </div>
 
         {/* Appointments Chart */}
@@ -204,7 +205,7 @@ export default function Analytics() {
           <AppointmentMetrics
             data={appointments?.data}
             byStatus={appointments?.byStatus}
-            isLoading={appointmentsLoading}
+            isLoading={appointmentsLoading || appointmentsFetching}
           />
         </div>
       </div>
@@ -244,7 +245,7 @@ export default function Analytics() {
           <ClientGrowthChart
             data={clients?.data}
             byType={clients?.byType}
-            isLoading={clientsLoading}
+            isLoading={clientsLoading || clientsFetching}
           />
         </div>
 
@@ -259,7 +260,7 @@ export default function Analytics() {
           <InvoiceAgingTable
             buckets={invoiceAging?.buckets}
             summary={invoiceAging?.summary}
-            isLoading={agingLoading}
+            isLoading={agingLoading || agingFetching}
           />
         </div>
 
@@ -271,7 +272,7 @@ export default function Analytics() {
               Top clienti
             </h2>
           </div>
-          <TopClientsTable data={topClients} isLoading={topClientsLoading} />
+          <TopClientsTable data={topClients} isLoading={topClientsLoading || topClientsFetching} />
         </div>
       </div>
     </div>

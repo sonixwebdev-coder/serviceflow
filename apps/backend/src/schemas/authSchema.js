@@ -12,7 +12,18 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(10),
 });
 
+const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(10, 'Invalid reset token'),
+  password: passwordSchema,
+});
+
 module.exports = {
   loginSchema,
   refreshSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 };

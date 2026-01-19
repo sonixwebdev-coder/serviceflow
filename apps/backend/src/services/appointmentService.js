@@ -9,6 +9,7 @@ const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = 
 const { createPayment } = require('./paymentService');
 const { resolveAsset } = require('./assetService');
 const logger = require('../utils/logger');
+const googleCalendarService = require('./google/googleCalendarService');
 
 const STATUS_MAP = new Map([
   ['pending', 'PENDING'],
@@ -265,6 +266,72 @@ const resolveClient = async (tx, clientPayload, fallbackId, organizationId) => {
 };
 
 // resolveVehicle removed - now using Asset model via resolveAsset from assetService.js
+
+/**
+ * Sync appointment to Google Calendar for all relevant users
+ * Runs asynchronously and doesn't block the main operation
+ * @param {object} prisma - Prisma client
+ * @param {object} appointment - The appointment with client data
+ * @param {'create' | 'update' | 'delete'} action - The sync action
+ */
+const syncToGoogleCalendar = async (prisma, appointment, action = 'create') => {
+  try {
+    // Collect all user IDs who should have this synced
+    const userIds = new Set();
+
+    // Add the creator
+    if (appointment.createdById) {
+      userIds.add(appointment.createdById);
+    }
+
+    // Add all assignees
+    if (appointment.assignees?.length) {
+      appointment.assignees.forEach((a) => {
+        if (a.userId) userIds.add(a.userId);
+      });
+    }
+
+    if (userIds.size === 0) {
+      logger.debug('[GCAL] No users to sync appointment to', { appointmentId: appointment.id });
+      return;
+    }
+
+    logger.info(`[GCAL] Syncing appointment ${appointment.id} to ${userIds.size} user(s)`, {
+      action,
+      userIds: Array.from(userIds),
+    });
+
+    // Sync to each user's calendar in parallel (fire and forget)
+    const syncPromises = Array.from(userIds).map(async (userId) => {
+      try {
+        if (action === 'create') {
+          await googleCalendarService.createEvent(prisma, userId, appointment, appointment.client);
+        } else if (action === 'update') {
+          await googleCalendarService.updateEvent(prisma, userId, appointment, appointment.client);
+        } else if (action === 'delete') {
+          await googleCalendarService.deleteEvent(prisma, userId, appointment.id);
+        }
+        logger.debug(`[GCAL] Sync ${action} successful for user ${userId}`, { appointmentId: appointment.id });
+      } catch (err) {
+        logger.error(`[GCAL] Sync ${action} failed for user ${userId}:`, {
+          appointmentId: appointment.id,
+          error: err.message,
+        });
+        // Don't throw - we want to continue syncing for other users
+      }
+    });
+
+    // Wait for all syncs but don't block on errors
+    await Promise.allSettled(syncPromises);
+  } catch (error) {
+    logger.error('[GCAL] Failed to sync appointment to Google Calendar:', {
+      appointmentId: appointment.id,
+      action,
+      error: error.message,
+    });
+    // Don't throw - calendar sync should not fail the main operation
+  }
+};
 
 const listAppointments = async (prisma, filters = {}, options = {}) => {
   const { status, from, to, clientId, assigneeId } = filters;
@@ -567,6 +634,11 @@ const createAppointment = async (prisma, payload, currentUser) => {
     // Don't fail the whole operation if notifications fail
   }
 
+  // Sync to Google Calendar (fire and forget, doesn't block the response)
+  syncToGoogleCalendar(prisma, appointment, 'create').catch((err) => {
+    logger.error('[GCAL] Background sync failed:', { appointmentId: appointment.id, error: err.message });
+  });
+
   return appointment;
 };
 
@@ -805,6 +877,11 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     // Don't fail the whole operation if notifications fail
   }
 
+  // Sync to Google Calendar (fire and forget, doesn't block the response)
+  syncToGoogleCalendar(prisma, updated, 'update').catch((err) => {
+    logger.error('[GCAL] Background sync failed:', { appointmentId: updated.id, error: err.message });
+  });
+
   return updated;
 };
 
@@ -840,6 +917,11 @@ const cancelAppointment = async (prisma, appointmentId, reason, currentUser) => 
     logger.error('Failed to send push notifications for appointment cancellation', { error: pushError.message, appointmentId: updated.id });
     // Don't fail if push notifications fail
   }
+
+  // Delete from Google Calendar (fire and forget, doesn't block the response)
+  syncToGoogleCalendar(prisma, updated, 'delete').catch((err) => {
+    logger.error('[GCAL] Background delete failed:', { appointmentId: updated.id, error: err.message });
+  });
 
   return updated;
 };

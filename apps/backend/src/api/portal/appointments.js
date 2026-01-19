@@ -3,6 +3,7 @@ const router = express.Router();
 const asyncHandler = require('../../middleware/asyncHandler');
 const authenticateClient = require('../../middleware/authenticateClient');
 const prisma = require('../../../lib/prisma');
+const messagesRouter = require('./messages');
 
 /**
  * GET /api/portal/appointments
@@ -47,19 +48,14 @@ router.get(
           location: true,
           paymentStatus: true,
           createdAt: true,
-          vehicle: {
-            select: {
-              id: true,
-              make: true,
-              model: true,
-              plateNumber: true,
-            },
-          },
           asset: {
             select: {
               id: true,
               name: true,
               type: true,
+              identifier: true,
+              manufacturer: true,
+              model: true,
             },
           },
         },
@@ -93,7 +89,6 @@ router.get(
         clientId: req.client.id,
       },
       include: {
-        vehicle: true,
         asset: true,
         serviceOrder: {
           include: {
@@ -149,5 +144,8 @@ router.get(
     res.json(appointments);
   })
 );
+
+// Mount messages routes under /appointments/:appointmentId/messages
+router.use('/:appointmentId/messages', messagesRouter);
 
 module.exports = router;

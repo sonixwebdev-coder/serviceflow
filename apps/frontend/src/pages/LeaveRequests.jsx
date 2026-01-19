@@ -422,15 +422,16 @@ const LeaveRequests = () => {
   const weekDays = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sam', 'Dum'];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Cereri de concediu</h1>
-          <p className="text-sm text-gray-500 mt-1">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title">Cereri de concediu</h1>
+          <p className="page-subtitle">
             Solicita zile libere si urmareste statusul cererilor tale.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <ExportButton
             entityType="leave-requests"
             filters={{
@@ -442,18 +443,18 @@ const LeaveRequests = () => {
             type="button"
             onClick={openRequestModal}
             disabled={!selectedDates.start || !selectedDates.end}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <CalendarIcon size={18} />
+            <CalendarIcon size={16} />
             Trimite cerere
           </button>
           {isManagerial && (
             <button
               type="button"
               onClick={openMedicalLeaveModal}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-all hover:shadow-md"
             >
-              <UserPlus size={18} />
+              <UserPlus size={16} />
               Adauga concediu medical
             </button>
           )}

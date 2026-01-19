@@ -20,6 +20,7 @@ const {
   markInvoiceAsPaid,
   getInvoicesByAppointment,
 } = require('../services/invoiceService');
+const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();
@@ -45,6 +46,15 @@ router.post(
   validate(createInvoiceSchema),
   asyncHandler(async (req, res) => {
     const invoice = await createInvoice(req.tenantPrisma, req.body);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.INVOICE,
+      entityId: invoice.id,
+      description: getActionDescription('CREATE', ENTITY_TYPES.INVOICE, invoice.invoiceNumber),
+      metadata: { appointmentId: invoice.appointmentId },
+    });
+
     return created(res, invoice, 'Invoice created successfully');
   })
 );
@@ -56,6 +66,15 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
     const invoice = await createInvoiceFromServiceOrder(req.tenantPrisma, req.params.serviceOrderId);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.INVOICE,
+      entityId: invoice.id,
+      description: getActionDescription('CREATE', ENTITY_TYPES.INVOICE, invoice.invoiceNumber),
+      metadata: { serviceOrderId: req.params.serviceOrderId, appointmentId: invoice.appointmentId },
+    });
+
     return created(res, invoice, 'Invoice created from service order successfully');
   })
 );
@@ -79,6 +98,15 @@ router.put(
   validate(updateInvoiceSchema),
   asyncHandler(async (req, res) => {
     const invoice = await updateInvoice(req.tenantPrisma, req.params.id, req.body, { userId: req.user.id });
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.INVOICE,
+      entityId: invoice.id,
+      description: getActionDescription('UPDATE', ENTITY_TYPES.INVOICE, invoice.invoiceNumber),
+      metadata: { changes: Object.keys(req.body) },
+    });
+
     return ok(res, invoice, 'Invoice updated successfully');
   })
 );
@@ -89,7 +117,16 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
+    const invoice = await getInvoiceById(req.tenantPrisma, req.params.id);
     await deleteInvoice(req.tenantPrisma, req.params.id);
+
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: ENTITY_TYPES.INVOICE,
+      entityId: req.params.id,
+      description: getActionDescription('DELETE', ENTITY_TYPES.INVOICE, invoice.invoiceNumber),
+    });
+
     return ok(res, { success: true }, 'Invoice deleted successfully');
   })
 );
@@ -118,6 +155,14 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
     const invoice = await markInvoiceAsSent(req.tenantPrisma, req.params.id);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.INVOICE,
+      entityId: invoice.id,
+      description: `Marcat ca trimisa factura: ${invoice.invoiceNumber}`,
+    });
+
     return ok(res, invoice, 'Invoice marked as sent');
   })
 );
@@ -129,6 +174,14 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
     const invoice = await markInvoiceAsPaid(req.tenantPrisma, req.params.id, { userId: req.user.id });
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.INVOICE,
+      entityId: invoice.id,
+      description: `Marcat ca platita factura: ${invoice.invoiceNumber}`,
+    });
+
     return ok(res, invoice, 'Invoice marked as paid');
   })
 );

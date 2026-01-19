@@ -26,11 +26,14 @@ import {
   MoreVertical,
   Activity,
   BarChart3,
+  Package,
+  Mail,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { USER_ROLES } from '../../utils/constants';
 import useAuth from '../../context/useAuth';
 import useToast from '../../context/useToast';
+import { useTerminology } from '../../context/TerminologyContext';
 import useNotifications from '../../hooks/useNotifications';
 import { markNotificationRead, markNotificationsRead } from '../../services/notificationService';
 import FloatingChatWidget from '../chat/FloatingChatWidget';
@@ -57,6 +60,8 @@ const DashboardLayout = ({ children }) => {
 
   const { user, logout, hasRole } = useAuth();
   const { showToast } = useToast();
+  const { features } = useTerminology();
+  const hasAssets = features?.useAssets !== false; // Default to true if undefined
   const location = useLocation();
 
   const {
@@ -72,7 +77,21 @@ const DashboardLayout = ({ children }) => {
   );
   const unreadCount = unreadNotifications.length;
 
-  const navigation = useMemo(() => [
+  const navigation = useMemo(() => {
+    // Build CRM children based on features
+    const crmChildren = [
+      { name: 'Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },
+      { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
+      { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
+      { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
+    ];
+
+    // Only show Assets nav item for sectors with assets (not BEAUTY)
+    if (hasAssets) {
+      crmChildren.splice(2, 0, { name: 'Active', href: '/crm/assets', icon: Package, roles: [] });
+    }
+
+    return [
     {
       name: 'Tablou de bord',
       href: '/dashboard',
@@ -102,12 +121,7 @@ const DashboardLayout = ({ children }) => {
       key: 'crm',
       icon: Briefcase,
       roles: [],
-      children: [
-        { name: 'Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },
-        { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
-        { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
-        { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
-      ]
+      children: crmChildren
     },
     {
       name: 'Echipa & Pontaj',
@@ -137,9 +151,11 @@ const DashboardLayout = ({ children }) => {
       children: [
         { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari organizatie', href: '/settings/organization', icon: Settings, roles: [USER_ROLES.ADMIN] },
+        { name: 'Template-uri Email', href: '/settings/email-templates', icon: Mail, roles: [USER_ROLES.ADMIN] },
       ]
     },
-  ], []);
+  ];
+  }, [hasAssets]);
 
   const filteredNavigation = navigation.filter((item) => {
     if (item.roles.length === 0) return true;

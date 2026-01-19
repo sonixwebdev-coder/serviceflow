@@ -1,237 +1,159 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { connectSocket, disconnectSocket, getSocket, updateSocketToken } from '../lib/socket';
-import { useAuthStore } from '../state/useAuthStore';
-import { refreshAuthSession } from '../utils/api';
+import { connectSocket, disconnectSocket, getSocket } from '@/lib/socket';
+import { useAuthStore } from '@/state/useAuthStore';
+import useToast from '@/context/useToast';
 
 /**
- * Hook to handle real-time events from the server in the client portal
- * Now uses JWT authentication with token refresh (same as CRM)
+ * Real-time events hook for client portal
+ * Manages socket connection and real-time event handling
  */
 export const useRealtimeEvents = () => {
+  const [isConnected, setIsConnected] = useState(false);
   const queryClient = useQueryClient();
-  const { accessToken, isAuthenticated, updateClient } = useAuthStore();
-  const connectedRef = useRef(false);
+  const { accessToken, client } = useAuthStore();
+  const { showToast } = useToast();
 
-  // Invalidate queries helper
-  const invalidate = useCallback(
-    (keys) => {
-      keys.forEach((key) => {
-        queryClient.invalidateQueries({ queryKey: key });
-      });
+  // Handle new message event
+  const handleNewMessage = useCallback(
+    (message) => {
+      // Update messages cache for the specific appointment
+      queryClient.setQueryData(
+        ['appointment-messages', message.appointmentId],
+        (old) => {
+          if (!old) return [message];
+          // Check if message already exists
+          if (old.some((m) => m.id === message.id)) {
+            return old;
+          }
+          return [...old, message];
+        }
+      );
+
+      // Show toast notification if message is from CRM staff (not from self)
+      const isOwnMessage = message.clientAuthorId === client?.id;
+
+      if (!isOwnMessage && message.author) {
+        const authorName = message.author.firstName
+          ? `${message.author.firstName} ${message.author.lastName || ''}`.trim()
+          : 'Echipa';
+
+        // Get message preview
+        let messagePreview = message.body || '';
+        if (message.type === 'file') {
+          const isVoice = message.metadata?.isVoice;
+          messagePreview = isVoice ? 'A trimis un mesaj vocal' : 'A trimis un fisier';
+        } else if (messagePreview.length > 50) {
+          messagePreview = messagePreview.substring(0, 47) + '...';
+        }
+
+        showToast({
+          title: 'Mesaj nou',
+          description: `${authorName}: ${messagePreview}`,
+          type: 'info',
+        });
+      }
+
+      // Invalidate unread count
+      queryClient.invalidateQueries([
+        'appointment-messages-unread',
+        message.appointmentId,
+      ]);
+    },
+    [queryClient, client?.id, showToast]
+  );
+
+  // Handle typing indicator event
+  const handleTyping = useCallback(
+    (data) => {
+      // You can implement typing indicator state here if needed
+      console.log('[Socket] Typing indicator:', data);
+    },
+    []
+  );
+
+  // Handle appointment update event
+  const handleAppointmentUpdate = useCallback(
+    (appointment) => {
+      queryClient.setQueryData(['appointment', appointment.id], (old) =>
+        old ? { ...old, ...appointment } : appointment
+      );
+      queryClient.invalidateQueries(['appointments']);
+      queryClient.invalidateQueries(['upcoming-appointments']);
     },
     [queryClient]
   );
 
-  // Show toast notification
-  const showToast = useCallback((message, type = 'info') => {
-    console.log(`[${type.toUpperCase()}] ${message}`);
-
-    // Show browser notification if permitted
-    if (Notification.permission === 'granted') {
-      new Notification(message, {
-        icon: '/favicon.ico',
-      });
-    }
-  }, []);
+  // Handle invoice update event
+  const handleInvoiceUpdate = useCallback(
+    (invoice) => {
+      queryClient.setQueryData(['invoice', invoice.id], (old) =>
+        old ? { ...old, ...invoice } : invoice
+      );
+      queryClient.invalidateQueries(['invoices']);
+    },
+    [queryClient]
+  );
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      if (connectedRef.current) {
-        disconnectSocket();
-        connectedRef.current = false;
-      }
+    if (!accessToken || !client?.id) {
       return;
     }
 
-    // Connect socket
-    let socket;
-    try {
-      socket = connectSocket(accessToken);
-    } catch (err) {
-      console.warn('[Portal] Socket connection failed, real-time updates disabled:', err.message);
-      return;
-    }
+    // Connect to socket
+    const socket = connectSocket(accessToken, client.id);
 
-    if (!socket) {
-      console.warn('[Portal] Socket not available, real-time updates disabled');
-      return;
-    }
+    if (!socket) return;
 
-    connectedRef.current = true;
+    // Set up event listeners
+    socket.on('connect', () => {
+      setIsConnected(true);
+    });
 
-    // Request notification permission
-    if (Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+    });
 
-    // Auth error handling - same as CRM
-    const authErrorCodes = new Set(['AUTH_MISSING_TOKEN', 'AUTH_INVALID_TOKEN', 'AUTH_TOKEN_EXPIRED']);
-    let lastAuthError = null;
-    let refreshingSocket = false;
-    let authFailureCount = 0;
-    let hasShownConnectionErrorToast = false;
-    let hasShownDisconnectToast = false;
-    const MAX_AUTH_FAILURES = 3;
+    // Message events
+    socket.on('portal:message:new', handleNewMessage);
+    socket.on('portal:message:typing', handleTyping);
 
-    const attemptSocketRefresh = async () => {
-      if (refreshingSocket) return;
+    // Appointment events
+    socket.on('portal:appointment:updated', handleAppointmentUpdate);
+    socket.on('portal:appointment:cancelled', handleAppointmentUpdate);
 
-      if (authFailureCount >= MAX_AUTH_FAILURES) {
-        console.warn('[Portal] Socket auth failed too many times, stopping reconnection attempts');
-        disconnectSocket();
-        return;
-      }
+    // Invoice events
+    socket.on('portal:invoice:updated', handleInvoiceUpdate);
+    socket.on('portal:invoice:paid', handleInvoiceUpdate);
 
-      refreshingSocket = true;
-      try {
-        const { accessToken: nextToken } = await refreshAuthSession();
-        if (nextToken) {
-          updateSocketToken(nextToken);
-          lastAuthError = null;
-          authFailureCount = 0;
-          if (!socket.connected) {
-            socket.connect();
-          }
-        }
-      } catch (refreshError) {
-        authFailureCount++;
-        console.error(`[Portal] Socket auth refresh failed (${authFailureCount}/${MAX_AUTH_FAILURES})`, refreshError);
-
-        if (authFailureCount >= MAX_AUTH_FAILURES) {
-          disconnectSocket();
-          showToast('Sesiunea a expirat. Te rugăm să te reconectezi.', 'error');
-        }
-      } finally {
-        refreshingSocket = false;
-      }
-    };
-
-    const handleConnectError = async (error) => {
-      console.error('[Portal] Socket connection error', error);
-      const message = error?.message;
-
-      if (message === 'AUTH_RATE_LIMIT_EXCEEDED') {
-        console.warn('[Portal] Socket auth rate limit exceeded');
-        disconnectSocket();
-        if (!hasShownConnectionErrorToast) {
-          hasShownConnectionErrorToast = true;
-          showToast('Prea multe încercări de conectare. Te rugăm să aștepți un minut.', 'warning');
-        }
-        return;
-      }
-
-      if (authErrorCodes.has(message)) {
-        lastAuthError = message;
-        await attemptSocketRefresh();
-      } else {
-        if (!hasShownConnectionErrorToast) {
-          hasShownConnectionErrorToast = true;
-          showToast('Conexiunea în timp real a fost întreruptă. Reconectare automată...', 'warning');
-        }
-      }
-    };
-
-    const handleDisconnect = (reason) => {
-      if (authErrorCodes.has(reason) || reason === 'client namespace disconnect') {
-        lastAuthError = null;
-        return;
-      }
-      if (lastAuthError && (reason === 'transport close' || reason === 'io server disconnect')) {
-        attemptSocketRefresh();
-        lastAuthError = null;
-        return;
-      }
-
-      if (!hasShownDisconnectToast) {
-        hasShownDisconnectToast = true;
-        console.log('[Portal] Socket disconnected:', reason);
-      }
-    };
-
-    const handleConnect = () => {
-      console.log('[Portal] Connected to real-time server');
-      hasShownConnectionErrorToast = false;
-      hasShownDisconnectToast = false;
-      authFailureCount = 0;
-    };
-
-    // Handle appointment updates
-    const handleAppointmentUpdated = (data) => {
-      console.log('[Portal] Appointment updated:', data);
-      invalidate([['appointments'], ['appointment', data.id]]);
-
-      const statusMessages = {
-        PENDING: 'in asteptare',
-        PREZENTAT: 'a fost confirmata',
-        IN_PROGRESS: 'este in lucru',
-        COMPLETED: 'a fost finalizata',
-        CANCELLED: 'a fost anulata',
-      };
-
-      const statusMessage = statusMessages[data.status] || 'a fost actualizata';
-      showToast(`Programarea "${data.title}" ${statusMessage}`, 'info');
-    };
-
-    const handleAppointmentCancelled = (data) => {
-      console.log('[Portal] Appointment cancelled:', data);
-      invalidate([['appointments'], ['appointment', data.id]]);
-      showToast(`Programarea "${data.title}" a fost anulata`, 'warning');
-    };
-
-    // Handle invoice updates
-    const handleInvoiceUpdated = (data) => {
-      console.log('[Portal] Invoice updated:', data);
-      invalidate([['invoices'], ['invoice', data.id]]);
-      showToast(`Factura #${data.invoiceNumber} a fost actualizata`, 'info');
-    };
-
-    // Handle client profile updates (from CRM)
-    const handleClientUpdated = (data) => {
-      console.log('[Portal] Client profile updated:', data);
-      updateClient(data);
-      showToast('Profilul dvs. a fost actualizat', 'info');
-    };
-
-    // Handle asset updates (from CRM)
-    const handleAssetUpdated = (data) => {
-      console.log('[Portal] Asset updated:', data);
-      invalidate([['assets'], ['asset', data.id]]);
-      const assetName = data.name || data.identifier || 'Activul';
-      showToast(`${assetName} a fost actualizat`, 'info');
-    };
-
-    // Connection events
-    socket.on('connect', handleConnect);
-    socket.on('connect_error', handleConnectError);
-    socket.on('disconnect', handleDisconnect);
-
-    // Data events
-    socket.on('portal:appointment:updated', handleAppointmentUpdated);
-    socket.on('portal:appointment:cancelled', handleAppointmentCancelled);
-    socket.on('portal:invoice:updated', handleInvoiceUpdated);
-    socket.on('portal:client:updated', handleClientUpdated);
-    socket.on('portal:asset:updated', handleAssetUpdated);
-
+    // Cleanup
     return () => {
-      lastAuthError = null;
-      refreshingSocket = false;
-
-      socket.off('connect', handleConnect);
-      socket.off('connect_error', handleConnectError);
-      socket.off('disconnect', handleDisconnect);
-
-      socket.off('portal:appointment:updated', handleAppointmentUpdated);
-      socket.off('portal:appointment:cancelled', handleAppointmentCancelled);
-      socket.off('portal:invoice:updated', handleInvoiceUpdated);
-      socket.off('portal:client:updated', handleClientUpdated);
-      socket.off('portal:asset:updated', handleAssetUpdated);
+      socket.off('portal:message:new', handleNewMessage);
+      socket.off('portal:message:typing', handleTyping);
+      socket.off('portal:appointment:updated', handleAppointmentUpdate);
+      socket.off('portal:appointment:cancelled', handleAppointmentUpdate);
+      socket.off('portal:invoice:updated', handleInvoiceUpdate);
+      socket.off('portal:invoice:paid', handleInvoiceUpdate);
     };
-  }, [isAuthenticated, accessToken, invalidate, showToast, updateClient]);
+  }, [
+    accessToken,
+    client?.id,
+    handleNewMessage,
+    handleTyping,
+    handleAppointmentUpdate,
+    handleInvoiceUpdate,
+    showToast,
+  ]);
 
-  // Return current socket for manual event handling if needed
+  // Disconnect on unmount
+  useEffect(() => {
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
+
   return {
     socket: getSocket(),
-    isConnected: connectedRef.current,
+    isConnected,
   };
 };

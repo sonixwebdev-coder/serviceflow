@@ -17,9 +17,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome section */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Bine ai venit, {clientName}!</h1>
-        <p className="mt-1 text-gray-500">Iata o privire de ansamblu a contului tau.</p>
+      <div className="page-header">
+        <h1 className="page-title">Bine ai venit, {clientName}!</h1>
+        <p className="page-subtitle">Iata o privire de ansamblu a contului tau.</p>
       </div>
 
       {/* Summary cards */}
@@ -86,9 +86,14 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="p-0">
           {appointmentsLoading ? (
-            <div className="p-6 text-center text-gray-500">Se incarca...</div>
+            <div className="flex justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary-600" />
+            </div>
           ) : upcomingAppointments?.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">Nu exista programari viitoare</div>
+            <div className="empty-state py-8">
+              <Calendar className="empty-state-icon !h-10 !w-10 !mb-2" />
+              <p className="empty-state-title text-base">Nu exista programari viitoare</p>
+            </div>
           ) : (
             <div className="divide-y divide-gray-200">
               {upcomingAppointments?.map((appointment) => (

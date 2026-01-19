@@ -2,11 +2,11 @@ import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Lock, Car, Settings2 } from 'lucide-react';
+import { User, Lock, Car, Package } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { useProfile, useUpdateProfile, useVehicles, useAssets } from '@/hooks/useProfile';
+import { useProfile, useUpdateProfile, useAssets } from '@/hooks/useProfile';
 import { useChangePassword } from '@/hooks/useAuth';
 import { useAuthStore } from '@/state/useAuthStore';
 
@@ -27,13 +27,15 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('profile');
   const client = useAuthStore((state) => state.client);
   const { data: profile } = useProfile();
-  const { data: vehicles } = useVehicles();
   const { data: assets } = useAssets();
   const updateProfileMutation = useUpdateProfile();
   const changePasswordMutation = useChangePassword();
 
-  // Get service type from organization settings
-  const serviceType = client?.organization?.serviceType || 'VEHICLE';
+  // Get sector config from organization
+  const sectorConfig = client?.organization?.sectorConfig;
+  const hasAssets = sectorConfig?.hasAssets || false;
+  const assetType = sectorConfig?.assetType;
+  const assetTerminology = sectorConfig?.terminology?.asset || { singular: 'Activ', plural: 'Active', identifier: 'Identificator' };
 
   const profileForm = useForm({
     resolver: zodResolver(profileSchema),
@@ -66,42 +68,40 @@ export default function Profile() {
     );
   };
 
-  // Build tabs based on service type - only show relevant asset tab
+  // Build tabs based on sector config - only show assets tab for sectors with assets
   const tabs = useMemo(() => {
     const baseTabs = [
       { id: 'profile', label: 'Profil', icon: User },
     ];
 
-    // Show Vehicle or Asset tab based on organization service type
-    if (serviceType === 'VEHICLE') {
-      baseTabs.push({ id: 'vehicles', label: 'Vehicule', icon: Car });
-    } else if (serviceType === 'ASSET') {
-      baseTabs.push({ id: 'assets', label: 'Echipamente', icon: Settings2 });
+    // Show Assets tab only for sectors that use assets (not BEAUTY)
+    if (hasAssets) {
+      const assetIcon = assetType === 'vehicle' ? Car : Package;
+      baseTabs.push({ id: 'assets', label: assetTerminology.plural, icon: assetIcon });
     }
-    // For GENERAL, don't show either tab
 
     baseTabs.push({ id: 'security', label: 'Securitate', icon: Lock });
     return baseTabs;
-  }, [serviceType]);
+  }, [hasAssets, assetType, assetTerminology.plural]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Profilul meu</h1>
-        <p className="mt-1 text-gray-500">Gestioneaza informatiile contului tau</p>
+      <div className="page-header">
+        <h1 className="page-title">Profilul meu</h1>
+        <p className="page-subtitle">Gestioneaza informatiile contului tau</p>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="flex gap-4">
+        <nav className="flex gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-t-lg'
               }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -174,52 +174,32 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Vehicles tab */}
-      {activeTab === 'vehicles' && (
+      {/* Assets tab - only shown for sectors with assets */}
+      {activeTab === 'assets' && hasAssets && (
         <Card>
           <CardHeader>
-            <CardTitle>Vehiculele mele</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {!vehicles?.length ? (
-              <div className="p-6 text-center text-gray-500">Nu exista vehicule inregistrate</div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {vehicles.map((vehicle) => (
-                  <div key={vehicle.id} className="px-6 py-4">
-                    <p className="font-medium text-gray-900">
-                      {vehicle.make} {vehicle.model} {vehicle.year && `(${vehicle.year})`}
-                    </p>
-                    <p className="text-sm text-gray-500">Numar: {vehicle.plateNumber}</p>
-                    {vehicle.vin && <p className="text-sm text-gray-500">VIN: {vehicle.vin}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Assets tab */}
-      {activeTab === 'assets' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Echipamentele mele</CardTitle>
+            <CardTitle>{assetTerminology.plural}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {!assets?.length ? (
-              <div className="p-6 text-center text-gray-500">Nu exista echipamente inregistrate</div>
+              <div className="empty-state">
+                <Package className="empty-state-icon" />
+                <p className="empty-state-title">Nu exista {assetTerminology.plural.toLowerCase()}</p>
+                <p className="empty-state-text">{assetTerminology.plural} vor fi adaugate de catre serviciu.</p>
+              </div>
             ) : (
               <div className="divide-y divide-gray-200">
                 {assets.map((asset) => (
                   <div key={asset.id} className="px-6 py-4">
-                    <p className="font-medium text-gray-900">{asset.name}</p>
-                    <p className="text-sm text-gray-500">Tip: {asset.type}</p>
+                    <p className="font-medium text-gray-900">
+                      {asset.name || `${asset.manufacturer || ''} ${asset.model || ''}`.trim() || assetTerminology.singular}
+                    </p>
+                    {asset.identifier && (
+                      <p className="text-sm text-gray-500">{assetTerminology.identifier}: {asset.identifier}</p>
+                    )}
                     {asset.manufacturer && <p className="text-sm text-gray-500">Producator: {asset.manufacturer}</p>}
                     {asset.model && <p className="text-sm text-gray-500">Model: {asset.model}</p>}
-                    {asset.identifier && (
-                      <p className="text-sm text-gray-500">Identificator: {asset.identifier}</p>
-                    )}
+                    {asset.type && <p className="text-sm text-gray-500">Tip: {asset.type}</p>}
                   </div>
                 ))}
               </div>

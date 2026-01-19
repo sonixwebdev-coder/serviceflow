@@ -1,4 +1,8 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs').promises;
+const crypto = require('crypto');
 const asyncHandler = require('../middleware/asyncHandler');
 const validate = require('../middleware/validate');
 const authenticate = require('../middleware/authenticate');
@@ -19,12 +23,70 @@ const {
   recordFinalPayment,
   getPaymentStatus,
 } = require('../services/appointmentService');
-const { listMessages, createMessage, markMessagesAsRead, getUnreadMessageCount } = require('../services/messageService');
+const { listMessages, createMessage, markMessagesAsRead, getUnreadMessageCount, createFileMessage } = require('../services/messageService');
 const { broadcastTyping } = require('../realtime/events');
 const { getServiceOrder, upsertServiceOrder, generateServiceOrderPdf } = require('../services/serviceOrderService');
+const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 const { createMessageSchema } = require('../schemas/messageSchema');
 const { z } = require('zod');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads', 'messages');
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    } catch (err) {
+      cb(err);
+    }
+  },
+  filename: (req, file, cb) => {
+    const hash = crypto.randomBytes(16).toString('hex');
+    const ext = path.extname(file.originalname);
+    cb(null, `${hash}${ext}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+  ];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('File type not allowed'), false);
+  }
+};
+
+const voiceFilter = (req, file, cb) => {
+  const allowedTypes = ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg', 'audio/wav'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Audio file type not allowed'), false);
+  }
+};
+
+const uploadFile = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+});
+
+const uploadVoice = multer({
+  storage,
+  fileFilter: voiceFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
 
 const SERVICE_ORDER_STATUSES = ['DRAFT', 'GENERATED', 'SENT', 'SIGNED', 'CANCELLED'];
 
@@ -48,6 +110,16 @@ router.post(
   validate(createAppointmentSchema),
   asyncHandler(async (req, res) => {
     const appointment = await createAppointment(req.tenantPrisma, req.body, req.user);
+
+    // Log the creation
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.APPOINTMENT,
+      entityId: appointment.id,
+      description: getActionDescription('CREATE', ENTITY_TYPES.APPOINTMENT, appointment.title || 'Programare'),
+      metadata: { clientId: appointment.clientId },
+    });
+
     return created(res, appointment, 'Appointment created successfully');
   })
 );
@@ -67,6 +139,16 @@ router.patch(
   validate(updateAppointmentSchema),
   asyncHandler(async (req, res) => {
     const appointment = await updateAppointment(req.tenantPrisma, req.params.appointmentId, req.body, req.user);
+
+    // Log the update
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.APPOINTMENT,
+      entityId: appointment.id,
+      description: getActionDescription('UPDATE', ENTITY_TYPES.APPOINTMENT, appointment.title || 'Programare'),
+      metadata: { clientId: appointment.clientId, changes: Object.keys(req.body) },
+    });
+
     return ok(res, appointment, 'Appointment updated successfully');
   })
 );
@@ -77,6 +159,16 @@ router.post(
   validate(z.object({ reason: z.string().optional() })),
   asyncHandler(async (req, res) => {
     const appointment = await cancelAppointment(req.tenantPrisma, req.params.appointmentId, req.body.reason, req.user);
+
+    // Log the cancellation
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: ENTITY_TYPES.APPOINTMENT,
+      entityId: appointment.id,
+      description: `Anulat programare: ${appointment.title || 'Programare'}`,
+      metadata: { clientId: appointment.clientId, reason: req.body.reason },
+    });
+
     return ok(res, appointment, 'Appointment cancelled');
   })
 );
@@ -125,6 +217,50 @@ router.post(
   asyncHandler(async (req, res) => {
     broadcastTyping(req.user.organizationId, req.params.appointmentId, req.user, req.body.isTyping);
     return ok(res, { success: true });
+  })
+);
+
+router.post(
+  '/:appointmentId/messages/upload-file',
+  authenticate,
+  uploadFile.single('file'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const fileUrl = `/uploads/messages/${req.file.filename}`;
+    const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
+      fileName: req.file.originalname,
+      fileUrl,
+      fileType: req.file.mimetype,
+      fileSize: req.file.size,
+    });
+
+    return created(res, message, 'File uploaded');
+  })
+);
+
+router.post(
+  '/:appointmentId/messages/upload-voice',
+  authenticate,
+  uploadVoice.single('audio'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No audio file uploaded' });
+    }
+
+    const fileUrl = `/uploads/messages/${req.file.filename}`;
+    const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
+      fileName: req.file.originalname || 'voice-message',
+      fileUrl,
+      fileType: req.file.mimetype,
+      fileSize: req.file.size,
+      isVoice: true,
+      duration: req.body.duration ? parseInt(req.body.duration, 10) : null,
+    });
+
+    return created(res, message, 'Voice message uploaded');
   })
 );
 
@@ -193,6 +329,15 @@ router.put(
   ),
   asyncHandler(async (req, res) => {
     const order = await upsertServiceOrder(req.tenantPrisma, req.params.appointmentId, req.body);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'ServiceOrder',
+      entityId: order.id,
+      description: `Actualizat deviz pentru programare`,
+      metadata: { appointmentId: req.params.appointmentId, status: req.body.status },
+    });
+
     return ok(res, order, 'Service order saved');
   })
 );
@@ -204,6 +349,15 @@ router.post(
   validate(recordPaymentSchema),
   asyncHandler(async (req, res) => {
     const result = await recordAdvancePayment(req.tenantPrisma, req.params.appointmentId, req.body.amount, req.user.id);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.PAYMENT,
+      entityId: result.payment?.id || req.params.appointmentId,
+      description: `Inregistrat avans: ${req.body.amount} RON`,
+      metadata: { appointmentId: req.params.appointmentId, amount: req.body.amount, type: 'advance' },
+    });
+
     return ok(res, result, 'Advance payment recorded successfully');
   })
 );
@@ -215,6 +369,15 @@ router.post(
   validate(recordPaymentSchema),
   asyncHandler(async (req, res) => {
     const result = await recordFinalPayment(req.tenantPrisma, req.params.appointmentId, req.body.amount, req.user.id);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.PAYMENT,
+      entityId: result.payment?.id || req.params.appointmentId,
+      description: `Inregistrat plata finala: ${req.body.amount} RON`,
+      metadata: { appointmentId: req.params.appointmentId, amount: req.body.amount, type: 'final' },
+    });
+
     return ok(res, result, 'Final payment recorded successfully');
   })
 );

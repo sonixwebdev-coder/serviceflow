@@ -13,19 +13,11 @@ const {
 } = require('../services/organizationService');
 const {
   getOrganizationSettings,
-  updateOrganizationSettings,
-  updateTerminology,
-  updateFeatures,
-  updateAssetFieldConfig,
+  getSectorInfo,
   updatePublicBooking,
 } = require('../services/organizationSettingsService');
-const {
-  updateOrganizationSettingsSchema,
-  terminologySchema,
-  featuresSchema,
-  assetFieldConfigSchema,
-  publicBookingSchema,
-} = require('../schemas/organizationSettingsSchema');
+const { publicBookingSchema } = require('../schemas/organizationSettingsSchema');
+const { logFromRequest } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();
@@ -88,6 +80,18 @@ router.get(
 );
 
 /**
+ * Get organization sector info (activity sector, asset type, terminology)
+ */
+router.get(
+  '/me/sector',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const sectorInfo = await getSectorInfo(req.tenantPrisma, req.user.organizationId);
+    return ok(res, sectorInfo);
+  })
+);
+
+/**
  * Update current user's organization
  * Only admins can update organization settings
  */
@@ -97,12 +101,21 @@ router.patch(
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
     const organization = await updateOrganization(req.user.organizationId, req.body);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Organization',
+      entityId: req.user.organizationId,
+      description: `Actualizat setari organizatie`,
+      metadata: { changes: Object.keys(req.body) },
+    });
+
     return ok(res, organization, 'Organization updated successfully');
   })
 );
 
 /**
- * Get organization settings (terminology, features, etc.)
+ * Get organization settings
  */
 router.get(
   '/me/settings',
@@ -114,84 +127,9 @@ router.get(
 );
 
 /**
- * Update organization settings (complete)
- * Only admins can update settings
- */
-router.put(
-  '/me/settings',
-  authenticate,
-  authorize({ roles: ['admin'] }),
-  validate(updateOrganizationSettingsSchema),
-  asyncHandler(async (req, res) => {
-    const settings = await updateOrganizationSettings(
-      req.tenantPrisma,
-      req.user.organizationId,
-      req.body
-    );
-    return ok(res, settings, 'Settings updated successfully');
-  })
-);
-
-/**
- * Update only terminology settings
- * Only admins can update terminology
- */
-router.patch(
-  '/me/settings/terminology',
-  authenticate,
-  authorize({ roles: ['admin'] }),
-  validate(terminologySchema),
-  asyncHandler(async (req, res) => {
-    const settings = await updateTerminology(
-      req.tenantPrisma,
-      req.user.organizationId,
-      req.body
-    );
-    return ok(res, settings, 'Terminology updated successfully');
-  })
-);
-
-/**
- * Update only feature flags
- * Only admins can update features
- */
-router.patch(
-  '/me/settings/features',
-  authenticate,
-  authorize({ roles: ['admin'] }),
-  validate(featuresSchema),
-  asyncHandler(async (req, res) => {
-    const settings = await updateFeatures(
-      req.tenantPrisma,
-      req.user.organizationId,
-      req.body
-    );
-    return ok(res, settings, 'Features updated successfully');
-  })
-);
-
-/**
- * Update asset field configuration
- * Only admins can update asset field config
- */
-router.patch(
-  '/me/settings/assetFieldConfig',
-  authenticate,
-  authorize({ roles: ['admin'] }),
-  validate(assetFieldConfigSchema),
-  asyncHandler(async (req, res) => {
-    const settings = await updateAssetFieldConfig(
-      req.tenantPrisma,
-      req.user.organizationId,
-      req.body
-    );
-    return ok(res, settings, 'Asset field configuration updated successfully');
-  })
-);
-
-/**
  * Update public booking settings
  * Only admins can update public booking settings
+ * This is the only editable settings after onboarding
  */
 router.patch(
   '/me/settings/publicBooking',
@@ -204,6 +142,15 @@ router.patch(
       req.user.organizationId,
       req.body
     );
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Organization',
+      entityId: req.user.organizationId,
+      description: `Actualizat setari programari publice`,
+      metadata: req.body,
+    });
+
     return ok(res, settings, 'Public booking settings updated successfully');
   })
 );

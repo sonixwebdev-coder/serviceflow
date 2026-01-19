@@ -21,6 +21,27 @@ const writeToFile = (message) => {
   }
 };
 
+/**
+ * Serialize data for logging, handling Error objects properly
+ */
+const serializeData = (data) => {
+  if (data instanceof Error) {
+    return JSON.stringify({
+      name: data.name,
+      message: data.message,
+      stack: data.stack,
+      // Include any custom properties on the error
+      ...Object.getOwnPropertyNames(data).reduce((acc, key) => {
+        if (!['name', 'message', 'stack'].includes(key)) {
+          acc[key] = data[key];
+        }
+        return acc;
+      }, {}),
+    }, null, 2);
+  }
+  return JSON.stringify(data, null, 2);
+};
+
 const log = (level, message, data = null) => {
   const timestamp = formatTimestamp();
   const logMessage = `[${timestamp}] [${level}] ${message}`;
@@ -28,7 +49,7 @@ const log = (level, message, data = null) => {
   // File output only (no console logging)
   writeToFile(logMessage);
   if (data) {
-    writeToFile(JSON.stringify(data, null, 2));
+    writeToFile(serializeData(data));
   }
 };
 

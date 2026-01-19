@@ -64,6 +64,7 @@ export const TerminologyProvider = ({ children }) => {
   const [features, setFeatures] = useState(DEFAULT_FEATURES);
   const [assetFieldConfig, setAssetFieldConfig] = useState(DEFAULT_ASSET_FIELD_CONFIG);
   const [publicBooking, setPublicBooking] = useState(DEFAULT_PUBLIC_BOOKING);
+  const [sectorConfig, setSectorConfig] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch terminology from API
@@ -96,6 +97,10 @@ export const TerminologyProvider = ({ children }) => {
 
         if (settings.publicBooking) {
           setPublicBooking(settings.publicBooking);
+        }
+
+        if (settings.sectorConfig) {
+          setSectorConfig(settings.sectorConfig);
         }
       } catch (error) {
         console.error('Failed to load organization settings:', error);
@@ -140,6 +145,10 @@ export const TerminologyProvider = ({ children }) => {
         setPublicBooking(settings.publicBooking);
       }
 
+      if (settings.sectorConfig) {
+        setSectorConfig(settings.sectorConfig);
+      }
+
       return settings;
     } catch (error) {
       console.error('Failed to refresh settings:', error);
@@ -152,6 +161,7 @@ export const TerminologyProvider = ({ children }) => {
     features,
     assetFieldConfig,
     publicBooking,
+    sectorConfig,
     loading,
     refreshSettings,
 
@@ -165,6 +175,9 @@ export const TerminologyProvider = ({ children }) => {
     assetIdentifier: terminology.asset.identifier,
     resourceSingular: terminology.resource.singular,
     resourcePlural: terminology.resource.plural,
+
+    // Sector-derived asset type (vehicle, appliance, equipment, etc.)
+    assetType: sectorConfig?.assetType || 'vehicle',
   };
 
   return (

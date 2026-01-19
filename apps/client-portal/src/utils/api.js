@@ -167,5 +167,30 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Get the base URL for static files (uploads)
+ * Removes /api from the API_BASE_URL
+ */
+export const getFileBaseUrl = () => {
+  return API_BASE_URL.replace(/\/api\/?$/, '');
+};
+
+/**
+ * Get full URL for a file path
+ * @param {string} filePath - Relative file path like /uploads/messages/file.png
+ * @returns {string} Full URL like http://localhost:5000/uploads/messages/file.png
+ */
+export const getFileUrl = (filePath) => {
+  if (!filePath) return '';
+  // If already a full URL, return as is
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+    return filePath;
+  }
+  const baseUrl = getFileBaseUrl();
+  // Ensure single slash between base URL and path
+  const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  return `${baseUrl}${normalizedPath}`;
+};
+
 export { fetchCsrfToken, refreshAuthSession };
 export default api;

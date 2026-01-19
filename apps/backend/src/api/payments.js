@@ -12,6 +12,7 @@ const {
   deletePayment,
 } = require('../services/paymentService');
 const { generateServiceOrderPdf } = require('../services/serviceOrderService');
+const { logFromRequest, ENTITY_TYPES } = require('../services/auditLogService');
 
 // Validation schemas
 const createPaymentSchema = z.object({
@@ -40,6 +41,14 @@ router.post(
       ...validated,
       paymentDate: validated.paymentDate ? new Date(validated.paymentDate) : new Date(),
       createdById: req.user.id,
+    });
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.PAYMENT,
+      entityId: payment.id,
+      description: `Inregistrat plata: ${validated.amount} RON (${validated.paymentMethod || 'CASH'})`,
+      metadata: { appointmentId: validated.appointmentId, amount: validated.amount, method: validated.paymentMethod },
     });
 
     // Regenerate service order PDF to reflect new payment (async, don't block response)
@@ -99,6 +108,14 @@ router.delete(
     const appointmentId = paymentToDelete.appointmentId;
 
     const payment = await deletePayment(req.tenantPrisma, req.params.id);
+
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: ENTITY_TYPES.PAYMENT,
+      entityId: req.params.id,
+      description: `Sters plata: ${paymentToDelete.amount} RON`,
+      metadata: { appointmentId, amount: paymentToDelete.amount },
+    });
 
     // Regenerate service order PDF to reflect payment deletion (async, don't block response)
     setImmediate(async () => {

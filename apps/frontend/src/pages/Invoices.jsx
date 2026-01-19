@@ -324,12 +324,12 @@ const Invoices = () => {
   };
 
   return (
-    <div className="">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Facturi</h1>
-          <p className="mt-1 text-sm text-gray-500">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title">Facturi</h1>
+          <p className="page-subtitle">
             Gestionează facturile pentru clienți
           </p>
         </div>
@@ -343,26 +343,26 @@ const Invoices = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Caută după număr factură..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-            />
-          </div>
+      <div className="filter-bar">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Caută după număr factură..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+          />
         </div>
-        <div className="sm:w-48">
+        <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
           >
-            <option value="">Toate statusurile</option>
+            <option value="">Toate</option>
             {Object.entries(STATUS_META).map(([value, { label }]) => (
               <option key={value} value={value}>
                 {label}
@@ -370,52 +370,66 @@ const Invoices = () => {
             ))}
           </select>
         </div>
+        {(searchTerm || statusFilter) && (
+          <button
+            type="button"
+            onClick={() => { setSearchTerm(''); setStatusFilter(''); }}
+            className="text-sm text-gray-500 hover:text-viperx-primary transition-colors flex items-center gap-1"
+          >
+            <X size={14} />
+            Resetează
+          </button>
+        )}
       </div>
 
       {/* Table - Desktop */}
-      <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-white lg:block">
+      <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:block">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Număr
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Client
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Dată emitere
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Scadență
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Acțiuni
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-100 bg-white">
               {loading && invoices.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-sm text-gray-500">
-                    Se încarcă...
+                  <td colSpan="7" className="px-6 py-12 text-center">
+                    <div className="flex justify-center">
+                      <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+                    </div>
                   </td>
                 </tr>
               ) : invoices.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-sm font-medium text-gray-900">Nicio factură</p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Creează prima factură din detaliile unei programări finalizate.
-                    </p>
+                  <td colSpan="7" className="px-6 py-12">
+                    <div className="empty-state">
+                      <FileText className="empty-state-icon" />
+                      <p className="empty-state-title">Nicio factură</p>
+                      <p className="empty-state-text">
+                        Creează prima factură din detaliile unei programări finalizate.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -512,16 +526,20 @@ const Invoices = () => {
       {/* Cards - Mobile */}
       <div className="space-y-4 lg:hidden">
         {loading && invoices.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-white px-4 py-12 text-center text-sm text-gray-500">
-            Se încarcă...
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm px-4 py-12">
+            <div className="flex justify-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+            </div>
           </div>
         ) : invoices.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-white px-4 py-12 text-center">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm font-medium text-gray-900">Nicio factură</p>
-            <p className="mt-1 text-sm text-gray-500">
-              Creează prima factură din detaliile unei programări finalizate.
-            </p>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="empty-state">
+              <FileText className="empty-state-icon" />
+              <p className="empty-state-title">Nicio factură</p>
+              <p className="empty-state-text">
+                Creează prima factură din detaliile unei programări finalizate.
+              </p>
+            </div>
           </div>
         ) : (
           invoices.map((invoice) => {
@@ -529,7 +547,7 @@ const Invoices = () => {
             return (
               <div
                 key={invoice.id}
-                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex-1 min-w-0">

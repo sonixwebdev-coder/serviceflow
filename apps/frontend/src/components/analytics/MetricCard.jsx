@@ -1,17 +1,23 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { MetricCardSkeleton } from './Skeleton';
 
 export default function MetricCard({
   title,
   value,
   change,
   changeLabel,
+  subtitle,
   icon: Icon,
   iconColor = 'text-viperx-primary',
   iconBg = 'bg-viperx-primary/10',
   format = 'number',
   prefix = '',
   suffix = '',
+  isLoading = false,
 }) {
+  if (isLoading) {
+    return <MetricCardSkeleton />;
+  }
   const formatValue = (val) => {
     if (format === 'currency') {
       return new Intl.NumberFormat('ro-RO', {
@@ -62,6 +68,9 @@ export default function MetricCard({
                 <span className="text-sm text-gray-500">{changeLabel}</span>
               )}
             </div>
+          )}
+          {subtitle && (
+            <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
           )}
         </div>
         {Icon && (

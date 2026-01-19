@@ -24,39 +24,38 @@ export default function Appointments() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Programari</h1>
-        <p className="mt-1 text-gray-500">Vizualizeaza istoricul programarilor tale</p>
+      <div className="page-header">
+        <h1 className="page-title">Programari</h1>
+        <p className="page-subtitle">Vizualizeaza istoricul programarilor tale</p>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex flex-wrap gap-2">
-            {statusOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setFilters({ ...filters, status: option.value, page: 1 })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filters.status === option.value
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="filter-bar">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
+        {statusOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => setFilters({ ...filters, status: option.value, page: 1 })}
+            className={`filter-pill ${filters.status === option.value ? 'active' : ''}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
       {/* Appointments list */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-6 text-center text-gray-500">Se incarca...</div>
+            <div className="flex justify-center py-12">
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-600" />
+            </div>
           ) : appointments.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">Nu exista programari</div>
+            <div className="empty-state">
+              <Calendar className="empty-state-icon" />
+              <p className="empty-state-title">Nu exista programari</p>
+              <p className="empty-state-text">Programarile tale vor aparea aici.</p>
+            </div>
           ) : (
             <div className="divide-y divide-gray-200">
               {appointments.map((appointment) => (

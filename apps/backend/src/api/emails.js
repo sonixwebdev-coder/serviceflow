@@ -15,7 +15,7 @@ router.get(
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
     const { page, limit, status, recipientEmail } = req.query;
-    const data = await emailService.getEmailLogs(req.prisma, {
+    const data = await emailService.getEmailLogs(req.tenantPrisma, {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 50,
       status,
@@ -34,7 +34,7 @@ router.get(
   authenticate,
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
-    const templates = await emailService.listTemplates(req.prisma);
+    const templates = await emailService.listTemplates(req.tenantPrisma);
     res.json(templates);
   })
 );
@@ -49,7 +49,7 @@ router.get(
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
     const { name } = req.params;
-    const template = await emailService.getOrCreateTemplate(req.prisma, {
+    const template = await emailService.getOrCreateTemplate(req.tenantPrisma, {
       organizationId: req.user.organizationId,
       name,
     });
@@ -69,7 +69,7 @@ router.put(
     const { name } = req.params;
     const { subject, bodyHtml, bodyText, isActive } = req.body;
 
-    const template = await emailService.updateTemplate(req.prisma, {
+    const template = await emailService.updateTemplate(req.tenantPrisma, {
       organizationId: req.user.organizationId,
       name,
       subject,
@@ -101,7 +101,7 @@ router.post(
       return res.status(400).json({ error: 'Subject is required when not using a template' });
     }
 
-    const emailLog = await emailService.sendEmail(req.prisma, {
+    const emailLog = await emailService.sendEmail(req.tenantPrisma, {
       to,
       subject,
       html,
@@ -147,7 +147,7 @@ router.post(
       companyPhone: '0721 123 456',
     };
 
-    const emailLog = await emailService.sendEmail(req.prisma, {
+    const emailLog = await emailService.sendEmail(req.tenantPrisma, {
       to,
       template,
       templateData: sampleData,
@@ -170,7 +170,7 @@ router.get(
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const log = await req.prisma.emailLog.findUnique({
+    const log = await req.tenantPrisma.emailLog.findUnique({
       where: { id },
     });
 
@@ -193,7 +193,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const existingLog = await req.prisma.emailLog.findUnique({
+    const existingLog = await req.tenantPrisma.emailLog.findUnique({
       where: { id },
     });
 
@@ -205,7 +205,7 @@ router.post(
       return res.status(400).json({ error: 'Email was already sent successfully' });
     }
 
-    const emailLog = await emailService.sendEmail(req.prisma, {
+    const emailLog = await emailService.sendEmail(req.tenantPrisma, {
       to: existingLog.recipientEmail,
       subject: existingLog.subject,
       html: existingLog.body,

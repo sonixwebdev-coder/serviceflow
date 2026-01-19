@@ -11,6 +11,7 @@ const {
   clockOut,
   deleteTimeEntry,
 } = require('../services/timeEntryService');
+const { logFromRequest } = require('../services/auditLogService');
 
 const listQuerySchema = z.object({
   employee: z.string().optional(),
@@ -50,6 +51,14 @@ router.post(
   validate(clockInSchema),
   asyncHandler(async (req, res) => {
     const entry = await clockIn(req.tenantPrisma, req.body, req.user);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: 'TimeEntry',
+      entityId: entry.id,
+      description: `Pontaj intrare`,
+    });
+
     return created(res, entry, 'Clock-in recorded successfully');
   })
 );
@@ -60,6 +69,14 @@ router.put(
   validate(clockOutSchema),
   asyncHandler(async (req, res) => {
     const entry = await clockOut(req.tenantPrisma, req.params.entryId, req.body, req.user);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'TimeEntry',
+      entityId: entry.id,
+      description: `Pontaj iesire`,
+    });
+
     return ok(res, entry, 'Clock-out recorded successfully');
   })
 );
@@ -70,6 +87,14 @@ router.delete(
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
     await deleteTimeEntry(req.tenantPrisma, req.params.entryId);
+
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: 'TimeEntry',
+      entityId: req.params.entryId,
+      description: `Sters pontaj`,
+    });
+
     return noContent(res);
   })
 );

@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, X, Eye, Car, Calendar, FileText, Phone, Mail, Building2, User, Hash, CreditCard, Edit2, Save, Plus, Trash2, Upload, Download, CheckCircle, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import { useClients } from '../hooks/useClients.js';
 import ExportButton from '../components/ExportButton.jsx';
+import Pagination from '../components/Pagination.jsx';
 import API from '../utils/api.js';
 import useToast from '../context/useToast.js';
 import { useTerminology } from '../context/TerminologyContext';
@@ -37,8 +39,20 @@ const fetchClientDetails = async (clientId) => {
   return response.data?.data || response.data;
 };
 
+const PAGE_SIZE = 20;
+
 const Clients = () => {
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Clear search param from URL after reading it (optional: keep URL clean)
+  useEffect(() => {
+    if (searchParams.has('search')) {
+      searchParams.delete('search');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -51,11 +65,20 @@ const Clients = () => {
   const [isImporting, setIsImporting] = useState(false);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
-  const { assetSingular, assetPlural } = useTerminology();
+  const { assetSingular, assetPlural, assetIdentifier, features, assetType: sectorAssetType } = useTerminology();
+  const hasAssets = features?.useAssets !== false; // Default to true if undefined
 
-  const { data, isLoading } = useClients(
-    search ? { search } : undefined
-  );
+  const { data, isLoading, isFetching } = useClients({
+    search: search || undefined,
+    page: currentPage,
+    limit: PAGE_SIZE,
+  });
+
+  // Reset to page 1 when search changes
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setCurrentPage(1);
+  };
 
   const { data: selectedClient, isLoading: clientLoading } = useQuery({
     queryKey: ['client', selectedClientId],
@@ -64,6 +87,7 @@ const Clients = () => {
   });
 
   const clients = data?.items || [];
+  const pagination = data?.pagination || { page: 1, pages: 1, total: 0 };
 
   const updateClientMutation = useMutation({
     mutationFn: async ({ clientId, data }) => {
@@ -210,7 +234,7 @@ const Clients = () => {
   const startEditingAsset = (asset) => {
     setAssetForm({
       name: asset.name || '',
-      type: asset.type || 'vehicle',
+      type: asset.type || sectorAssetType,
       manufacturer: asset.manufacturer || '',
       model: asset.model || '',
       year: asset.year || '',
@@ -238,7 +262,7 @@ const Clients = () => {
   const startAddingAsset = () => {
     setAssetForm({
       name: '',
-      type: 'vehicle',
+      type: sectorAssetType,
       manufacturer: '',
       model: '',
       year: '',
@@ -378,19 +402,20 @@ const Clients = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Clienti</h1>
-          <p className="text-sm text-gray-500">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title">Clienti</h1>
+          <p className="page-subtitle">
             Gestioneaza profilurile clientilor, informatii de contact si istoric servicii.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
           >
             <Upload size={16} />
             Importa CSV
@@ -405,45 +430,63 @@ const Clients = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative w-full max-w-md">
+      {/* Search Filter */}
+      <div className="filter-bar">
+        <div className="relative flex-1 max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cauta dupa nume, companie, email, telefon sau card fidelitate"
-            className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            onChange={(event) => handleSearchChange(event.target.value)}
+            placeholder="Cauta dupa nume, companie, email, telefon sau card fidelitate..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
           />
         </div>
+        {search && (
+          <button
+            type="button"
+            onClick={() => handleSearchChange('')}
+            className="text-sm text-gray-500 hover:text-viperx-primary transition-colors flex items-center gap-1"
+          >
+            <X size={14} />
+            Sterge cautarea
+          </button>
+        )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Clients Table Card */}
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}>
         {/* Desktop Table */}
         <div className="hidden lg:block">
-          <div className="grid grid-cols-8 gap-4 px-6 py-3 text-sm font-medium text-gray-500 border-b">
+          <div className={`grid gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50 ${hasAssets ? 'grid-cols-8' : 'grid-cols-7'}`}>
             <span>Client</span>
             <span>Email</span>
             <span>Telefon</span>
             <span>Companie</span>
             <span>Card fidelitate</span>
-            <span>{assetPlural}</span>
+            {hasAssets && <span>{assetPlural}</span>}
             <span>Ultima actualizare</span>
             <span>Actiuni</span>
           </div>
 
           {isLoading ? (
-            <div className="flex justify-center py-8">
+            <div className="flex justify-center py-12">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
             </div>
           ) : clients.length === 0 ? (
-            <div className="p-6 text-sm text-gray-500">
-              {search ? 'Niciun client gasit.' : 'Nu exista clienti inca.'}
+            <div className="empty-state">
+              <User className="empty-state-icon" />
+              <p className="empty-state-title">
+                {search ? 'Niciun client gasit' : 'Nu exista clienti inca'}
+              </p>
+              <p className="empty-state-text">
+                {search ? 'Incearca o alta cautare.' : 'Clientii vor aparea aici dupa ce ii adaugi.'}
+              </p>
             </div>
           ) : (
             <div className="divide-y">
               {clients.map((client) => (
-                <div key={client.id} className="grid grid-cols-8 gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <div key={client.id} className={`grid gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors ${hasAssets ? 'grid-cols-8' : 'grid-cols-7'}`}>
                   <div className="font-medium text-gray-900">
                     {client.type === 'SRL'
                       ? client.companyName || 'Client companie'
@@ -465,7 +508,7 @@ const Clients = () => {
                       <span className="text-gray-400">—</span>
                     )}
                   </div>
-                  <div>{client.assets?.length || 0}</div>
+                  {hasAssets && <div>{client.assets?.length || 0}</div>}
                   <div>{formatDateTime(client.updatedAt)}</div>
                   <div>
                     <button
@@ -486,12 +529,18 @@ const Clients = () => {
         {/* Mobile Cards */}
         <div className="lg:hidden">
           {isLoading ? (
-            <div className="flex justify-center py-8">
+            <div className="flex justify-center py-12">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
             </div>
           ) : clients.length === 0 ? (
-            <div className="p-6 text-sm text-gray-500">
-              {search ? 'Niciun client gasit.' : 'Nu exista clienti inca.'}
+            <div className="empty-state">
+              <User className="empty-state-icon" />
+              <p className="empty-state-title">
+                {search ? 'Niciun client gasit' : 'Nu exista clienti inca'}
+              </p>
+              <p className="empty-state-text">
+                {search ? 'Incearca o alta cautare.' : 'Clientii vor aparea aici dupa ce ii adaugi.'}
+              </p>
             </div>
           ) : (
             <div className="divide-y">
@@ -527,10 +576,12 @@ const Clients = () => {
                           <span>{client.fidelityCardSerie}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-1.5">
-                        <Car size={14} className="text-gray-400" />
-                        <span>{client.assets?.length || 0} {assetPlural.toLowerCase()}</span>
-                      </div>
+                      {hasAssets && (
+                        <div className="flex items-center gap-1.5">
+                          <Car size={14} className="text-gray-400" />
+                          <span>{client.assets?.length || 0} {assetPlural.toLowerCase()}</span>
+                        </div>
+                      )}
                       {client.companyName && client.type === 'PF' && (
                         <div className="flex items-center gap-1.5">
                           <Building2 size={14} className="text-gray-400" />
@@ -569,6 +620,19 @@ const Clients = () => {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-100">
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={pagination.pages}
+              totalItems={pagination.total}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* Client Details Drawer */}
@@ -888,7 +952,8 @@ const Clients = () => {
                     </div>
                   </div>
 
-                      {/* Assets */}
+                      {/* Assets - only shown for sectors with assets */}
+                      {hasAssets && (
                       <div className="rounded-xl border border-gray-200 bg-white p-6">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900">
@@ -912,23 +977,6 @@ const Clients = () => {
                           <div className="rounded-lg border-2 border-viperx-primary bg-blue-50 p-4">
                             <h4 className="font-semibold text-gray-900 mb-3">{assetSingular} Nou</h4>
                             <div className="grid grid-cols-2 gap-3">
-                              {/* Type Selector */}
-                              <div className="col-span-2">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Tip *</label>
-                                <select
-                                  value={assetForm.type}
-                                  onChange={(e) => handleAssetInputChange('type', e.target.value)}
-                                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                  required
-                                >
-                                  <option value="vehicle">Vehicul</option>
-                                  <option value="appliance">Aparat electrocasnic</option>
-                                  <option value="hvac_unit">Unitate HVAC</option>
-                                  <option value="equipment">Echipament</option>
-                                  <option value="other">Altele</option>
-                                </select>
-                              </div>
-
                               <div className="col-span-2">
                                 <label className="block text-xs font-medium text-gray-700 mb-1">Nume (generat automat daca e gol)</label>
                                 <input
@@ -972,7 +1020,7 @@ const Clients = () => {
                               </div>
                               <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  {assetForm.type === 'vehicle' ? 'Numar inmatriculare' : 'Numar de serie'}
+                                  {assetIdentifier}
                                 </label>
                                 <input
                                   type="text"
@@ -983,7 +1031,7 @@ const Clients = () => {
                               </div>
 
                               {/* Vehicle-specific fields */}
-                              {assetForm.type === 'vehicle' && (
+                              {sectorAssetType === 'vehicle' && (
                                 <>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">VIN</label>
@@ -1031,7 +1079,7 @@ const Clients = () => {
                               )}
 
                               {/* Appliance-specific fields */}
-                              {assetForm.type === 'appliance' && (
+                              {sectorAssetType === 'appliance' && (
                                 <>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">Categorie</label>
@@ -1061,7 +1109,7 @@ const Clients = () => {
                               )}
 
                               {/* HVAC-specific fields */}
-                              {assetForm.type === 'hvac_unit' && (
+                              {sectorAssetType === 'hvac_unit' && (
                                 <>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">Tip unitate</label>
@@ -1108,7 +1156,7 @@ const Clients = () => {
                               )}
 
                               {/* Equipment-specific fields */}
-                              {assetForm.type === 'equipment' && (
+                              {sectorAssetType === 'equipment' && (
                                 <>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">Categorie echipament</label>
@@ -1162,23 +1210,6 @@ const Clients = () => {
                                   <>
                                     <h4 className="font-semibold text-gray-900 mb-3">Editeaza {assetSingular}</h4>
                                     <div className="grid grid-cols-2 gap-3">
-                                      {/* Type Selector */}
-                                      <div className="col-span-2">
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tip *</label>
-                                        <select
-                                          value={assetForm.type}
-                                          onChange={(e) => handleAssetInputChange('type', e.target.value)}
-                                          className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-                                          required
-                                        >
-                                          <option value="vehicle">Vehicul</option>
-                                          <option value="appliance">Aparat electrocasnic</option>
-                                          <option value="hvac_unit">Unitate HVAC</option>
-                                          <option value="equipment">Echipament</option>
-                                          <option value="other">Altele</option>
-                                        </select>
-                                      </div>
-
                                       <div className="col-span-2">
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Nume</label>
                                         <input
@@ -1219,7 +1250,7 @@ const Clients = () => {
                                       </div>
                                       <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                                          {assetForm.type === 'vehicle' ? 'Numar inmatriculare' : 'Numar de serie'}
+                                          {assetIdentifier}
                                         </label>
                                         <input
                                           type="text"
@@ -1230,7 +1261,7 @@ const Clients = () => {
                                       </div>
 
                                       {/* Vehicle-specific fields */}
-                                      {assetForm.type === 'vehicle' && (
+                                      {sectorAssetType === 'vehicle' && (
                                         <>
                                           <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">VIN</label>
@@ -1278,7 +1309,7 @@ const Clients = () => {
                                       )}
 
                                       {/* Appliance-specific fields */}
-                                      {assetForm.type === 'appliance' && (
+                                      {sectorAssetType === 'appliance' && (
                                         <>
                                           <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">Categorie</label>
@@ -1308,7 +1339,7 @@ const Clients = () => {
                                       )}
 
                                       {/* HVAC-specific fields */}
-                                      {assetForm.type === 'hvac_unit' && (
+                                      {sectorAssetType === 'hvac_unit' && (
                                         <>
                                           <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">Tip unitate</label>
@@ -1355,7 +1386,7 @@ const Clients = () => {
                                       )}
 
                                       {/* Equipment-specific fields */}
-                                      {assetForm.type === 'equipment' && (
+                                      {sectorAssetType === 'equipment' && (
                                         <>
                                           <div>
                                             <label className="block text-xs font-medium text-gray-700 mb-1">Categorie echipament</label>
@@ -1443,6 +1474,7 @@ const Clients = () => {
                           </div>
                         )}
                       </div>
+                      )}
 
                       {/* Appointments */}
                       <div className="rounded-xl border border-gray-200 bg-white p-6">

@@ -1,8 +1,11 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { ToastProvider } from '@/context/ToastContext';
 import PortalLayout from '@/components/layout/PortalLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { useAuthStore } from '@/state/useAuthStore';
 
 import Login from '@/pages/Login';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -24,9 +27,13 @@ const queryClient = new QueryClient({
   },
 });
 
+// Hydrate auth state from localStorage on app start
+useAuthStore.getState().hydrate();
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <ToastProvider>
       <BrowserRouter>
         <Routes>
           {/* Public routes */}
@@ -54,6 +61,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

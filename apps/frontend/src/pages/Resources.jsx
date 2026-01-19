@@ -86,31 +86,32 @@ const Resources = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{resourcePlural}</h1>
-          <p className="text-gray-600 mt-1">Manage scheduling {resourcePlural.toLowerCase()} (workspaces, service bays, equipment)</p>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title">{resourcePlural}</h1>
+          <p className="page-subtitle">Gestioneaza {resourcePlural.toLowerCase()} pentru programari</p>
         </div>
         <button
           onClick={() => setIsCreating(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
         >
-          <Plus size={20} />
-          Add {resourceSingular}
+          <Plus size={16} />
+          Adauga {resourceSingular.toLowerCase()}
         </button>
       </div>
 
       {/* Search */}
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+      <div className="filter-bar">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder={`Search ${resourcePlural.toLowerCase()} by name, type...`}
+            placeholder={`Cauta ${resourcePlural.toLowerCase()} dupa nume, tip...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
           />
         </div>
       </div>

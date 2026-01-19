@@ -25,81 +25,80 @@ export default function Invoices() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Facturi</h1>
-        <p className="mt-1 text-gray-500">Vizualizeaza si descarca facturile tale</p>
+      <div className="page-header">
+        <h1 className="page-title">Facturi</h1>
+        <p className="page-subtitle">Vizualizeaza si descarca facturile tale</p>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="py-4">
+        <Card className="card-hover">
+          <CardContent className="py-5">
             <p className="text-sm text-gray-500">Neplatite</p>
             <p className="text-2xl font-bold text-gray-900">{summary?.unpaid?.count || 0}</p>
-            <p className="text-sm text-blue-600">{formatCurrency(summary?.unpaid?.total || 0)}</p>
+            <p className="text-sm font-medium text-blue-600">{formatCurrency(summary?.unpaid?.total || 0)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="py-4">
+        <Card className="card-hover">
+          <CardContent className="py-5">
             <p className="text-sm text-gray-500">Restante</p>
             <p className="text-2xl font-bold text-red-600">{summary?.overdue?.count || 0}</p>
-            <p className="text-sm text-red-600">{formatCurrency(summary?.overdue?.total || 0)}</p>
+            <p className="text-sm font-medium text-red-600">{formatCurrency(summary?.overdue?.total || 0)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="py-4">
+        <Card className="card-hover">
+          <CardContent className="py-5">
             <p className="text-sm text-gray-500">Platite</p>
             <p className="text-2xl font-bold text-green-600">{summary?.paid?.count || 0}</p>
-            <p className="text-sm text-green-600">{formatCurrency(summary?.paid?.total || 0)}</p>
+            <p className="text-sm font-medium text-green-600">{formatCurrency(summary?.paid?.total || 0)}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex flex-wrap gap-2">
-            {statusOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setFilters({ ...filters, status: option.value, page: 1 })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filters.status === option.value
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="filter-bar">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
+        {statusOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => setFilters({ ...filters, status: option.value, page: 1 })}
+            className={`filter-pill ${filters.status === option.value ? 'active' : ''}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
       {/* Invoices table */}
       <Card>
         <CardContent className="p-0 overflow-x-auto">
           {isLoading ? (
-            <div className="p-6 text-center text-gray-500">Se incarca...</div>
+            <div className="flex justify-center py-12">
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-600" />
+            </div>
           ) : invoices.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">Nu exista facturi</div>
+            <div className="empty-state">
+              <FileText className="empty-state-icon" />
+              <p className="empty-state-title">Nu exista facturi</p>
+              <p className="empty-state-text">Facturile tale vor aparea aici.</p>
+            </div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50/50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Numar
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Data
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Scadenta
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Total
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Status
                   </th>
                   <th className="px-6 py-3"></th>

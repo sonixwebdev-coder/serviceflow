@@ -18,6 +18,7 @@ model Organization {
   subscriptionId       String?               @unique
   subscriptionEndsAt   DateTime?
   settings             Json?
+  activitySector       ActivitySector        @default(AUTOMOTIVE)
   maxUsers             Int                   @default(5)
   maxClients           Int                   @default(100)
   maxAppointments      Int                   @default(500)
@@ -38,7 +39,6 @@ model Organization {
   timeEntries          TimeEntry[]
   timeOffRequests      TimeOffRequest[]
   users                User[]
-  vehicles             Vehicle[]
   chatChannels         ChatChannel[]
   emailLogs            EmailLog[]
   emailTemplates       EmailTemplate[]
@@ -60,6 +60,8 @@ model User {
   hireDate               DateTime?               @default(now())
   isActive               Boolean                 @default(true)
   avatarUrl              String?
+  resetToken             String?
+  resetTokenExpiry       DateTime?
   leaveBalanceVacation   Int                     @default(21)
   leaveBalanceSick       Int                     @default(15)
   leaveBalancePersonal   Int                     @default(5)
@@ -184,29 +186,31 @@ model RegistrationRequest {
 }
 
 model Client {
-  id                 String        @id @default(cuid())
+  id                 String               @id @default(cuid())
   firstName          String?
   lastName           String?
   phone              String?
   email              String?
   notes              String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
   companyName        String?
   contactName        String?
   registrationNumber String?
-  type               ClientType    @default(PF)
+  type               ClientType           @default(PF)
   vatNumber          String?
   address            String?
-  isOnline           Boolean       @default(false)
+  isOnline           Boolean              @default(false)
   fidelityCardSerie  String?
   organizationId     String?
   appointments       Appointment[]
   assets             Asset[]
-  organization       Organization? @relation(fields: [organizationId], references: [id])
+  organization       Organization?        @relation(fields: [organizationId], references: [id])
   invoices           Invoice[]
-  vehicles           Vehicle[]
   account            ClientAccount?
+  messages           Message[]
+  messageReadReceipts MessageReadReceipt[]
+  notifications      ClientNotification[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -215,31 +219,6 @@ model Client {
   @@index([fidelityCardSerie])
 }
 
-model Vehicle {
-  id             String        @id @default(cuid())
-  clientId       String
-  make           String?
-  model          String?
-  year           Int?
-  vin            String?       @unique
-  plateNumber    String?
-  color          String?
-  notes          String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  carId          String?
-  odometerKm     Int?
-  organizationId String?
-  assetType      String?
-  metadata       Json?
-  appointments   Appointment[]
-  client         Client        @relation(fields: [clientId], references: [id])
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-
-  @@index([clientId])
-  @@index([plateNumber])
-  @@index([assetType])
-}
 
 model Asset {
   id             String        @id @default(cuid())
@@ -289,7 +268,6 @@ model Appointment {
   scheduledEnd       DateTime
   location           String?
   clientId           String?
-  vehicleId          String?
   createdById        String
   updatedById        String?
   cancellationReason String?
@@ -310,7 +288,6 @@ model Appointment {
   organization       Organization?         @relation(fields: [organizationId], references: [id])
   resource           Resource?             @relation(fields: [resourceId], references: [id])
   updatedBy          User?                 @relation("AppointmentUpdatedBy", fields: [updatedById], references: [id])
-  vehicle            Vehicle?              @relation(fields: [vehicleId], references: [id])
   assignees          AppointmentAssignee[]
   invoices           Invoice[]
   messages           Message[]
@@ -318,7 +295,6 @@ model Appointment {
   serviceOrder       ServiceOrder?
 
   @@index([clientId])
-  @@index([vehicleId])
   @@index([assetId])
   @@index([resourceId])
   @@index([status, scheduledStart])
@@ -366,20 +342,23 @@ model Payment {
 }
 
 model Message {
-  id            String               @id @default(cuid())
-  appointmentId String
-  authorId      String
-  body          String
-  type          MessageType          @default(TEXT)
-  metadata      Json?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  appointment   Appointment          @relation(fields: [appointmentId], references: [id])
-  author        User                 @relation(fields: [authorId], references: [id])
-  attachments   MessageAttachment[]
-  readReceipts  MessageReadReceipt[]
+  id             String               @id @default(cuid())
+  appointmentId  String
+  authorId       String?              // CRM user author (nullable for client messages)
+  clientAuthorId String?              // Client portal author (nullable for CRM messages)
+  body           String
+  type           MessageType          @default(TEXT)
+  metadata       Json?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  appointment    Appointment          @relation(fields: [appointmentId], references: [id])
+  author         User?                @relation(fields: [authorId], references: [id])
+  clientAuthor   Client?              @relation(fields: [clientAuthorId], references: [id])
+  attachments    MessageAttachment[]
+  readReceipts   MessageReadReceipt[]
 
   @@index([appointmentId])
+  @@index([clientAuthorId])
 }
 
 model MessageAttachment {
@@ -397,12 +376,16 @@ model MessageAttachment {
 model MessageReadReceipt {
   id        String   @id @default(cuid())
   messageId String
-  userId    String
+  userId    String?  // CRM user who read (nullable for client reads)
+  clientId  String?  // Client who read (nullable for CRM user reads)
   readAt    DateTime @default(now())
   message   Message  @relation(fields: [messageId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
+  client    Client?  @relation(fields: [clientId], references: [id])
 
   @@unique([messageId, userId])
+  @@unique([messageId, clientId])
+  @@index([clientId])
 }
 
 model ChatChannel {
@@ -774,6 +757,24 @@ model Notification {
   @@index([recipientId, isRead])
 }
 
+model ClientNotification {
+  id         String           @id @default(cuid())
+  clientId   String
+  title      String
+  message    String
+  type       NotificationType @default(ANNOUNCEMENT)
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  isRead     Boolean          @default(false)
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+  client     Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, isRead])
+  @@index([createdAt])
+}
+
 model AuditLog {
   id             String        @id @default(cuid())
   actorId        String?
@@ -1102,6 +1103,13 @@ enum SubscriptionPlan {
   STARTER
   PROFESSIONAL
   ENTERPRISE
+}
+
+enum ActivitySector {
+  AUTOMOTIVE
+  BEAUTY
+  HOME_SERVICES
+  IT_ELECTRONICS
 }
 
 enum ClientType {

@@ -8,29 +8,28 @@ import Input from '@/components/ui/Input';
 import { bookingService } from '@/services/bookingService';
 import { cn } from '@/lib/utils';
 
-// Base steps that apply to all service types
+// Base steps that apply to all organizations
 const baseSteps = [
   { id: 'date', title: 'Data', icon: Calendar },
   { id: 'time', title: 'Ora', icon: Clock },
   { id: 'details', title: 'Date personale', icon: User },
 ];
 
-// Service-type specific steps
-const vehicleStep = { id: 'vehicle', title: 'Vehicul', icon: Car };
-const assetStep = { id: 'asset', title: 'Echipament', icon: Package };
 const confirmStep = { id: 'confirm', title: 'Confirmare', icon: CheckCircle };
 
-// Get steps based on service type
-const getStepsForServiceType = (serviceType) => {
-  switch (serviceType) {
-    case 'VEHICLE':
-      return [...baseSteps, vehicleStep, confirmStep];
-    case 'ASSET':
-      return [...baseSteps, assetStep, confirmStep];
-    case 'GENERAL':
-    default:
-      return [...baseSteps, confirmStep];
+// Get steps based on sector configuration
+const getStepsForSector = (sectorConfig) => {
+  if (!sectorConfig?.hasAssets) {
+    // No assets (e.g., BEAUTY sector)
+    return [...baseSteps, confirmStep];
   }
+
+  // Sectors with assets - determine icon and title based on assetType
+  const assetStepTitle = sectorConfig.terminology?.asset?.singular || 'Activ';
+  const assetStepIcon = sectorConfig.assetType === 'vehicle' ? Car : Package;
+  const assetStep = { id: 'asset', title: assetStepTitle, icon: assetStepIcon };
+
+  return [...baseSteps, assetStep, confirmStep];
 };
 
 export default function Book() {
@@ -73,9 +72,12 @@ export default function Book() {
     queryFn: () => bookingService.getOrganization(slug),
   });
 
-  // Get service type and steps based on organization settings
-  const serviceType = organization?.publicBookingSettings?.serviceType || 'GENERAL';
-  const steps = useMemo(() => getStepsForServiceType(serviceType), [serviceType]);
+  // Get sector config and steps based on organization settings
+  const sectorConfig = organization?.sectorConfig;
+  const hasAssets = sectorConfig?.hasAssets || false;
+  const assetType = sectorConfig?.assetType;
+  const assetTerminology = sectorConfig?.terminology?.asset || { singular: 'Activ', plural: 'Active', identifier: 'Identificator' };
+  const steps = useMemo(() => getStepsForSector(sectorConfig), [sectorConfig]);
   const currentStepId = steps[currentStep]?.id;
   const isLastStep = currentStep === steps.length - 1;
 
@@ -150,11 +152,22 @@ export default function Book() {
         password: formData.createAccount ? formData.password : null,
       };
 
-      // Add vehicle or asset data based on service type
-      if (serviceType === 'VEHICLE' && (formData.vehicle.make || formData.vehicle.plateNumber || formData.vehicle.model)) {
-        bookingData.vehicle = formData.vehicle;
-      } else if (serviceType === 'ASSET' && (formData.asset.name || formData.asset.identifier)) {
-        bookingData.asset = formData.asset;
+      // Add asset data based on sector's asset type
+      // Backend expects 'asset' field for all asset types
+      if (hasAssets) {
+        if (assetType === 'vehicle' && (formData.vehicle.make || formData.vehicle.plateNumber || formData.vehicle.model)) {
+          // Map vehicle form data to asset structure
+          bookingData.asset = {
+            manufacturer: formData.vehicle.make,
+            model: formData.vehicle.model,
+            year: formData.vehicle.year,
+            identifier: formData.vehicle.plateNumber,
+            // Generate name from vehicle data
+            name: `${formData.vehicle.make || ''} ${formData.vehicle.model || ''}`.trim() || null,
+          };
+        } else if (assetType !== 'vehicle' && (formData.asset.name || formData.asset.identifier)) {
+          bookingData.asset = formData.asset;
+        }
       }
 
       bookingMutation.mutate(bookingData);
@@ -411,102 +424,105 @@ export default function Book() {
               </div>
             )}
 
-            {/* Vehicle (Optional) - Only for VEHICLE service type */}
-            {currentStepId === 'vehicle' && (
+            {/* Asset Step - Only for sectors with assets */}
+            {currentStepId === 'asset' && hasAssets && (
               <div className="space-y-4">
                 <p className="text-sm text-gray-600">
-                  Adauga informatii despre vehicul (optional)
+                  Adauga informatii despre {assetTerminology.singular.toLowerCase()} (optional)
                 </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Marca</label>
-                    <Input
-                      value={formData.vehicle.make}
-                      onChange={(e) => updateNestedFormData('vehicle', 'make', e.target.value)}
-                      placeholder="ex: Volkswagen"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Model</label>
-                    <Input
-                      value={formData.vehicle.model}
-                      onChange={(e) => updateNestedFormData('vehicle', 'model', e.target.value)}
-                      placeholder="ex: Golf"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">An fabricatie</label>
-                    <Input
-                      type="number"
-                      value={formData.vehicle.year}
-                      onChange={(e) => updateNestedFormData('vehicle', 'year', e.target.value)}
-                      placeholder="ex: 2020"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Numar inmatriculare</label>
-                    <Input
-                      value={formData.vehicle.plateNumber}
-                      onChange={(e) => updateNestedFormData('vehicle', 'plateNumber', e.target.value)}
-                      placeholder="ex: B 123 ABC"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Asset (Optional) - Only for ASSET service type */}
-            {currentStepId === 'asset' && (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Adauga informatii despre echipament (optional)
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Denumire</label>
-                    <Input
-                      value={formData.asset.name}
-                      onChange={(e) => updateNestedFormData('asset', 'name', e.target.value)}
-                      placeholder="ex: Laptop Dell"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Identificator / Serie</label>
-                    <Input
-                      value={formData.asset.identifier}
-                      onChange={(e) => updateNestedFormData('asset', 'identifier', e.target.value)}
-                      placeholder="ex: SN123456"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Tip</label>
-                    <Input
-                      value={formData.asset.type}
-                      onChange={(e) => updateNestedFormData('asset', 'type', e.target.value)}
-                      placeholder="ex: Laptop, Telefon"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Producator</label>
-                    <Input
-                      value={formData.asset.manufacturer}
-                      onChange={(e) => updateNestedFormData('asset', 'manufacturer', e.target.value)}
-                      placeholder="ex: Dell, Apple"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">Model</label>
-                  <Input
-                    value={formData.asset.model}
-                    onChange={(e) => updateNestedFormData('asset', 'model', e.target.value)}
-                    placeholder="ex: XPS 15"
-                  />
-                </div>
+                {/* Vehicle-specific fields */}
+                {assetType === 'vehicle' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Marca</label>
+                        <Input
+                          value={formData.vehicle.make}
+                          onChange={(e) => updateNestedFormData('vehicle', 'make', e.target.value)}
+                          placeholder="ex: Volkswagen"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Model</label>
+                        <Input
+                          value={formData.vehicle.model}
+                          onChange={(e) => updateNestedFormData('vehicle', 'model', e.target.value)}
+                          placeholder="ex: Golf"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">An fabricatie</label>
+                        <Input
+                          type="number"
+                          value={formData.vehicle.year}
+                          onChange={(e) => updateNestedFormData('vehicle', 'year', e.target.value)}
+                          placeholder="ex: 2020"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">{assetTerminology.identifier}</label>
+                        <Input
+                          value={formData.vehicle.plateNumber}
+                          onChange={(e) => updateNestedFormData('vehicle', 'plateNumber', e.target.value)}
+                          placeholder="ex: B 123 ABC"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Generic asset fields for equipment, appliance, etc. */}
+                {assetType !== 'vehicle' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Denumire</label>
+                        <Input
+                          value={formData.asset.name}
+                          onChange={(e) => updateNestedFormData('asset', 'name', e.target.value)}
+                          placeholder="ex: Laptop Dell"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">{assetTerminology.identifier}</label>
+                        <Input
+                          value={formData.asset.identifier}
+                          onChange={(e) => updateNestedFormData('asset', 'identifier', e.target.value)}
+                          placeholder="ex: SN123456"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Tip</label>
+                        <Input
+                          value={formData.asset.type}
+                          onChange={(e) => updateNestedFormData('asset', 'type', e.target.value)}
+                          placeholder="ex: Laptop, Telefon"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Producator</label>
+                        <Input
+                          value={formData.asset.manufacturer}
+                          onChange={(e) => updateNestedFormData('asset', 'manufacturer', e.target.value)}
+                          placeholder="ex: Dell, Apple"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label">Model</label>
+                      <Input
+                        value={formData.asset.model}
+                        onChange={(e) => updateNestedFormData('asset', 'model', e.target.value)}
+                        placeholder="ex: XPS 15"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -540,17 +556,17 @@ export default function Book() {
                     <span className="text-gray-600">Telefon:</span>
                     <span className="font-medium">{formData.client.phone}</span>
                   </div>
-                  {serviceType === 'VEHICLE' && formData.vehicle.plateNumber && (
+                  {hasAssets && assetType === 'vehicle' && formData.vehicle.plateNumber && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Vehicul:</span>
+                      <span className="text-gray-600">{assetTerminology.singular}:</span>
                       <span className="font-medium">
                         {formData.vehicle.make} {formData.vehicle.model} - {formData.vehicle.plateNumber}
                       </span>
                     </div>
                   )}
-                  {serviceType === 'ASSET' && (formData.asset.name || formData.asset.identifier) && (
+                  {hasAssets && assetType !== 'vehicle' && (formData.asset.name || formData.asset.identifier) && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Echipament:</span>
+                      <span className="text-gray-600">{assetTerminology.singular}:</span>
                       <span className="font-medium">
                         {formData.asset.name}{formData.asset.identifier && ` - ${formData.asset.identifier}`}
                       </span>

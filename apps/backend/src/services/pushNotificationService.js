@@ -480,6 +480,78 @@ const getMessageTypeLabel = (type) => {
   }
 };
 
+/**
+ * Send push notification for appointment message
+ * @param {Object} params - Notification parameters
+ * @param {string} params.appointmentId - The appointment ID
+ * @param {string} params.appointmentTitle - The appointment title
+ * @param {Object} params.author - The message author (user or client)
+ * @param {string} params.messageBody - The message body
+ * @param {string} params.messageType - The message type (TEXT, FILE, etc.)
+ * @param {Array} params.recipientIds - User IDs to notify
+ * @param {boolean} params.isFromClient - Whether the message is from a client
+ */
+const sendAppointmentMessageNotification = async ({
+  appointmentId,
+  appointmentTitle,
+  author,
+  messageBody,
+  messageType,
+  recipientIds,
+  isFromClient = false,
+}) => {
+  if (!recipientIds || recipientIds.length === 0) return;
+
+  const authorName = isFromClient
+    ? (author?.companyName || `${author?.firstName || ''} ${author?.lastName || ''}`.trim() || 'Client')
+    : (`${author?.firstName || ''} ${author?.lastName || ''}`.trim() || 'Utilizator');
+
+  const title = isFromClient ? 'Mesaj de la client' : 'Mesaj nou';
+
+  let body = '';
+  if (messageType === 'TEXT') {
+    body = `${authorName} in "${appointmentTitle}": ${messageBody}`;
+  } else if (messageType === 'FILE') {
+    const isVoice = messageBody?.toLowerCase().includes('voice') || messageBody?.toLowerCase().includes('audio');
+    body = isVoice
+      ? `${authorName} a trimis un mesaj vocal in "${appointmentTitle}"`
+      : `${authorName} a trimis un fisier in "${appointmentTitle}"`;
+  } else {
+    body = `${authorName} a trimis un mesaj in "${appointmentTitle}"`;
+  }
+
+  // Truncate body if too long
+  if (body.length > 120) {
+    body = body.substring(0, 117) + '...';
+  }
+
+  const icon = '/icons/message.png';
+
+  for (const userId of recipientIds) {
+    try {
+      const preferences = await getNotificationPreferences(userId);
+      if (!preferences.enablePushNotifications || !preferences.enableMessages) {
+        continue;
+      }
+
+      await sendPushToUser(userId, {
+        title,
+        body,
+        icon,
+        badge: '/icons/badge.png',
+        tag: `appointment-message-${appointmentId}`,
+        data: {
+          type: 'appointment-message',
+          appointmentId,
+          url: `/appointments?id=${appointmentId}&tab=messages`,
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to send appointment message notification to user ${userId}:`, error);
+    }
+  }
+};
+
 module.exports = {
   getVapidPublicKey,
   subscribeToPush,
@@ -494,4 +566,5 @@ module.exports = {
   sendTaskNotification,
   sendReminderNotification,
   sendChatMessageNotification,
+  sendAppointmentMessageNotification,
 };

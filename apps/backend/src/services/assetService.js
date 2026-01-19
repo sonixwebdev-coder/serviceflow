@@ -182,6 +182,10 @@ const resolveAsset = async (tx, clientId, assetPayload, fallbackId, organization
  * List assets with pagination and filtering
  */
 const listAssets = async (prisma, { clientId, type, search, page = 1, limit = 50 }) => {
+  // Parse pagination params as integers
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = parseInt(limit, 10) || 50;
+
   const where = {};
 
   if (clientId) where.clientId = clientId;
@@ -199,14 +203,14 @@ const listAssets = async (prisma, { clientId, type, search, page = 1, limit = 50
     prisma.asset.findMany({
       where,
       include: { client: true },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.asset.count({ where }),
   ]);
 
-  return { items, total, page, limit };
+  return { items, total, page: pageNum, limit: limitNum };
 };
 
 /**

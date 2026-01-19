@@ -39,6 +39,17 @@ const broadcastMessage = (organizationId, appointmentId, message) => {
   emitToOrganization(organizationId, 'message:new', message);
 };
 
+/**
+ * Broadcast a message to a specific client (client portal)
+ */
+const broadcastMessageToClient = (clientId, appointmentId, message) => {
+  if (!message || !clientId) return;
+  emitToClient(clientId, 'portal:message:new', {
+    ...message,
+    appointmentId,
+  });
+};
+
 const broadcastTyping = (organizationId, appointmentId, user, isTyping) => {
   if (!user || !appointmentId || !organizationId) return;
 
@@ -54,6 +65,24 @@ const broadcastTyping = (organizationId, appointmentId, user, isTyping) => {
       lastName,
     },
     isTyping
+  });
+};
+
+/**
+ * Broadcast typing indicator to a specific client (client portal)
+ */
+const broadcastTypingToClient = (clientId, appointmentId, user, isTyping) => {
+  if (!user || !appointmentId || !clientId) return;
+
+  emitToClient(clientId, 'portal:message:typing', {
+    appointmentId,
+    user: {
+      id: user._id || user.id,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      type: 'user',
+    },
+    isTyping,
   });
 };
 
@@ -85,13 +114,6 @@ const broadcastAppointmentToClient = (action, appointment) => {
     scheduledEnd: appointment.scheduledEnd,
     location: appointment.location,
     cancellationReason: appointment.cancellationReason,
-    vehicle: appointment.vehicle ? {
-      id: appointment.vehicle.id,
-      make: appointment.vehicle.make,
-      model: appointment.vehicle.model,
-      plateNumber: appointment.vehicle.plateNumber,
-      year: appointment.vehicle.year,
-    } : null,
     asset: appointment.asset ? {
       id: appointment.asset.id,
       name: appointment.asset.name,
@@ -185,4 +207,6 @@ module.exports = {
   broadcastInvoiceToClient,
   broadcastClientUpdate,
   broadcastAssetUpdate,
+  broadcastMessageToClient,
+  broadcastTypingToClient,
 };

@@ -13,6 +13,7 @@ const {
   addTaskComment,
   deleteTask,
 } = require('../services/taskService');
+const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -81,6 +82,14 @@ router.post(
   validate(createTaskSchema),
   asyncHandler(async (req, res) => {
     const task = await createTask(req.tenantPrisma, req.body, req.user);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.TASK,
+      entityId: task.id,
+      description: getActionDescription('CREATE', ENTITY_TYPES.TASK, task.title),
+    });
+
     return created(res, task, 'Task created successfully');
   })
 );
@@ -91,6 +100,15 @@ router.put(
   validate(updateTaskSchema),
   asyncHandler(async (req, res) => {
     const task = await updateTask(req.tenantPrisma, req.params.taskId, req.body, req.user);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.TASK,
+      entityId: task.id,
+      description: getActionDescription('UPDATE', ENTITY_TYPES.TASK, task.title),
+      metadata: { changes: Object.keys(req.body) },
+    });
+
     return ok(res, task, 'Task updated successfully');
   })
 );
@@ -119,7 +137,16 @@ router.delete(
   '/:taskId',
   authenticate,
   asyncHandler(async (req, res) => {
+    const task = await getTaskById(req.tenantPrisma, req.params.taskId, req.user);
     await deleteTask(req.tenantPrisma, req.params.taskId, req.user);
+
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: ENTITY_TYPES.TASK,
+      entityId: req.params.taskId,
+      description: getActionDescription('DELETE', ENTITY_TYPES.TASK, task.title),
+    });
+
     return noContent(res);
   })
 );

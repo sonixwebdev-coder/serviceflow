@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useLogin } from '@/hooks/useAuth';
+import { useAuthStore } from '@/state/useAuthStore';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
@@ -18,8 +19,17 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const loginMutation = useLogin();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const loading = useAuthStore((state) => state.loading);
 
   const from = location.state?.from?.pathname || '/';
+
+  // Redirect if already authenticated (after loading)
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [loading, isAuthenticated, navigate, from]);
 
   const {
     register,
@@ -37,16 +47,17 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary-600">Portal Client</h1>
-          <h2 className="mt-6 text-2xl font-semibold text-gray-900">Autentificare</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="mt-4 text-2xl font-semibold text-gray-900">Autentificare</h2>
+          <p className="mt-2 text-sm text-gray-500">
             Accesati contul pentru a vedea programarile si facturile
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="card p-8">
+        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {loginMutation.isError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {loginMutation.error?.response?.data?.error || 'Eroare la autentificare'}
@@ -120,6 +131,7 @@ export default function Login() {
             Autentificare
           </Button>
         </form>
+        </div>
       </div>
     </div>
   );

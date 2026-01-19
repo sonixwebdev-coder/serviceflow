@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
-import { X, UserPlus, Mail, Phone, Calendar, Shield, CheckCircle, Umbrella } from 'lucide-react';
+import { X, UserPlus, Mail, Phone, Calendar, Shield, CheckCircle, Umbrella, Users } from 'lucide-react';
 import useUsers from '../hooks/useUsers';
 import useAuth from '../context/useAuth';
 import useToast from '../context/useToast';
@@ -307,15 +307,16 @@ const Employees = () => {
   );
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Angajati</h1>
-          <p className="text-sm text-gray-500 mt-1">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title">Angajati</h1>
+          <p className="page-subtitle">
             Gestioneaza profilurile angajatilor si nivelurile de acces.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <ExportButton
             entityType="users"
             filters={{
@@ -327,54 +328,50 @@ const Employees = () => {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+              className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
             >
-              <UserPlus size={18} />
+              <UserPlus size={16} />
               Adauga angajat
             </button>
           )}
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Filtre</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-            <select
-              name="role"
-              value={filters.role || ''}
-              onChange={handleFilterChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-            >
-              <option value="">Toate rolurile</option>
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {ROLE_LABELS[role] || role.charAt(0).toUpperCase() + role.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              name="isActive"
-              value={filters.isActive?.toString() ?? 'true'}
-              onChange={handleFilterChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-            >
-              <option value="true">Activ</option>
-              <option value="false">Inactiv</option>
-            </select>
-          </div>
+      {/* Filters */}
+      <div className="filter-bar">
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol:</label>
+          <select
+            name="role"
+            value={filters.role || ''}
+            onChange={handleFilterChange}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+          >
+            <option value="">Toate</option>
+            {roles.map((role) => (
+              <option key={role} value={role}>
+                {ROLE_LABELS[role] || role.charAt(0).toUpperCase() + role.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</label>
+          <select
+            name="isActive"
+            value={filters.isActive?.toString() ?? 'true'}
+            onChange={handleFilterChange}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+          >
+            <option value="true">Activ</option>
+            <option value="false">Inactiv</option>
+          </select>
         </div>
       </div>
 
+      {/* Team Directory */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">Directorul echipei</h2>
-        </div>
-
         {/* Desktop Table */}
         <div className="hidden lg:block overflow-x-auto">
           {loading ? (
@@ -384,17 +381,21 @@ const Employees = () => {
           ) : error ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
           ) : users.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-gray-500">Niciun angajat gasit.</div>
+            <div className="empty-state">
+              <Users size={48} className="empty-state-icon" />
+              <p className="empty-state-title">Niciun angajat gasit</p>
+              <p className="empty-state-text">Adauga angajati pentru a gestiona echipa.</p>
+            </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nume</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Concediu</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Cont</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actiuni</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Nume</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status Concediu</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status Cont</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actiuni</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

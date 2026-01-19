@@ -2,6 +2,7 @@ const { AppError } = require('../utils/errors');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { emitToOrganization } = require('../realtime/emitter');
+const { ACTIVITY_SECTORS, getSectorConfig } = require('../constants/activitySectors');
 
 const SALT_ROUNDS = 10;
 const DEFAULT_WORK_START = 9; // 9 AM
@@ -19,6 +20,7 @@ const getOrganizationBySlug = async (prisma, slug) => {
       name: true,
       slug: true,
       settings: true,
+      activitySector: true,
     },
   });
 
@@ -26,12 +28,14 @@ const getOrganizationBySlug = async (prisma, slug) => {
     throw new AppError('Organization not found', 404);
   }
 
+  // Get sector configuration
+  const sectorConfig = getSectorConfig(organization.activitySector);
+
   // Parse settings with defaults - settings are nested under publicBooking key
   const orgSettings = organization.settings || {};
   const pbSettings = orgSettings.publicBooking || {};
 
   const publicBookingSettings = {
-    serviceType: pbSettings.serviceType || 'VEHICLE', // VEHICLE, ASSET, GENERAL
     workingHours: {
       start: pbSettings.workingHours?.start ?? DEFAULT_WORK_START,
       end: pbSettings.workingHours?.end ?? DEFAULT_WORK_END,
@@ -42,6 +46,7 @@ const getOrganizationBySlug = async (prisma, slug) => {
 
   return {
     ...organization,
+    sectorConfig,
     publicBookingSettings,
   };
 };
@@ -193,18 +198,26 @@ const getAvailableSlots = async (prisma, { organizationId, date, duration = 60, 
 };
 
 /**
- * Create a public booking (appointment + client)
+ * Create a public booking (appointment + client + asset if applicable)
  */
 const createPublicBooking = async (prisma, {
   organizationId,
   clientData,
   appointmentData,
-  vehicleData,
   assetData,
-  serviceType = 'VEHICLE',
   createAccount,
   password,
 }) => {
+  // Get organization to determine if assets are needed
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { activitySector: true },
+  });
+
+  const sectorConfig = getSectorConfig(organization.activitySector);
+  const hasAssets = sectorConfig?.hasAssets ?? false;
+  const assetType = sectorConfig?.assetType || null;
+
   // Get a system user for createdById (required field)
   const systemUser = await getSystemUserForOrg(prisma, organizationId);
 
@@ -232,34 +245,25 @@ const createPublicBooking = async (prisma, {
       });
     }
 
-    // Create vehicle if provided and service type is VEHICLE
-    let vehicle = null;
-    if (serviceType === 'VEHICLE' && vehicleData && (vehicleData.make || vehicleData.model || vehicleData.plateNumber)) {
-      vehicle = await tx.vehicle.create({
-        data: {
-          client: { connect: { id: client.id } },
-          make: vehicleData.make,
-          model: vehicleData.model,
-          year: vehicleData.year ? parseInt(vehicleData.year, 10) : null,
-          plateNumber: vehicleData.plateNumber,
-          color: vehicleData.color,
-        },
-      });
-    }
-
-    // Create asset if provided and service type is ASSET
+    // Create asset if sector uses assets and data is provided
     let asset = null;
-    if (serviceType === 'ASSET' && assetData && (assetData.name || assetData.identifier)) {
+    if (hasAssets && assetData && (assetData.name || assetData.identifier || assetData.manufacturer)) {
+      // Generate name if not provided
+      const assetName = assetData.name ||
+        `${assetData.manufacturer || ''} ${assetData.model || ''}`.trim() ||
+        sectorConfig.terminology.asset.singular;
+
       asset = await tx.asset.create({
         data: {
           organization: { connect: { id: organizationId } },
           client: { connect: { id: client.id } },
-          name: assetData.name || 'Asset',
+          name: assetName,
           identifier: assetData.identifier,
-          type: assetData.type,
+          type: assetType,
           manufacturer: assetData.manufacturer,
           model: assetData.model,
           year: assetData.year ? parseInt(assetData.year, 10) : null,
+          metadata: assetData.metadata || {},
         },
       });
     }
@@ -274,7 +278,6 @@ const createPublicBooking = async (prisma, {
         organization: { connect: { id: organizationId } },
         client: { connect: { id: client.id } },
         createdBy: { connect: { id: systemUser.id } },
-        ...(vehicle && { vehicle: { connect: { id: vehicle.id } } }),
         ...(asset && { asset: { connect: { id: asset.id } } }),
         title: appointmentData.title || 'Programare noua',
         description: appointmentData.description || null,
@@ -310,11 +313,8 @@ const createPublicBooking = async (prisma, {
         clientAccount = existingAccountForClient;
       } else if (existingAccountWithEmail) {
         // Email exists but for a different organization's client
-        // This means the same person has an account in another organization
-        // We need to create a new account for THIS organization's client
         if (existingAccountWithEmail.client.organizationId !== organizationId) {
-          // Different org - we can't create a duplicate email due to unique constraint
-          // Instead, generate a unique email variant for this org
+          // Different org - generate a unique email variant
           const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
           const verificationToken = crypto.randomBytes(32).toString('hex');
           const uniqueEmail = `${clientData.email.toLowerCase().split('@')[0]}+${organizationId.slice(-6)}@${clientData.email.split('@')[1]}`;
@@ -329,7 +329,6 @@ const createPublicBooking = async (prisma, {
             },
           });
         }
-        // Same org - account already exists, don't create duplicate
       } else {
         // No existing account, create new one
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -349,7 +348,6 @@ const createPublicBooking = async (prisma, {
 
     return {
       client,
-      vehicle,
       asset,
       appointment,
       clientAccount,
@@ -372,12 +370,6 @@ const createPublicBooking = async (prisma, {
       email: result.client.email,
       phone: result.client.phone,
     },
-    vehicle: result.vehicle ? {
-      id: result.vehicle.id,
-      make: result.vehicle.make,
-      model: result.vehicle.model,
-      plateNumber: result.vehicle.plateNumber,
-    } : null,
     asset: result.asset ? {
       id: result.asset.id,
       name: result.asset.name,
@@ -400,12 +392,6 @@ const createPublicBooking = async (prisma, {
       lastName: result.client.lastName,
       email: result.client.email,
     },
-    vehicle: result.vehicle ? {
-      id: result.vehicle.id,
-      make: result.vehicle.make,
-      model: result.vehicle.model,
-      plateNumber: result.vehicle.plateNumber,
-    } : null,
     asset: result.asset ? {
       id: result.asset.id,
       name: result.asset.name,

@@ -1,10 +1,20 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { signAccessToken, generateRefreshToken } = require('../utils/token');
 const { mapUser } = require('../utils/transform');
 const { normalizeEmploymentType } = require('../utils/normalize');
 const { ensureRole, normalizeRoleKey } = require('./roleService');
+const { sendCrmPasswordResetEmail } = require('./email/emailService');
+const logger = require('../utils/logger');
+
+/**
+ * Generate a secure token
+ */
+const generateToken = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
 
 const sanitizeUser = (user) => {
   if (!user) return null;
@@ -198,9 +208,104 @@ const revokeRefreshToken = async ({ token }) => {
   });
 };
 
+/**
+ * Request password reset for CRM user - sends email with reset link
+ * Uses system-level email template (not customizable by org admins)
+ */
+const requestPasswordReset = async (email) => {
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() },
+    include: {
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          settings: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    // Don't reveal if account exists
+    return { success: true };
+  }
+
+  const resetToken = generateToken();
+  const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetToken,
+      resetTokenExpiry,
+    },
+  });
+
+  // Build reset link
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+  // Get user name
+  const userName = `${user.firstName} ${user.lastName}`.trim();
+
+  // Send CRM password reset email (system-level, not customizable by org admins)
+  try {
+    await sendCrmPasswordResetEmail({
+      email: user.email,
+      userName,
+      resetLink,
+      expiresIn: '1 ora',
+    });
+    logger.info(`Password reset email sent to CRM user ${email}`);
+  } catch (emailError) {
+    logger.error(`Failed to send password reset email to CRM user ${email}:`, emailError);
+    // Don't fail the request if email fails
+  }
+
+  return { success: true };
+};
+
+/**
+ * Reset password with token
+ */
+const resetPassword = async ({ resetToken, newPassword }) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      resetToken,
+      resetTokenExpiry: { gt: new Date() },
+    },
+  });
+
+  if (!user) {
+    throw new AppError('Invalid or expired reset token', 400);
+  }
+
+  const hash = await bcrypt.hash(newPassword, parseInt(process.env.HASH_SALT_ROUNDS || '10', 10));
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hash,
+      resetToken: null,
+      resetTokenExpiry: null,
+    },
+  });
+
+  // Invalidate all refresh tokens for this user
+  await prisma.refreshToken.updateMany({
+    where: { userId: user.id, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+
+  return { success: true };
+};
+
 module.exports = {
   registerUser,
   loginUser,
   refreshSession,
   revokeRefreshToken,
+  requestPasswordReset,
+  resetPassword,
 };

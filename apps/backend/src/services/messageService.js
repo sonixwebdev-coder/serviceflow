@@ -1,7 +1,9 @@
 const { AppError } = require('../utils/errors');
 const { mapUser } = require('../utils/transform');
-const { broadcastMessage } = require('../realtime/events');
+const { broadcastMessage, broadcastMessageToClient } = require('../realtime/events');
 const { createNotification } = require('./notificationService');
+const { createClientNotification } = require('./clientNotificationService');
+const { sendAppointmentMessageNotification } = require('./pushNotificationService');
 const logger = require('../utils/logger');
 
 const includeConfig = {
@@ -14,11 +16,35 @@ const includeConfig = {
       },
     },
   },
+  clientAuthor: true,
   readReceipts: {
     include: {
       user: true,
+      client: true,
     },
   },
+  attachments: true,
+};
+
+/**
+ * Map a client to author format
+ */
+const mapClientAuthor = (client) => {
+  if (!client) return null;
+
+  const displayName = client.companyName ||
+    [client.firstName, client.lastName].filter(Boolean).join(' ') ||
+    'Client';
+
+  return {
+    id: client.id,
+    _id: client.id,
+    firstName: client.firstName || displayName,
+    lastName: client.lastName || '',
+    email: client.email,
+    avatarUrl: null,
+    type: 'client',
+  };
 };
 
 const ensureAppointmentAccess = async (prisma, appointmentId, currentUser) => {
@@ -61,23 +87,39 @@ const listMessages = async (prisma, appointmentId, currentUser) => {
     include: includeConfig,
   });
 
-  return messages.map((message) => ({
-    id: message.id,
-    _id: message.id,
-    appointmentId: message.appointmentId,
-    author: mapUser(message.author),
-    authorId: message.authorId,
-    body: message.body,
-    type: message.type?.toLowerCase() || 'text',
-    metadata: message.metadata,
-    readReceipts: message.readReceipts.map((receipt) => ({
-      userId: receipt.userId,
-      readAt: receipt.readAt,
-    })),
-    isRead: message.readReceipts.some((receipt) => receipt.userId === currentUser.id),
-    createdAt: message.createdAt,
-    updatedAt: message.updatedAt,
-  }));
+  return messages.map((message) => {
+    const isClientAuthor = !!message.clientAuthorId;
+
+    return {
+      id: message.id,
+      _id: message.id,
+      appointmentId: message.appointmentId,
+      author: isClientAuthor
+        ? mapClientAuthor(message.clientAuthor)
+        : { ...mapUser(message.author), type: 'user' },
+      authorId: message.authorId,
+      clientAuthorId: message.clientAuthorId,
+      body: message.body,
+      type: message.type?.toLowerCase() || 'text',
+      metadata: message.metadata,
+      attachments: message.attachments?.map(att => ({
+        id: att.id,
+        fileName: att.fileName,
+        fileUrl: att.fileUrl,
+        fileType: att.fileType,
+        fileSize: att.fileSize,
+      })) || [],
+      readReceipts: message.readReceipts.map((receipt) => ({
+        id: receipt.id,
+        userId: receipt.userId,
+        clientId: receipt.clientId,
+        readAt: receipt.readAt,
+      })),
+      isRead: message.readReceipts.some((receipt) => receipt.userId === currentUser.id),
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+    };
+  });
 };
 
 const createMessage = async (prisma, appointmentId, currentUser, { body, type, metadata }) => {
@@ -102,18 +144,57 @@ const createMessage = async (prisma, appointmentId, currentUser, { body, type, m
     id: message.id,
     _id: message.id,
     appointmentId: message.appointmentId,
-    author: mapUser(message.author),
+    author: { ...mapUser(message.author), type: 'user' },
     authorId: message.authorId,
+    clientAuthorId: null,
     body: message.body,
     type: message.type?.toLowerCase() || 'text',
     metadata: message.metadata,
+    attachments: [],
     readReceipts: [],
     isRead: false,
     createdAt: message.createdAt,
     updatedAt: message.updatedAt,
   };
 
+  // Broadcast to CRM organization room
   broadcastMessage(appointment.organizationId, appointmentId, payload);
+
+  // Also broadcast to client portal if appointment has a client
+  if (appointment.clientId) {
+    broadcastMessageToClient(appointment.clientId, appointmentId, payload);
+
+    // Create a persistent notification for the client
+    try {
+      const fullAppointmentForClient = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { title: true },
+      });
+      const appointmentTitleForClient = fullAppointmentForClient?.title || 'Programare';
+      const authorNameForClient = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Echipa';
+      const messagePreviewForClient = body.substring(0, 80);
+
+      await createClientNotification({
+        clientId: appointment.clientId,
+        title: 'Mesaj nou',
+        message: `${authorNameForClient} in "${appointmentTitleForClient}": ${messagePreviewForClient}${body.length > 80 ? '...' : ''}`,
+        type: 'MESSAGE',
+        entityType: 'appointment',
+        entityId: appointmentId,
+        metadata: {
+          messageId: message.id,
+          appointmentId,
+          appointmentTitle: appointmentTitleForClient,
+        },
+      });
+    } catch (clientNotificationError) {
+      logger.error('[MESSAGE] Failed to create client notification', {
+        error: clientNotificationError.message,
+        messageId: message.id,
+        clientId: appointment.clientId,
+      });
+    }
+  }
 
   // Create notifications for all users with access except the author
   try {
@@ -154,7 +235,7 @@ const createMessage = async (prisma, appointmentId, currentUser, { body, type, m
       where: { id: appointmentId },
       include: {
         client: true,
-        vehicle: true,
+        asset: true,
       },
     });
 
@@ -185,6 +266,17 @@ const createMessage = async (prisma, appointmentId, currentUser, { body, type, m
       appointmentId,
       recipientCount: recipientIds.size,
     });
+
+    // Send push notifications
+    await sendAppointmentMessageNotification({
+      appointmentId,
+      appointmentTitle,
+      author: currentUser,
+      messageBody: body,
+      messageType: type?.toUpperCase() || 'TEXT',
+      recipientIds: Array.from(recipientIds),
+      isFromClient: false,
+    });
   } catch (notificationError) {
     logger.error('[MESSAGE] Failed to create notifications', {
       error: notificationError.message,
@@ -199,11 +291,14 @@ const markMessagesAsRead = async (prisma, appointmentId, currentUser) => {
   await ensureAppointmentAccess(prisma, appointmentId, currentUser);
 
   // Get all messages in this appointment that aren't authored by the current user
-  // and that the user hasn't already read
+  // (including client-authored messages) and that the user hasn't already read
   const messages = await prisma.message.findMany({
     where: {
       appointmentId,
-      authorId: { not: currentUser.id },
+      OR: [
+        { authorId: { not: currentUser.id } },
+        { clientAuthorId: { not: null } },
+      ],
       readReceipts: {
         none: {
           userId: currentUser.id,
@@ -241,7 +336,10 @@ const getUnreadMessageCount = async (prisma, appointmentId, currentUser) => {
   const count = await prisma.message.count({
     where: {
       appointmentId,
-      authorId: { not: currentUser.id },
+      OR: [
+        { authorId: { not: currentUser.id } },
+        { clientAuthorId: { not: null } },
+      ],
       readReceipts: {
         none: {
           userId: currentUser.id,
@@ -253,9 +351,166 @@ const getUnreadMessageCount = async (prisma, appointmentId, currentUser) => {
   return count;
 };
 
+/**
+ * Create a file attachment message
+ */
+const createFileMessage = async (prisma, appointmentId, currentUser, { fileName, fileUrl, fileType, fileSize, isVoice, duration }) => {
+  const appointment = await ensureAppointmentAccess(prisma, appointmentId, currentUser);
+
+  const message = await prisma.message.create({
+    data: {
+      appointmentId,
+      authorId: currentUser.id,
+      body: fileName,
+      type: 'FILE',
+      metadata: isVoice ? { isVoice: true, duration } : null,
+      attachments: {
+        create: {
+          fileName,
+          fileUrl,
+          fileType,
+          fileSize,
+        },
+      },
+    },
+    include: includeConfig,
+  });
+
+  const isClientAuthor = !!message.clientAuthorId;
+  const payload = {
+    id: message.id,
+    _id: message.id,
+    appointmentId: message.appointmentId,
+    author: isClientAuthor
+      ? mapClientAuthor(message.clientAuthor)
+      : { ...mapUser(message.author), type: 'user' },
+    authorId: message.authorId,
+    clientAuthorId: null,
+    body: message.body,
+    type: message.type?.toLowerCase() || 'file',
+    metadata: message.metadata,
+    attachments: message.attachments?.map(att => ({
+      id: att.id,
+      fileName: att.fileName,
+      fileUrl: att.fileUrl,
+      fileType: att.fileType,
+      fileSize: att.fileSize,
+    })) || [],
+    readReceipts: [],
+    isRead: false,
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
+  };
+
+  // Broadcast to CRM organization room
+  broadcastMessage(appointment.organizationId, appointmentId, payload);
+
+  // Also broadcast to client portal if appointment has a client
+  if (appointment.clientId) {
+    broadcastMessageToClient(appointment.clientId, appointmentId, payload);
+
+    // Create a persistent notification for the client
+    try {
+      const fullAppointmentForClient = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { title: true },
+      });
+      const appointmentTitleForClient = fullAppointmentForClient?.title || 'Programare';
+      const authorNameForClient = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Echipa';
+      const isVoiceMessage = isVoice;
+      const messageText = isVoiceMessage
+        ? `${authorNameForClient} a trimis un mesaj vocal in "${appointmentTitleForClient}"`
+        : `${authorNameForClient} a trimis un fisier in "${appointmentTitleForClient}"`;
+
+      await createClientNotification({
+        clientId: appointment.clientId,
+        title: isVoiceMessage ? 'Mesaj vocal nou' : 'Fisier nou',
+        message: messageText,
+        type: 'MESSAGE',
+        entityType: 'appointment',
+        entityId: appointmentId,
+        metadata: {
+          messageId: message.id,
+          appointmentId,
+          appointmentTitle: appointmentTitleForClient,
+          isVoice: isVoiceMessage,
+        },
+      });
+    } catch (clientNotificationError) {
+      logger.error('[MESSAGE] Failed to create client notification for file', {
+        error: clientNotificationError.message,
+        messageId: message.id,
+        clientId: appointment.clientId,
+      });
+    }
+  }
+
+  // Create notifications for file messages
+  try {
+    const recipientIds = new Set();
+
+    // Add all assignees
+    appointment.assignees?.forEach((assignee) => {
+      if (assignee.userId !== currentUser.id) {
+        recipientIds.add(assignee.userId);
+      }
+    });
+
+    // Add admins
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        roles: {
+          some: {
+            role: {
+              key: {
+                in: ['admin', 'ADMIN', 'Admin'],
+              },
+            },
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    adminUsers.forEach((admin) => {
+      if (admin.id !== currentUser.id) {
+        recipientIds.add(admin.id);
+      }
+    });
+
+    if (recipientIds.size > 0) {
+      const fullAppointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+      });
+
+      const appointmentTitle = fullAppointment?.title || 'Programare';
+
+      // Send push notifications for file
+      await sendAppointmentMessageNotification({
+        appointmentId,
+        appointmentTitle,
+        author: currentUser,
+        messageBody: fileName,
+        messageType: 'FILE',
+        recipientIds: Array.from(recipientIds),
+        isFromClient: false,
+      });
+    }
+  } catch (notificationError) {
+    logger.error('[MESSAGE] Failed to create file message notifications', {
+      error: notificationError.message,
+      messageId: message.id,
+    });
+  }
+
+  return payload;
+};
+
 module.exports = {
   listMessages,
   createMessage,
   markMessagesAsRead,
   getUnreadMessageCount,
+  createFileMessage,
 };

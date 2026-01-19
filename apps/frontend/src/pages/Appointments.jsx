@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MessageSquare, X, Send, Plus, Trash2, FileText, CheckCircle2, Clock, AlertCircle, Edit2, Save } from 'lucide-react';
+import { MessageSquare, X, Send, Plus, Trash2, FileText, CheckCircle2, Clock, AlertCircle, Edit2, Save, Cloud, CloudOff, Paperclip, Mic, Square, Play, Pause, Download, Image as ImageIcon, User } from 'lucide-react';
 import { format, isBefore, startOfDay, parse, startOfWeek, getDay } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useAppointments } from '../hooks/useAppointments.js';
@@ -17,7 +17,6 @@ import ClientAutocomplete from '../components/ui/ClientAutocomplete.jsx';
 import Pagination from '../components/Pagination.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 import DynamicAssetFields from '../components/DynamicAssetFields';
-import { getAvailableAssetTypes } from '../constants/assetFieldTemplates';
 import useToast from '../context/useToast';
 import useAuth from '../context/useAuth';
 import { useTerminology } from '../context/TerminologyContext';
@@ -25,7 +24,8 @@ import { USER_ROLES } from '../utils/constants.js';
 import { getErrorMessage } from '../utils/errorUtils.js';
 import { createAppointment, downloadServiceOrderPdf } from '../services/appointmentService';
 import { getPaymentStatus, getAppointmentPayments, createPayment, deletePayment } from '../services/paymentService';
-import API from '../utils/api.js';
+import { getSyncStatus as getGoogleSyncStatus } from '../services/googleCalendarService';
+import API, { getFileUrl } from '../utils/api.js';
 import { getSocket } from '../lib/socket.js';
 
 const formatDateTime = (value, pattern = 'Pp') =>
@@ -83,6 +83,136 @@ const getPaymentStatusMeta = (status) => {
   return PAYMENT_STATUS_META[status] || PAYMENT_STATUS_META.UNPAID;
 };
 
+// Inline VoiceRecorder component for appointment messages
+const VoiceRecorder = ({ onUpload, disabled, isUploading }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4',
+      });
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  };
+
+  const handleSend = async () => {
+    if (audioBlob && onUpload) {
+      await onUpload(audioBlob, recordingTime);
+      clearRecording();
+    }
+  };
+
+  const clearRecording = () => {
+    setAudioBlob(null);
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    setRecordingTime(0);
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (isRecording) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1 bg-red-50 rounded-lg">
+        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        <span className="text-xs text-red-600 font-medium">{formatTime(recordingTime)}</span>
+        <button
+          type="button"
+          onClick={stopRecording}
+          className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+        >
+          <Square size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  if (audioBlob && audioUrl) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 rounded-lg">
+        <audio src={audioUrl} controls className="h-8" style={{ maxWidth: '120px' }} />
+        <button
+          type="button"
+          onClick={clearRecording}
+          className="p-1 text-gray-500 hover:text-gray-700"
+        >
+          <X size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={isUploading}
+          className="p-1 bg-viperx-primary text-white rounded-full hover:bg-viperx-primary/90 disabled:opacity-50"
+        >
+          {isUploading ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send size={12} />}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={startRecording}
+      disabled={disabled || isUploading}
+      className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <Mic size={20} />
+    </button>
+  );
+};
+
 const getStatusMeta = (value) => {
   if (!value) {
     return { label: 'Necunoscut', badgeClass: 'border border-gray-200 bg-gray-100 text-gray-600', calendarClass: 'status-unknown' };
@@ -122,7 +252,6 @@ const defaultClientForm = {
 };
 
 const defaultAssetForm = {
-  assetType: 'vehicle', // Default asset type
   metadata: {}, // Dynamic fields will be stored here
   notes: '',
 };
@@ -210,6 +339,8 @@ const Appointments = () => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [sendError, setSendError] = useState(null);
   const [typingUsers, setTypingUsers] = useState(new Map());
+  const [previewFile, setPreviewFile] = useState(null); // { url, name, type } for modal preview
+  const [pendingFile, setPendingFile] = useState(null); // File object for preview before sending
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -229,7 +360,8 @@ const Appointments = () => {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { user } = useAuth();
-  const { assetSingular, assetPlural } = useTerminology();
+  const { assetSingular, assetPlural, features, assetType: sectorAssetType } = useTerminology();
+  const hasAssets = features?.useAssets !== false; // Default to true if undefined
   const modalRef = useRef(null);
   const pendingPdfWindowRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -304,7 +436,7 @@ const Appointments = () => {
       }
 
       setAssetForm({
-        assetType: asset.type || 'vehicle',
+        assetType: asset.type || sectorAssetType,
         metadata: reconstructedMetadata,
         notes: asset.notes || '',
       });
@@ -356,7 +488,7 @@ const Appointments = () => {
       }
 
       setAssetForm({
-        assetType: asset.type || 'vehicle',
+        assetType: asset.type || sectorAssetType,
         metadata: reconstructedMetadata,
         notes: asset.notes || '',
       });
@@ -489,7 +621,25 @@ const Appointments = () => {
     setIsCreateOpen(true);
   };
   const { data: selectedAppointment } = useAppointment(selectedAppointmentId, { enabled: Boolean(selectedAppointmentId) });
-  const { messages, sending, sendMessage, loading: messagesLoading } = useAppointmentMessages(selectedAppointmentId || undefined);
+
+  // Google Calendar sync status
+  const { data: googleSyncStatus } = useQuery({
+    queryKey: ['google-sync-status', selectedAppointmentId],
+    queryFn: () => getGoogleSyncStatus(selectedAppointmentId),
+    enabled: Boolean(selectedAppointmentId),
+    retry: false,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
+  const { messages, sending, sendMessage, loading: messagesLoading, uploadFile, uploadingFile, uploadVoice, uploadingVoice } = useAppointmentMessages(selectedAppointmentId || undefined);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messages?.length > 0 && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   const { data: serviceOrder, isLoading: orderLoading } = useServiceOrder(selectedAppointmentId || undefined);
   const saveOrderMutation = useSaveServiceOrder(selectedAppointmentId || undefined);
   const cancelMutation = useCancelAppointment();
@@ -1098,7 +1248,7 @@ useEffect(() => {
         fidelityCardSerie: clientForm.fidelityCardSerie?.trim() || undefined,
       },
       asset: {
-        assetType: assetForm.assetType,
+        assetType: sectorAssetType,
         // Extract common fields from metadata for backend
         manufacturer: assetForm.metadata?.make || assetForm.metadata?.brand || undefined,
         model: assetForm.metadata?.model || undefined,
@@ -1229,15 +1379,16 @@ useEffect(() => {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Programari</h1>
-          <p className="text-sm text-gray-500">
-            Gestioneaza programarile atelierului, echipa alocata si statusul lucrarilor in timp real.
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title">Programari</h1>
+          <p className="page-subtitle">
+            Gestioneaza programarile, echipa alocata si statusul lucrarilor in timp real.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <ExportButton
             entityType="appointments"
             filters={{
@@ -1250,39 +1401,39 @@ useEffect(() => {
           <button
             type="button"
             onClick={() => openCreateModal(new Date())}
-            className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-viperx-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
           >
+            <Plus size={16} />
             Programare noua
           </button>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-medium text-gray-500 self-center">Status:</span>
+      {/* Filters */}
+      <div className="filter-bar">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</span>
           {STATUS_FILTERS.map((filter) => (
             <button
               key={filter.label}
               type="button"
               onClick={() => setStatus(filter.value)}
-              className={`rounded-full border px-4 py-1 text-xs font-medium transition-colors ${
-                status === filter.value
-                  ? 'border-viperx-primary bg-viperx-primary/10 text-viperx-primary'
-                  : 'border-gray-200 text-gray-600 hover:border-viperx-primary/40 hover:text-viperx-primary'
-              }`}
+              className={`filter-pill ${status === filter.value ? 'active' : ''}`}
             >
               {filter.label}
             </button>
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-4">
+        <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-gray-500">Client:</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Client:</label>
             <select
               value={selectedClientId || ''}
               onChange={(e) => setSelectedClientId(e.target.value || undefined)}
-              className="rounded-lg border border-gray-300 px-3 py-1 text-xs focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
             >
               <option value="">Toti clientii</option>
               {uniqueClients.map((client) => (
@@ -1294,11 +1445,11 @@ useEffect(() => {
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-gray-500">Responsabil:</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Responsabil:</label>
             <select
               value={selectedAssigneeId || ''}
               onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
-              className="rounded-lg border border-gray-300 px-3 py-1 text-xs focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
             >
               <option value="">Toti responsabilii</option>
               {assigneeOptions.map((employee) => (
@@ -1317,18 +1468,26 @@ useEffect(() => {
                 setSelectedClientId(undefined);
                 setSelectedAssigneeId(undefined);
               }}
-              className="text-xs text-gray-500 hover:text-viperx-primary transition-colors underline"
+              className="text-sm text-gray-500 hover:text-viperx-primary transition-colors flex items-center gap-1"
             >
-              Reseteaza filtrele
+              <X size={14} />
+              Reseteaza
             </button>
           )}
         </div>
-      </div>
-      {companySettings?.rampCount ? (
-        <p className="text-xs text-gray-500">Rampe configurate: {companySettings.rampCount}</p>
-      ) : null}
 
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        {companySettings?.rampCount > 0 && (
+          <>
+            <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+            <span className="text-xs text-gray-500">
+              <span className="font-medium">{companySettings.rampCount}</span> rampe configurate
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Calendar Card */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         {isLoading ? (
           <div className="py-10 text-center text-sm text-gray-500">Se incarca programarile...</div>
         ) : (
@@ -1366,22 +1525,28 @@ useEffect(() => {
                   localizer.format(date, 'MMMM yyyy', culture),
               }}
             />
-            {calendarEvents.length === 0 ? (
-              <p className="mt-4 text-center text-sm text-gray-400">Nu exista programari pentru filtrul selectat.</p>
-            ) : null}
+            {calendarEvents.length === 0 && (
+              <div className="empty-state">
+                <Clock className="empty-state-icon" />
+                <p className="empty-state-title">Nu exista programari</p>
+                <p className="empty-state-text">Nu s-au gasit programari pentru filtrul selectat.</p>
+              </div>
+            )}
           </>
         )}
       </div>
 
       {/* Pagination */}
-      {meta && (
-        <Pagination
-          currentPage={meta.page}
-          totalPages={meta.totalPages}
-          onPageChange={setPage}
-          totalItems={meta.total}
-          pageSize={meta.limit}
-        />
+      {meta && meta.totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            currentPage={meta.page}
+            totalPages={meta.totalPages}
+            onPageChange={setPage}
+            totalItems={meta.total}
+            pageSize={meta.limit}
+          />
+        </div>
       )}
 
       {isCreateOpen && (
@@ -1577,7 +1742,7 @@ useEffect(() => {
                               {selectedClient.email && <span>Email: {selectedClient.email}</span>}
                             </div>
 
-                            {selectedClient.assets && selectedClient.assets.length > 0 && (
+                            {hasAssets && selectedClient.assets && selectedClient.assets.length > 0 && (
                               <div className="mt-3">
                                 <label className="block text-xs font-medium text-gray-700 mb-1">
                                   Selecteaza {assetSingular.toLowerCase()}:
@@ -1744,81 +1909,17 @@ useEffect(() => {
                 )}
               </div>
 
+              {/* Asset Details Section - only shown for sectors with assets */}
+              {hasAssets && (
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <h3 className="text-base font-semibold text-gray-900">Detalii {assetSingular.toLowerCase()}</h3>
                 <div className="mt-4">
                   <p className="text-xs text-gray-500 mb-4">Completeaza informatiile despre {assetSingular.toLowerCase()}.</p>
 
-                  {/* Asset Type Selector */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tip {assetSingular.toLowerCase()} *
-                    </label>
-                    <select
-                      value={assetForm.assetType}
-                      onChange={(event) => setAssetForm((prev) => ({
-                        ...prev,
-                        assetType: event.target.value,
-                        metadata: {} // Reset metadata when changing type
-                      }))}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                    >
-                      {getAvailableAssetTypes().map((type) => (
-                        <option key={type.key} value={type.key}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Appliance-specific fields */}
-                  {assetForm.assetType === 'appliance' && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Categorie *</label>
-                      <select
-                        value={assetForm.metadata?.category || ''}
-                        onChange={(e) => setAssetForm(prev => ({
-                          ...prev,
-                          metadata: { ...prev.metadata, category: e.target.value }
-                        }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                      >
-                        <option value="">Selecteaza</option>
-                        <option value="Frigider">Frigider</option>
-                        <option value="Masina de spalat">Masina de spalat</option>
-                        <option value="Cuptor">Cuptor</option>
-                        <option value="Aragaz">Aragaz</option>
-                        <option value="Aspirator">Aspirator</option>
-                        <option value="Altele">Altele</option>
-                      </select>
-                    </div>
-                  )}
-
-                  {/* HVAC-specific fields */}
-                  {assetForm.assetType === 'hvac_unit' && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Tip unitate *</label>
-                      <select
-                        value={assetForm.metadata?.unitType || ''}
-                        onChange={(e) => setAssetForm(prev => ({
-                          ...prev,
-                          metadata: { ...prev.metadata, unitType: e.target.value }
-                        }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                      >
-                        <option value="">Selecteaza</option>
-                        <option value="Aer conditionat">Aer conditionat</option>
-                        <option value="Centrala termica">Centrala termica</option>
-                        <option value="Pompa de caldura">Pompa de caldura</option>
-                        <option value="Ventilatie">Ventilatie</option>
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Dynamic Asset Fields */}
+                  {/* Dynamic Asset Fields - uses sector-derived asset type */}
                   <div className="mb-4">
                     <DynamicAssetFields
-                      assetType={assetForm.assetType}
+                      assetType={sectorAssetType}
                       formData={assetForm}
                       onChange={setAssetForm}
                     />
@@ -1839,6 +1940,7 @@ useEffect(() => {
                   </div>
                 </div>
               </div>
+              )}
 
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <div className="mb-4">
@@ -1892,58 +1994,60 @@ useEffect(() => {
                         </div>
 
                         {/* Split sections for Hardware and Labor */}
-                        <div className="grid gap-3 md:grid-cols-2">
-                          {/* Hardware Section */}
-                          <div className="rounded-lg border border-blue-200 bg-white p-2.5">
-                            <h4 className="text-xs font-semibold text-blue-900 mb-2 flex items-center gap-1">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                              </svg>
-                              Piese & Materiale
-                            </h4>
-                            <div className="space-y-2">
-                              <div className="flex gap-2">
-                                <div className="w-16">
-                                  <label className="block text-xs text-gray-600 mb-1">Cant.</label>
+                        <div className={`grid gap-3 ${hasAssets ? 'md:grid-cols-2' : 'md:grid-cols-1'}`}>
+                          {/* Hardware Section - only shown for sectors with assets */}
+                          {hasAssets && (
+                            <div className="rounded-lg border border-blue-200 bg-white p-2.5">
+                              <h4 className="text-xs font-semibold text-blue-900 mb-2 flex items-center gap-1">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                Piese & Materiale
+                              </h4>
+                              <div className="space-y-2">
+                                <div className="flex gap-2">
+                                  <div className="w-16">
+                                    <label className="block text-xs text-gray-600 mb-1">Cant.</label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={item.hardwareQuantity}
+                                      onChange={(event) => handleLineItemChange(index, 'hardwareQuantity', event.target.value)}
+                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-viperx-primary focus:outline-none"
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <label className="block text-xs text-gray-600 mb-1">Unitate</label>
+                                    <select
+                                      value={item.hardwareUnit || ''}
+                                      onChange={(event) => handleLineItemChange(index, 'hardwareUnit', event.target.value)}
+                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-viperx-primary focus:outline-none"
+                                    >
+                                      <option value="">—</option>
+                                      {HARDWARE_UNITS.map((unit) => (
+                                        <option key={unit.value} value={unit.value}>
+                                          {unit.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-1">Pret unitar (RON)</label>
                                   <input
                                     type="number"
                                     min="0"
-                                    step="1"
-                                    value={item.hardwareQuantity}
-                                    onChange={(event) => handleLineItemChange(index, 'hardwareQuantity', event.target.value)}
-                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-viperx-primary focus:outline-none"
+                                    step="0.01"
+                                    value={item.hardwarePrice}
+                                    onChange={(event) => handleLineItemChange(index, 'hardwarePrice', event.target.value)}
+                                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-viperx-primary focus:outline-none"
+                                    placeholder="0.00"
                                   />
                                 </div>
-                                <div className="flex-1">
-                                  <label className="block text-xs text-gray-600 mb-1">Unitate</label>
-                                  <select
-                                    value={item.hardwareUnit || ''}
-                                    onChange={(event) => handleLineItemChange(index, 'hardwareUnit', event.target.value)}
-                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-viperx-primary focus:outline-none"
-                                  >
-                                    <option value="">—</option>
-                                    {HARDWARE_UNITS.map((unit) => (
-                                      <option key={unit.value} value={unit.value}>
-                                        {unit.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-xs text-gray-600 mb-1">Pret unitar (RON)</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={item.hardwarePrice}
-                                  onChange={(event) => handleLineItemChange(index, 'hardwarePrice', event.target.value)}
-                                  className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-viperx-primary focus:outline-none"
-                                  placeholder="0.00"
-                                />
                               </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Labor Section */}
                           <div className="rounded-lg border border-amber-200 bg-white p-2.5">
@@ -2255,16 +2359,36 @@ useEffect(() => {
                           <div className="md:col-span-3">
                             <dt className="text-gray-500">Status</dt>
                             <dd className="mt-1 flex flex-col gap-2">
-                              <span
-                                className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ${getStatusMeta(selectedAppointment.status).badgeClass}`}
-                              >
-                                {getStatusMeta(selectedAppointment.status).label}
-                                {selectedAppointment.status === 'COMPLETED' && (
-                                  <span className="ml-2" title="Programare finalizata - Blocata">
-                                    🔒
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ${getStatusMeta(selectedAppointment.status).badgeClass}`}
+                                >
+                                  {getStatusMeta(selectedAppointment.status).label}
+                                  {selectedAppointment.status === 'COMPLETED' && (
+                                    <span className="ml-2" title="Programare finalizata - Blocata">
+                                      🔒
+                                    </span>
+                                  )}
+                                </span>
+                                {/* Google Calendar Sync Status */}
+                                {googleSyncStatus?.synced ? (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200"
+                                    title={`Sincronizat cu Google Calendar${googleSyncStatus.lastSyncAt ? ` la ${new Date(googleSyncStatus.lastSyncAt).toLocaleString('ro-RO')}` : ''}`}
+                                  >
+                                    <Cloud className="w-3 h-3" />
+                                    Sincronizat
                                   </span>
-                                )}
-                              </span>
+                                ) : googleSyncStatus && !googleSyncStatus.synced ? (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-500 border border-gray-200"
+                                    title="Nu este sincronizat cu Google Calendar"
+                                  >
+                                    <CloudOff className="w-3 h-3" />
+                                    Nesincronizat
+                                  </span>
+                                ) : null}
+                              </div>
                               {selectedAppointment.status !== 'COMPLETED' ? (
                                 <div className="relative">
                                   <select
@@ -2391,13 +2515,11 @@ useEffect(() => {
                           <dd className="font-medium text-gray-900">{selectedAppointment.asset.name}</dd>
                         </div>
 
-                        {/* Show asset type */}
+                        {/* Show asset type - uses terminology from sector */}
                         {selectedAppointment.asset.type && (
                           <div>
                             <dt className="text-gray-500">Tip</dt>
-                            <dd className="font-medium text-gray-900">
-                              {getAvailableAssetTypes().find(t => t.key === selectedAppointment.asset.type)?.name || selectedAppointment.asset.type}
-                            </dd>
+                            <dd className="font-medium text-gray-900">{assetSingular}</dd>
                           </div>
                         )}
 
@@ -2634,63 +2756,65 @@ useEffect(() => {
                                 </div>
 
                                 {/* Split sections for Hardware and Labor */}
-                                <div className="grid gap-4 md:grid-cols-2">
-                                  {/* Hardware Section */}
-                                  <div className="rounded-lg border border-blue-200 bg-blue-50/30 p-3">
-                                    <h4 className="text-xs font-semibold text-blue-900 mb-3 flex items-center gap-1">
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                      </svg>
-                                      Piese & Materiale
-                                    </h4>
-                                    <div className="space-y-2">
-                                      <div className="flex gap-2">
-                                        <div className="w-20">
-                                          <label className="block text-xs text-gray-600 mb-1">Cant.</label>
+                                <div className={`grid gap-4 ${hasAssets ? 'md:grid-cols-2' : 'md:grid-cols-1'}`}>
+                                  {/* Hardware Section - only shown for sectors with assets */}
+                                  {hasAssets && (
+                                    <div className="rounded-lg border border-blue-200 bg-blue-50/30 p-3">
+                                      <h4 className="text-xs font-semibold text-blue-900 mb-3 flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        </svg>
+                                        Piese & Materiale
+                                      </h4>
+                                      <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                          <div className="w-20">
+                                            <label className="block text-xs text-gray-600 mb-1">Cant.</label>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              step="1"
+                                              value={item.hardwareQuantity}
+                                              onChange={(event) => handleLineItemChange(index, 'hardwareQuantity', event.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                            />
+                                          </div>
+                                          <div className="flex-1">
+                                            <label className="block text-xs text-gray-600 mb-1">Unitate</label>
+                                            <select
+                                              value={item.hardwareUnit || ''}
+                                              onChange={(event) => handleLineItemChange(index, 'hardwareUnit', event.target.value)}
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                            >
+                                              <option value="">Alege...</option>
+                                              {HARDWARE_UNITS.map((unit) => (
+                                                <option key={unit.value} value={unit.value}>
+                                                  {unit.label}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs text-gray-600 mb-1">Pret unitar piese (RON)</label>
                                           <input
                                             type="number"
                                             min="0"
-                                            step="1"
-                                            value={item.hardwareQuantity}
-                                            onChange={(event) => handleLineItemChange(index, 'hardwareQuantity', event.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                            step="0.01"
+                                            value={item.hardwarePrice}
+                                            onChange={(event) => handleLineItemChange(index, 'hardwarePrice', event.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                            placeholder="0.00"
                                           />
                                         </div>
-                                        <div className="flex-1">
-                                          <label className="block text-xs text-gray-600 mb-1">Unitate</label>
-                                          <select
-                                            value={item.hardwareUnit || ''}
-                                            onChange={(event) => handleLineItemChange(index, 'hardwareUnit', event.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                                          >
-                                            <option value="">Alege...</option>
-                                            {HARDWARE_UNITS.map((unit) => (
-                                              <option key={unit.value} value={unit.value}>
-                                                {unit.label}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </div>
+                                        {hardware > 0 && (
+                                          <div className="text-xs text-blue-700 font-medium mt-2 pt-2 border-t border-blue-200">
+                                            Subtotal piese: {currencyFormatter.format(hardwareQty * hardware)}
+                                          </div>
+                                        )}
                                       </div>
-                                      <div>
-                                        <label className="block text-xs text-gray-600 mb-1">Pret unitar piese (RON)</label>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          step="0.01"
-                                          value={item.hardwarePrice}
-                                          onChange={(event) => handleLineItemChange(index, 'hardwarePrice', event.target.value)}
-                                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                                          placeholder="0.00"
-                                        />
-                                      </div>
-                                      {hardware > 0 && (
-                                        <div className="text-xs text-blue-700 font-medium mt-2 pt-2 border-t border-blue-200">
-                                          Subtotal piese: {currencyFormatter.format(hardwareQty * hardware)}
-                                        </div>
-                                      )}
                                     </div>
-                                  </div>
+                                  )}
 
                                   {/* Labor Section */}
                                   <div className="rounded-lg border border-amber-200 bg-amber-50/30 p-3">
@@ -3166,25 +3290,92 @@ useEffect(() => {
                     Nu exista mesaje deocamdata. Scrie primul mesaj mai jos.
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div key={message.id} className="flex gap-3">
-                        <div className="mt-1 rounded-full bg-viperx-primary/10 p-2 text-viperx-primary">
-                          <MessageSquare size={16} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-900">
-                              {message.author?.firstName} {message.author?.lastName}
-                            </p>
-                            <span className="text-xs text-gray-400">
-                              {formatDateTime(message.createdAt, 'dd.MM.yyyy HH:mm')}
-                            </span>
+                  <div className="space-y-3">
+                    {messages.map((message) => {
+                      const isOwnMessage = message.authorId === user?.id;
+                      const isClientMessage = message.author?.type === 'client';
+                      const authorName = message.author?.firstName
+                        ? `${message.author.firstName} ${message.author.lastName || ''}`
+                        : isClientMessage ? 'Client' : 'Utilizator';
+                      const isVoice = message.metadata?.isVoice;
+                      const hasAttachments = message.attachments?.length > 0;
+
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
+                        >
+                          {/* Avatar */}
+                          <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isClientMessage ? 'bg-blue-100' : 'bg-viperx-primary/10'}`}>
+                            <User size={14} className={isClientMessage ? 'text-blue-600' : 'text-viperx-primary'} />
                           </div>
-                          <p className="text-sm text-gray-700">{message.body}</p>
+
+                          {/* Message content */}
+                          <div className={`max-w-[75%] flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                            {/* Author and time */}
+                            <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                              <span className="text-xs font-medium text-gray-700">{authorName}</span>
+                              <span className="text-xs text-gray-400">
+                                {formatDateTime(message.createdAt, 'HH:mm')}
+                              </span>
+                            </div>
+
+                            {/* Message bubble */}
+                            <div className={`rounded-2xl px-4 py-2 ${isOwnMessage ? 'bg-viperx-primary text-white rounded-tr-sm' : 'bg-gray-100 text-gray-900 rounded-tl-sm'}`}>
+                              {/* Text content */}
+                              {message.body && !isVoice && (
+                                <p className="text-sm whitespace-pre-wrap break-words">{message.body}</p>
+                              )}
+
+                              {/* Voice message */}
+                              {isVoice && hasAttachments && (
+                                <div className="flex items-center gap-3 min-w-[180px]">
+                                  <audio
+                                    controls
+                                    src={getFileUrl(message.attachments[0].fileUrl)}
+                                    className="h-8 w-full"
+                                    style={{ maxWidth: '200px' }}
+                                  />
+                                </div>
+                              )}
+
+                              {/* File attachments */}
+                              {!isVoice && hasAttachments && message.attachments.map((attachment) => {
+                                const isImage = attachment.fileType?.startsWith('image/');
+                                const fullUrl = getFileUrl(attachment.fileUrl);
+                                return (
+                                  <div key={attachment.id} className="mt-2">
+                                    {isImage ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewFile({ url: fullUrl, name: attachment.fileName, type: attachment.fileType })}
+                                        className="block cursor-pointer hover:opacity-90 transition-opacity"
+                                      >
+                                        <img
+                                          src={fullUrl}
+                                          alt={attachment.fileName}
+                                          className="max-w-[200px] max-h-[150px] rounded-lg object-cover"
+                                        />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewFile({ url: fullUrl, name: attachment.fileName, type: attachment.fileType })}
+                                        className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isOwnMessage ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-200 hover:bg-gray-300'}`}
+                                      >
+                                        <FileText size={16} />
+                                        <span className="text-xs truncate max-w-[140px]">{attachment.fileName}</span>
+                                        <ImageIcon size={14} />
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div ref={messagesEndRef} />
                   </div>
                 )}
@@ -3264,30 +3455,127 @@ useEffect(() => {
                     </button>
                   </div>
                 )}
-                <div className="flex items-end gap-3">
+
+                {/* Pending file preview */}
+                {pendingFile && (
+                  <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="flex items-start gap-3">
+                      {pendingFile.type?.startsWith('image/') ? (
+                        <img
+                          src={URL.createObjectURL(pendingFile)}
+                          alt={pendingFile.name}
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <FileText size={24} className="text-gray-500" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{pendingFile.name}</p>
+                        <p className="text-xs text-gray-500">{(pendingFile.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPendingFile(null)}
+                          className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg"
+                        >
+                          <X size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={uploadingFile}
+                          onClick={async () => {
+                            try {
+                              await uploadFile(pendingFile);
+                              setPendingFile(null);
+                              setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                            } catch (error) {
+                              showToast({ title: 'Eroare', description: 'Nu am putut incarca fisierul', type: 'error' });
+                            }
+                          }}
+                          className="p-1.5 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 disabled:opacity-50"
+                        >
+                          {uploadingFile ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          ) : (
+                            <Send size={16} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-end gap-2">
+                  {/* File upload button */}
+                  <label className="cursor-pointer p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*,application/pdf,.doc,.docx,.txt"
+                      disabled={isSendingMessage || uploadingFile || !!pendingFile}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 10 * 1024 * 1024) {
+                          showToast({ title: 'Fisier prea mare', description: 'Maxim 10MB permis', type: 'error' });
+                          e.target.value = '';
+                          return;
+                        }
+                        setPendingFile(file);
+                        e.target.value = '';
+                      }}
+                    />
+                    {uploadingFile ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-viperx-primary border-t-transparent" />
+                    ) : (
+                      <Paperclip size={20} />
+                    )}
+                  </label>
+
+                  {/* Voice record button - simplified inline recorder */}
+                  <VoiceRecorder
+                    onUpload={async (audioBlob, duration) => {
+                      try {
+                        await uploadVoice({ audioBlob, duration });
+                        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                      } catch (error) {
+                        showToast({ title: 'Eroare', description: 'Nu am putut incarca mesajul vocal', type: 'error' });
+                      }
+                    }}
+                    disabled={isSendingMessage || uploadingVoice}
+                    isUploading={uploadingVoice}
+                  />
+
+                  {/* Text input */}
                   <textarea
                     value={messageDraft}
                     onChange={(event) => handleMessageInputChange(event.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (messageDraft.trim() && !isSendingMessage) {
+                          e.target.form.requestSubmit();
+                        }
+                      }
+                    }}
                     placeholder="Scrie un mesaj..."
-                    rows={2}
+                    rows={1}
                     disabled={isSendingMessage}
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
+                    style={{ minHeight: '40px', maxHeight: '100px' }}
                   />
                   <button
                     type="submit"
                     disabled={isSendingMessage || !messageDraft.trim()}
-                    className="flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2.5 rounded-lg bg-viperx-primary text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSendingMessage ? (
-                      <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        <span>Se trimite...</span>
-                      </>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     ) : (
-                      <>
-                        <Send size={16} />
-                        <span>Trimite</span>
-                      </>
+                      <Send size={20} />
                     )}
                   </button>
                 </div>
@@ -3428,6 +3716,71 @@ useEffect(() => {
                 )}
                 {isRecordingPayment ? 'Se înregistrează...' : 'Adauga plata'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewFile(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+              <h3 className="text-sm font-medium text-gray-900 truncate max-w-[300px]">{previewFile.name}</h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewFile.url}
+                  download={previewFile.name}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Download size={16} />
+                  Descarca
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewFile(null)}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 overflow-auto max-h-[calc(90vh-60px)] flex items-center justify-center bg-gray-100">
+              {previewFile.type?.startsWith('image/') ? (
+                <img
+                  src={previewFile.url}
+                  alt={previewFile.name}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                />
+              ) : previewFile.type === 'application/pdf' ? (
+                <iframe
+                  src={previewFile.url}
+                  title={previewFile.name}
+                  className="w-full h-[70vh] rounded-lg"
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <FileText size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-600 mb-4">Previzualizare indisponibila pentru acest tip de fisier</p>
+                  <a
+                    href={previewFile.url}
+                    download={previewFile.name}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 transition-colors"
+                  >
+                    <Download size={18} />
+                    Descarca fisierul
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

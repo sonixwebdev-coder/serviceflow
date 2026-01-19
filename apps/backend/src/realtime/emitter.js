@@ -1,16 +1,10 @@
 let ioInstance = null;
-let portalIoInstance = null;
 
 const setIO = (io) => {
   ioInstance = io;
 };
 
-const setPortalIO = (portalIo) => {
-  portalIoInstance = portalIo;
-};
-
 const getIO = () => ioInstance;
-const getPortalIO = () => portalIoInstance;
 
 // ==========================================
 // CRM Namespace Emitters (default /)
@@ -39,38 +33,32 @@ const emitToUser = (userId, event, payload) => {
 };
 
 const emitToOrganization = (organizationId, event, payload) => {
-  if (!ioInstance || !organizationId) return;
+  if (!ioInstance || !organizationId) {
+    console.log(`[Socket] emitToOrganization skipped: ioInstance=${!!ioInstance}, organizationId=${organizationId}`);
+    return;
+  }
+  console.log(`[Socket] Emitting ${event} to org:${organizationId}`);
   ioInstance.to(`org:${organizationId}`).emit(event, payload);
 };
 
-// ==========================================
-// Portal Namespace Emitters (/portal)
-// ==========================================
-
 /**
- * Emit event to a specific client (client portal)
+ * Emit to a specific client (client portal)
+ * Uses the default namespace where clients are connected
  */
 const emitToClient = (clientId, event, payload) => {
-  if (!portalIoInstance || !clientId) return;
-  portalIoInstance.to(`client:${clientId}`).emit(event, payload);
-};
-
-/**
- * Emit event to all clients in an organization (client portal)
- */
-const emitToOrganizationClients = (organizationId, event, payload) => {
-  if (!portalIoInstance || !organizationId) return;
-  portalIoInstance.to(`org:${organizationId}:clients`).emit(event, payload);
+  if (!ioInstance || !clientId) {
+    console.log(`[Socket] emitToClient skipped: ioInstance=${!!ioInstance}, clientId=${clientId}`);
+    return;
+  }
+  console.log(`[Socket] Emitting ${event} to client:${clientId}`);
+  ioInstance.to(`client:${clientId}`).emit(event, payload);
 };
 
 module.exports = {
   setIO,
-  setPortalIO,
   getIO,
-  getPortalIO,
   emit,
   emitToUser,
   emitToOrganization,
   emitToClient,
-  emitToOrganizationClients,
 };

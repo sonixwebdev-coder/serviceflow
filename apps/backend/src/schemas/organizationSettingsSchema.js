@@ -53,7 +53,6 @@ const workingHoursSchema = z.object({
  * Schema for public booking settings
  */
 const publicBookingSchema = z.object({
-  serviceType: z.enum(['VEHICLE', 'ASSET', 'GENERAL']).optional(),
   workingHours: workingHoursSchema.optional(),
   slotDuration: z.number().min(15).max(480).optional(), // 15 min to 8 hours
   allowWeekends: z.boolean().optional(),

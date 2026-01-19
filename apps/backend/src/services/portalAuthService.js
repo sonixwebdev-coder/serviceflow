@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { signAccessToken, verifyAccessToken, generateRefreshToken, REFRESH_TOKEN_TTL_DAYS } = require('../utils/token');
+const { getSectorConfig } = require('../constants/activitySectors');
+const { sendPasswordResetEmail } = require('./email/emailService');
 
 const SALT_ROUNDS = 10;
 const SESSION_DURATION_DAYS = 30; // Keep for backward compatibility during migration
@@ -113,6 +115,7 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
               id: true,
               name: true,
               slug: true,
+              activitySector: true,
               settings: true,
             },
           },
@@ -159,9 +162,9 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
     data: { lastLoginAt: new Date() },
   });
 
-  // Extract service type from organization settings
-  const orgSettings = account.client.organization?.settings || {};
-  const serviceType = orgSettings.publicBooking?.serviceType || 'VEHICLE';
+  // Get sector configuration from activity sector
+  const activitySector = account.client.organization?.activitySector;
+  const sectorConfig = getSectorConfig(activitySector);
 
   return {
     accessToken,
@@ -174,9 +177,11 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
     client: {
       ...account.client,
       organization: {
-        ...account.client.organization,
-        serviceType,
-        settings: undefined, // Don't expose full settings
+        id: account.client.organization?.id,
+        name: account.client.organization?.name,
+        slug: account.client.organization?.slug,
+        activitySector,
+        sectorConfig,
       },
     },
   };
@@ -217,6 +222,7 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
                   id: true,
                   name: true,
                   slug: true,
+                  activitySector: true,
                   settings: true,
                 },
               },
@@ -260,9 +266,9 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
     },
   });
 
-  // Extract service type from organization settings
-  const orgSettings = stored.account.client.organization?.settings || {};
-  const serviceType = orgSettings.publicBooking?.serviceType || 'VEHICLE';
+  // Get sector configuration from activity sector
+  const activitySector = stored.account.client.organization?.activitySector;
+  const sectorConfig = getSectorConfig(activitySector);
 
   return {
     accessToken,
@@ -275,9 +281,11 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
     client: {
       ...stored.account.client,
       organization: {
-        ...stored.account.client.organization,
-        serviceType,
-        settings: undefined, // Don't expose full settings
+        id: stored.account.client.organization?.id,
+        name: stored.account.client.organization?.name,
+        slug: stored.account.client.organization?.slug,
+        activitySector,
+        sectorConfig,
       },
     },
   };
@@ -309,9 +317,12 @@ const verifyEmail = async (prisma, verificationToken) => {
 /**
  * Request password reset
  */
-const requestPasswordReset = async (prisma, email) => {
+const requestPasswordReset = async (prisma, email, organizationSlug) => {
   const account = await prisma.clientAccount.findUnique({
     where: { email: email.toLowerCase() },
+    include: {
+      client: true,
+    },
   });
 
   if (!account) {
@@ -330,10 +341,46 @@ const requestPasswordReset = async (prisma, email) => {
     },
   });
 
-  // Here you would send an email with the reset link
-  logger.info(`Password reset requested for ${email}, token: ${resetToken}`);
+  // Get organization settings for email branding
+  const organization = await prisma.organization.findFirst({
+    where: { slug: organizationSlug },
+    select: {
+      id: true,
+      name: true,
+      settings: true,
+    },
+  });
 
-  return { success: true, resetToken };
+  // Build reset link
+  const portalUrl = process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
+  const resetLink = `${portalUrl}/${organizationSlug}/reset-password?token=${resetToken}`;
+
+  // Get client name
+  const client = account.client;
+  const clientName = client?.type === 'SRL'
+    ? client.companyName
+    : `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || 'Client';
+
+  // Send password reset email
+  try {
+    await sendPasswordResetEmail(prisma, {
+      email: account.email,
+      clientName,
+      resetLink,
+      expiresIn: '1 ora',
+      companySettings: {
+        name: organization?.name || 'ServiceFlow',
+        phone: organization?.settings?.phone,
+      },
+      organizationId: organization?.id,
+    });
+    logger.info(`Password reset email sent to ${email}`);
+  } catch (emailError) {
+    logger.error(`Failed to send password reset email to ${email}:`, emailError);
+    // Don't fail the request if email fails
+  }
+
+  return { success: true };
 };
 
 /**
@@ -402,6 +449,7 @@ const getAccountByToken = async (prisma, accessToken) => {
                 id: true,
                 name: true,
                 slug: true,
+                activitySector: true,
                 settings: true,
               },
             },
@@ -414,9 +462,9 @@ const getAccountByToken = async (prisma, accessToken) => {
       return null;
     }
 
-    // Extract service type from organization settings
-    const orgSettings = account.client.organization?.settings || {};
-    const serviceType = orgSettings.publicBooking?.serviceType || 'VEHICLE';
+    // Get sector configuration from activity sector
+    const activitySector = account.client.organization?.activitySector;
+    const sectorConfig = getSectorConfig(activitySector);
 
     return {
       account: {
@@ -427,8 +475,11 @@ const getAccountByToken = async (prisma, accessToken) => {
       client: {
         ...account.client,
         organization: {
-          ...account.client.organization,
-          serviceType,
+          id: account.client.organization?.id,
+          name: account.client.organization?.name,
+          slug: account.client.organization?.slug,
+          activitySector,
+          sectorConfig,
         },
       },
     };

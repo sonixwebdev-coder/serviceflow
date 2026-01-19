@@ -39,7 +39,7 @@ const corsOptions = {
 
 // Static file serving MUST come BEFORE helmet to avoid CSP blocking PDF iframes
 // This route is exempt from CSP headers to allow PDF embedding
-app.use('/files', (req, res, next) => {
+const staticCorsMiddleware = (req, res, next) => {
   // Set CORS headers for cross-origin access
   const origin = req.headers.origin;
   const allowedOrigins = Array.isArray(corsOptions.origin) ? corsOptions.origin : [corsOptions.origin];
@@ -51,7 +51,13 @@ app.use('/files', (req, res, next) => {
   // Don't set CSP headers for static files (PDFs, images)
   res.locals.skipCSP = true;
   next();
-}, express.static(fileStorageRoot));
+};
+
+app.use('/files', staticCorsMiddleware, express.static(fileStorageRoot));
+
+// Serve uploaded files (messages, attachments)
+const uploadsRoot = path.resolve(__dirname, 'uploads');
+app.use('/uploads', staticCorsMiddleware, express.static(uploadsRoot));
 
 // Security headers with helmet (applied after /files route)
 app.use((req, res, next) => {

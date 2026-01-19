@@ -5,6 +5,8 @@ import { TerminologyProvider } from './context/TerminologyContext.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import CreateFirstAdmin from './pages/CreateFirstAdmin';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
@@ -30,6 +32,7 @@ import { USER_ROLES } from './utils/constants';
 import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
 import CompanySettings from './pages/CompanySettings.jsx';
 import OrganizationSettings from './pages/OrganizationSettings.jsx';
+import EmailTemplates from './pages/EmailTemplates.jsx';
 import GlobalSearch from './components/search/GlobalSearch.jsx';
 
 function App() {
@@ -44,6 +47,8 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/create-admin" element={<CreateFirstAdmin />} />
           {/* ANAF functionality temporarily disabled */}
           {/* <Route path="/anaf/callback" element={<AnafCallback />} /> */}
@@ -243,6 +248,17 @@ function App() {
               <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
                 <DashboardLayout>
                   <OrganizationSettings />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/email-templates"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <EmailTemplates />
                 </DashboardLayout>
               </ProtectedRoute>
             }

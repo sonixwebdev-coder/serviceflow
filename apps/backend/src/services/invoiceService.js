@@ -842,6 +842,8 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
       tax: totals.tax,
       total: totals.total,
       pdfUrl: relativePdfPath,
+      // Set paidAt when changing status to PAID
+      ...(changingToPaid && { paidAt: new Date() }),
       // Update payment tracking (from Payment records)
       advancePayment: totalPaid,
       remainingBalance,

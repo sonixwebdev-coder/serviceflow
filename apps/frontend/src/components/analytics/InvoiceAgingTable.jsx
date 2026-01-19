@@ -1,4 +1,5 @@
 import { AlertCircle, Clock, AlertTriangle, XCircle } from 'lucide-react';
+import { BucketsSkeleton } from './Skeleton';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('ro-RO', {
@@ -47,13 +48,7 @@ const getBucketConfig = (key) => {
 
 export default function InvoiceAgingTable({ buckets = {}, summary = {}, isLoading }) {
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="animate-pulse h-16 bg-gray-100 rounded-lg" />
-        ))}
-      </div>
-    );
+    return <BucketsSkeleton rows={5} />;
   }
 
   const bucketOrder = ['current', 'overdue30', 'overdue60', 'overdue90', 'overdue90plus'];

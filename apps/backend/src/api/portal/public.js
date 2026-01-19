@@ -77,7 +77,6 @@ router.post(
     const {
       client,
       appointment,
-      vehicle,
       asset,
       createAccount,
       password,
@@ -110,15 +109,12 @@ router.post(
     }
 
     const organization = await publicBookingService.getOrganizationBySlug(prisma, slug);
-    const serviceType = organization.publicBookingSettings?.serviceType || 'VEHICLE';
 
     const result = await publicBookingService.createPublicBooking(prisma, {
       organizationId: organization.id,
       clientData: client,
       appointmentData: appointment,
-      vehicleData: vehicle,
       assetData: asset,
-      serviceType,
       createAccount,
       password,
     });

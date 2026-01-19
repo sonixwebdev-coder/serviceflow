@@ -12,7 +12,7 @@ router.get(
   '/overview',
   authenticate,
   asyncHandler(async (req, res) => {
-    const data = await analyticsService.getDashboardOverview(req.prisma);
+    const data = await analyticsService.getDashboardOverview(req.tenantPrisma);
     res.json(data);
   })
 );
@@ -27,7 +27,7 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
-    const data = await analyticsService.getRevenueTrends(req.prisma, {
+    const data = await analyticsService.getRevenueTrends(req.tenantPrisma, {
       startDate,
       endDate,
       groupBy,
@@ -46,7 +46,7 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
-    const data = await analyticsService.getAppointmentStats(req.prisma, {
+    const data = await analyticsService.getAppointmentStats(req.tenantPrisma, {
       startDate,
       endDate,
     });
@@ -64,7 +64,7 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
-    const data = await analyticsService.getClientAcquisition(req.prisma, {
+    const data = await analyticsService.getClientAcquisition(req.tenantPrisma, {
       startDate,
       endDate,
       groupBy,
@@ -81,7 +81,7 @@ router.get(
   '/invoices/aging',
   authenticate,
   asyncHandler(async (req, res) => {
-    const data = await analyticsService.getInvoiceAging(req.prisma);
+    const data = await analyticsService.getInvoiceAging(req.tenantPrisma);
     res.json(data);
   })
 );
@@ -96,7 +96,7 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, limit } = req.query;
-    const data = await analyticsService.getTopClients(req.prisma, {
+    const data = await analyticsService.getTopClients(req.tenantPrisma, {
       startDate,
       endDate,
       limit: limit ? parseInt(limit, 10) : 10,

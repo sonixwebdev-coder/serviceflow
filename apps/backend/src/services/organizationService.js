@@ -3,6 +3,7 @@ const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { signAccessToken, generateRefreshToken } = require('../utils/token');
 const { ensureRole } = require('./roleService');
+const { ACTIVITY_SECTORS, isValidSector } = require('../constants/activitySectors');
 
 /**
  * Create a new organization with an admin user
@@ -16,10 +17,20 @@ const createOrganization = async ({
   firstName,
   lastName,
   phoneNumber,
+  activitySector,
 }) => {
   // Validate required fields
   if (!organizationName || !slug || !email || !password || !firstName || !lastName) {
     throw new AppError('Missing required fields', 400);
+  }
+
+  // Validate activity sector (required)
+  if (!activitySector) {
+    throw new AppError('Activity sector is required', 400);
+  }
+
+  if (!isValidSector(activitySector)) {
+    throw new AppError('Invalid activity sector', 400);
   }
 
   // Validate slug format (lowercase, alphanumeric, hyphens only)
@@ -58,6 +69,22 @@ const createOrganization = async ({
 
   let organization, user, accessToken, refreshToken;
 
+  // Generate settings based on activity sector
+  const sectorConfig = ACTIVITY_SECTORS[activitySector];
+  const settings = {
+    terminology: sectorConfig.terminology,
+    features: {
+      useAssets: sectorConfig.hasAssets,
+      useResources: true,
+      requireAssetForAppointment: false,
+    },
+    publicBooking: {
+      workingHours: { start: 9, end: 18 },
+      slotDuration: 60,
+      allowWeekends: false,
+    },
+  };
+
   await prisma.$transaction(async (tx) => {
     // Create organization
     organization = await tx.organization.create({
@@ -68,6 +95,8 @@ const createOrganization = async ({
         plan: 'FREE',
         trialEndsAt,
         trialStartedAt: new Date(),
+        activitySector,
+        settings,
       },
     });
 

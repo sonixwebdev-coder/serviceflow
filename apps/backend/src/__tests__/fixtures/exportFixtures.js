@@ -13,7 +13,7 @@ const mockAppointments = [
     scheduledEnd: new Date('2024-01-15T12:00:00Z'),
     location: 'Service Principal',
     clientId: 1,
-    vehicleId: 1,
+    assetId: 1,
     createdById: 1,
     createdAt: new Date('2024-01-10T09:00:00Z'),
     updatedAt: new Date('2024-01-15T12:00:00Z'),
@@ -25,12 +25,13 @@ const mockAppointments = [
       phone: '+40712345678',
       email: 'ion.popescu@example.com',
     },
-    vehicle: {
+    asset: {
       id: 1,
-      plateNumber: 'B-123-ABC',
-      make: 'Dacia',
+      identifier: 'B-123-ABC',
+      manufacturer: 'Dacia',
       model: 'Logan',
       year: 2020,
+      type: 'vehicle',
     },
     createdBy: {
       id: 1,
@@ -47,7 +48,7 @@ const mockAppointments = [
     scheduledEnd: new Date('2024-02-20T15:00:00Z'),
     location: 'Service Rapid',
     clientId: 2,
-    vehicleId: 2,
+    assetId: 2,
     createdById: 1,
     createdAt: new Date('2024-02-15T10:00:00Z'),
     updatedAt: new Date('2024-02-15T10:00:00Z'),
@@ -59,12 +60,13 @@ const mockAppointments = [
       phone: '+40723456789',
       email: 'contact@autotransport.ro',
     },
-    vehicle: {
+    asset: {
       id: 2,
-      plateNumber: 'B-456-DEF',
-      make: 'Mercedes',
+      identifier: 'B-456-DEF',
+      manufacturer: 'Mercedes',
       model: 'Sprinter',
       year: 2019,
+      type: 'vehicle',
     },
     createdBy: {
       id: 1,

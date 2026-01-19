@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchAppointmentMessages,
   sendAppointmentMessage,
+  uploadMessageFile,
+  uploadMessageVoice,
 } from '../services/appointmentService';
 import { getSocket } from '../lib/socket.js';
 
@@ -38,10 +40,33 @@ export const useAppointmentMessages = (appointmentId) => {
     };
   }, [appointmentId, queryClient]);
 
-  const mutation = useMutation({
+  const sendMutation = useMutation({
     mutationFn: ({ body, type, metadata }) => sendAppointmentMessage(appointmentId, { body, type, metadata }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointment-messages', appointmentId] });
+    onSuccess: (newMessage) => {
+      queryClient.setQueryData(['appointment-messages', appointmentId], (current = []) => {
+        const exists = current.some((entry) => entry.id === newMessage.id);
+        return exists ? current : [...current, newMessage];
+      });
+    },
+  });
+
+  const uploadFileMutation = useMutation({
+    mutationFn: (file) => uploadMessageFile(appointmentId, file),
+    onSuccess: (newMessage) => {
+      queryClient.setQueryData(['appointment-messages', appointmentId], (current = []) => {
+        const exists = current.some((entry) => entry.id === newMessage.id);
+        return exists ? current : [...current, newMessage];
+      });
+    },
+  });
+
+  const uploadVoiceMutation = useMutation({
+    mutationFn: ({ audioBlob, duration }) => uploadMessageVoice(appointmentId, audioBlob, duration),
+    onSuccess: (newMessage) => {
+      queryClient.setQueryData(['appointment-messages', appointmentId], (current = []) => {
+        const exists = current.some((entry) => entry.id === newMessage.id);
+        return exists ? current : [...current, newMessage];
+      });
     },
   });
 
@@ -50,7 +75,11 @@ export const useAppointmentMessages = (appointmentId) => {
     loading: query.isLoading,
     error: query.error,
     refresh: query.refetch,
-    sendMessage: mutation.mutateAsync,
-    sending: mutation.isPending,
+    sendMessage: sendMutation.mutateAsync,
+    sending: sendMutation.isPending,
+    uploadFile: uploadFileMutation.mutateAsync,
+    uploadingFile: uploadFileMutation.isPending,
+    uploadVoice: uploadVoiceMutation.mutateAsync,
+    uploadingVoice: uploadVoiceMutation.isPending,
   };
 };

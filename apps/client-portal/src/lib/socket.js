@@ -1,69 +1,70 @@
 import { io } from 'socket.io-client';
 
-let socket;
+let socket = null;
 
-const getBaseUrl = () => {
-  const configured = import.meta.env.VITE_SOCKET_URL;
-  if (configured) return configured.replace(/\/$/, '');
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-  return apiUrl.replace(/\/api\/?$/, '');
+const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+
+/**
+ * Connect to socket server for real-time updates
+ */
+export const connectSocket = (accessToken, clientId) => {
+  if (socket?.connected) {
+    return socket;
+  }
+
+  if (!accessToken || !clientId) {
+    console.warn('[Socket] Missing token or clientId, skipping connection');
+    return null;
+  }
+
+  socket = io(SOCKET_URL, {
+    auth: {
+      token: accessToken,
+      type: 'client',
+      clientId,
+    },
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+  });
+
+  socket.on('connect', () => {
+    console.log('[Socket] Connected to server');
+    // Join client-specific room
+    socket.emit('join:client', clientId);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('[Socket] Disconnected:', reason);
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('[Socket] Connection error:', error.message);
+  });
+
+  return socket;
 };
 
 /**
- * Connect socket for client portal
- * Uses JWT access token for authentication (same as CRM)
- * Connects to the /portal namespace (separate from CRM)
+ * Update socket authentication token
  */
-export const connectSocket = (accessToken) => {
-  if (!accessToken) return null;
-
-  // If socket exists and is connected or connecting, don't recreate
-  if (socket && (socket.connected || socket.connecting)) {
-    return socket;
-  }
-
-  // Clean up existing socket if it exists
+export const updateSocketToken = (accessToken) => {
   if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
-  }
-
-  try {
-    // Connect to the /portal namespace
-    const baseUrl = getBaseUrl();
-    socket = io(`${baseUrl}/portal`, {
-      autoConnect: false, // Don't auto-connect, let useRealtimeEvents handle it
-      transports: ['websocket'],
-      upgrade: false,
-      auth: { token: accessToken },
-      timeout: 20000,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 10000,
-    });
-
-    socket.connect();
-
-    return socket;
-  } catch (err) {
-    console.error('[Portal] Failed to create socket:', err.message);
-    return null;
+    socket.auth = { ...socket.auth, token: accessToken };
   }
 };
 
-export const updateSocketToken = (newToken) => {
-  if (socket && newToken) {
-    socket.auth = { token: newToken };
-  }
-};
-
+/**
+ * Get the current socket instance
+ */
 export const getSocket = () => socket;
 
+/**
+ * Disconnect the socket
+ */
 export const disconnectSocket = () => {
   if (socket) {
-    socket.removeAllListeners();
     socket.disconnect();
     socket = null;
   }

@@ -33,22 +33,24 @@ export default function ForgotPassword() {
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full text-center space-y-6">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="h-8 w-8 text-green-600" />
+        <div className="max-w-md w-full">
+          <div className="card p-8 text-center space-y-6">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">Verifica email-ul</h2>
+              <p className="mt-2 text-gray-500">
+                Daca exista un cont cu aceasta adresa de email, vei primi un link pentru resetarea parolei.
+              </p>
+            </div>
+            <Link to="/login">
+              <Button variant="secondary" className="w-full">
+                <ArrowLeft className="h-4 w-4" />
+                Inapoi la autentificare
+              </Button>
+            </Link>
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Verifica email-ul</h2>
-            <p className="mt-2 text-gray-600">
-              Daca exista un cont cu aceasta adresa de email, vei primi un link pentru resetarea parolei.
-            </p>
-          </div>
-          <Link to="/login">
-            <Button variant="secondary" className="w-full">
-              <ArrowLeft className="h-4 w-4" />
-              Inapoi la autentificare
-            </Button>
-          </Link>
         </div>
       </div>
     );
@@ -56,16 +58,17 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary-600">Portal Client</h1>
-          <h2 className="mt-6 text-2xl font-semibold text-gray-900">Ai uitat parola?</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="mt-4 text-2xl font-semibold text-gray-900">Ai uitat parola?</h2>
+          <p className="mt-2 text-sm text-gray-500">
             Introdu adresa de email si iti vom trimite un link pentru resetarea parolei.
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="card p-8">
+        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {forgotPasswordMutation.isError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {forgotPasswordMutation.error?.response?.data?.error || 'Eroare la trimiterea email-ului'}
@@ -107,6 +110,7 @@ export default function ForgotPassword() {
             </Link>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

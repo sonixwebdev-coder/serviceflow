@@ -19,11 +19,9 @@ export const connectSocket = (token) => {
 
   socket = io(getBaseUrl(), {
     autoConnect: false,
-    transports: ['websocket'], // doar websocket, fara polling
-    upgrade: false, // dezactiveaza upgrade-ul de la polling
+    transports: ['websocket', 'polling'],
     auth: { token },
     timeout: 20000,
-
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,

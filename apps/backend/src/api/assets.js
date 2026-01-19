@@ -10,6 +10,7 @@ const {
   deleteAsset,
   getAssetsByClientId,
 } = require('../services/assetService');
+const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();
@@ -31,6 +32,15 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'technician'] }),
   asyncHandler(async (req, res) => {
     const asset = await createAsset(req.tenantPrisma, req.body);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.ASSET,
+      entityId: asset.id,
+      description: getActionDescription('CREATE', ENTITY_TYPES.ASSET, asset.name),
+      metadata: { clientId: asset.clientId, type: asset.type },
+    });
+
     return created(res, asset, 'Asset created successfully');
   })
 );
@@ -52,6 +62,15 @@ router.patch(
   authorize({ roles: ['admin', 'manager', 'technician'] }),
   asyncHandler(async (req, res) => {
     const asset = await updateAsset(req.tenantPrisma, req.params.assetId, req.body);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.ASSET,
+      entityId: asset.id,
+      description: getActionDescription('UPDATE', ENTITY_TYPES.ASSET, asset.name),
+      metadata: { changes: Object.keys(req.body) },
+    });
+
     return ok(res, asset, 'Asset updated successfully');
   })
 );
@@ -62,7 +81,16 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
+    const asset = await getAssetById(req.tenantPrisma, req.params.assetId);
     const result = await deleteAsset(req.tenantPrisma, req.params.assetId);
+
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: ENTITY_TYPES.ASSET,
+      entityId: req.params.assetId,
+      description: getActionDescription('DELETE', ENTITY_TYPES.ASSET, asset.name),
+    });
+
     return ok(res, result, 'Asset deleted successfully');
   })
 );

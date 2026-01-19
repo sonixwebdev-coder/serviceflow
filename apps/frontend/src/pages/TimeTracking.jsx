@@ -191,11 +191,12 @@ const TimeTracking = () => {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Pontaj</h1>
-          <p className="text-sm text-gray-500 mt-1">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title">Pontaj</h1>
+          <p className="page-subtitle">
             {isManagerial
               ? 'Monitorizeaza activitatea de pontare a angajatilor.'
               : 'Pontare intrare si iesire pentru urmarirea orelor de lucru.'}

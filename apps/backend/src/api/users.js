@@ -22,6 +22,7 @@ const {
   updateProfile,
   changePassword,
 } = require('../services/userService');
+const { logFromRequest, ENTITY_TYPES } = require('../services/auditLogService');
 const { ok, created, noContent } = require('../utils/http');
 
 const router = express.Router();
@@ -92,6 +93,15 @@ router.post(
   validate(createUserSchema),
   asyncHandler(async (req, res) => {
     const user = await createUser(req.tenantPrisma, req.body, req.user.organizationId);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.USER,
+      entityId: user.id,
+      description: `Creat angajat nou: ${user.firstName} ${user.lastName}`,
+      metadata: { email: user.email, role: user.role },
+    });
+
     return created(res, user, 'User created successfully');
   })
 );
@@ -103,6 +113,15 @@ router.put(
   validate(updateUserSchema),
   asyncHandler(async (req, res) => {
     const user = await updateUser(req.tenantPrisma, req.params.userId, req.body, req.user.organizationId);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.USER,
+      entityId: user.id,
+      description: `Actualizat angajat: ${user.firstName} ${user.lastName}`,
+      metadata: { changes: Object.keys(req.body) },
+    });
+
     return ok(res, user, 'User updated successfully');
   })
 );
@@ -114,6 +133,17 @@ router.patch(
   validate(updateUserStatusSchema),
   asyncHandler(async (req, res) => {
     const user = await updateUserStatus(req.tenantPrisma, { userId: req.params.userId, isActive: req.body.isActive });
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: ENTITY_TYPES.USER,
+      entityId: user.id,
+      description: req.body.isActive
+        ? `Activat angajat: ${user.firstName} ${user.lastName}`
+        : `Dezactivat angajat: ${user.firstName} ${user.lastName}`,
+      metadata: { isActive: req.body.isActive },
+    });
+
     return ok(res, user, 'User status updated');
   })
 );
@@ -123,7 +153,16 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
+    const user = await getUserById(req.tenantPrisma, req.params.userId);
     await deactivateUser(req.tenantPrisma, req.params.userId);
+
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: ENTITY_TYPES.USER,
+      entityId: req.params.userId,
+      description: `Dezactivat angajat: ${user.firstName} ${user.lastName}`,
+    });
+
     return noContent(res);
   })
 );

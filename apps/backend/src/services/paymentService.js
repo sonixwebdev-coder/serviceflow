@@ -87,11 +87,11 @@ const createPayment = async (prisma, data, options = {}) => {
   });
 
   // Update appointment payment status
-  await updateAppointmentPaymentStatus(appointmentId, { tx: client });
+  await updateAppointmentPaymentStatus(prisma, appointmentId, { tx: client });
 
   // Update invoice payment status if payment is linked to invoice
   if (invoiceId) {
-    await updateInvoicePaymentStatus(invoiceId, { tx: client });
+    await updateInvoicePaymentStatus(prisma, invoiceId, { tx: client });
   }
 
   return payment;
@@ -333,11 +333,11 @@ const deletePayment = async (prisma, paymentId, options = {}) => {
   });
 
   // Update appointment payment status
-  await updateAppointmentPaymentStatus(appointmentId, { tx: client });
+  await updateAppointmentPaymentStatus(prisma, appointmentId, { tx: client });
 
   // Update invoice payment status if payment was linked to invoice
   if (invoiceId) {
-    await updateInvoicePaymentStatus(invoiceId, { tx: client });
+    await updateInvoicePaymentStatus(prisma, invoiceId, { tx: client });
   }
 
   return deleted;

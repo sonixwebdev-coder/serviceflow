@@ -11,11 +11,6 @@ export const profileService = {
     return response.data;
   },
 
-  async getVehicles() {
-    const response = await api.get('/portal/profile/vehicles');
-    return response.data;
-  },
-
   async getAssets() {
     const response = await api.get('/portal/profile/assets');
     return response.data;

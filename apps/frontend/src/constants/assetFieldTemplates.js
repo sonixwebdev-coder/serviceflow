@@ -346,17 +346,6 @@ export const getAssetFieldTemplate = (assetType) => {
 };
 
 /**
- * Get list of all available asset types
- */
-export const getAvailableAssetTypes = () => {
-  return Object.keys(ASSET_FIELD_TEMPLATES).map((key) => ({
-    key,
-    name: ASSET_FIELD_TEMPLATES[key].name,
-    description: ASSET_FIELD_TEMPLATES[key].description,
-  }));
-};
-
-/**
  * Get visible fields for an asset type based on organization config
  * @param {string} assetType - The asset type
  * @param {object} assetFieldConfig - Organization's field configuration

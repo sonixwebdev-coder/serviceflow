@@ -1,14 +1,20 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Car, FileText } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Car, FileText, MessageCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { useAppointment } from '@/hooks/useAppointments';
-import { formatDateTime, formatCurrency } from '@/lib/utils';
+import { useUnreadMessageCount } from '@/hooks/useAppointmentMessages';
+import { AppointmentChat } from '@/components/messaging';
+import { formatDateTime, formatCurrency, cn } from '@/lib/utils';
 
 export default function AppointmentDetail() {
   const { id } = useParams();
+  const [activeTab, setActiveTab] = useState('details');
   const { data: appointment, isLoading } = useAppointment(id);
+  const { data: unreadData } = useUnreadMessageCount(id);
+  const unreadCount = unreadData?.count || 0;
 
   if (isLoading) {
     return (
@@ -29,6 +35,11 @@ export default function AppointmentDetail() {
     );
   }
 
+  const tabs = [
+    { id: 'details', label: 'Detalii', icon: FileText },
+    { id: 'messages', label: 'Mesaje', icon: MessageCircle, badge: unreadCount },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -45,7 +56,50 @@ export default function AppointmentDetail() {
         <StatusBadge status={appointment.status} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="flex space-x-8" aria-label="Tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap',
+                activeTab === tab.id
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+              {tab.badge > 0 && (
+                <span className="ml-1 px-2 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-600">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Messages Tab */}
+      {activeTab === 'messages' && (
+        <Card className="h-[500px] flex flex-col">
+          <CardHeader className="border-b border-gray-200 py-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Conversatie cu echipa
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 p-0 overflow-hidden">
+            <AppointmentChat appointmentId={id} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Details Tab */}
+      {activeTab === 'details' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Main info */}
         <Card>
           <CardHeader>
@@ -167,7 +221,8 @@ export default function AppointmentDetail() {
             </CardContent>
           </Card>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

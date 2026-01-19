@@ -162,7 +162,7 @@ const FIELD_CONFIGS = {
     { label: 'Procent completare', value: 'completionPercentage' },
     { label: 'Client', value: 'customerName' },
     { label: 'Telefon client', value: 'customerPhone' },
-    { label: 'Vehicul', value: 'customerVehicle' },
+    { label: 'Activ client', value: 'customerVehicle' },
     { label: 'Creat de', value: 'createdBy.name' },
     { label: 'Data creare', value: 'createdAt' },
   ],

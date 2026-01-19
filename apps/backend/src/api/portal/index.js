@@ -5,6 +5,7 @@ const appointmentsRouter = require('./appointments');
 const invoicesRouter = require('./invoices');
 const profileRouter = require('./profile');
 const publicRouter = require('./public');
+const notificationsRouter = require('./notifications');
 
 const router = express.Router();
 
@@ -21,5 +22,6 @@ router.use('/auth', authRouter);
 router.use('/appointments', appointmentsRouter);
 router.use('/invoices', invoicesRouter);
 router.use('/profile', profileRouter);
+router.use('/notifications', notificationsRouter);
 
 module.exports = router;

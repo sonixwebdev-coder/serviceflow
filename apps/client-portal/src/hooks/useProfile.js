@@ -22,13 +22,6 @@ export function useUpdateProfile() {
   });
 }
 
-export function useVehicles() {
-  return useQuery({
-    queryKey: ['vehicles'],
-    queryFn: () => profileService.getVehicles(),
-  });
-}
-
 export function useAssets() {
   return useQuery({
     queryKey: ['assets'],

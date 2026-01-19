@@ -1,36 +1,10 @@
 const { AppError } = require('../utils/errors');
-const { getDefaultFieldConfig, getAvailableAssetTypes } = require('../constants/assetFieldTemplates');
+const { ACTIVITY_SECTORS, getSectorConfig } = require('../constants/activitySectors');
 
 /**
- * Default terminology for new organizations
- * Can be customized per organization
- */
-const DEFAULT_TERMINOLOGY = {
-  asset: {
-    singular: 'Vehicle',
-    plural: 'Vehicles',
-    identifier: 'Plate Number',
-  },
-  resource: {
-    singular: 'Service Bay',
-    plural: 'Service Bays',
-  },
-};
-
-/**
- * Default feature flags for new organizations
- */
-const DEFAULT_FEATURES = {
-  useAssets: true,
-  useResources: true,
-  requireAssetForAppointment: false,
-};
-
-/**
- * Default public booking settings for client portal
+ * Default public booking settings
  */
 const DEFAULT_PUBLIC_BOOKING = {
-  serviceType: 'VEHICLE', // VEHICLE, ASSET, or GENERAL
   workingHours: {
     start: 9,  // 9 AM
     end: 18,   // 6 PM
@@ -40,18 +14,7 @@ const DEFAULT_PUBLIC_BOOKING = {
 };
 
 /**
- * Generate default asset field configuration for all asset types
- */
-const DEFAULT_ASSET_FIELD_CONFIG = {
-  vehicle: getDefaultFieldConfig('vehicle'),
-  appliance: getDefaultFieldConfig('appliance'),
-  hvac_unit: getDefaultFieldConfig('hvac_unit'),
-  equipment: getDefaultFieldConfig('equipment'),
-  other: getDefaultFieldConfig('other'),
-};
-
-/**
- * Get complete organization settings with defaults
+ * Get complete organization settings with sector info
  * @param {Object} prisma - Prisma client
  * @param {String} organizationId - Organization ID
  * @returns {Object} Organization settings
@@ -59,186 +22,66 @@ const DEFAULT_ASSET_FIELD_CONFIG = {
 const getOrganizationSettings = async (prisma, organizationId) => {
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { id: true, name: true, slug: true, settings: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      settings: true,
+      activitySector: true,
+    },
   });
 
   if (!org) {
     throw new AppError('Organization not found', 404);
   }
 
-  // Merge stored settings with defaults
   const settings = org.settings || {};
+  const sectorConfig = getSectorConfig(org.activitySector);
 
+  // Terminology and features are always derived from sector config (not editable)
+  // Only publicBooking is editable after onboarding
   return {
     id: org.id,
     name: org.name,
     slug: org.slug,
-    terminology: settings.terminology || DEFAULT_TERMINOLOGY,
-    features: settings.features || DEFAULT_FEATURES,
-    assetFieldConfig: settings.assetFieldConfig || DEFAULT_ASSET_FIELD_CONFIG,
+    activitySector: org.activitySector,
+    sectorConfig,
+    terminology: sectorConfig?.terminology || settings.terminology,
+    features: {
+      useAssets: sectorConfig?.hasAssets ?? true,
+      useResources: true,
+      requireAssetForAppointment: false,
+    },
     publicBooking: settings.publicBooking || DEFAULT_PUBLIC_BOOKING,
   };
 };
 
 /**
- * Update organization terminology
+ * Get organization sector info
  * @param {Object} prisma - Prisma client
  * @param {String} organizationId - Organization ID
- * @param {Object} terminology - New terminology settings
- * @returns {Object} Updated settings
+ * @returns {Object} Sector info
  */
-const updateTerminology = async (prisma, organizationId, terminology) => {
-  // Get current settings
+const getSectorInfo = async (prisma, organizationId) => {
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { settings: true },
+    select: { activitySector: true },
   });
 
   if (!org) {
     throw new AppError('Organization not found', 404);
   }
 
-  const currentSettings = org.settings || {};
+  const sectorConfig = getSectorConfig(org.activitySector);
 
-  // Merge terminology with existing settings
-  const updatedSettings = {
-    ...currentSettings,
-    terminology: {
-      ...DEFAULT_TERMINOLOGY,
-      ...currentSettings.terminology,
-      ...terminology,
-    },
+  return {
+    activitySector: org.activitySector,
+    ...sectorConfig,
   };
-
-  // Update in database
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { settings: updatedSettings },
-  });
-
-  return updatedSettings;
 };
 
 /**
- * Update organization features
- * @param {Object} prisma - Prisma client
- * @param {String} organizationId - Organization ID
- * @param {Object} features - New feature flags
- * @returns {Object} Updated settings
- */
-const updateFeatures = async (prisma, organizationId, features) => {
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { settings: true },
-  });
-
-  if (!org) {
-    throw new AppError('Organization not found', 404);
-  }
-
-  const currentSettings = org.settings || {};
-
-  const updatedSettings = {
-    ...currentSettings,
-    features: {
-      ...DEFAULT_FEATURES,
-      ...currentSettings.features,
-      ...features,
-    },
-  };
-
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { settings: updatedSettings },
-  });
-
-  return updatedSettings;
-};
-
-/**
- * Update complete organization settings
- * @param {Object} prisma - Prisma client
- * @param {String} organizationId - Organization ID
- * @param {Object} settings - Complete settings object
- * @returns {Object} Updated settings
- */
-const updateOrganizationSettings = async (prisma, organizationId, settings) => {
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { settings: true },
-  });
-
-  if (!org) {
-    throw new AppError('Organization not found', 404);
-  }
-
-  const currentSettings = org.settings || {};
-
-  // Merge with defaults
-  const updatedSettings = {
-    terminology: {
-      ...DEFAULT_TERMINOLOGY,
-      ...currentSettings.terminology,
-      ...settings.terminology,
-    },
-    features: {
-      ...DEFAULT_FEATURES,
-      ...currentSettings.features,
-      ...settings.features,
-    },
-    assetFieldConfig: {
-      ...DEFAULT_ASSET_FIELD_CONFIG,
-      ...currentSettings.assetFieldConfig,
-      ...settings.assetFieldConfig,
-    },
-  };
-
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { settings: updatedSettings },
-  });
-
-  return updatedSettings;
-};
-
-/**
- * Update asset field configuration
- * @param {Object} prisma - Prisma client
- * @param {String} organizationId - Organization ID
- * @param {Object} assetFieldConfig - Asset field configuration
- * @returns {Object} Updated settings
- */
-const updateAssetFieldConfig = async (prisma, organizationId, assetFieldConfig) => {
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { settings: true },
-  });
-
-  if (!org) {
-    throw new AppError('Organization not found', 404);
-  }
-
-  const currentSettings = org.settings || {};
-
-  const updatedSettings = {
-    ...currentSettings,
-    assetFieldConfig: {
-      ...DEFAULT_ASSET_FIELD_CONFIG,
-      ...currentSettings.assetFieldConfig,
-      ...assetFieldConfig,
-    },
-  };
-
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { settings: updatedSettings },
-  });
-
-  return updatedSettings;
-};
-
-/**
- * Update public booking settings
+ * Update public booking settings (only editable settings after onboarding)
  * @param {Object} prisma - Prisma client
  * @param {String} organizationId - Organization ID
  * @param {Object} publicBooking - Public booking settings
@@ -256,18 +99,20 @@ const updatePublicBooking = async (prisma, organizationId, publicBooking) => {
 
   const currentSettings = org.settings || {};
 
+  // Only allow updating workingHours, slotDuration, allowWeekends
+  // Do NOT allow changing serviceType (derived from activitySector)
   const updatedSettings = {
     ...currentSettings,
     publicBooking: {
       ...DEFAULT_PUBLIC_BOOKING,
       ...currentSettings.publicBooking,
-      ...publicBooking,
-      // Handle nested workingHours object
       workingHours: {
         ...DEFAULT_PUBLIC_BOOKING.workingHours,
         ...(currentSettings.publicBooking?.workingHours || {}),
         ...(publicBooking.workingHours || {}),
       },
+      slotDuration: publicBooking.slotDuration ?? currentSettings.publicBooking?.slotDuration ?? DEFAULT_PUBLIC_BOOKING.slotDuration,
+      allowWeekends: publicBooking.allowWeekends ?? currentSettings.publicBooking?.allowWeekends ?? DEFAULT_PUBLIC_BOOKING.allowWeekends,
     },
   };
 
@@ -279,38 +124,9 @@ const updatePublicBooking = async (prisma, organizationId, publicBooking) => {
   return updatedSettings;
 };
 
-/**
- * Initialize default settings for a new organization
- * @param {Object} prisma - Prisma client
- * @param {String} organizationId - Organization ID
- * @returns {Object} Default settings
- */
-const initializeDefaultSettings = async (prisma, organizationId) => {
-  const defaultSettings = {
-    terminology: DEFAULT_TERMINOLOGY,
-    features: DEFAULT_FEATURES,
-    assetFieldConfig: DEFAULT_ASSET_FIELD_CONFIG,
-    publicBooking: DEFAULT_PUBLIC_BOOKING,
-  };
-
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { settings: defaultSettings },
-  });
-
-  return defaultSettings;
-};
-
 module.exports = {
   getOrganizationSettings,
-  updateTerminology,
-  updateFeatures,
-  updateAssetFieldConfig,
+  getSectorInfo,
   updatePublicBooking,
-  updateOrganizationSettings,
-  initializeDefaultSettings,
-  DEFAULT_TERMINOLOGY,
-  DEFAULT_FEATURES,
-  DEFAULT_ASSET_FIELD_CONFIG,
   DEFAULT_PUBLIC_BOOKING,
 };

@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
+import { ChartSkeleton, SkeletonBox } from './Skeleton';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
@@ -34,8 +35,12 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function ClientGrowthChart({ data = [], byType = {}, isLoading }) {
   if (isLoading) {
     return (
-      <div className="h-[300px] flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Se incarca...</div>
+      <div className="space-y-4">
+        <div className="flex gap-4">
+          <SkeletonBox className="h-4 w-32" />
+          <SkeletonBox className="h-4 w-24" />
+        </div>
+        <ChartSkeleton height={250} />
       </div>
     );
   }

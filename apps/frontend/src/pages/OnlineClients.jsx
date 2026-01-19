@@ -509,23 +509,23 @@ const OnlineClients = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="page-header">
+          <h1 className="page-title flex items-center gap-2">
             <Globe className="text-viperx-primary" size={28} />
             Clienti Online
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="page-subtitle">
             Gestioneaza clientii online cu informatii de livrare si contacte digitale.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <button
             type="button"
             onClick={openAddClientModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-viperx-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
           >
             <Plus size={16} />
             Adauga Client Online
@@ -533,7 +533,7 @@ const OnlineClients = () => {
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
           >
             <Upload size={16} />
             Importa CSV
@@ -550,7 +550,7 @@ const OnlineClients = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Total Clienti Online</p>
@@ -562,7 +562,7 @@ const OnlineClients = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Procent din Total</p>
@@ -574,7 +574,7 @@ const OnlineClients = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Adaugati Recent (7 zile)</p>
@@ -587,25 +587,35 @@ const OnlineClients = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex items-center gap-3">
-        <div className="relative w-full max-w-md">
+      {/* Search Filter */}
+      <div className="filter-bar">
+        <div className="relative flex-1 max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cauta dupa nume, companie, email, telefon, adresa sau card fidelitate"
-            className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            placeholder="Cauta dupa nume, companie, email, telefon, adresa sau card fidelitate..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
           />
         </div>
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="text-sm text-gray-500 hover:text-viperx-primary transition-colors flex items-center gap-1"
+          >
+            <X size={14} />
+            Sterge cautarea
+          </button>
+        )}
       </div>
 
       {/* Clients Table/Cards */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Desktop Table */}
         <div className="hidden lg:block">
-          <div className="grid grid-cols-9 gap-4 px-6 py-3 text-sm font-medium text-gray-500 border-b">
+          <div className="grid grid-cols-9 gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50">
             <span>Client</span>
             <span>Email</span>
             <span>Telefon</span>

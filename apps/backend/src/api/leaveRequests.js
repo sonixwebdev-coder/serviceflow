@@ -12,6 +12,7 @@ const {
   rejectTimeOffRequest,
   createMedicalLeave,
 } = require('../services/timeOffService');
+const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -56,6 +57,15 @@ router.post(
   validate(createSchema),
   asyncHandler(async (req, res) => {
     const request = await createTimeOffRequest(req.tenantPrisma, req.body, req.user);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.TIME_OFF,
+      entityId: request.id,
+      description: getActionDescription('CREATE', ENTITY_TYPES.TIME_OFF, req.body.leaveType),
+      metadata: { leaveType: req.body.leaveType, startDate: req.body.startDate, endDate: req.body.endDate },
+    });
+
     return created(res, request, 'Leave request submitted');
   })
 );
@@ -67,6 +77,15 @@ router.put(
   validate(reviewSchema),
   asyncHandler(async (req, res) => {
     const request = await approveTimeOffRequest(req.tenantPrisma, req.params.requestId, req.user, req.body || {});
+
+    await logFromRequest(req, {
+      action: 'APPROVE',
+      entityType: ENTITY_TYPES.TIME_OFF,
+      entityId: request.id,
+      description: getActionDescription('APPROVE', ENTITY_TYPES.TIME_OFF),
+      metadata: { employeeId: request.employeeId },
+    });
+
     return ok(res, request, 'Leave request approved');
   })
 );
@@ -78,6 +97,15 @@ router.put(
   validate(reviewSchema),
   asyncHandler(async (req, res) => {
     const request = await rejectTimeOffRequest(req.tenantPrisma, req.params.requestId, req.user, req.body || {});
+
+    await logFromRequest(req, {
+      action: 'REJECT',
+      entityType: ENTITY_TYPES.TIME_OFF,
+      entityId: request.id,
+      description: getActionDescription('REJECT', ENTITY_TYPES.TIME_OFF),
+      metadata: { employeeId: request.employeeId },
+    });
+
     return ok(res, request, 'Leave request rejected');
   })
 );
@@ -90,6 +118,15 @@ router.post(
   validate(createMedicalLeaveSchema),
   asyncHandler(async (req, res) => {
     const request = await createMedicalLeave(req.tenantPrisma, req.body, req.user);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: ENTITY_TYPES.TIME_OFF,
+      entityId: request.id,
+      description: `Creat concediu medical pentru angajat`,
+      metadata: { employeeId: req.body.employeeId, startDate: req.body.startDate, endDate: req.body.endDate },
+    });
+
     return created(res, request, 'Medical leave created');
   })
 );

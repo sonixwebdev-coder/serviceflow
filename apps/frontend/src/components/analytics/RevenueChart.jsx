@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
+import { ChartSkeleton } from './Skeleton';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('ro-RO', {
@@ -39,11 +40,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function RevenueChart({ data = [], isLoading }) {
   if (isLoading) {
-    return (
-      <div className="h-[300px] flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Se incarca...</div>
-      </div>
-    );
+    return <ChartSkeleton height={300} />;
   }
 
   if (!data.length) {

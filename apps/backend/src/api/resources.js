@@ -10,6 +10,7 @@ const {
   deleteResource,
   getAvailableResources,
 } = require('../services/resourceService');
+const { logFromRequest } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();
@@ -55,6 +56,15 @@ router.post(
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
     const resource = await createResource(req.tenantPrisma, req.body);
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: 'Resource',
+      entityId: resource.id,
+      description: `Creat resursa noua: ${resource.name}`,
+      metadata: { type: resource.type },
+    });
+
     return created(res, resource, 'Resource created successfully');
   })
 );
@@ -76,6 +86,15 @@ router.patch(
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
     const resource = await updateResource(req.tenantPrisma, req.params.resourceId, req.body);
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Resource',
+      entityId: resource.id,
+      description: `Actualizat resursa: ${resource.name}`,
+      metadata: { changes: Object.keys(req.body) },
+    });
+
     return ok(res, resource, 'Resource updated successfully');
   })
 );
@@ -86,7 +105,16 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
+    const resource = await getResourceById(req.tenantPrisma, req.params.resourceId);
     const result = await deleteResource(req.tenantPrisma, req.params.resourceId);
+
+    await logFromRequest(req, {
+      action: 'DELETE',
+      entityType: 'Resource',
+      entityId: req.params.resourceId,
+      description: `Sters resursa: ${resource.name}`,
+    });
+
     return ok(res, result, 'Resource deleted successfully');
   })
 );

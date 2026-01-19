@@ -5,6 +5,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const googleOAuthService = require('../services/google/googleOAuthService');
 const googleCalendarService = require('../services/google/googleCalendarService');
 const logger = require('../utils/logger');
+const prisma = require('../../lib/prisma'); // Global prisma for unauthenticated callback
 
 /**
  * GET /api/integrations/google/connect
@@ -28,7 +29,7 @@ router.get(
 
 /**
  * GET /api/integrations/google/callback
- * Handle OAuth callback
+ * Handle OAuth callback (unauthenticated - called by Google)
  */
 router.get(
   '/google/callback',
@@ -53,8 +54,8 @@ router.get(
       // Exchange code for tokens
       const tokens = await googleOAuthService.exchangeCodeForTokens(code);
 
-      // Store config
-      await googleOAuthService.storeCalendarConfig(req.prisma, stateData.userId, tokens);
+      // Store config using global prisma (no tenant context in callback)
+      await googleOAuthService.storeCalendarConfig(prisma, stateData.userId, tokens);
 
       logger.info(`Google Calendar connected for user ${stateData.userId}`);
 
@@ -76,7 +77,7 @@ router.get(
   '/google/status',
   authenticate,
   asyncHandler(async (req, res) => {
-    const status = await googleOAuthService.getConnectionStatus(req.prisma, req.user.id);
+    const status = await googleOAuthService.getConnectionStatus(req.tenantPrisma, req.user.id);
     res.json(status);
   })
 );
@@ -89,7 +90,7 @@ router.post(
   '/google/disconnect',
   authenticate,
   asyncHandler(async (req, res) => {
-    await googleOAuthService.disconnectCalendar(req.prisma, req.user.id);
+    await googleOAuthService.disconnectCalendar(req.tenantPrisma, req.user.id);
     res.json({ success: true, message: 'Google Calendar disconnected' });
   })
 );
@@ -102,7 +103,7 @@ router.get(
   '/google/calendars',
   authenticate,
   asyncHandler(async (req, res) => {
-    const calendars = await googleCalendarService.listCalendars(req.prisma, req.user.id);
+    const calendars = await googleCalendarService.listCalendars(req.tenantPrisma, req.user.id);
     res.json(calendars);
   })
 );
@@ -116,7 +117,7 @@ router.put(
   authenticate,
   asyncHandler(async (req, res) => {
     const { calendarId, syncEnabled } = req.body;
-    const config = await googleCalendarService.updateSyncSettings(req.prisma, req.user.id, {
+    const config = await googleCalendarService.updateSyncSettings(req.tenantPrisma, req.user.id, {
       calendarId,
       syncEnabled,
     });
@@ -132,7 +133,7 @@ router.post(
   '/google/sync',
   authenticate,
   asyncHandler(async (req, res) => {
-    const result = await googleCalendarService.syncAllAppointments(req.prisma, req.user.id);
+    const result = await googleCalendarService.syncAllAppointments(req.tenantPrisma, req.user.id);
     res.json(result);
   })
 );
@@ -147,7 +148,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { appointmentId } = req.params;
 
-    const appointment = await req.prisma.appointment.findUnique({
+    const appointment = await req.tenantPrisma.appointment.findUnique({
       where: { id: appointmentId },
       include: { client: true },
     });
@@ -157,7 +158,7 @@ router.post(
     }
 
     const result = await googleCalendarService.createEvent(
-      req.prisma,
+      req.tenantPrisma,
       req.user.id,
       appointment,
       appointment.client
@@ -177,11 +178,51 @@ router.get(
   asyncHandler(async (req, res) => {
     const { appointmentId } = req.params;
     const status = await googleCalendarService.getAppointmentSyncStatus(
-      req.prisma,
+      req.tenantPrisma,
       req.user.id,
       appointmentId
     );
     res.json(status || { synced: false });
+  })
+);
+
+/**
+ * POST /api/integrations/google/import
+ * Import events from Google Calendar to CRM
+ */
+router.post(
+  '/google/import',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const { timeMin, timeMax, maxResults } = req.body;
+    const options = {};
+
+    if (timeMin) options.timeMin = new Date(timeMin);
+    if (timeMax) options.timeMax = new Date(timeMax);
+    if (maxResults) options.maxResults = parseInt(maxResults, 10);
+
+    const result = await googleCalendarService.importEventsFromGoogle(
+      req.tenantPrisma,
+      req.user.id,
+      options
+    );
+    res.json(result);
+  })
+);
+
+/**
+ * POST /api/integrations/google/sync-bidirectional
+ * Two-way sync: Export CRM appointments to Google and import Google events to CRM
+ */
+router.post(
+  '/google/sync-bidirectional',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const result = await googleCalendarService.syncBidirectional(
+      req.tenantPrisma,
+      req.user.id
+    );
+    res.json(result);
   })
 );
 

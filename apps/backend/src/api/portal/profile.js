@@ -86,33 +86,6 @@ router.put(
 );
 
 /**
- * GET /api/portal/profile/vehicles
- * Get client's vehicles
- */
-router.get(
-  '/vehicles',
-  authenticateClient,
-  asyncHandler(async (req, res) => {
-    const vehicles = await prisma.vehicle.findMany({
-      where: { clientId: req.client.id },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        make: true,
-        model: true,
-        year: true,
-        plateNumber: true,
-        vin: true,
-        color: true,
-        createdAt: true,
-      },
-    });
-
-    res.json(vehicles);
-  })
-);
-
-/**
  * GET /api/portal/profile/assets
  * Get client's assets
  */

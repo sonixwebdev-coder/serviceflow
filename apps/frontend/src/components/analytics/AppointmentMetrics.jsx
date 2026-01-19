@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
+import { ChartSkeleton, SkeletonBox } from './Skeleton';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
@@ -36,8 +37,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function AppointmentMetrics({ data = [], byStatus = {}, isLoading }) {
   if (isLoading) {
     return (
-      <div className="h-[300px] flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Se incarca...</div>
+      <div className="space-y-4">
+        <div className="grid grid-cols-5 gap-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <SkeletonBox key={i} className="h-16 rounded-lg" />
+          ))}
+        </div>
+        <ChartSkeleton height={250} />
       </div>
     );
   }

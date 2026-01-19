@@ -1,55 +1,202 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTerminology } from '../context/TerminologyContext';
 import useToast from '../context/useToast';
 import API from '../utils/api';
-import { Save, RefreshCw, Eye, EyeOff, CheckSquare, Square, Globe, Car, Package, Calendar } from 'lucide-react';
-import { getAvailableAssetTypes, getAssetFieldTemplate } from '../constants/assetFieldTemplates';
+import {
+  Save,
+  Globe,
+  Car,
+  Scissors,
+  Wrench,
+  Smartphone,
+  Info,
+  Calendar,
+  Link2,
+  Unlink,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ExternalLink,
+} from 'lucide-react';
+import {
+  useGoogleCalendarStatus,
+  useGoogleCalendars,
+  useConnectGoogleCalendar,
+  useDisconnectGoogleCalendar,
+  useUpdateGoogleCalendarSettings,
+  useSyncAllToGoogleCalendar,
+  useSyncBidirectional,
+} from '../hooks/useGoogleCalendar';
 
-const SERVICE_TYPE_OPTIONS = [
-  { value: 'VEHICLE', label: 'Vehicule', icon: Car, description: 'Service auto, ITP, vulcanizare, spalatorie' },
-  { value: 'ASSET', label: 'Echipamente', icon: Package, description: 'IT, electrocasnice, HVAC, utilaje' },
-  { value: 'GENERAL', label: 'General', icon: Calendar, description: 'Servicii fara active specifice' },
-];
+const SECTOR_ICONS = {
+  AUTOMOTIVE: Car,
+  BEAUTY: Scissors,
+  HOME_SERVICES: Wrench,
+  IT_ELECTRONICS: Smartphone,
+};
 
 const OrganizationSettings = () => {
-  const { terminology: currentTerminology, features: currentFeatures, assetFieldConfig: currentAssetFieldConfig, publicBooking: currentPublicBooking, refreshSettings } = useTerminology();
+  const { publicBooking: currentPublicBooking, refreshSettings } = useTerminology();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('terminology');
-  const [selectedAssetType, setSelectedAssetType] = useState('vehicle');
+  const [selectedCalendarId, setSelectedCalendarId] = useState('');
 
-  // Terminology form state
-  const [terminology, setTerminology] = useState({
-    asset: {
-      singular: '',
-      plural: '',
-      identifier: '',
+  // Handle OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleConnected = params.get('google_connected');
+    const error = params.get('error');
+
+    if (googleConnected === 'true') {
+      showToast({
+        title: 'Succes',
+        description: 'Google Calendar a fost conectat cu succes!',
+        type: 'success',
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (error) {
+      showToast({
+        title: 'Eroare',
+        description: error === 'oauth_failed'
+          ? 'Nu s-a putut conecta Google Calendar. Te rugam sa incerci din nou.'
+          : `Eroare: ${error}`,
+        type: 'error',
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [showToast]);
+
+  // Fetch sector info
+  const { data: sectorInfo, isLoading: sectorLoading } = useQuery({
+    queryKey: ['org-sector'],
+    queryFn: async () => {
+      const response = await API.get('/organizations/me/sector');
+      return response.data.data || response.data;
     },
-    resource: {
-      singular: '',
-      plural: '',
-    },
   });
 
-  // Features form state
-  const [features, setFeatures] = useState({
-    useAssets: true,
-    useResources: true,
-    requireAssetForAppointment: false,
-  });
+  // Google Calendar hooks
+  const {
+    data: gcalStatus,
+    isLoading: gcalStatusLoading,
+    refetch: refetchGcalStatus,
+  } = useGoogleCalendarStatus();
 
-  // Asset field config state
-  const [assetFieldConfig, setAssetFieldConfig] = useState({
-    vehicle: { visibleFields: [], requiredFields: [], fieldLabels: {} },
-    appliance: { visibleFields: [], requiredFields: [], fieldLabels: {} },
-    hvac_unit: { visibleFields: [], requiredFields: [], fieldLabels: {} },
-    equipment: { visibleFields: [], requiredFields: [], fieldLabels: {} },
-    other: { visibleFields: [], requiredFields: [], fieldLabels: {} },
-  });
+  const {
+    data: calendars,
+    isLoading: calendarsLoading,
+    refetch: fetchCalendars,
+  } = useGoogleCalendars({ enabled: false });
 
-  // Public booking settings state
+  const connectMutation = useConnectGoogleCalendar();
+  const disconnectMutation = useDisconnectGoogleCalendar();
+  const updateSettingsMutation = useUpdateGoogleCalendarSettings();
+  const syncAllMutation = useSyncAllToGoogleCalendar();
+  const syncBidirectionalMutation = useSyncBidirectional();
+
+  // Load calendars when connected
+  useEffect(() => {
+    if (gcalStatus?.connected) {
+      fetchCalendars();
+      if (gcalStatus?.calendarId) {
+        setSelectedCalendarId(gcalStatus.calendarId);
+      }
+    }
+  }, [gcalStatus?.connected, gcalStatus?.calendarId, fetchCalendars]);
+
+  const handleConnect = async () => {
+    try {
+      await connectMutation.mutateAsync();
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || 'Nu s-a putut initia conexiunea',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!window.confirm('Sigur doriti sa deconectati Google Calendar?')) return;
+
+    try {
+      await disconnectMutation.mutateAsync();
+      showToast({
+        title: 'Succes',
+        description: 'Google Calendar a fost deconectat',
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || 'Nu s-a putut deconecta',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleCalendarChange = async (calendarId) => {
+    setSelectedCalendarId(calendarId);
+    try {
+      await updateSettingsMutation.mutateAsync({
+        calendarId,
+        syncEnabled: true,
+      });
+      showToast({
+        title: 'Succes',
+        description: 'Calendarul a fost selectat',
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || 'Nu s-a putut actualiza calendarul',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSyncAll = async () => {
+    try {
+      const result = await syncAllMutation.mutateAsync();
+      showToast({
+        title: 'Succes',
+        description: `${result?.results?.created || 0} create, ${result?.results?.updated || 0} actualizate`,
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || 'Nu s-a putut sincroniza',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSyncBidirectional = async () => {
+    try {
+      const result = await syncBidirectionalMutation.mutateAsync();
+      const exportResults = result?.results?.export?.results || {};
+      const importResults = result?.results?.import?.results || {};
+      showToast({
+        title: 'Sincronizare completa',
+        description: `Export: ${exportResults.created || 0} create, ${exportResults.updated || 0} actualizate. Import: ${importResults.imported || 0} importate din Google.`,
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        title: 'Eroare',
+        description: error.response?.data?.message || 'Nu s-a putut sincroniza',
+        type: 'error',
+      });
+    }
+  };
+
+  // Public booking settings state (without serviceType)
   const [publicBooking, setPublicBooking] = useState({
-    serviceType: 'VEHICLE',
     workingHours: { start: 9, end: 18 },
     slotDuration: 60,
     allowWeekends: false,
@@ -57,183 +204,14 @@ const OrganizationSettings = () => {
 
   // Initialize form with current values
   useEffect(() => {
-    if (currentTerminology) {
-      setTerminology(currentTerminology);
-    }
-  }, [currentTerminology]);
-
-  useEffect(() => {
-    if (currentFeatures) {
-      setFeatures(currentFeatures);
-    }
-  }, [currentFeatures]);
-
-  useEffect(() => {
-    if (currentAssetFieldConfig) {
-      setAssetFieldConfig(currentAssetFieldConfig);
-    }
-  }, [currentAssetFieldConfig]);
-
-  useEffect(() => {
     if (currentPublicBooking) {
-      setPublicBooking(currentPublicBooking);
+      setPublicBooking({
+        workingHours: currentPublicBooking.workingHours || { start: 9, end: 18 },
+        slotDuration: currentPublicBooking.slotDuration || 60,
+        allowWeekends: currentPublicBooking.allowWeekends || false,
+      });
     }
   }, [currentPublicBooking]);
-
-  const handleTerminologyChange = (category, field, value) => {
-    setTerminology((prev) => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleFeatureChange = (feature, checked) => {
-    setFeatures((prev) => ({
-      ...prev,
-      [feature]: checked,
-    }));
-  };
-
-  const saveTerminology = async () => {
-    setLoading(true);
-    try {
-      await API.patch('/organizations/me/settings/terminology', terminology);
-      await refreshSettings();
-
-      showToast({
-        title: 'Succes',
-        description: 'Terminologia a fost actualizata cu succes',
-        type: 'success',
-      });
-    } catch (error) {
-      showToast({
-        title: 'Eroare',
-        description: error.response?.data?.message || 'Nu s-a putut actualiza terminologia',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveFeatures = async () => {
-    setLoading(true);
-    try {
-      await API.patch('/organizations/me/settings/features', features);
-      await refreshSettings();
-
-      showToast({
-        title: 'Succes',
-        description: 'Functiile au fost actualizate cu succes',
-        type: 'success',
-      });
-    } catch (error) {
-      showToast({
-        title: 'Eroare',
-        description: error.response?.data?.message || 'Nu s-au putut actualiza functiile',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetToDefaults = () => {
-    setTerminology({
-      asset: {
-        singular: 'Vehicle',
-        plural: 'Vehicles',
-        identifier: 'Plate Number',
-      },
-      resource: {
-        singular: 'Service Bay',
-        plural: 'Service Bays',
-      },
-    });
-  };
-
-  // Asset field config handlers
-  const toggleFieldVisibility = (assetType, fieldKey) => {
-    setAssetFieldConfig((prev) => {
-      const config = prev[assetType] || { visibleFields: [], requiredFields: [], fieldLabels: {} };
-      const visibleFields = config.visibleFields || [];
-      const isVisible = visibleFields.includes(fieldKey);
-
-      return {
-        ...prev,
-        [assetType]: {
-          ...config,
-          visibleFields: isVisible
-            ? visibleFields.filter((f) => f !== fieldKey)
-            : [...visibleFields, fieldKey],
-          // Remove from required if hiding
-          requiredFields: isVisible
-            ? (config.requiredFields || []).filter((f) => f !== fieldKey)
-            : config.requiredFields,
-        },
-      };
-    });
-  };
-
-  const toggleFieldRequired = (assetType, fieldKey) => {
-    setAssetFieldConfig((prev) => {
-      const config = prev[assetType] || { visibleFields: [], requiredFields: [], fieldLabels: {} };
-      const requiredFields = config.requiredFields || [];
-      const isRequired = requiredFields.includes(fieldKey);
-
-      return {
-        ...prev,
-        [assetType]: {
-          ...config,
-          requiredFields: isRequired
-            ? requiredFields.filter((f) => f !== fieldKey)
-            : [...requiredFields, fieldKey],
-        },
-      };
-    });
-  };
-
-  const updateFieldLabel = (assetType, fieldKey, label) => {
-    setAssetFieldConfig((prev) => {
-      const config = prev[assetType] || { visibleFields: [], requiredFields: [], fieldLabels: {} };
-
-      return {
-        ...prev,
-        [assetType]: {
-          ...config,
-          fieldLabels: {
-            ...(config.fieldLabels || {}),
-            [fieldKey]: label,
-          },
-        },
-      };
-    });
-  };
-
-  const saveAssetFieldConfig = async () => {
-    setLoading(true);
-    try {
-      await API.patch('/organizations/me/settings/assetFieldConfig', assetFieldConfig);
-      await refreshSettings();
-
-      showToast({
-        title: 'Succes',
-        description: 'Configurarea campurilor a fost actualizata cu succes',
-        type: 'success',
-      });
-    } catch (error) {
-      showToast({
-        title: 'Eroare',
-        description: error.response?.data?.message || 'Nu s-a putut actualiza configurarea',
-        type: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePublicBookingChange = (field, value) => {
     setPublicBooking((prev) => ({
@@ -274,584 +252,349 @@ const OrganizationSettings = () => {
     }
   };
 
+  const SectorIcon = sectorInfo?.activitySector ? SECTOR_ICONS[sectorInfo.activitySector] : Info;
+
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Setari organizatie</h1>
         <p className="text-gray-600 mt-2">
-          Personalizeaza modul in care organizatia ta foloseste ServiceFlow
+          Gestioneaza setarile organizatiei tale
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('terminology')}
-            className={`${
-              activeTab === 'terminology'
-                ? 'border-viperx-primary text-viperx-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-          >
-            Terminologie
-          </button>
-          <button
-            onClick={() => setActiveTab('features')}
-            className={`${
-              activeTab === 'features'
-                ? 'border-viperx-primary text-viperx-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-          >
-            Functii
-          </button>
-          <button
-            onClick={() => setActiveTab('assetFields')}
-            className={`${
-              activeTab === 'assetFields'
-                ? 'border-viperx-primary text-viperx-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-          >
-            Campuri Active
-          </button>
-          <button
-            onClick={() => setActiveTab('publicBooking')}
-            className={`${
-              activeTab === 'publicBooking'
-                ? 'border-viperx-primary text-viperx-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2`}
-          >
-            <Globe className="w-4 h-4" />
-            Portal Public
-          </button>
-        </nav>
+      {/* Sector Info - Read Only */}
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mb-6">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Domeniu de activitate</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Setarile domeniului sunt configurate la crearea organizatiei
+          </p>
+        </div>
+
+        <div className="px-6 py-6">
+          {sectorLoading ? (
+            <div className="animate-pulse flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+              <div className="flex-1">
+                <div className="h-5 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          ) : sectorInfo ? (
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <SectorIcon className="w-6 h-6 text-viperx-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {sectorInfo.labelRo || sectorInfo.label}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {sectorInfo.description}
+                </p>
+
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sectorInfo.hasAssets && (
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tip activ</p>
+                      <p className="text-sm font-medium text-gray-900 mt-1">
+                        {sectorInfo.terminology?.asset?.singular || 'N/A'}
+                      </p>
+                    </div>
+                  )}
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Resurse</p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {sectorInfo.terminology?.resource?.singular || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Foloseste active</p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {sectorInfo.hasAssets ? 'Da' : 'Nu'}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500 mt-4">
+                  Aceste setari sunt determinate automat de domeniul de activitate si nu pot fi modificate.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-600">Nu s-au putut incarca informatiile despre domeniu.</p>
+          )}
+        </div>
       </div>
 
-      {/* Terminology Tab */}
-      {activeTab === 'terminology' && (
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Personalizeaza terminologia</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Adapteaza ServiceFlow la industria ta prin personalizarea termenilor
-            </p>
-          </div>
-
-          <div className="px-6 py-6 space-y-8">
-            {/* Asset Terminology */}
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">Active</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Pe ce lucrezi? (ex: Vehicule, Dispozitive, Unitati, Proprietati)
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="asset-singular" className="block text-sm font-medium text-gray-700 mb-1">
-                    Forma singular
-                  </label>
-                  <input
-                    type="text"
-                    id="asset-singular"
-                    placeholder="ex: Vehicul"
-                    value={terminology.asset.singular}
-                    onChange={(e) => handleTerminologyChange('asset', 'singular', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Exemplu: "Adauga un {terminology.asset.singular || 'Vehicul'} nou"
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="asset-plural" className="block text-sm font-medium text-gray-700 mb-1">
-                    Forma plural
-                  </label>
-                  <input
-                    type="text"
-                    id="asset-plural"
-                    placeholder="ex: Vehicule"
-                    value={terminology.asset.plural}
-                    onChange={(e) => handleTerminologyChange('asset', 'plural', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Exemplu: "Toate {terminology.asset.plural || 'Vehiculele'}"
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="asset-identifier" className="block text-sm font-medium text-gray-700 mb-1">
-                    Eticheta identificator
-                  </label>
-                  <input
-                    type="text"
-                    id="asset-identifier"
-                    placeholder="ex: Numar inmatriculare"
-                    value={terminology.asset.identifier}
-                    onChange={(e) => handleTerminologyChange('asset', 'identifier', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Exemplu: "{terminology.asset.identifier || 'Numar inmatriculare'}: ABC-123"
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Resource Terminology */}
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">Resurse</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Ce resurse programezi? (ex: Rampe service, Statii de lucru, Echipe)
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="resource-singular" className="block text-sm font-medium text-gray-700 mb-1">
-                    Forma singular
-                  </label>
-                  <input
-                    type="text"
-                    id="resource-singular"
-                    placeholder="ex: Rampa service"
-                    value={terminology.resource.singular}
-                    onChange={(e) => handleTerminologyChange('resource', 'singular', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Exemplu: "Asigneaza la {terminology.resource.singular || 'Rampa service'}"
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="resource-plural" className="block text-sm font-medium text-gray-700 mb-1">
-                    Forma plural
-                  </label>
-                  <input
-                    type="text"
-                    id="resource-plural"
-                    placeholder="ex: Rampe service"
-                    value={terminology.resource.plural}
-                    onChange={(e) => handleTerminologyChange('resource', 'plural', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Exemplu: "{terminology.resource.plural || 'Rampe service'} disponibile"
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-between items-center pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={resetToDefaults}
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Reseteaza la valorile implicite
-              </button>
-
-              <button
-                onClick={saveTerminology}
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-viperx-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Se salveaza...' : 'Salveaza modificarile'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Features Tab */}
-      {activeTab === 'features' && (
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Functii aplicatie</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Activeaza sau dezactiveaza functiile in functie de nevoile afacerii tale
-            </p>
-          </div>
-
-          <div className="px-6 py-6 space-y-6">
-            <div className="flex items-center justify-between py-4 border-b border-gray-100">
-              <div>
-                <label htmlFor="use-assets" className="text-sm font-medium text-gray-900 block">
-                  Foloseste active
-                </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Urmareste {terminology.asset.plural.toLowerCase()} pentru clientii tai
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="use-assets"
-                checked={features.useAssets}
-                onChange={(e) => handleFeatureChange('useAssets', e.target.checked)}
-                className="h-4 w-4 text-viperx-primary focus:ring-viperx-primary border-gray-300 rounded"
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-4 border-b border-gray-100">
-              <div>
-                <label htmlFor="use-resources" className="text-sm font-medium text-gray-900 block">
-                  Foloseste resurse
-                </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Urmareste si programeaza {terminology.resource.plural.toLowerCase()}
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="use-resources"
-                checked={features.useResources}
-                onChange={(e) => handleFeatureChange('useResources', e.target.checked)}
-                className="h-4 w-4 text-viperx-primary focus:ring-viperx-primary border-gray-300 rounded"
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-4">
-              <div>
-                <label htmlFor="require-asset" className="text-sm font-medium text-gray-900 block">
-                  Impune activ pentru programari
-                </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Forteaza selectarea unui {terminology.asset.singular.toLowerCase()} la crearea programarilor
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                id="require-asset"
-                checked={features.requireAssetForAppointment}
-                onChange={(e) => handleFeatureChange('requireAssetForAppointment', e.target.checked)}
-                disabled={!features.useAssets}
-                className="h-4 w-4 text-viperx-primary focus:ring-viperx-primary border-gray-300 rounded disabled:opacity-50"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end pt-6 border-t border-gray-200">
-              <button
-                onClick={saveFeatures}
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-viperx-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Se salveaza...' : 'Salveaza modificarile'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Asset Fields Tab */}
-      {activeTab === 'assetFields' && (
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Configurare campuri active</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Personalizeaza ce campuri sunt vizibile si obligatorii pentru fiecare tip de activ
-            </p>
-          </div>
-
-          <div className="px-6 py-6">
-            {/* Asset Type Selector */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecteaza tipul de activ
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                {getAvailableAssetTypes().map((assetType) => (
-                  <button
-                    key={assetType.key}
-                    onClick={() => setSelectedAssetType(assetType.key)}
-                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                      selectedAssetType === assetType.key
-                        ? 'bg-viperx-primary text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <div className="font-semibold">{assetType.name}</div>
-                    <div className="text-xs opacity-75 mt-1">{assetType.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Field Configuration Table */}
-            {selectedAssetType && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-base font-semibold text-gray-900">
-                    Campuri pentru {getAssetFieldTemplate(selectedAssetType).name}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Configureaza vizibilitatea si obligativitatea campurilor
-                  </p>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Camp
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Eticheta personalizata
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Vizibil
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Obligatoriu
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {Object.values(getAssetFieldTemplate(selectedAssetType).fields).map((field) => {
-                        const isVisible = assetFieldConfig[selectedAssetType]?.visibleFields?.includes(field.key);
-                        const isRequired = assetFieldConfig[selectedAssetType]?.requiredFields?.includes(field.key);
-                        const customLabel = assetFieldConfig[selectedAssetType]?.fieldLabels?.[field.key] || '';
-
-                        return (
-                          <tr key={field.key} className={!isVisible ? 'bg-gray-50 opacity-50' : ''}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{field.defaultLabel}</div>
-                              <div className="text-xs text-gray-500">{field.key}</div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <input
-                                type="text"
-                                value={customLabel}
-                                onChange={(e) => updateFieldLabel(selectedAssetType, field.key, e.target.value)}
-                                placeholder={field.defaultLabel}
-                                disabled={!isVisible}
-                                className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                              />
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <button
-                                onClick={() => toggleFieldVisibility(selectedAssetType, field.key)}
-                                className="inline-flex items-center justify-center p-1 rounded hover:bg-gray-100 transition-colors"
-                              >
-                                {isVisible ? (
-                                  <Eye className="w-5 h-5 text-viperx-primary" />
-                                ) : (
-                                  <EyeOff className="w-5 h-5 text-gray-400" />
-                                )}
-                              </button>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <button
-                                onClick={() => toggleFieldRequired(selectedAssetType, field.key)}
-                                disabled={!isVisible}
-                                className="inline-flex items-center justify-center p-1 rounded hover:bg-gray-100 transition-colors disabled:cursor-not-allowed disabled:opacity-30"
-                              >
-                                {isRequired ? (
-                                  <CheckSquare className="w-5 h-5 text-viperx-primary" />
-                                ) : (
-                                  <Square className="w-5 h-5 text-gray-400" />
-                                )}
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Help Text */}
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>Cum functioneaza:</strong>
-                  </p>
-                  <ul className="list-disc list-inside text-sm text-blue-800 mt-2 space-y-1">
-                    <li>Click pe iconita de ochi pentru a face un camp vizibil sau ascuns</li>
-                    <li>Click pe iconita de checkbox pentru a marca un camp ca obligatoriu</li>
-                    <li>Campurile ascunse nu pot fi marcate ca obligatorii</li>
-                    <li>Etichetele personalizate vor inlocui etichetele implicite in formulare</li>
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
-              <button
-                onClick={saveAssetFieldConfig}
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-viperx-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Se salveaza...' : 'Salveaza modificarile'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Public Booking Tab */}
-      {activeTab === 'publicBooking' && (
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200">
+      {/* Public Booking Settings */}
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+          <Globe className="w-5 h-5 text-gray-400" />
+          <div>
             <h2 className="text-lg font-semibold text-gray-900">Setari portal public</h2>
             <p className="text-sm text-gray-600 mt-1">
               Configureaza cum clientii noi pot face programari prin portalul public
             </p>
           </div>
+        </div>
 
-          <div className="px-6 py-6 space-y-8">
-            {/* Service Type Selection */}
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">Tip serviciu</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Ce tip de active gestioneaza organizatia ta? Aceasta setare determina ce informatii cer clientilor la programare.
-              </p>
+        <div className="px-6 py-6 space-y-8">
+          {/* Working Hours */}
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Program de lucru</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Intervalul orar in care clientii pot face programari
+            </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {SERVICE_TYPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => handlePublicBookingChange('serviceType', option.value)}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${
-                      publicBooking.serviceType === option.value
-                        ? 'border-viperx-primary bg-orange-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <option.icon className={`w-6 h-6 ${
-                        publicBooking.serviceType === option.value ? 'text-viperx-primary' : 'text-gray-400'
-                      }`} />
-                      <span className="font-semibold text-gray-900">{option.label}</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{option.description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Working Hours */}
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">Program de lucru</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Intervalul orar in care clientii pot face programari
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="work-start" className="block text-sm font-medium text-gray-700 mb-1">
-                    Ora de inceput
-                  </label>
-                  <select
-                    id="work-start"
-                    value={publicBooking.workingHours?.start || 9}
-                    onChange={(e) => handleWorkingHoursChange('start', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="work-end" className="block text-sm font-medium text-gray-700 mb-1">
-                    Ora de sfarsit
-                  </label>
-                  <select
-                    id="work-end"
-                    value={publicBooking.workingHours?.end || 18}
-                    onChange={(e) => handleWorkingHoursChange('end', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Slot Duration */}
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">Durata programarii</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Durata implicita a unei programari (in minute)
-              </p>
-
-              <select
-                value={publicBooking.slotDuration || 60}
-                onChange={(e) => handlePublicBookingChange('slotDuration', parseInt(e.target.value, 10))}
-                className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-              >
-                <option value={15}>15 minute</option>
-                <option value={30}>30 minute</option>
-                <option value={45}>45 minute</option>
-                <option value={60}>1 ora</option>
-                <option value={90}>1 ora 30 min</option>
-                <option value={120}>2 ore</option>
-                <option value={180}>3 ore</option>
-                <option value={240}>4 ore</option>
-              </select>
-            </div>
-
-            {/* Allow Weekends */}
-            <div className="flex items-center justify-between py-4 border-t border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="allow-weekends" className="text-sm font-medium text-gray-900 block">
-                  Permite programari in weekend
+                <label htmlFor="work-start" className="block text-sm font-medium text-gray-700 mb-1">
+                  Ora de inceput
                 </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Clientii vor putea face programari si sambata/duminica
-                </p>
+                <select
+                  id="work-start"
+                  value={publicBooking.workingHours?.start || 9}
+                  onChange={(e) => handleWorkingHoursChange('start', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                  ))}
+                </select>
               </div>
-              <input
-                type="checkbox"
-                id="allow-weekends"
-                checked={publicBooking.allowWeekends || false}
-                onChange={(e) => handlePublicBookingChange('allowWeekends', e.target.checked)}
-                className="h-4 w-4 text-viperx-primary focus:ring-viperx-primary border-gray-300 rounded"
-              />
-            </div>
 
-            {/* Portal URL Info */}
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-900">
-                <strong>Link portal public:</strong>
-              </p>
-              <p className="text-sm text-blue-800 mt-2 font-mono">
-                {window.location.origin.replace('3001', '3002')}/book/{currentTerminology ? 'slug-organizatie' : '...'}
-              </p>
-              <p className="text-xs text-blue-700 mt-2">
-                Acest link poate fi distribuit clientilor noi pentru a face programari fara cont.
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end pt-6 border-t border-gray-200">
-              <button
-                onClick={savePublicBooking}
-                disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-viperx-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Se salveaza...' : 'Salveaza modificarile'}
-              </button>
+              <div>
+                <label htmlFor="work-end" className="block text-sm font-medium text-gray-700 mb-1">
+                  Ora de sfarsit
+                </label>
+                <select
+                  id="work-end"
+                  value={publicBooking.workingHours?.end || 18}
+                  onChange={(e) => handleWorkingHoursChange('end', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
+
+          {/* Slot Duration */}
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Durata programarii</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Durata implicita a unei programari (in minute)
+            </p>
+
+            <select
+              value={publicBooking.slotDuration || 60}
+              onChange={(e) => handlePublicBookingChange('slotDuration', parseInt(e.target.value, 10))}
+              className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            >
+              <option value={15}>15 minute</option>
+              <option value={30}>30 minute</option>
+              <option value={45}>45 minute</option>
+              <option value={60}>1 ora</option>
+              <option value={90}>1 ora 30 min</option>
+              <option value={120}>2 ore</option>
+              <option value={180}>3 ore</option>
+              <option value={240}>4 ore</option>
+            </select>
+          </div>
+
+          {/* Allow Weekends */}
+          <div className="flex items-center justify-between py-4 border-t border-gray-100">
+            <div>
+              <label htmlFor="allow-weekends" className="text-sm font-medium text-gray-900 block">
+                Permite programari in weekend
+              </label>
+              <p className="text-sm text-gray-600 mt-1">
+                Clientii vor putea face programari si sambata/duminica
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              id="allow-weekends"
+              checked={publicBooking.allowWeekends || false}
+              onChange={(e) => handlePublicBookingChange('allowWeekends', e.target.checked)}
+              className="h-4 w-4 text-viperx-primary focus:ring-viperx-primary border-gray-300 rounded"
+            />
+          </div>
+
+          {/* Portal URL Info */}
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-900">
+              <strong>Link portal public:</strong>
+            </p>
+            <p className="text-sm text-blue-800 mt-2 font-mono">
+              {window.location.origin.replace('3001', '3002')}/book/slug-organizatie
+            </p>
+            <p className="text-xs text-blue-700 mt-2">
+              Acest link poate fi distribuit clientilor noi pentru a face programari fara cont.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end pt-6 border-t border-gray-200">
+            <button
+              onClick={savePublicBooking}
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-viperx-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-viperx-primary disabled:opacity-50 transition-colors"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {loading ? 'Se salveaza...' : 'Salveaza modificarile'}
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Google Calendar Integration */}
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mt-6">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-blue-500" />
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Google Calendar</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Sincronizeaza programarile cu Google Calendar
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 py-6">
+          {gcalStatusLoading ? (
+            <div className="animate-pulse flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+              <div className="flex-1">
+                <div className="h-5 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          ) : gcalStatus?.connected ? (
+            <div className="space-y-6">
+              {/* Connected Status */}
+              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900">Conectat la Google Calendar</p>
+                    <p className="text-sm text-green-700">{gcalStatus.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDisconnect}
+                  disabled={disconnectMutation.isPending}
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <Unlink className="w-4 h-4 mr-1.5" />
+                  {disconnectMutation.isPending ? 'Se deconecteaza...' : 'Deconecteaza'}
+                </button>
+              </div>
+
+              {/* Calendar Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selecteaza calendarul pentru sincronizare
+                </label>
+                {calendarsLoading ? (
+                  <div className="animate-pulse h-10 bg-gray-200 rounded-lg w-full"></div>
+                ) : calendars?.length > 0 ? (
+                  <select
+                    value={selectedCalendarId}
+                    onChange={(e) => handleCalendarChange(e.target.value)}
+                    disabled={updateSettingsMutation.isPending}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    <option value="">Selecteaza un calendar...</option>
+                    {calendars.map((cal) => (
+                      <option key={cal.id} value={cal.id}>
+                        {cal.summary} {cal.primary && '(Principal)'}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-gray-500">Nu s-au gasit calendare disponibile</p>
+                )}
+              </div>
+
+              {/* Sync Info */}
+              {gcalStatus?.syncEnabled && selectedCalendarId && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">
+                        Sincronizare activa (bidirectionala)
+                      </p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Programarile sunt sincronizate automat in ambele directii: CRM → Google si Google → CRM.
+                      </p>
+                      {gcalStatus?.lastSyncAt && (
+                        <p className="text-xs text-blue-600 mt-2">
+                          Ultima sincronizare: {new Date(gcalStatus.lastSyncAt).toLocaleString('ro-RO')}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={handleSyncBidirectional}
+                        disabled={syncBidirectionalMutation.isPending || syncAllMutation.isPending}
+                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-1.5 ${syncBidirectionalMutation.isPending ? 'animate-spin' : ''}`} />
+                        {syncBidirectionalMutation.isPending ? 'Se sincronizeaza...' : 'Sincronizare completa'}
+                      </button>
+                      <button
+                        onClick={handleSyncAll}
+                        disabled={syncAllMutation.isPending || syncBidirectionalMutation.isPending}
+                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-1.5 ${syncAllMutation.isPending ? 'animate-spin' : ''}`} />
+                        {syncAllMutation.isPending ? 'Se exporta...' : 'Doar export (CRM → Google)'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <Calendar className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Conecteaza Google Calendar
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Sincronizeaza programarile din aplicatie cu Google Calendar pentru a avea o vedere completa a programului tau.
+              </p>
+              <button
+                onClick={handleConnect}
+                disabled={connectMutation.isPending}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+              >
+                <Link2 className="w-4 h-4 mr-2" />
+                {connectMutation.isPending ? 'Se conecteaza...' : 'Conecteaza cu Google'}
+              </button>
+
+              <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200 text-left max-w-md mx-auto">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-900">Nota importanta</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Vei fi redirectionat catre Google pentru a autoriza accesul.
+                      Aplicatia va putea crea si gestiona evenimente in calendarul tau.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

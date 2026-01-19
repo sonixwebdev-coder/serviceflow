@@ -375,6 +375,196 @@ const getAppointmentSyncStatus = async (prisma, userId, appointmentId) => {
   });
 };
 
+/**
+ * Import events from Google Calendar into CRM
+ * Only imports events that don't already exist in the CRM
+ * @param {object} prisma - Prisma client
+ * @param {string} userId - User ID
+ * @param {object} options - Import options
+ * @param {Date} options.timeMin - Start date for events (default: now)
+ * @param {Date} options.timeMax - End date for events (default: 30 days from now)
+ * @param {number} options.maxResults - Maximum events to fetch (default: 50)
+ */
+const importEventsFromGoogle = async (prisma, userId, options = {}) => {
+  const config = await getCalendarConfig(prisma, userId);
+
+  if (!config || !config.syncEnabled) {
+    return { success: false, error: 'Calendar sync not enabled' };
+  }
+
+  try {
+    const calendar = await getAuthenticatedCalendarClient(prisma, userId);
+
+    // Get user info
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true },
+    });
+
+    if (!user?.organizationId) {
+      return { success: false, error: 'User has no organization' };
+    }
+
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Fetch events from Google Calendar
+    const response = await calendar.events.list({
+      calendarId: config.calendarId || 'primary',
+      timeMin: (options.timeMin || now).toISOString(),
+      timeMax: (options.timeMax || thirtyDaysFromNow).toISOString(),
+      maxResults: options.maxResults || 50,
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    const googleEvents = response.data.items || [];
+    logger.info(`[GCAL] Fetched ${googleEvents.length} events from Google Calendar for user ${userId}`);
+
+    // Get all existing sync records to know which events are already synced
+    const existingSyncRecords = await prisma.calendarEventSync.findMany({
+      where: { configId: config.id },
+      select: { googleEventId: true, appointmentId: true },
+    });
+
+    const syncedGoogleEventIds = new Set(existingSyncRecords.map((r) => r.googleEventId));
+
+    // Also check appointments with googleEventId in metadata (for previously imported)
+    const appointmentsWithGoogleEvent = await prisma.appointment.findMany({
+      where: {
+        organizationId: user.organizationId,
+        metadata: { path: ['googleEventId'], not: null },
+      },
+      select: { id: true, metadata: true },
+    });
+
+    const importedGoogleEventIds = new Set();
+    appointmentsWithGoogleEvent.forEach((apt) => {
+      const googleEventId = apt.metadata?.googleEventId;
+      if (googleEventId) {
+        importedGoogleEventIds.add(googleEventId);
+      }
+    });
+
+    const results = {
+      total: googleEvents.length,
+      imported: 0,
+      skipped: 0,
+      errors: 0,
+      importedAppointments: [],
+    };
+
+    for (const event of googleEvents) {
+      // Skip events without proper date/time
+      if (!event.start?.dateTime || !event.end?.dateTime) {
+        logger.debug(`[GCAL] Skipping all-day or invalid event: ${event.summary}`);
+        results.skipped++;
+        continue;
+      }
+
+      // Skip if already synced from CRM
+      if (syncedGoogleEventIds.has(event.id)) {
+        logger.debug(`[GCAL] Skipping already synced event: ${event.summary}`);
+        results.skipped++;
+        continue;
+      }
+
+      // Skip if already imported
+      if (importedGoogleEventIds.has(event.id)) {
+        logger.debug(`[GCAL] Skipping already imported event: ${event.summary}`);
+        results.skipped++;
+        continue;
+      }
+
+      try {
+        // Create appointment from Google event
+        const appointment = await prisma.appointment.create({
+          data: {
+            title: event.summary || 'Google Calendar Event',
+            description: event.description || null,
+            location: event.location || null,
+            scheduledStart: new Date(event.start.dateTime),
+            scheduledEnd: new Date(event.end.dateTime),
+            status: 'PENDING',
+            createdById: userId,
+            updatedById: userId,
+            organizationId: user.organizationId,
+            metadata: {
+              googleEventId: event.id,
+              importedFromGoogle: true,
+              importedAt: new Date().toISOString(),
+            },
+          },
+        });
+
+        // Create sync record
+        await prisma.calendarEventSync.create({
+          data: {
+            appointmentId: appointment.id,
+            googleEventId: event.id,
+            configId: config.id,
+            syncStatus: 'SYNCED',
+            lastSyncAt: new Date(),
+          },
+        });
+
+        results.imported++;
+        results.importedAppointments.push({
+          id: appointment.id,
+          title: appointment.title,
+          googleEventId: event.id,
+        });
+
+        logger.info(`[GCAL] Imported event "${event.summary}" as appointment ${appointment.id}`);
+      } catch (err) {
+        logger.error(`[GCAL] Failed to import event "${event.summary}":`, err);
+        results.errors++;
+      }
+    }
+
+    // Update last sync time
+    await prisma.googleCalendarConfig.update({
+      where: { userId },
+      data: { lastSyncAt: new Date() },
+    });
+
+    logger.info(`[GCAL] Import complete for user ${userId}: ${results.imported} imported, ${results.skipped} skipped, ${results.errors} errors`);
+    return { success: true, results };
+  } catch (error) {
+    logger.error(`[GCAL] Failed to import events from Google Calendar for user ${userId}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Two-way sync: Export CRM appointments to Google and import Google events to CRM
+ * @param {object} prisma - Prisma client
+ * @param {string} userId - User ID
+ */
+const syncBidirectional = async (prisma, userId) => {
+  const config = await getCalendarConfig(prisma, userId);
+
+  if (!config || !config.syncEnabled) {
+    return { success: false, error: 'Calendar sync not enabled' };
+  }
+
+  const results = {
+    export: null,
+    import: null,
+  };
+
+  // First, export CRM appointments to Google
+  results.export = await syncAllAppointments(prisma, userId);
+
+  // Then, import Google events to CRM
+  results.import = await importEventsFromGoogle(prisma, userId);
+
+  return {
+    success: results.export.success && results.import.success,
+    results,
+  };
+};
+
 module.exports = {
   createEvent,
   updateEvent,
@@ -383,4 +573,6 @@ module.exports = {
   listCalendars,
   updateSyncSettings,
   getAppointmentSyncStatus,
+  importEventsFromGoogle,
+  syncBidirectional,
 };
