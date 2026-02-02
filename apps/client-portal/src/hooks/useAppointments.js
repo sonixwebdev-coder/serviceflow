@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '../services/appointmentService';
 
 export function useAppointments(filters = {}) {
@@ -20,5 +20,18 @@ export function useUpcomingAppointments() {
   return useQuery({
     queryKey: ['upcoming-appointments'],
     queryFn: () => appointmentService.getUpcomingAppointments(),
+  });
+}
+
+export function useCreateAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => appointmentService.createAppointment(data),
+    onSuccess: () => {
+      // Invalidate appointments queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-appointments'] });
+    },
   });
 }

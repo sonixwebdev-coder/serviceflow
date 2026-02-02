@@ -107,9 +107,25 @@ const recordPaymentSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
 });
 
+/**
+ * Portal appointment creation schema - simplified for client use
+ * Clients can only set basic fields, not assignees or payment details
+ */
+const portalCreateAppointmentSchema = z.object({
+  title: z.string().min(1, 'Titlul programarii este obligatoriu'),
+  description: z.string().optional(),
+  scheduledStart: z.coerce.date({ invalid_type_error: 'Data de inceput invalida' }),
+  scheduledEnd: z.coerce.date({ invalid_type_error: 'Data de sfarsit invalida' }),
+  location: z.string().optional(),
+  assetId: z.string().optional(),
+  // Allow creating a new asset inline
+  asset: assetSchema,
+});
+
 module.exports = {
   createAppointmentSchema,
   updateAppointmentSchema,
   listAppointmentsQuerySchema,
   recordPaymentSchema,
+  portalCreateAppointmentSchema,
 };

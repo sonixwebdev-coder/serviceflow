@@ -113,6 +113,156 @@ router.get(
 );
 
 /**
+ * POST /api/portal/profile/assets
+ * Create a new asset
+ */
+router.post(
+  '/assets',
+  authenticateClient,
+  asyncHandler(async (req, res) => {
+    const { name, identifier, type, manufacturer, model, year } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Numele este obligatoriu' });
+    }
+
+    const asset = await prisma.asset.create({
+      data: {
+        organization: { connect: { id: req.client.organizationId } },
+        client: { connect: { id: req.client.id } },
+        name,
+        identifier: identifier || null,
+        type: type || null,
+        manufacturer: manufacturer || null,
+        model: model || null,
+        year: year ? parseInt(year, 10) : null,
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        manufacturer: true,
+        model: true,
+        identifier: true,
+        year: true,
+        createdAt: true,
+      },
+    });
+
+    // Broadcast to CRM
+    emitToOrganization(req.client.organizationId, 'asset:created', {
+      ...asset,
+      clientId: req.client.id,
+      source: 'portal',
+    });
+
+    res.status(201).json(asset);
+  })
+);
+
+/**
+ * PUT /api/portal/profile/assets/:id
+ * Update an asset
+ */
+router.put(
+  '/assets/:id',
+  authenticateClient,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { name, identifier, type, manufacturer, model, year } = req.body;
+
+    // Verify asset belongs to this client
+    const existingAsset = await prisma.asset.findFirst({
+      where: { id, clientId: req.client.id },
+    });
+
+    if (!existingAsset) {
+      return res.status(404).json({ error: 'Echipamentul nu a fost gasit' });
+    }
+
+    if (!name) {
+      return res.status(400).json({ error: 'Numele este obligatoriu' });
+    }
+
+    const asset = await prisma.asset.update({
+      where: { id },
+      data: {
+        name,
+        identifier: identifier || null,
+        type: type || null,
+        manufacturer: manufacturer || null,
+        model: model || null,
+        year: year ? parseInt(year, 10) : null,
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        manufacturer: true,
+        model: true,
+        identifier: true,
+        year: true,
+        createdAt: true,
+      },
+    });
+
+    // Broadcast to CRM
+    emitToOrganization(req.client.organizationId, 'asset:updated', {
+      ...asset,
+      clientId: req.client.id,
+      source: 'portal',
+    });
+
+    res.json(asset);
+  })
+);
+
+/**
+ * DELETE /api/portal/profile/assets/:id
+ * Delete an asset
+ */
+router.delete(
+  '/assets/:id',
+  authenticateClient,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    // Verify asset belongs to this client
+    const existingAsset = await prisma.asset.findFirst({
+      where: { id, clientId: req.client.id },
+    });
+
+    if (!existingAsset) {
+      return res.status(404).json({ error: 'Echipamentul nu a fost gasit' });
+    }
+
+    // Check if asset is used in any appointments
+    const appointmentCount = await prisma.appointment.count({
+      where: { assetId: id },
+    });
+
+    if (appointmentCount > 0) {
+      return res.status(400).json({
+        error: `Echipamentul nu poate fi sters deoarece este asociat cu ${appointmentCount} programari`
+      });
+    }
+
+    await prisma.asset.delete({
+      where: { id },
+    });
+
+    // Broadcast to CRM
+    emitToOrganization(req.client.organizationId, 'asset:deleted', {
+      id,
+      clientId: req.client.id,
+      source: 'portal',
+    });
+
+    res.json({ success: true });
+  })
+);
+
+/**
  * PUT /api/portal/profile/email
  * Update account email
  */

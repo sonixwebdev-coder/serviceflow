@@ -29,6 +29,39 @@ export function useAssets() {
   });
 }
 
+export function useCreateAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => profileService.createAsset(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+    },
+  });
+}
+
+export function useUpdateAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }) => profileService.updateAsset(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+    },
+  });
+}
+
+export function useDeleteAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id) => profileService.deleteAsset(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+    },
+  });
+}
+
 export function useUpdateEmail() {
   return useMutation({
     mutationFn: ({ email, password }) => profileService.updateEmail(email, password),

@@ -22,4 +22,27 @@ export const appointmentService = {
     const response = await api.get('/portal/appointments/list/upcoming');
     return response.data;
   },
+
+  async createAppointment(data) {
+    const response = await api.post('/portal/appointments', data);
+    return response.data;
+  },
+
+  async checkAvailability(scheduledStart, scheduledEnd) {
+    const params = new URLSearchParams();
+    params.append('scheduledStart', scheduledStart);
+    params.append('scheduledEnd', scheduledEnd);
+    const response = await api.get(`/portal/appointments/check-availability?${params.toString()}`);
+    return response.data;
+  },
+
+  async getAvailableDates(days = 30) {
+    const response = await api.get(`/portal/appointments/available-dates?days=${days}`);
+    return response.data;
+  },
+
+  async getAvailableSlots(date, duration = 60) {
+    const response = await api.get(`/portal/appointments/available-slots?date=${date}&duration=${duration}`);
+    return response.data;
+  },
 };

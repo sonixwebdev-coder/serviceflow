@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Lock, Car, Package } from 'lucide-react';
+import { User, Lock, Car, Package, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { useProfile, useUpdateProfile, useAssets } from '@/hooks/useProfile';
+import { useProfile, useUpdateProfile, useAssets, useCreateAsset, useUpdateAsset, useDeleteAsset } from '@/hooks/useProfile';
 import { useChangePassword } from '@/hooks/useAuth';
 import { useAuthStore } from '@/state/useAuthStore';
+import useToast from '@/context/useToast';
 
 const profileSchema = z.object({
   phone: z.string().optional(),
@@ -25,11 +26,19 @@ const passwordSchema = z.object({
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('profile');
+  const [showAssetModal, setShowAssetModal] = useState(false);
+  const [editingAsset, setEditingAsset] = useState(null);
+  const [deletingAsset, setDeletingAsset] = useState(null);
+
   const client = useAuthStore((state) => state.client);
   const { data: profile } = useProfile();
   const { data: assets } = useAssets();
   const updateProfileMutation = useUpdateProfile();
   const changePasswordMutation = useChangePassword();
+  const createAssetMutation = useCreateAsset();
+  const updateAssetMutation = useUpdateAsset();
+  const deleteAssetMutation = useDeleteAsset();
+  const { showToast } = useToast();
 
   // Get sector config from organization
   const sectorConfig = client?.organization?.sectorConfig;
@@ -66,6 +75,94 @@ export default function Profile() {
         },
       }
     );
+  };
+
+  // Asset form state
+  const [assetForm, setAssetForm] = useState({
+    name: '',
+    identifier: '',
+    type: '',
+    manufacturer: '',
+    model: '',
+    year: '',
+  });
+
+  const resetAssetForm = () => {
+    setAssetForm({
+      name: '',
+      identifier: '',
+      type: '',
+      manufacturer: '',
+      model: '',
+      year: '',
+    });
+    setEditingAsset(null);
+  };
+
+  const openCreateModal = () => {
+    resetAssetForm();
+    setShowAssetModal(true);
+  };
+
+  const openEditModal = (asset) => {
+    setAssetForm({
+      name: asset.name || '',
+      identifier: asset.identifier || '',
+      type: asset.type || '',
+      manufacturer: asset.manufacturer || '',
+      model: asset.model || '',
+      year: asset.year?.toString() || '',
+    });
+    setEditingAsset(asset);
+    setShowAssetModal(true);
+  };
+
+  const closeAssetModal = () => {
+    setShowAssetModal(false);
+    resetAssetForm();
+  };
+
+  const handleAssetSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!assetForm.name.trim()) {
+      showToast({ type: 'error', title: 'Numele este obligatoriu' });
+      return;
+    }
+
+    try {
+      if (editingAsset) {
+        await updateAssetMutation.mutateAsync({
+          id: editingAsset.id,
+          data: assetForm,
+        });
+        showToast({ type: 'success', title: 'Echipament actualizat cu succes!' });
+      } else {
+        await createAssetMutation.mutateAsync(assetForm);
+        showToast({ type: 'success', title: 'Echipament adaugat cu succes!' });
+      }
+      closeAssetModal();
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: error.response?.data?.error || 'Eroare la salvare',
+      });
+    }
+  };
+
+  const handleDeleteAsset = async () => {
+    if (!deletingAsset) return;
+
+    try {
+      await deleteAssetMutation.mutateAsync(deletingAsset.id);
+      showToast({ type: 'success', title: 'Echipament sters cu succes!' });
+      setDeletingAsset(null);
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: error.response?.data?.error || 'Eroare la stergere',
+      });
+    }
   };
 
   // Build tabs based on sector config - only show assets tab for sectors with assets
@@ -177,35 +274,193 @@ export default function Profile() {
       {/* Assets tab - only shown for sectors with assets */}
       {activeTab === 'assets' && hasAssets && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{assetTerminology.plural}</CardTitle>
+            <Button size="sm" onClick={openCreateModal}>
+              <Plus className="h-4 w-4 mr-1" />
+              Adauga
+            </Button>
           </CardHeader>
           <CardContent className="p-0">
             {!assets?.length ? (
               <div className="empty-state">
                 <Package className="empty-state-icon" />
                 <p className="empty-state-title">Nu exista {assetTerminology.plural.toLowerCase()}</p>
-                <p className="empty-state-text">{assetTerminology.plural} vor fi adaugate de catre serviciu.</p>
+                <p className="empty-state-text">Adauga un echipament pentru a-l putea folosi la programari.</p>
+                <Button className="mt-4" onClick={openCreateModal}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Adauga {assetTerminology.singular.toLowerCase()}
+                </Button>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
                 {assets.map((asset) => (
-                  <div key={asset.id} className="px-6 py-4">
-                    <p className="font-medium text-gray-900">
-                      {asset.name || `${asset.manufacturer || ''} ${asset.model || ''}`.trim() || assetTerminology.singular}
-                    </p>
-                    {asset.identifier && (
-                      <p className="text-sm text-gray-500">{assetTerminology.identifier}: {asset.identifier}</p>
-                    )}
-                    {asset.manufacturer && <p className="text-sm text-gray-500">Producator: {asset.manufacturer}</p>}
-                    {asset.model && <p className="text-sm text-gray-500">Model: {asset.model}</p>}
-                    {asset.type && <p className="text-sm text-gray-500">Tip: {asset.type}</p>}
+                  <div key={asset.id} className="px-6 py-4 flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900">
+                        {asset.name || `${asset.manufacturer || ''} ${asset.model || ''}`.trim() || assetTerminology.singular}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                        {asset.identifier && (
+                          <span>{assetTerminology.identifier}: {asset.identifier}</span>
+                        )}
+                        {asset.manufacturer && <span>Producator: {asset.manufacturer}</span>}
+                        {asset.model && <span>Model: {asset.model}</span>}
+                        {asset.year && <span>An: {asset.year}</span>}
+                        {asset.type && <span>Tip: {asset.type}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditModal(asset)}
+                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                        title="Editeaza"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingAsset(asset)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Sterge"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Asset Modal */}
+      {showAssetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={closeAssetModal} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editingAsset ? 'Editeaza' : 'Adauga'} {assetTerminology.singular.toLowerCase()}
+              </h2>
+              <button
+                onClick={closeAssetModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssetSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Denumire <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={assetForm.name}
+                  onChange={(e) => setAssetForm({ ...assetForm, name: e.target.value })}
+                  placeholder={assetType === 'vehicle' ? 'Ex: Volkswagen Golf' : 'Ex: Laptop Dell XPS'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {assetTerminology.identifier}
+                </label>
+                <Input
+                  value={assetForm.identifier}
+                  onChange={(e) => setAssetForm({ ...assetForm, identifier: e.target.value })}
+                  placeholder={assetType === 'vehicle' ? 'Ex: B 123 ABC' : 'Ex: SN123456'}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Producator
+                  </label>
+                  <Input
+                    value={assetForm.manufacturer}
+                    onChange={(e) => setAssetForm({ ...assetForm, manufacturer: e.target.value })}
+                    placeholder={assetType === 'vehicle' ? 'Ex: Volkswagen' : 'Ex: Dell'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Model
+                  </label>
+                  <Input
+                    value={assetForm.model}
+                    onChange={(e) => setAssetForm({ ...assetForm, model: e.target.value })}
+                    placeholder={assetType === 'vehicle' ? 'Ex: Golf' : 'Ex: XPS 15'}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    An fabricatie
+                  </label>
+                  <Input
+                    type="number"
+                    value={assetForm.year}
+                    onChange={(e) => setAssetForm({ ...assetForm, year: e.target.value })}
+                    placeholder="Ex: 2020"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Tip
+                  </label>
+                  <Input
+                    value={assetForm.type}
+                    onChange={(e) => setAssetForm({ ...assetForm, type: e.target.value })}
+                    placeholder={assetType === 'vehicle' ? 'Ex: Autoturism' : 'Ex: Laptop'}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="secondary" onClick={closeAssetModal}>
+                  Anuleaza
+                </Button>
+                <Button
+                  type="submit"
+                  isLoading={createAssetMutation.isPending || updateAssetMutation.isPending}
+                >
+                  {editingAsset ? 'Salveaza' : 'Adauga'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingAsset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setDeletingAsset(null)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Confirmare stergere</h2>
+            <p className="text-gray-600 mb-6">
+              Esti sigur ca vrei sa stergi <strong>{deletingAsset.name}</strong>?
+              Aceasta actiune nu poate fi anulata.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setDeletingAsset(null)}>
+                Anuleaza
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteAsset}
+                isLoading={deleteAssetMutation.isPending}
+              >
+                Sterge
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Security tab */}

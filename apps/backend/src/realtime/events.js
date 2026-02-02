@@ -34,6 +34,14 @@ const broadcastAppointment = (action, appointment) => {
   emitToOrganization(appointment.organizationId, event, appointment);
 };
 
+/**
+ * Broadcast when a new appointment is created (including from portal)
+ */
+const broadcastAppointmentCreated = (organizationId, appointment) => {
+  if (!appointment || !organizationId) return;
+  emitToOrganization(organizationId, 'appointment:created', appointment);
+};
+
 const broadcastMessage = (organizationId, appointmentId, message) => {
   if (!message || !organizationId) return;
   emitToOrganization(organizationId, 'message:new', message);
@@ -198,6 +206,7 @@ module.exports = {
   broadcastTimeOff,
   broadcastNotification,
   broadcastAppointment,
+  broadcastAppointmentCreated,
   broadcastMessage,
   broadcastTyping,
   broadcastServiceOrder,
