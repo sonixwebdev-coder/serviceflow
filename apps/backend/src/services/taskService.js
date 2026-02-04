@@ -13,8 +13,14 @@ const withTaskIncludes = optimizedTaskIncludes;
 
 const isManagerial = ({ roles }) => roles?.some((role) => ['admin', 'manager'].includes(role));
 
-const buildTaskWhere = (filters, currentUser) => {
+const buildTaskWhere = (filters, currentUser, options = {}) => {
+  const { locationFilter = {} } = options;
   const where = {};
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    Object.assign(where, locationFilter);
+  }
 
   if (filters.status) {
     where.status = normalize(filters.status);
@@ -52,7 +58,8 @@ const buildTaskWhere = (filters, currentUser) => {
 };
 
 const listTasks = async (prisma, filters = {}, currentUser, options = {}) => {
-  const where = buildTaskWhere(filters, currentUser);
+  const { locationFilter = {} } = options;
+  const where = buildTaskWhere(filters, currentUser, { locationFilter });
   const orderBy = [{ dueDate: 'asc' }, { priority: 'desc' }];
 
   // Support pagination (optional for backward compatibility)
@@ -115,7 +122,8 @@ const getTaskById = async (prisma, taskId, currentUser) => {
   return mapped;
 };
 
-const createTask = async (prisma, payload, currentUser) => {
+const createTask = async (prisma, payload, currentUser, options = {}) => {
+  const { locationId } = options;
   const assignments = Array.isArray(payload.assignedTo) ? payload.assignedTo : [];
 
   const task = await prisma.task.create({
@@ -133,6 +141,7 @@ const createTask = async (prisma, payload, currentUser) => {
       customerVehicle: payload.customerVehicle,
       createdById: currentUser.id,
       updatedById: currentUser.id,
+      locationId: payload.locationId || locationId || null,
       products: payload.products?.length
         ? {
             create: payload.products.map((product) => ({

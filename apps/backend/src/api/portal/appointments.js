@@ -60,7 +60,7 @@ const getAvailableDatesForClient = async (organizationId, days = 30) => {
 /**
  * Get available time slots for a specific date
  */
-const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAULT_SLOT_DURATION) => {
+const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAULT_SLOT_DURATION, locationId = null) => {
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },
     select: { settings: true },
@@ -70,9 +70,18 @@ const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAU
   const workStart = pbSettings.workingHours?.start ?? DEFAULT_WORK_START;
   const workEnd = pbSettings.workingHours?.end ?? DEFAULT_WORK_END;
 
-  // Get ramp count for capacity
-  const settings = await getCompanySettings();
-  const totalCapacity = Number(settings?.rampCount) || 1;
+  // Get capacity - either from resources at location or company settings
+  let totalCapacity = 1;
+  if (locationId) {
+    const resources = await prisma.resource.findMany({
+      where: { organizationId, locationId, isActive: true },
+      select: { capacity: true },
+    });
+    totalCapacity = resources.reduce((sum, r) => sum + r.capacity, 0) || 1;
+  } else {
+    const settings = await getCompanySettings();
+    totalCapacity = Number(settings?.rampCount) || 1;
+  }
 
   // Parse date as local date
   const [year, month, day] = date.split('-').map(Number);
@@ -87,13 +96,19 @@ const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAU
   const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
   const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
+  // Build appointment query with optional location filter
+  const appointmentWhere = {
+    organizationId,
+    scheduledStart: { gte: startOfDay, lte: endOfDay },
+    status: { not: 'CANCELLED' },
+  };
+  if (locationId) {
+    appointmentWhere.locationId = locationId;
+  }
+
   // Get existing appointments for the day
   const existingAppointments = await prisma.appointment.findMany({
-    where: {
-      organizationId,
-      scheduledStart: { gte: startOfDay, lte: endOfDay },
-      status: { not: 'CANCELLED' },
-    },
+    where: appointmentWhere,
     select: {
       scheduledStart: true,
       scheduledEnd: true,
@@ -176,6 +191,39 @@ const checkAvailability = async (organizationId, scheduledStart, scheduledEnd) =
 };
 
 /**
+ * GET /api/portal/appointments/locations
+ * Get organization's active locations for booking
+ */
+router.get(
+  '/locations',
+  authenticateClient,
+  asyncHandler(async (req, res) => {
+    const locations = await prisma.location.findMany({
+      where: {
+        organizationId: req.client.organizationId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        address: true,
+        city: true,
+        county: true,
+        phone: true,
+        isPrimary: true,
+      },
+      orderBy: [{ isPrimary: 'desc' }, { name: 'asc' }],
+    });
+
+    res.json({
+      locations,
+      hasMultipleLocations: locations.length > 1,
+    });
+  })
+);
+
+/**
  * GET /api/portal/appointments/available-dates
  * Get available dates for the next N days
  */
@@ -197,7 +245,7 @@ router.get(
   '/available-slots',
   authenticateClient,
   asyncHandler(async (req, res) => {
-    const { date, duration } = req.query;
+    const { date, duration, locationId } = req.query;
 
     if (!date) {
       return res.status(400).json({ error: 'Data este obligatorie' });
@@ -211,7 +259,8 @@ router.get(
     const slots = await getAvailableSlotsForClient(
       req.client.organizationId,
       date,
-      duration ? parseInt(duration, 10) : DEFAULT_SLOT_DURATION
+      duration ? parseInt(duration, 10) : DEFAULT_SLOT_DURATION,
+      locationId || null
     );
     res.json(slots);
   })
@@ -258,7 +307,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const client = req.client;
     const organizationId = client.organizationId;
-    const { title, description, scheduledStart, scheduledEnd, location, assetId, asset } = req.body;
+    const { title, description, scheduledStart, scheduledEnd, location, assetId, asset, locationId } = req.body;
 
     // Validate dates
     const start = new Date(scheduledStart);
@@ -331,6 +380,7 @@ router.post(
         scheduledStart: start,
         scheduledEnd: end,
         location,
+        locationId: locationId || null,
         clientId: client.id,
         assetId: resolvedAssetId,
         createdById: creatorAdminId,

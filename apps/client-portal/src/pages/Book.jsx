@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Calendar, Clock, User, Car, Package, CheckCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { Calendar, Clock, User, Car, Package, CheckCircle, ArrowLeft, ArrowRight, Loader2, MapPin } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -15,27 +15,40 @@ const baseSteps = [
   { id: 'details', title: 'Date personale', icon: User },
 ];
 
+const locationStep = { id: 'location', title: 'Locatie', icon: MapPin };
 const confirmStep = { id: 'confirm', title: 'Confirmare', icon: CheckCircle };
 
-// Get steps based on sector configuration
-const getStepsForSector = (sectorConfig) => {
-  if (!sectorConfig?.hasAssets) {
-    // No assets (e.g., BEAUTY sector)
-    return [...baseSteps, confirmStep];
+// Get steps based on sector configuration and locations
+const getStepsForSector = (sectorConfig, hasMultipleLocations) => {
+  const steps = [];
+
+  // Add location step first if multiple locations
+  if (hasMultipleLocations) {
+    steps.push(locationStep);
   }
 
-  // Sectors with assets - determine icon and title based on assetType
-  const assetStepTitle = sectorConfig.terminology?.asset?.singular || 'Activ';
-  const assetStepIcon = sectorConfig.assetType === 'vehicle' ? Car : Package;
-  const assetStep = { id: 'asset', title: assetStepTitle, icon: assetStepIcon };
+  // Add base steps
+  steps.push(...baseSteps);
 
-  return [...baseSteps, assetStep, confirmStep];
+  // Add asset step if sector uses assets
+  if (sectorConfig?.hasAssets) {
+    const assetStepTitle = sectorConfig.terminology?.asset?.singular || 'Activ';
+    const assetStepIcon = sectorConfig.assetType === 'vehicle' ? Car : Package;
+    const assetStep = { id: 'asset', title: assetStepTitle, icon: assetStepIcon };
+    steps.push(assetStep);
+  }
+
+  // Add confirm step
+  steps.push(confirmStep);
+
+  return steps;
 };
 
 export default function Book() {
   const { slug } = useParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
+    selectedLocation: null,
     selectedDate: null,
     selectedSlot: null,
     client: {
@@ -77,9 +90,18 @@ export default function Book() {
   const hasAssets = sectorConfig?.hasAssets || false;
   const assetType = sectorConfig?.assetType;
   const assetTerminology = sectorConfig?.terminology?.asset || { singular: 'Activ', plural: 'Active', identifier: 'Identificator' };
-  const steps = useMemo(() => getStepsForSector(sectorConfig), [sectorConfig]);
+  const locations = organization?.locations || [];
+  const hasMultipleLocations = organization?.hasMultipleLocations || false;
+  const steps = useMemo(() => getStepsForSector(sectorConfig, hasMultipleLocations), [sectorConfig, hasMultipleLocations]);
   const currentStepId = steps[currentStep]?.id;
   const isLastStep = currentStep === steps.length - 1;
+
+  // Auto-select primary location if only one location exists
+  useMemo(() => {
+    if (locations.length === 1 && !formData.selectedLocation) {
+      setFormData((prev) => ({ ...prev, selectedLocation: locations[0] }));
+    }
+  }, [locations, formData.selectedLocation]);
 
   // Fetch available dates
   const { data: dates, isLoading: datesLoading } = useQuery({
@@ -88,10 +110,10 @@ export default function Book() {
     enabled: !!organization,
   });
 
-  // Fetch available slots for selected date
+  // Fetch available slots for selected date (filtered by location if selected)
   const { data: slots, isLoading: slotsLoading } = useQuery({
-    queryKey: ['available-slots', slug, formData.selectedDate],
-    queryFn: () => bookingService.getAvailableSlots(slug, formData.selectedDate),
+    queryKey: ['available-slots', slug, formData.selectedDate, formData.selectedLocation?.id],
+    queryFn: () => bookingService.getAvailableSlots(slug, formData.selectedDate, formData.selectedLocation?.id),
     enabled: !!formData.selectedDate,
   });
 
@@ -117,6 +139,8 @@ export default function Book() {
 
   const canProceed = () => {
     switch (currentStepId) {
+      case 'location':
+        return !!formData.selectedLocation;
       case 'date':
         return !!formData.selectedDate;
       case 'time':
@@ -150,6 +174,7 @@ export default function Book() {
         },
         createAccount: formData.createAccount,
         password: formData.createAccount ? formData.password : null,
+        locationId: formData.selectedLocation?.id || null,
       };
 
       // Add asset data based on sector's asset type
@@ -295,6 +320,60 @@ export default function Book() {
             <CardTitle>{steps[currentStep].title}</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Select Location */}
+            {currentStepId === 'location' && (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Selecteaza locatia unde doresti sa faci programarea.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {locations.map((location) => (
+                    <button
+                      key={location.id}
+                      onClick={() => {
+                        updateFormData('selectedLocation', location);
+                        // Reset date/slot when changing location
+                        updateFormData('selectedDate', null);
+                        updateFormData('selectedSlot', null);
+                      }}
+                      className={cn(
+                        'p-4 rounded-lg border text-left transition-colors',
+                        formData.selectedLocation?.id === location.id
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <MapPin className={cn(
+                          'h-5 w-5 mt-0.5 flex-shrink-0',
+                          formData.selectedLocation?.id === location.id ? 'text-primary-600' : 'text-gray-400'
+                        )} />
+                        <div>
+                          <p className={cn(
+                            'font-medium',
+                            formData.selectedLocation?.id === location.id ? 'text-primary-700' : 'text-gray-900'
+                          )}>
+                            {location.name}
+                            {location.isPrimary && (
+                              <span className="ml-2 text-xs font-normal text-gray-500">(Principal)</span>
+                            )}
+                          </p>
+                          {(location.address || location.city) && (
+                            <p className="mt-1 text-sm text-gray-500">
+                              {[location.address, location.city, location.county].filter(Boolean).join(', ')}
+                            </p>
+                          )}
+                          {location.phone && (
+                            <p className="mt-1 text-xs text-gray-400">{location.phone}</p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Select Date */}
             {currentStepId === 'date' && (
               <div className="space-y-4">
@@ -530,6 +609,12 @@ export default function Book() {
             {currentStepId === 'confirm' && (
               <div className="space-y-6">
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  {formData.selectedLocation && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Locatie:</span>
+                      <span className="font-medium">{formData.selectedLocation.name}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Data si ora:</span>
                     <span className="font-medium">

@@ -11,6 +11,7 @@ import API from '../utils/api.js';
 import useToast from '../context/useToast.js';
 import { useTerminology } from '../context/TerminologyContext';
 import DatePicker from '../components/ui/DatePicker';
+import LocationBadge from '../components/LocationBadge';
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -488,9 +489,14 @@ const Clients = () => {
               {clients.map((client) => (
                 <div key={client.id} className={`grid gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors ${hasAssets ? 'grid-cols-8' : 'grid-cols-7'}`}>
                   <div className="font-medium text-gray-900">
-                    {client.type === 'SRL'
-                      ? client.companyName || 'Client companie'
-                      : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {client.type === 'SRL'
+                          ? client.companyName || 'Client companie'
+                          : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
+                      </span>
+                      <LocationBadge locationId={client.locationId} size="xs" />
+                    </div>
                     {client.type === 'SRL' && client.contactName ? (
                       <p className="text-xs text-gray-500">Contact: {client.contactName}</p>
                     ) : null}
@@ -548,11 +554,14 @@ const Clients = () => {
                 <div key={client.id} className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="space-y-3">
                     <div>
-                      <p className="font-semibold text-gray-900">
-                        {client.type === 'SRL'
-                          ? client.companyName || 'Client companie'
-                          : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900">
+                          {client.type === 'SRL'
+                            ? client.companyName || 'Client companie'
+                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
+                        </p>
+                        <LocationBadge locationId={client.locationId} size="xs" />
+                      </div>
                       {client.type === 'SRL' && client.contactName && (
                         <p className="text-xs text-gray-500 mt-1">Contact: {client.contactName}</p>
                       )}

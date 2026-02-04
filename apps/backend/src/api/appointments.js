@@ -99,7 +99,8 @@ router.get(
   asyncHandler(async (req, res) => {
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
-    const appointments = await listAppointments(req.tenantPrisma, req.query, { paginate });
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const appointments = await listAppointments(req.tenantPrisma, req.query, { paginate, locationFilter });
     return ok(res, appointments);
   })
 );
@@ -109,7 +110,10 @@ router.post(
   authenticate,
   validate(createAppointmentSchema),
   asyncHandler(async (req, res) => {
-    const appointment = await createAppointment(req.tenantPrisma, req.body, req.user);
+    const locationContext = await req.getLocationContext();
+    const appointment = await createAppointment(req.tenantPrisma, req.body, req.user, {
+      locationId: locationContext.currentLocationId,
+    });
 
     // Log the creation
     await logFromRequest(req, {
@@ -117,7 +121,7 @@ router.post(
       entityType: ENTITY_TYPES.APPOINTMENT,
       entityId: appointment.id,
       description: getActionDescription('CREATE', ENTITY_TYPES.APPOINTMENT, appointment.title || 'Programare'),
-      metadata: { clientId: appointment.clientId },
+      metadata: { clientId: appointment.clientId, locationId: appointment.locationId },
     });
 
     return created(res, appointment, 'Appointment created successfully');

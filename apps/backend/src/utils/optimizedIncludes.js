@@ -80,6 +80,15 @@ const minimalTaskIncludes = {
   },
 };
 
+// Minimal location include
+const minimalLocationInclude = {
+  select: {
+    id: true,
+    name: true,
+    slug: true,
+  },
+};
+
 // Optimized appointment includes
 const optimizedAppointmentIncludes = {
   client: {
@@ -109,6 +118,7 @@ const optimizedAppointmentIncludes = {
       metadata: true,
     },
   },
+  locationRef: minimalLocationInclude,
   assignees: {
     include: {
       user: minimalUserInclude,
@@ -136,6 +146,7 @@ const minimalAppointmentIncludes = {
       identifier: true,
     },
   },
+  locationRef: minimalLocationInclude,
   assignees: {
     select: {
       user: {
@@ -167,11 +178,13 @@ const optimizedTimeEntryIncludes = {
       shiftType: true,
     },
   },
+  locationRef: minimalLocationInclude,
 };
 
 module.exports = {
   minimalUserInclude,
   fullUserInclude,
+  minimalLocationInclude,
   optimizedTaskIncludes,
   fullTaskIncludes,
   minimalTaskIncludes,

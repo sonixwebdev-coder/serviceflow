@@ -26,6 +26,8 @@ import ClientGrowthChart from '../components/analytics/ClientGrowthChart';
 import InvoiceAgingTable from '../components/analytics/InvoiceAgingTable';
 import TopClientsTable from '../components/analytics/TopClientsTable';
 import DateRangeFilter from '../components/analytics/DateRangeFilter';
+import LocationComparisonChart from '../components/analytics/LocationComparisonChart';
+import { useAuth } from '../context/useAuth';
 
 const DEFAULT_RANGE = {
   startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
@@ -35,6 +37,8 @@ const DEFAULT_RANGE = {
 
 export default function Analytics() {
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE);
+  const { hasRole } = useAuth();
+  const canViewLocationComparison = hasRole('admin', 'manager');
 
   const queryParams = useMemo(
     () => ({
@@ -164,6 +168,14 @@ export default function Analytics() {
           />
         </div>
       </div>
+
+      {/* Location Comparison (admin/manager only) */}
+      {canViewLocationComparison && (
+        <LocationComparisonChart
+          startDate={dateRange.startDate}
+          endDate={dateRange.endDate}
+        />
+      )}
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -13,10 +13,12 @@ export const bookingService = {
     return response.data;
   },
 
-  async getAvailableSlots(slug, date, duration = 60) {
-    const response = await api.get(`/portal/public/${slug}/slots`, {
-      params: { date, duration },
-    });
+  async getAvailableSlots(slug, date, locationId = null, duration = 60) {
+    const params = { date, duration };
+    if (locationId) {
+      params.locationId = locationId;
+    }
+    const response = await api.get(`/portal/public/${slug}/slots`, { params });
     return response.data;
   },
 

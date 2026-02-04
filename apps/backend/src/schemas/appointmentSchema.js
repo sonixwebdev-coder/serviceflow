@@ -117,6 +117,7 @@ const portalCreateAppointmentSchema = z.object({
   scheduledStart: z.coerce.date({ invalid_type_error: 'Data de inceput invalida' }),
   scheduledEnd: z.coerce.date({ invalid_type_error: 'Data de sfarsit invalida' }),
   location: z.string().optional(),
+  locationId: z.string().optional(),
   assetId: z.string().optional(),
   // Allow creating a new asset inline
   asset: assetSchema,

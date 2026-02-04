@@ -7,6 +7,7 @@ const TENANT_MODELS = [
   'client',
   'asset',
   'resource',
+  'location',
   'appointment',
   'serviceOrder',
   'invoice',
@@ -21,6 +22,7 @@ const TENANT_MODELS = [
   'chatChannel', // Only chatChannel has organizationId - other chat models are scoped via channel
   // Note: chatMember, chatMessage, chatAttachment, chatReadReceipt, chatTypingIndicator
   // do NOT have organizationId - they are scoped through their parent chatChannel
+  // Note: userLocation does NOT have organizationId - it is scoped through the location relation
 ];
 
 /**

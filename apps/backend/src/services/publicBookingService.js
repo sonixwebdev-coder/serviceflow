@@ -28,6 +28,25 @@ const getOrganizationBySlug = async (prisma, slug) => {
     throw new AppError('Organization not found', 404);
   }
 
+  // Get active locations for this organization
+  const locations = await prisma.location.findMany({
+    where: {
+      organizationId: organization.id,
+      isActive: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      address: true,
+      city: true,
+      county: true,
+      phone: true,
+      isPrimary: true,
+    },
+    orderBy: [{ isPrimary: 'desc' }, { name: 'asc' }],
+  });
+
   // Get sector configuration
   const sectorConfig = getSectorConfig(organization.activitySector);
 
@@ -46,6 +65,8 @@ const getOrganizationBySlug = async (prisma, slug) => {
 
   return {
     ...organization,
+    locations,
+    hasMultipleLocations: locations.length > 1,
     sectorConfig,
     publicBookingSettings,
   };
@@ -93,17 +114,26 @@ const getSystemUserForOrg = async (prisma, organizationId) => {
 
 /**
  * Get total capacity from active resources (ramps)
+ * Optionally filtered by location
  */
-const getOrganizationCapacity = async (prisma, organizationId) => {
+const getOrganizationCapacity = async (prisma, organizationId, locationId = null) => {
+  const resourceWhere = {
+    organizationId,
+    isActive: true,
+  };
+
+  // Filter by location if specified
+  if (locationId) {
+    resourceWhere.locationId = locationId;
+  }
+
   const resources = await prisma.resource.findMany({
-    where: {
-      organizationId,
-      isActive: true,
-    },
+    where: resourceWhere,
     select: {
       id: true,
       name: true,
       capacity: true,
+      locationId: true,
     },
   });
 
@@ -116,7 +146,7 @@ const getOrganizationCapacity = async (prisma, organizationId) => {
 /**
  * Get available time slots for booking
  */
-const getAvailableSlots = async (prisma, { organizationId, date, duration = 60, settings = null }) => {
+const getAvailableSlots = async (prisma, { organizationId, date, duration = 60, settings = null, locationId = null }) => {
   // Parse date as local date (not UTC)
   const [year, month, day] = date.split('-').map(Number);
   const targetDate = new Date(year, month - 1, day);
@@ -124,25 +154,34 @@ const getAvailableSlots = async (prisma, { organizationId, date, duration = 60, 
   const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
   const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
-  // Get organization's resource capacity
-  const { totalCapacity } = await getOrganizationCapacity(prisma, organizationId);
+  // Get organization's resource capacity (optionally filtered by location)
+  const { totalCapacity } = await getOrganizationCapacity(prisma, organizationId, locationId);
+
+  // Build appointment query with optional location filter
+  const appointmentWhere = {
+    organizationId,
+    scheduledStart: {
+      gte: startOfDay,
+      lte: endOfDay,
+    },
+    status: {
+      notIn: ['CANCELLED'],
+    },
+  };
+
+  // Filter by location if specified
+  if (locationId) {
+    appointmentWhere.locationId = locationId;
+  }
 
   // Get existing appointments for the day (not cancelled)
   const existingAppointments = await prisma.appointment.findMany({
-    where: {
-      organizationId,
-      scheduledStart: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-      status: {
-        notIn: ['CANCELLED'],
-      },
-    },
+    where: appointmentWhere,
     select: {
       scheduledStart: true,
       scheduledEnd: true,
       resourceId: true,
+      locationId: true,
     },
   });
 
@@ -207,6 +246,7 @@ const createPublicBooking = async (prisma, {
   assetData,
   createAccount,
   password,
+  locationId,
 }) => {
   // Get organization to determine if assets are needed
   const organization = await prisma.organization.findUnique({
@@ -279,6 +319,7 @@ const createPublicBooking = async (prisma, {
         client: { connect: { id: client.id } },
         createdBy: { connect: { id: systemUser.id } },
         ...(asset && { asset: { connect: { id: asset.id } } }),
+        ...(locationId && { locationRef: { connect: { id: locationId } } }),
         title: appointmentData.title || 'Programare noua',
         description: appointmentData.description || null,
         scheduledStart,

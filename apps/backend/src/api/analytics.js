@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
+const authorize = require('../middleware/authorize');
 const asyncHandler = require('../middleware/asyncHandler');
 const analyticsService = require('../services/analyticsService');
 
@@ -12,7 +13,8 @@ router.get(
   '/overview',
   authenticate,
   asyncHandler(async (req, res) => {
-    const data = await analyticsService.getDashboardOverview(req.tenantPrisma);
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const data = await analyticsService.getDashboardOverview(req.tenantPrisma, { locationFilter });
     res.json(data);
   })
 );
@@ -27,10 +29,12 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const data = await analyticsService.getRevenueTrends(req.tenantPrisma, {
       startDate,
       endDate,
       groupBy,
+      locationFilter,
     });
     res.json(data);
   })
@@ -46,9 +50,11 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const data = await analyticsService.getAppointmentStats(req.tenantPrisma, {
       startDate,
       endDate,
+      locationFilter,
     });
     res.json(data);
   })
@@ -64,10 +70,12 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const data = await analyticsService.getClientAcquisition(req.tenantPrisma, {
       startDate,
       endDate,
       groupBy,
+      locationFilter,
     });
     res.json(data);
   })
@@ -82,6 +90,25 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const data = await analyticsService.getInvoiceAging(req.tenantPrisma);
+    res.json(data);
+  })
+);
+
+/**
+ * GET /api/analytics/locations/comparison
+ * Get analytics comparison across all locations (admin/manager only)
+ * Query params: startDate, endDate
+ */
+router.get(
+  '/locations/comparison',
+  authenticate,
+  authorize({ roles: ['admin', 'manager'] }),
+  asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+    const data = await analyticsService.getLocationComparison(req.tenantPrisma, {
+      startDate,
+      endDate,
+    });
     res.json(data);
   })
 );

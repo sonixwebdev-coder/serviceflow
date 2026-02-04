@@ -36,13 +36,22 @@ export const appointmentService = {
     return response.data;
   },
 
+  async getLocations() {
+    const response = await api.get('/portal/appointments/locations');
+    return response.data;
+  },
+
   async getAvailableDates(days = 30) {
     const response = await api.get(`/portal/appointments/available-dates?days=${days}`);
     return response.data;
   },
 
-  async getAvailableSlots(date, duration = 60) {
-    const response = await api.get(`/portal/appointments/available-slots?date=${date}&duration=${duration}`);
+  async getAvailableSlots(date, duration = 60, locationId = null) {
+    const params = new URLSearchParams();
+    params.append('date', date);
+    params.append('duration', duration);
+    if (locationId) params.append('locationId', locationId);
+    const response = await api.get(`/portal/appointments/available-slots?${params.toString()}`);
     return response.data;
   },
 };

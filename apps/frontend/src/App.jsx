@@ -33,6 +33,7 @@ import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
 import CompanySettings from './pages/CompanySettings.jsx';
 import OrganizationSettings from './pages/OrganizationSettings.jsx';
 import EmailTemplates from './pages/EmailTemplates.jsx';
+import Locations from './pages/Locations.jsx';
 import GlobalSearch from './components/search/GlobalSearch.jsx';
 
 function App() {
@@ -231,6 +232,17 @@ function App() {
           />
 
           {/* Admin Only Routes */}
+          <Route
+            path="/settings/locations"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <Locations />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/settings/company"
             element={

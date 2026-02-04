@@ -51,3 +51,12 @@ export const fetchTopClients = async (params = {}) => {
   const response = await api.get('/analytics/clients/top', { params });
   return response.data;
 };
+
+/**
+ * Get location comparison analytics (admin/manager only)
+ * @param {Object} params - { startDate, endDate }
+ */
+export const fetchLocationComparison = async (params = {}) => {
+  const response = await api.get('/analytics/locations/comparison', { params });
+  return response.data;
+};

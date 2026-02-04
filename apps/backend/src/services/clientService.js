@@ -1,12 +1,17 @@
 const { AppError } = require('../utils/errors');
 const { broadcastClientUpdate } = require('../realtime/events');
 
-const listClients = async (prisma, { search, page = 1, limit = 20, isOnline }) => {
+const listClients = async (prisma, { search, page = 1, limit = 20, isOnline, locationFilter = {} }) => {
   const take = Math.min(limit, 100);
   const skip = (page - 1) * take;
 
-  // Build where clause with search and isOnline filter
+  // Build where clause with search, isOnline filter, and location filter
   const conditions = [];
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    conditions.push(locationFilter);
+  }
 
   if (search) {
     conditions.push({
@@ -59,7 +64,8 @@ const listClients = async (prisma, { search, page = 1, limit = 20, isOnline }) =
   };
 };
 
-const createClient = async (prisma, data) => {
+const createClient = async (prisma, data, options = {}) => {
+  const { locationId } = options;
   const type = (data.type || 'PF').toUpperCase();
   if (!['PF', 'SRL'].includes(type)) {
     throw new AppError('Invalid client type', 400);
@@ -89,6 +95,7 @@ const createClient = async (prisma, data) => {
         isOnline: data.isOnline,
         fidelityCardSerie: data.fidelityCardSerie,
         notes: data.notes,
+        locationId: data.locationId || locationId || null,
       },
       include: {
         assets: true,
@@ -173,7 +180,7 @@ const updateClient = async (prisma, clientId, data) => {
  * @returns {Promise<Array>} - Array of matching clients with assets
  */
 const searchClients = async (prisma, query, options = {}) => {
-  const { limit = 20 } = options;
+  const { limit = 20, locationFilter = {} } = options;
 
   if (!query || query.trim().length === 0) {
     return [];
@@ -181,31 +188,44 @@ const searchClients = async (prisma, query, options = {}) => {
 
   const searchTerm = query.trim();
 
-  // Search clients with OR conditions across multiple fields
-  const clients = await prisma.client.findMany({
-    where: {
-      OR: [
-        { firstName: { contains: searchTerm, mode: 'insensitive' } },
-        { lastName: { contains: searchTerm, mode: 'insensitive' } },
-        { phone: { contains: searchTerm, mode: 'insensitive' } },
-        { email: { contains: searchTerm, mode: 'insensitive' } },
-        { companyName: { contains: searchTerm, mode: 'insensitive' } },
-        { contactName: { contains: searchTerm, mode: 'insensitive' } },
-        { fidelityCardSerie: { contains: searchTerm, mode: 'insensitive' } },
-        // Search by asset identifier and name
-        {
-          assets: {
-            some: {
-              OR: [
-                { identifier: { contains: searchTerm, mode: 'insensitive' } },
-                { manufacturer: { contains: searchTerm, mode: 'insensitive' } },
-                { name: { contains: searchTerm, mode: 'insensitive' } },
-              ],
-            },
+  // Build where clause with location filter and search
+  const whereConditions = [];
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    whereConditions.push(locationFilter);
+  }
+
+  // Add search conditions
+  whereConditions.push({
+    OR: [
+      { firstName: { contains: searchTerm, mode: 'insensitive' } },
+      { lastName: { contains: searchTerm, mode: 'insensitive' } },
+      { phone: { contains: searchTerm, mode: 'insensitive' } },
+      { email: { contains: searchTerm, mode: 'insensitive' } },
+      { companyName: { contains: searchTerm, mode: 'insensitive' } },
+      { contactName: { contains: searchTerm, mode: 'insensitive' } },
+      { fidelityCardSerie: { contains: searchTerm, mode: 'insensitive' } },
+      // Search by asset identifier and name
+      {
+        assets: {
+          some: {
+            OR: [
+              { identifier: { contains: searchTerm, mode: 'insensitive' } },
+              { manufacturer: { contains: searchTerm, mode: 'insensitive' } },
+              { name: { contains: searchTerm, mode: 'insensitive' } },
+            ],
           },
         },
-      ],
-    },
+      },
+    ],
+  });
+
+  const where = whereConditions.length > 1 ? { AND: whereConditions } : whereConditions[0];
+
+  // Search clients with OR conditions across multiple fields
+  const clients = await prisma.client.findMany({
+    where,
     include: {
       assets: {
         orderBy: {

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
-import { X, UserPlus, Mail, Phone, Calendar, Shield, CheckCircle, Umbrella, Users } from 'lucide-react';
+import { X, UserPlus, Mail, Phone, Calendar, Shield, CheckCircle, Umbrella, Users, MapPin } from 'lucide-react';
 import useUsers from '../hooks/useUsers';
 import useAuth from '../context/useAuth';
 import useToast from '../context/useToast';
@@ -9,6 +9,7 @@ import DatePicker from '../components/ui/DatePicker';
 import ExportButton from '../components/ExportButton';
 import { createUser, deactivateUser, updateUser } from '../services/userService';
 import { USER_ROLES } from '../utils/constants';
+import { useAllOrgLocations, useLocationMutations } from '../hooks/useLocations';
 
 const ROLE_LABELS = {
   [USER_ROLES.ADMIN]: 'Administrator',
@@ -25,6 +26,8 @@ const initialFormState = {
   dateOfBirth: null,
   role: USER_ROLES.TECHNICIAN,
   password: '',
+  locationIds: [],
+  primaryLocationId: null,
 };
 
 const Employees = () => {
@@ -36,6 +39,10 @@ const Employees = () => {
 
   const [filters, setFilters] = useState({ isActive: true });
   const { users, loading, error, setFilters: setHookFilters, refresh } = useUsers(filters, { enabled: isAdmin });
+
+  // Fetch all organization locations for the form
+  const { locations: allLocations, loading: locationsLoading } = useAllOrgLocations({ enabled: isAdmin });
+  const { assignUsers, removeUsers } = useLocationMutations();
 
   const [modalMode, setModalMode] = useState(null); // 'create' | 'edit'
   const [formState, setFormState] = useState(initialFormState);
@@ -78,6 +85,11 @@ const Employees = () => {
 
   const openEditModal = (employee) => {
     setTargetUser(employee);
+
+    // Extract location IDs and primary location from employee data
+    const employeeLocationIds = (employee.locations || []).map((loc) => loc.id);
+    const primaryLoc = (employee.locations || []).find((loc) => loc.isPrimary);
+
     setFormState({
       firstName: employee.firstName,
       lastName: employee.lastName,
@@ -86,6 +98,8 @@ const Employees = () => {
       dateOfBirth: employee.dateOfBirth ? new Date(employee.dateOfBirth) : null,
       role: employee.role,
       password: '',
+      locationIds: employeeLocationIds,
+      primaryLocationId: primaryLoc?.id || employeeLocationIds[0] || null,
     });
     setModalMode('edit');
   };
@@ -109,6 +123,37 @@ const Employees = () => {
     setFormState((current) => ({
       ...current,
       dateOfBirth: date,
+    }));
+  };
+
+  const handleLocationToggle = (locationId, checked) => {
+    setFormState((current) => {
+      const newLocationIds = checked
+        ? [...current.locationIds, locationId]
+        : current.locationIds.filter((id) => id !== locationId);
+
+      // If we're removing the primary location, set a new primary
+      let newPrimaryId = current.primaryLocationId;
+      if (!checked && current.primaryLocationId === locationId) {
+        newPrimaryId = newLocationIds[0] || null;
+      }
+      // If this is the first location added, make it primary
+      if (checked && newLocationIds.length === 1) {
+        newPrimaryId = locationId;
+      }
+
+      return {
+        ...current,
+        locationIds: newLocationIds,
+        primaryLocationId: newPrimaryId,
+      };
+    });
+  };
+
+  const handlePrimaryLocationChange = (locationId) => {
+    setFormState((current) => ({
+      ...current,
+      primaryLocationId: locationId,
     }));
   };
 
@@ -149,25 +194,83 @@ const Employees = () => {
 
     setSaving(true);
 
-   try {
-     if (modalMode === 'create') {
-       await createUser(payload);
-       showToast({
-         title: 'Angajat adaugat',
-         description: 'Angajatul a fost adaugat cu succes.',
-         type: 'success',
-       });
-     } else if (targetUser) {
-       await updateUser(targetUser._id, payload);
-       showToast({
-         title: 'Angajat actualizat',
-         description: 'Modificarile au fost salvate.',
-         type: 'success',
-       });
-     }
+    try {
+      let savedUserId;
 
-     await refresh();
-     closeModal();
+      if (modalMode === 'create') {
+        const newUser = await createUser(payload);
+        savedUserId = newUser._id || newUser.id;
+        showToast({
+          title: 'Angajat adaugat',
+          description: 'Angajatul a fost adaugat cu succes.',
+          type: 'success',
+        });
+      } else if (targetUser) {
+        await updateUser(targetUser._id, payload);
+        savedUserId = targetUser._id;
+        showToast({
+          title: 'Angajat actualizat',
+          description: 'Modificarile au fost salvate.',
+          type: 'success',
+        });
+      }
+
+      // Handle location assignments if we have locations selected
+      if (savedUserId && formState.locationIds.length > 0) {
+        // Get current locations for the user (for edit mode)
+        const currentLocationIds = modalMode === 'edit'
+          ? (targetUser?.locations || []).map((loc) => loc.id)
+          : [];
+
+        // Find locations to add and remove
+        const locationsToAdd = formState.locationIds.filter(
+          (id) => !currentLocationIds.includes(id)
+        );
+        const locationsToRemove = currentLocationIds.filter(
+          (id) => !formState.locationIds.includes(id)
+        );
+
+        // Remove user from locations they're no longer assigned to
+        for (const locId of locationsToRemove) {
+          try {
+            await removeUsers({ locationId: locId, userIds: [savedUserId] });
+          } catch (err) {
+            console.error('Failed to remove user from location:', err);
+          }
+        }
+
+        // Add user to new locations
+        for (const locId of locationsToAdd) {
+          const isPrimary = locId === formState.primaryLocationId;
+          try {
+            await assignUsers({ locationId: locId, userIds: [savedUserId], setPrimary: isPrimary });
+          } catch (err) {
+            console.error('Failed to assign user to location:', err);
+          }
+        }
+
+        // If primary location changed but user was already assigned to it, update primary flag
+        const existingPrimaryLoc = (targetUser?.locations || []).find((loc) => loc.isPrimary);
+        if (
+          modalMode === 'edit' &&
+          existingPrimaryLoc &&
+          formState.primaryLocationId !== existingPrimaryLoc.id &&
+          formState.locationIds.includes(formState.primaryLocationId)
+        ) {
+          try {
+            await assignUsers({
+              locationId: formState.primaryLocationId,
+              userIds: [savedUserId],
+              setPrimary: true,
+            });
+          } catch (err) {
+            console.error('Failed to update primary location:', err);
+          }
+        }
+      }
+
+      await refresh();
+      closeModal();
     } catch (submitError) {
       showToast({
         title: 'Salvarea a esuat',
@@ -303,6 +406,53 @@ const Employees = () => {
           />
         </div>
       </div>
+
+      {/* Location Assignment */}
+      {allLocations.length > 0 && (
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+            <MapPin size={16} className="text-gray-500" />
+            Locatii asignate
+          </label>
+          <div className="space-y-2 max-h-48 overflow-y-auto p-3 bg-gray-50 rounded-lg border border-gray-200">
+            {locationsLoading ? (
+              <div className="text-sm text-gray-500">Se incarca locatiile...</div>
+            ) : (
+              allLocations.map((location) => (
+                <label
+                  key={location.id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-white transition cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formState.locationIds.includes(location.id)}
+                    onChange={(e) => handleLocationToggle(location.id, e.target.checked)}
+                    className="rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                  />
+                  <span className="flex-1 text-sm text-gray-700">{location.name}</span>
+                  {formState.locationIds.includes(location.id) && (
+                    <label className="flex items-center gap-1.5 text-xs">
+                      <input
+                        type="radio"
+                        name="primaryLocation"
+                        checked={formState.primaryLocationId === location.id}
+                        onChange={() => handlePrimaryLocationChange(location.id)}
+                        className="text-viperx-primary focus:ring-viperx-primary"
+                      />
+                      <span className="text-gray-500">Principal</span>
+                    </label>
+                  )}
+                </label>
+              ))
+            )}
+          </div>
+          {formState.locationIds.length === 0 && (
+            <p className="text-xs text-amber-600 mt-2">
+              Nicio locatie selectata. Angajatul nu va avea acces la date.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -394,6 +544,7 @@ const Employees = () => {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status Concediu</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Locatii</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status Cont</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actiuni</th>
                 </tr>
@@ -452,6 +603,32 @@ const Employees = () => {
                           <Shield size={12} />
                           {ROLE_LABELS[employee.role] || employee.role}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {(employee.locations || []).length > 0 ? (
+                            employee.locations.slice(0, 2).map((loc) => (
+                              <span
+                                key={loc.id}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  loc.isPrimary
+                                    ? 'bg-viperx-primary/10 text-viperx-primary border border-viperx-primary/30'
+                                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                }`}
+                              >
+                                <MapPin size={10} />
+                                {loc.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Neasignat</span>
+                          )}
+                          {(employee.locations || []).length > 2 && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                              +{employee.locations.length - 2}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${employee.isActive ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
@@ -553,6 +730,25 @@ const Employees = () => {
                           <Calendar size={14} className="text-gray-400" />
                           Angajat din: {employee.createdAt ? format(new Date(employee.createdAt), 'dd MMM yyyy', { locale: roDateLocale }) : '—'}
                         </div>
+                        {(employee.locations || []).length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <MapPin size={14} className="text-gray-400" />
+                            <div className="flex flex-wrap gap-1">
+                              {employee.locations.map((loc) => (
+                                <span
+                                  key={loc.id}
+                                  className={`text-xs px-1.5 py-0.5 rounded ${
+                                    loc.isPrimary
+                                      ? 'bg-viperx-primary/10 text-viperx-primary'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}
+                                >
+                                  {loc.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex gap-2 pt-2">

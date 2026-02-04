@@ -28,6 +28,7 @@ import {
   BarChart3,
   Package,
   Mail,
+  MapPin,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { USER_ROLES } from '../../utils/constants';
@@ -37,6 +38,9 @@ import { useTerminology } from '../../context/TerminologyContext';
 import useNotifications from '../../hooks/useNotifications';
 import { markNotificationRead, markNotificationsRead } from '../../services/notificationService';
 import FloatingChatWidget from '../chat/FloatingChatWidget';
+import LocationSwitcher from '../LocationSwitcher';
+import LocationSwitchingOverlay from '../LocationSwitchingOverlay';
+import { useMyLocations } from '../../hooks/useLocations';
 
 const formatRelativeTime = (value) => {
   try {
@@ -63,6 +67,9 @@ const DashboardLayout = ({ children }) => {
   const { features } = useTerminology();
   const hasAssets = features?.useAssets !== false; // Default to true if undefined
   const location = useLocation();
+
+  // Initialize user locations
+  useMyLocations();
 
   const {
     notifications,
@@ -149,6 +156,7 @@ const DashboardLayout = ({ children }) => {
       icon: Settings,
       roles: [USER_ROLES.ADMIN],
       children: [
+        { name: 'Locatii', href: '/settings/locations', icon: MapPin, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari organizatie', href: '/settings/organization', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Template-uri Email', href: '/settings/email-templates', icon: Mail, roles: [USER_ROLES.ADMIN] },
@@ -435,6 +443,7 @@ const DashboardLayout = ({ children }) => {
           </button>
 
           <div className="flex flex-1 items-center justify-end gap-3">
+            <LocationSwitcher />
             <button
               type="button"
               className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
@@ -546,6 +555,9 @@ const DashboardLayout = ({ children }) => {
 
       {/* Floating Chat Widget */}
       <FloatingChatWidget />
+
+      {/* Location Switching Overlay */}
+      <LocationSwitchingOverlay />
     </div>
   );
 };

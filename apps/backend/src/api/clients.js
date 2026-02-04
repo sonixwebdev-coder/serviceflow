@@ -81,7 +81,11 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
-    const results = await searchClients(req.tenantPrisma, q, { limit: limit ? parseInt(limit) : 20 });
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const results = await searchClients(req.tenantPrisma, q, {
+      limit: limit ? parseInt(limit) : 20,
+      locationFilter,
+    });
     return ok(res, results);
   })
 );
@@ -91,7 +95,8 @@ router.get(
   authenticate,
   validate(listClientQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const result = await listClients(req.tenantPrisma, req.query);
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const result = await listClients(req.tenantPrisma, { ...req.query, locationFilter });
     return ok(res, result);
   })
 );
@@ -102,7 +107,10 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(createClientSchema),
   asyncHandler(async (req, res) => {
-    const client = await createClient(req.tenantPrisma, req.body);
+    const locationContext = await req.getLocationContext();
+    const client = await createClient(req.tenantPrisma, req.body, {
+      locationId: req.body.locationId || locationContext.currentLocationId,
+    });
 
     // Log audit action
     const clientName = client.type === 'PF'
@@ -113,7 +121,7 @@ router.post(
       entityType: ENTITY_TYPES.CLIENT,
       entityId: client.id,
       description: getActionDescription('CREATE', ENTITY_TYPES.CLIENT, clientName),
-      metadata: { clientType: client.type },
+      metadata: { clientType: client.type, locationId: client.locationId },
     });
 
     return created(res, client, 'Client created successfully');

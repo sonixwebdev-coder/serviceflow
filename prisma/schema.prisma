@@ -29,6 +29,7 @@ model Organization {
   auditLogs            AuditLog[]
   clients              Client[]
   invoices             Invoice[]
+  locations            Location[]
   notifications        Notification[]
   payments             Payment[]
   registrationRequests RegistrationRequest[]
@@ -72,6 +73,7 @@ model User {
   appointmentsUpdated    Appointment[]           @relation("AppointmentUpdatedBy")
   appointmentAssignees   AppointmentAssignee[]
   auditLogs              AuditLog[]
+  locations              UserLocation[]
   messages               Message[]
   messageReadReceipts    MessageReadReceipt[]
   notifications          Notification[]          @relation("NotificationRecipient")
@@ -102,6 +104,56 @@ model User {
 
   @@index([isActive])
   @@index([email])
+}
+
+model Location {
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String
+  address        String?
+  city           String?
+  county         String?
+  country        String         @default("RO")
+  phone          String?
+  email          String?
+  timezone       String         @default("Europe/Bucharest")
+  isActive       Boolean        @default(true)
+  isPrimary      Boolean        @default(false)
+  operatingHours Json?
+  settings       Json?
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  users          UserLocation[]
+  resources      Resource[]
+  appointments   Appointment[]
+  schedules      Schedule[]
+  timeEntries    TimeEntry[]
+  clients        Client[]
+  tasks          Task[]
+  chatChannels   ChatChannel[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+model UserLocation {
+  id         String   @id @default(cuid())
+  userId     String
+  locationId String
+  isPrimary  Boolean  @default(false)
+  assignedAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, locationId])
+  @@index([userId])
+  @@index([locationId])
 }
 
 model Role {
@@ -203,9 +255,11 @@ model Client {
   isOnline           Boolean              @default(false)
   fidelityCardSerie  String?
   organizationId     String?
+  locationId         String?
   appointments       Appointment[]
   assets             Asset[]
   organization       Organization?        @relation(fields: [organizationId], references: [id])
+  locationRef        Location?            @relation(fields: [locationId], references: [id])
   invoices           Invoice[]
   account            ClientAccount?
   messages           Message[]
@@ -217,6 +271,7 @@ model Client {
   @@index([email])
   @@index([isOnline])
   @@index([fidelityCardSerie])
+  @@index([locationId])
 }
 
 
@@ -245,6 +300,7 @@ model Asset {
 model Resource {
   id             String        @id @default(cuid())
   organizationId String
+  locationId     String?
   name           String
   type           String
   description    String?
@@ -254,8 +310,10 @@ model Resource {
   updatedAt      DateTime      @updatedAt
   appointments   Appointment[]
   organization   Organization  @relation(fields: [organizationId], references: [id])
+  location       Location?     @relation(fields: [locationId], references: [id])
 
   @@index([organizationId])
+  @@index([locationId])
   @@index([isActive])
 }
 
@@ -282,11 +340,13 @@ model Appointment {
   assetId            String?
   organizationId     String?
   resourceId         String?
+  locationId         String?
   asset              Asset?                @relation(fields: [assetId], references: [id])
   client             Client?               @relation(fields: [clientId], references: [id])
   createdBy          User                  @relation("AppointmentCreatedBy", fields: [createdById], references: [id])
   organization       Organization?         @relation(fields: [organizationId], references: [id])
   resource           Resource?             @relation(fields: [resourceId], references: [id])
+  locationRef        Location?             @relation(fields: [locationId], references: [id])
   updatedBy          User?                 @relation("AppointmentUpdatedBy", fields: [updatedById], references: [id])
   assignees          AppointmentAssignee[]
   invoices           Invoice[]
@@ -297,6 +357,7 @@ model Appointment {
   @@index([clientId])
   @@index([assetId])
   @@index([resourceId])
+  @@index([locationId])
   @@index([status, scheduledStart])
   @@index([createdById])
   @@index([scheduledStart, scheduledEnd])
@@ -391,6 +452,7 @@ model MessageReadReceipt {
 model ChatChannel {
   id              String            @id @default(cuid())
   organizationId  String
+  locationId      String?           // For LOCATION type channels
   name            String?
   description     String?
   type            ChatChannelType   @default(PUBLIC)
@@ -401,11 +463,13 @@ model ChatChannel {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   organization    Organization      @relation(fields: [organizationId], references: [id])
+  location        Location?         @relation(fields: [locationId], references: [id])
   createdBy       User              @relation("ChatChannelCreatedBy", fields: [createdById], references: [id])
   members         ChatMember[]
   messages        ChatMessage[]
 
   @@index([organizationId])
+  @@index([locationId])
   @@index([type])
   @@index([isArchived])
 }
@@ -614,14 +678,17 @@ model Schedule {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   organizationId  String?
+  locationId      String?
   createdBy       User              @relation("ScheduleCreatedBy", fields: [createdById], references: [id])
   employee        User              @relation("ScheduleEmployee", fields: [employeeId], references: [id])
   organization    Organization?     @relation(fields: [organizationId], references: [id])
+  locationRef     Location?         @relation(fields: [locationId], references: [id])
   updatedBy       User?             @relation("ScheduleUpdatedBy", fields: [updatedById], references: [id])
   timeEntries     TimeEntry[]
 
   @@index([employeeId, date])
   @@index([date, status])
+  @@index([locationId])
 }
 
 model Task {
@@ -642,8 +709,10 @@ model Task {
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   organizationId       String?
+  locationId           String?
   createdBy            User             @relation("TaskCreatedBy", fields: [createdById], references: [id])
   organization         Organization?    @relation(fields: [organizationId], references: [id])
+  locationRef          Location?        @relation(fields: [locationId], references: [id])
   updatedBy            User?            @relation("TaskUpdatedBy", fields: [updatedById], references: [id])
   assignments          TaskAssignment[]
   comments             TaskComment[]
@@ -653,6 +722,7 @@ model Task {
   @@index([dueDate])
   @@index([createdById])
   @@index([status, dueDate])
+  @@index([locationId])
 }
 
 model TaskAssignment {
@@ -705,11 +775,14 @@ model TimeEntry {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   organizationId   String?
+  locationId       String?
   employee         User            @relation(fields: [employeeId], references: [id])
   organization     Organization?   @relation(fields: [organizationId], references: [id])
   schedule         Schedule?       @relation(fields: [scheduleId], references: [id])
+  locationRef      Location?       @relation(fields: [locationId], references: [id])
 
   @@index([employeeId, clockIn])
+  @@index([locationId])
 }
 
 model TimeOffRequest {
@@ -1139,6 +1212,7 @@ enum ChatChannelType {
   PRIVATE
   DIRECT
   GROUP
+  LOCATION  // Auto-created for each location
 }
 
 enum ChatMemberRole {

@@ -21,6 +21,7 @@ import { USER_ROLES, TASK_STATUS, TASK_PRIORITY } from '../utils/constants';
 import { createTask, updateTask, addTaskComment, deleteTask, fetchTaskComments } from '../services/taskService';
 import DatePicker from '../components/ui/DatePicker';
 import Pagination from '../components/Pagination';
+import LocationBadge from '../components/LocationBadge';
 
 const TASK_TYPE_LABELS = {
   installation: 'Instalare',
@@ -481,6 +482,7 @@ const Tasks = () => {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200">
                           {TASK_TYPE_LABELS[task.taskType] || task.taskType}
                         </span>
+                        <LocationBadge locationId={task.locationId} size="xs" />
                       </div>
                     </div>
                     {isManagerial && canEdit && (

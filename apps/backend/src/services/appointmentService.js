@@ -334,7 +334,7 @@ const syncToGoogleCalendar = async (prisma, appointment, action = 'create') => {
 };
 
 const listAppointments = async (prisma, filters = {}, options = {}) => {
-  const { status, from, to, clientId, assigneeId } = filters;
+  const { status, from, to, clientId, assigneeId, locationId } = filters;
   const where = {};
 
   if (status) {
@@ -361,6 +361,13 @@ const listAppointments = async (prisma, filters = {}, options = {}) => {
         userId: assigneeId,
       },
     };
+  }
+
+  // Filter by location
+  if (locationId) {
+    where.locationId = locationId;
+  } else if (options.locationFilter) {
+    Object.assign(where, options.locationFilter);
   }
 
   const orderBy = { scheduledStart: 'desc' };
@@ -394,7 +401,8 @@ const listAppointments = async (prisma, filters = {}, options = {}) => {
   return appointments;
 };
 
-const createAppointment = async (prisma, payload, currentUser) => {
+const createAppointment = async (prisma, payload, currentUser, options = {}) => {
+  const { locationId: defaultLocationId } = options;
   const scheduledStart = new Date(payload.scheduledStart);
   const scheduledEnd = new Date(payload.scheduledEnd);
 
@@ -435,6 +443,7 @@ const createAppointment = async (prisma, payload, currentUser) => {
       scheduledStart,
       scheduledEnd,
       location: payload.location,
+      locationId: payload.locationId || defaultLocationId || null,
       clientId: client?.id || null,
       assetId: asset?.id || null, // Use Asset instead of Vehicle
       createdById: currentUser.id,

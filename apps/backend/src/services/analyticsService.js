@@ -6,16 +6,26 @@ const { subDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, en
  * @param {Object} options - Query options
  * @returns {Promise<Object>} Revenue data grouped by period
  */
-const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day' } = {}) => {
+const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}) => {
   const now = new Date();
   const start = startDate ? new Date(startDate) : subDays(now, 30);
   const end = endDate ? new Date(endDate) : now;
+
+  // Build base where clause with location filter for invoices (via appointment)
+  const baseWhere = {
+    status: 'PAID',
+  };
+
+  // Apply location filter through appointment relation if provided
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    baseWhere.appointment = locationFilter;
+  }
 
   // Get paid invoices within the date range
   // Use OR logic: paidAt in range, OR status PAID with issueDate in range (fallback for older records)
   const invoices = await prisma.invoice.findMany({
     where: {
-      status: 'PAID',
+      ...baseWhere,
       OR: [
         {
           paidAt: {
@@ -69,7 +79,7 @@ const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day' } 
 
   const prevInvoices = await prisma.invoice.findMany({
     where: {
-      status: 'PAID',
+      ...baseWhere,
       OR: [
         {
           paidAt: {
@@ -116,19 +126,27 @@ const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day' } 
  * @param {Object} options - Query options
  * @returns {Promise<Object>} Appointment metrics
  */
-const getAppointmentStats = async (prisma, { startDate, endDate } = {}) => {
+const getAppointmentStats = async (prisma, { startDate, endDate, locationFilter = {} } = {}) => {
   const now = new Date();
   const start = startDate ? new Date(startDate) : subDays(now, 30);
   const end = endDate ? new Date(endDate) : now;
 
+  // Build where clause with location filter
+  const baseWhere = {
+    scheduledStart: {
+      gte: startOfDay(start),
+      lte: endOfDay(end),
+    },
+  };
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    Object.assign(baseWhere, locationFilter);
+  }
+
   // Get appointments within the date range
   const appointments = await prisma.appointment.findMany({
-    where: {
-      scheduledStart: {
-        gte: startOfDay(start),
-        lte: endOfDay(end),
-      },
-    },
+    where: baseWhere,
     select: {
       id: true,
       status: true,
@@ -179,13 +197,18 @@ const getAppointmentStats = async (prisma, { startDate, endDate } = {}) => {
   const prevStart = subDays(start, daysDiff);
   const prevEnd = subDays(end, daysDiff);
 
-  const prevAppointments = await prisma.appointment.count({
-    where: {
-      scheduledStart: {
-        gte: startOfDay(prevStart),
-        lte: endOfDay(prevEnd),
-      },
+  const prevWhere = {
+    scheduledStart: {
+      gte: startOfDay(prevStart),
+      lte: endOfDay(prevEnd),
     },
+  };
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    Object.assign(prevWhere, locationFilter);
+  }
+
+  const prevAppointments = await prisma.appointment.count({
+    where: prevWhere,
   });
 
   const appointmentChange = prevAppointments > 0 ? ((total - prevAppointments) / prevAppointments) * 100 : 0;
@@ -216,19 +239,27 @@ const getAppointmentStats = async (prisma, { startDate, endDate } = {}) => {
  * @param {Object} options - Query options
  * @returns {Promise<Object>} Client growth data
  */
-const getClientAcquisition = async (prisma, { startDate, endDate, groupBy = 'day' } = {}) => {
+const getClientAcquisition = async (prisma, { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}) => {
   const now = new Date();
   const start = startDate ? new Date(startDate) : subDays(now, 30);
   const end = endDate ? new Date(endDate) : now;
 
+  // Build where clause with location filter
+  const baseWhere = {
+    createdAt: {
+      gte: startOfDay(start),
+      lte: endOfDay(end),
+    },
+  };
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    Object.assign(baseWhere, locationFilter);
+  }
+
   // Get new clients within the date range
   const clients = await prisma.client.findMany({
-    where: {
-      createdAt: {
-        gte: startOfDay(start),
-        lte: endOfDay(end),
-      },
-    },
+    where: baseWhere,
     select: {
       id: true,
       createdAt: true,
@@ -253,21 +284,27 @@ const getClientAcquisition = async (prisma, { startDate, endDate, groupBy = 'day
     if (client.type === 'SRL') groupedClients[periodKey].srl++;
   });
 
-  // Get total client count
-  const totalClients = await prisma.client.count();
+  // Get total client count (with location filter)
+  const totalClientWhere = locationFilter && Object.keys(locationFilter).length > 0 ? locationFilter : undefined;
+  const totalClients = await prisma.client.count({ where: totalClientWhere });
 
   // Get previous period for comparison
   const daysDiff = differenceInDays(end, start);
   const prevStart = subDays(start, daysDiff);
   const prevEnd = subDays(end, daysDiff);
 
-  const prevClients = await prisma.client.count({
-    where: {
-      createdAt: {
-        gte: startOfDay(prevStart),
-        lte: endOfDay(prevEnd),
-      },
+  const prevWhere = {
+    createdAt: {
+      gte: startOfDay(prevStart),
+      lte: endOfDay(prevEnd),
     },
+  };
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    Object.assign(prevWhere, locationFilter);
+  }
+
+  const prevClients = await prisma.client.count({
+    where: prevWhere,
   });
 
   const newClientsCount = clients.length;
@@ -397,9 +434,10 @@ const getInvoiceAging = async (prisma) => {
 /**
  * Get dashboard overview metrics
  * @param {Object} prisma - Tenant-scoped Prisma client
+ * @param {Object} options - Query options
  * @returns {Promise<Object>} Dashboard overview
  */
-const getDashboardOverview = async (prisma) => {
+const getDashboardOverview = async (prisma, { locationFilter = {} } = {}) => {
   const now = new Date();
   const startOfToday = startOfDay(now);
   const endOfToday = endOfDay(now);
@@ -411,6 +449,30 @@ const getDashboardOverview = async (prisma) => {
   // Last month dates for comparison
   const startOfLastMonth = startOfMonth(subDays(startOfThisMonth, 1));
   const endOfLastMonth = endOfMonth(startOfLastMonth);
+
+  // Build location-filtered where clauses
+  const clientWhere = locationFilter && Object.keys(locationFilter).length > 0 ? locationFilter : undefined;
+  const appointmentWhere = (dateFilter) => {
+    const where = { ...dateFilter };
+    if (locationFilter && Object.keys(locationFilter).length > 0) {
+      Object.assign(where, locationFilter);
+    }
+    return where;
+  };
+  const taskWhere = (statusFilter) => {
+    const where = { ...statusFilter };
+    if (locationFilter && Object.keys(locationFilter).length > 0) {
+      Object.assign(where, locationFilter);
+    }
+    return where;
+  };
+  const invoiceWhere = (baseFilter) => {
+    const where = { ...baseFilter };
+    if (locationFilter && Object.keys(locationFilter).length > 0) {
+      where.appointment = locationFilter;
+    }
+    return where;
+  };
 
   // Run all queries in parallel
   const [
@@ -426,32 +488,32 @@ const getDashboardOverview = async (prisma) => {
     activeTasks,
   ] = await Promise.all([
     // Total clients
-    prisma.client.count(),
+    prisma.client.count({ where: clientWhere }),
 
     // Today's appointments
     prisma.appointment.count({
-      where: {
+      where: appointmentWhere({
         scheduledStart: {
           gte: startOfToday,
           lte: endOfToday,
         },
-      },
+      }),
     }),
 
     // This week's appointments
     prisma.appointment.count({
-      where: {
+      where: appointmentWhere({
         scheduledStart: {
           gte: startOfThisWeek,
           lte: endOfThisWeek,
         },
-      },
+      }),
     }),
 
     // This month's revenue (from paid invoices)
     // Use OR logic: paidAt in range, OR status PAID with issueDate in range (fallback for older records)
     prisma.invoice.aggregate({
-      where: {
+      where: invoiceWhere({
         status: 'PAID',
         OR: [
           {
@@ -468,7 +530,7 @@ const getDashboardOverview = async (prisma) => {
             },
           },
         ],
-      },
+      }),
       _sum: {
         total: true,
       },
@@ -476,7 +538,7 @@ const getDashboardOverview = async (prisma) => {
 
     // Last month's revenue (for comparison)
     prisma.invoice.aggregate({
-      where: {
+      where: invoiceWhere({
         status: 'PAID',
         OR: [
           {
@@ -493,7 +555,7 @@ const getDashboardOverview = async (prisma) => {
             },
           },
         ],
-      },
+      }),
       _sum: {
         total: true,
       },
@@ -501,7 +563,7 @@ const getDashboardOverview = async (prisma) => {
 
     // Count of paid invoices this month
     prisma.invoice.count({
-      where: {
+      where: invoiceWhere({
         status: 'PAID',
         OR: [
           {
@@ -518,16 +580,16 @@ const getDashboardOverview = async (prisma) => {
             },
           },
         ],
-      },
+      }),
     }),
 
     // Pending invoices total amount (unpaid)
     prisma.invoice.aggregate({
-      where: {
+      where: invoiceWhere({
         status: {
           in: ['GENERATED', 'SENT', 'OVERDUE'],
         },
-      },
+      }),
       _sum: {
         total: true,
       },
@@ -535,27 +597,27 @@ const getDashboardOverview = async (prisma) => {
 
     // Pending invoices count
     prisma.invoice.count({
-      where: {
+      where: invoiceWhere({
         status: {
           in: ['GENERATED', 'SENT'],
         },
-      },
+      }),
     }),
 
     // Overdue invoices
     prisma.invoice.count({
-      where: {
+      where: invoiceWhere({
         status: 'OVERDUE',
-      },
+      }),
     }),
 
     // Active tasks
     prisma.task.count({
-      where: {
+      where: taskWhere({
         status: {
           in: ['TODO', 'IN_PROGRESS'],
         },
-      },
+      }),
     }),
   ]);
 
@@ -658,6 +720,247 @@ const getTopClients = async (prisma, { startDate, endDate, limit = 10 } = {}) =>
   });
 };
 
+/**
+ * Get analytics comparison across all locations
+ * Returns key metrics for each location for comparison
+ * @param {Object} prisma - Tenant-scoped Prisma client
+ * @param {Object} options - Query options
+ * @returns {Promise<Object>} Location comparison data
+ */
+const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
+  const now = new Date();
+  const start = startDate ? new Date(startDate) : subDays(now, 30);
+  const end = endDate ? new Date(endDate) : now;
+
+  // Get all locations for this organization
+  const locations = await prisma.location.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isPrimary: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  // For each location, get key metrics
+  const locationMetrics = await Promise.all(
+    locations.map(async (location) => {
+      const locationFilter = { locationId: location.id };
+
+      // Run all queries in parallel for this location
+      const [
+        appointmentCount,
+        completedAppointments,
+        clientCount,
+        newClients,
+        revenue,
+        taskCount,
+        completedTasks,
+      ] = await Promise.all([
+        // Total appointments in period
+        prisma.appointment.count({
+          where: {
+            ...locationFilter,
+            scheduledStart: {
+              gte: startOfDay(start),
+              lte: endOfDay(end),
+            },
+          },
+        }),
+
+        // Completed appointments in period
+        prisma.appointment.count({
+          where: {
+            ...locationFilter,
+            status: 'COMPLETED',
+            scheduledStart: {
+              gte: startOfDay(start),
+              lte: endOfDay(end),
+            },
+          },
+        }),
+
+        // Total clients at this specific location
+        prisma.client.count({
+          where: locationFilter,
+        }),
+
+        // New clients in period at this specific location
+        prisma.client.count({
+          where: {
+            ...locationFilter,
+            createdAt: {
+              gte: startOfDay(start),
+              lte: endOfDay(end),
+            },
+          },
+        }),
+
+        // Revenue from paid invoices (via appointment location)
+        prisma.invoice.aggregate({
+          where: {
+            status: 'PAID',
+            appointment: locationFilter,
+            OR: [
+              {
+                paidAt: {
+                  gte: startOfDay(start),
+                  lte: endOfDay(end),
+                },
+              },
+              {
+                paidAt: null,
+                issueDate: {
+                  gte: startOfDay(start),
+                  lte: endOfDay(end),
+                },
+              },
+            ],
+          },
+          _sum: {
+            total: true,
+          },
+        }),
+
+        // Total tasks at this specific location in period
+        prisma.task.count({
+          where: {
+            ...locationFilter,
+            createdAt: {
+              gte: startOfDay(start),
+              lte: endOfDay(end),
+            },
+          },
+        }),
+
+        // Completed tasks in period at this specific location
+        prisma.task.count({
+          where: {
+            ...locationFilter,
+            status: 'COMPLETED',
+            updatedAt: {
+              gte: startOfDay(start),
+              lte: endOfDay(end),
+            },
+          },
+        }),
+      ]);
+
+      return {
+        location: {
+          id: location.id,
+          name: location.name,
+          slug: location.slug,
+          isPrimary: location.isPrimary,
+        },
+        metrics: {
+          appointments: {
+            total: appointmentCount,
+            completed: completedAppointments,
+            completionRate: appointmentCount > 0
+              ? Math.round((completedAppointments / appointmentCount) * 100)
+              : 0,
+          },
+          clients: {
+            total: clientCount,
+            new: newClients,
+          },
+          revenue: Math.round((Number(revenue._sum.total) || 0) * 100) / 100,
+          tasks: {
+            total: taskCount,
+            completed: completedTasks,
+          },
+        },
+      };
+    })
+  );
+
+  // Get unassigned records (null locationId) - legacy data
+  const [
+    unassignedClients,
+    unassignedNewClients,
+    unassignedTasks,
+  ] = await Promise.all([
+    prisma.client.count({
+      where: { locationId: null },
+    }),
+    prisma.client.count({
+      where: {
+        locationId: null,
+        createdAt: {
+          gte: startOfDay(start),
+          lte: endOfDay(end),
+        },
+      },
+    }),
+    prisma.task.count({
+      where: {
+        locationId: null,
+        createdAt: {
+          gte: startOfDay(start),
+          lte: endOfDay(end),
+        },
+      },
+    }),
+  ]);
+
+  // Calculate totals across all locations
+  const totals = locationMetrics.reduce(
+    (acc, loc) => ({
+      appointments: acc.appointments + loc.metrics.appointments.total,
+      completedAppointments: acc.completedAppointments + loc.metrics.appointments.completed,
+      clients: acc.clients + loc.metrics.clients.total,
+      newClients: acc.newClients + loc.metrics.clients.new,
+      revenue: acc.revenue + loc.metrics.revenue,
+      tasks: acc.tasks + loc.metrics.tasks.total,
+      completedTasks: acc.completedTasks + loc.metrics.tasks.completed,
+    }),
+    { appointments: 0, completedAppointments: 0, clients: 0, newClients: 0, revenue: 0, tasks: 0, completedTasks: 0 }
+  );
+
+  // Add unassigned to totals
+  totals.clients += unassignedClients;
+  totals.newClients += unassignedNewClients;
+  totals.tasks += unassignedTasks;
+
+  return {
+    period: {
+      startDate: format(start, 'yyyy-MM-dd'),
+      endDate: format(end, 'yyyy-MM-dd'),
+    },
+    locations: locationMetrics,
+    unassigned: {
+      clients: {
+        total: unassignedClients,
+        new: unassignedNewClients,
+      },
+      tasks: {
+        total: unassignedTasks,
+      },
+    },
+    totals: {
+      appointments: {
+        total: totals.appointments,
+        completed: totals.completedAppointments,
+        completionRate: totals.appointments > 0
+          ? Math.round((totals.completedAppointments / totals.appointments) * 100)
+          : 0,
+      },
+      clients: {
+        total: totals.clients,
+        new: totals.newClients,
+      },
+      revenue: Math.round(totals.revenue * 100) / 100,
+      tasks: {
+        total: totals.tasks,
+        completed: totals.completedTasks,
+      },
+    },
+  };
+};
+
 module.exports = {
   getRevenueTrends,
   getAppointmentStats,
@@ -665,4 +968,5 @@ module.exports = {
   getInvoiceAging,
   getDashboardOverview,
   getTopClients,
+  getLocationComparison,
 };

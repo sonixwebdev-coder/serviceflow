@@ -32,7 +32,10 @@ router.get(
   authenticate,
   validate(listUsersQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const users = await listUsers(req.tenantPrisma, req.query, req.user);
+    const locationContext = await req.getLocationContext();
+    const users = await listUsers(req.tenantPrisma, req.query, req.user, {
+      locationId: locationContext.currentLocationId,
+    });
     return ok(res, users);
   })
 );

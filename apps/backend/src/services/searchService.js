@@ -6,7 +6,7 @@ const logger = require('../utils/logger');
  * @param {Object} options - Search options
  * @returns {Promise<Object>} Search results grouped by entity type
  */
-const globalSearch = async (prisma, { query, limit = 5, types = null } = {}) => {
+const globalSearch = async (prisma, { query, limit = 5, types = null, locationFilter = {} } = {}) => {
   if (!query || query.trim().length < 2) {
     return { results: [], total: 0 };
   }
@@ -22,7 +22,7 @@ const globalSearch = async (prisma, { query, limit = 5, types = null } = {}) => 
 
   if (searchTypes.includes('clients')) {
     searches.push(
-      searchClients(prisma, searchTerm, limit).then((items) => {
+      searchClients(prisma, searchTerm, limit, locationFilter).then((items) => {
         results.clients = items;
         totalCount += items.length;
       })
@@ -31,7 +31,7 @@ const globalSearch = async (prisma, { query, limit = 5, types = null } = {}) => 
 
   if (searchTypes.includes('appointments')) {
     searches.push(
-      searchAppointments(prisma, searchTerm, limit).then((items) => {
+      searchAppointments(prisma, searchTerm, limit, locationFilter).then((items) => {
         results.appointments = items;
         totalCount += items.length;
       })
@@ -40,7 +40,7 @@ const globalSearch = async (prisma, { query, limit = 5, types = null } = {}) => 
 
   if (searchTypes.includes('tasks')) {
     searches.push(
-      searchTasks(prisma, searchTerm, limit).then((items) => {
+      searchTasks(prisma, searchTerm, limit, locationFilter).then((items) => {
         results.tasks = items;
         totalCount += items.length;
       })
@@ -49,7 +49,7 @@ const globalSearch = async (prisma, { query, limit = 5, types = null } = {}) => 
 
   if (searchTypes.includes('invoices')) {
     searches.push(
-      searchInvoices(prisma, searchTerm, limit).then((items) => {
+      searchInvoices(prisma, searchTerm, limit, locationFilter).then((items) => {
         results.invoices = items;
         totalCount += items.length;
       })
@@ -77,18 +77,30 @@ const globalSearch = async (prisma, { query, limit = 5, types = null } = {}) => 
 /**
  * Search clients
  */
-const searchClients = async (prisma, query, limit = 5) => {
+const searchClients = async (prisma, query, limit = 5, locationFilter = {}) => {
+  const whereConditions = [];
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    whereConditions.push(locationFilter);
+  }
+
+  // Add search condition
+  whereConditions.push({
+    OR: [
+      { firstName: { contains: query, mode: 'insensitive' } },
+      { lastName: { contains: query, mode: 'insensitive' } },
+      { companyName: { contains: query, mode: 'insensitive' } },
+      { email: { contains: query, mode: 'insensitive' } },
+      { phone: { contains: query, mode: 'insensitive' } },
+      { fidelityCardSerie: { contains: query, mode: 'insensitive' } },
+    ],
+  });
+
+  const where = whereConditions.length > 1 ? { AND: whereConditions } : whereConditions[0];
+
   const clients = await prisma.client.findMany({
-    where: {
-      OR: [
-        { firstName: { contains: query, mode: 'insensitive' } },
-        { lastName: { contains: query, mode: 'insensitive' } },
-        { companyName: { contains: query, mode: 'insensitive' } },
-        { email: { contains: query, mode: 'insensitive' } },
-        { phone: { contains: query, mode: 'insensitive' } },
-        { fidelityCardSerie: { contains: query, mode: 'insensitive' } },
-      ],
-    },
+    where,
     select: {
       id: true,
       firstName: true,
@@ -118,18 +130,30 @@ const searchClients = async (prisma, query, limit = 5) => {
 /**
  * Search appointments
  */
-const searchAppointments = async (prisma, query, limit = 5) => {
+const searchAppointments = async (prisma, query, limit = 5, locationFilter = {}) => {
+  const whereConditions = [];
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    whereConditions.push(locationFilter);
+  }
+
+  // Add search condition
+  whereConditions.push({
+    OR: [
+      { title: { contains: query, mode: 'insensitive' } },
+      { description: { contains: query, mode: 'insensitive' } },
+      { location: { contains: query, mode: 'insensitive' } },
+      { client: { firstName: { contains: query, mode: 'insensitive' } } },
+      { client: { lastName: { contains: query, mode: 'insensitive' } } },
+      { client: { companyName: { contains: query, mode: 'insensitive' } } },
+    ],
+  });
+
+  const where = whereConditions.length > 1 ? { AND: whereConditions } : whereConditions[0];
+
   const appointments = await prisma.appointment.findMany({
-    where: {
-      OR: [
-        { title: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { location: { contains: query, mode: 'insensitive' } },
-        { client: { firstName: { contains: query, mode: 'insensitive' } } },
-        { client: { lastName: { contains: query, mode: 'insensitive' } } },
-        { client: { companyName: { contains: query, mode: 'insensitive' } } },
-      ],
-    },
+    where,
     select: {
       id: true,
       title: true,
@@ -168,15 +192,27 @@ const searchAppointments = async (prisma, query, limit = 5) => {
 /**
  * Search tasks
  */
-const searchTasks = async (prisma, query, limit = 5) => {
+const searchTasks = async (prisma, query, limit = 5, locationFilter = {}) => {
+  const whereConditions = [];
+
+  // Apply location filter
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    whereConditions.push(locationFilter);
+  }
+
+  // Add search condition
+  whereConditions.push({
+    OR: [
+      { title: { contains: query, mode: 'insensitive' } },
+      { description: { contains: query, mode: 'insensitive' } },
+      { customerName: { contains: query, mode: 'insensitive' } },
+    ],
+  });
+
+  const where = whereConditions.length > 1 ? { AND: whereConditions } : whereConditions[0];
+
   const tasks = await prisma.task.findMany({
-    where: {
-      OR: [
-        { title: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { customerName: { contains: query, mode: 'insensitive' } },
-      ],
-    },
+    where,
     select: {
       id: true,
       title: true,
@@ -203,16 +239,28 @@ const searchTasks = async (prisma, query, limit = 5) => {
 /**
  * Search invoices
  */
-const searchInvoices = async (prisma, query, limit = 5) => {
+const searchInvoices = async (prisma, query, limit = 5, locationFilter = {}) => {
+  const whereConditions = [];
+
+  // Apply location filter through appointment relation
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    whereConditions.push({ appointment: locationFilter });
+  }
+
+  // Add search condition
+  whereConditions.push({
+    OR: [
+      { invoiceNumber: { contains: query, mode: 'insensitive' } },
+      { client: { firstName: { contains: query, mode: 'insensitive' } } },
+      { client: { lastName: { contains: query, mode: 'insensitive' } } },
+      { client: { companyName: { contains: query, mode: 'insensitive' } } },
+    ],
+  });
+
+  const where = whereConditions.length > 1 ? { AND: whereConditions } : whereConditions[0];
+
   const invoices = await prisma.invoice.findMany({
-    where: {
-      OR: [
-        { invoiceNumber: { contains: query, mode: 'insensitive' } },
-        { client: { firstName: { contains: query, mode: 'insensitive' } } },
-        { client: { lastName: { contains: query, mode: 'insensitive' } } },
-        { client: { companyName: { contains: query, mode: 'insensitive' } } },
-      ],
-    },
+    where,
     select: {
       id: true,
       invoiceNumber: true,

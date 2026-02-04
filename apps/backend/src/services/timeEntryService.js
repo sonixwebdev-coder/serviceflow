@@ -9,6 +9,7 @@ const isManagerial = ({ roles }) => roles?.some((role) => ['admin', 'manager'].i
 
 const listTimeEntries = async (prisma, filters = {}, currentUser, options = {}) => {
   const managerial = isManagerial(currentUser);
+  const { locationFilter } = options;
   const where = {};
 
   // Filter by employee
@@ -29,6 +30,11 @@ const listTimeEntries = async (prisma, filters = {}, currentUser, options = {}) 
     if (filters.endDate) {
       where.clockIn.lte = new Date(filters.endDate);
     }
+  }
+
+  // Location filter
+  if (locationFilter) {
+    Object.assign(where, locationFilter);
   }
 
   const orderBy = { clockIn: 'desc' };
@@ -79,6 +85,7 @@ const clockIn = async (prisma, payload = {}, currentUser) => {
       scheduleId: payload.schedule || null,
       clockIn: clockInTime,
       clockInLocation: payload.clockInLocation,
+      locationId: payload.locationId || null,
       source: payload.schedule ? 'SCHEDULE' : 'MANUAL',
     },
     include: {
@@ -92,6 +99,13 @@ const clockIn = async (prisma, payload = {}, currentUser) => {
         },
       },
       schedule: true,
+      locationRef: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
     },
   });
 

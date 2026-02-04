@@ -33,7 +33,8 @@ router.get(
   validate(listInvoicesQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
     const paginate = Boolean(req.query.page || req.query.limit);
-    const invoices = await listInvoices(req.tenantPrisma, req.query, { paginate });
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const invoices = await listInvoices(req.tenantPrisma, req.query, { paginate, locationFilter });
     return ok(res, invoices);
   })
 );

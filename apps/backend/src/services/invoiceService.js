@@ -480,7 +480,7 @@ const getInvoiceById = async (prisma, id) => {
 };
 
 const listInvoices = async (prisma, filters = {}, options = {}) => {
-  const { paginate = false } = options;
+  const { paginate = false, locationFilter } = options;
   const where = {};
 
   // Status filter
@@ -509,6 +509,20 @@ const listInvoices = async (prisma, filters = {}, options = {}) => {
     where.invoiceNumber = {
       contains: filters.search,
       mode: 'insensitive',
+    };
+  }
+
+  // Location filter - invoices are filtered via their appointment's location
+  if (locationFilter && locationFilter.locationId) {
+    where.appointment = {
+      locationId: locationFilter.locationId,
+    };
+  } else if (locationFilter && locationFilter.OR) {
+    // Handle includeNull case
+    where.appointment = {
+      OR: locationFilter.OR.map((cond) => ({
+        locationId: cond.locationId,
+      })),
     };
   }
 

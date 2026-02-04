@@ -2,12 +2,14 @@ const express = require('express');
 const asyncHandler = require('../middleware/asyncHandler');
 const { ok } = require('../utils/http');
 const tenantScope = require('../middleware/tenantScope');
+const { locationScope } = require('../middleware/locationScope');
 
 const authRouter = require('./auth');
 const organizationsRouter = require('./organizations');
 const clientsRouter = require('./clients');
 const assetsRouter = require('./assets');
 const resourcesRouter = require('./resources');
+const locationsRouter = require('./locations');
 const appointmentsRouter = require('./appointments');
 const usersRouter = require('./users');
 const tasksRouter = require('./tasks');
@@ -44,11 +46,16 @@ router.get(
 // Must run after authenticate middleware in individual routes
 router.use(tenantScope);
 
+// Location scoping middleware - handles location-based access control
+// Must run after tenantScope and authenticate middleware in individual routes
+router.use(locationScope);
+
 router.use('/auth', authRouter);
 router.use('/organizations', organizationsRouter);
 router.use('/clients', clientsRouter);
 router.use('/assets', assetsRouter);
 router.use('/resources', resourcesRouter);
+router.use('/locations', locationsRouter);
 router.use('/appointments', appointmentsRouter);
 router.use('/users', usersRouter);
 router.use('/tasks', tasksRouter);

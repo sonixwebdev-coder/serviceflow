@@ -14,11 +14,13 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { q, limit, types } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
 
-    const results = await searchService.globalSearch(req.prisma, {
+    const results = await searchService.globalSearch(req.tenantPrisma, {
       query: q,
       limit: limit ? parseInt(limit, 10) : 5,
       types,
+      locationFilter,
     });
 
     res.json(results);
@@ -60,10 +62,12 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const results = await searchService.searchClients(
-      req.prisma,
+      req.tenantPrisma,
       q || '',
-      limit ? parseInt(limit, 10) : 10
+      limit ? parseInt(limit, 10) : 10,
+      locationFilter
     );
     res.json(results);
   })
@@ -78,10 +82,12 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const results = await searchService.searchAppointments(
-      req.prisma,
+      req.tenantPrisma,
       q || '',
-      limit ? parseInt(limit, 10) : 10
+      limit ? parseInt(limit, 10) : 10,
+      locationFilter
     );
     res.json(results);
   })
@@ -96,10 +102,12 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const results = await searchService.searchTasks(
-      req.prisma,
+      req.tenantPrisma,
       q || '',
-      limit ? parseInt(limit, 10) : 10
+      limit ? parseInt(limit, 10) : 10,
+      locationFilter
     );
     res.json(results);
   })
@@ -114,10 +122,12 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const results = await searchService.searchInvoices(
-      req.prisma,
+      req.tenantPrisma,
       q || '',
-      limit ? parseInt(limit, 10) : 10
+      limit ? parseInt(limit, 10) : 10,
+      locationFilter
     );
     res.json(results);
   })
@@ -133,7 +143,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
     const results = await searchService.searchUsers(
-      req.prisma,
+      req.tenantPrisma,
       q || '',
       limit ? parseInt(limit, 10) : 10
     );

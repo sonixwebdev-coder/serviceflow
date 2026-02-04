@@ -29,11 +29,12 @@ router.get(
       });
     }
 
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
     const resources = await getAvailableResources(req.tenantPrisma, {
       startTime,
       endTime,
       type,
-    });
+    }, { locationFilter });
 
     return ok(res, resources);
   })
@@ -44,7 +45,8 @@ router.get(
   '/',
   authenticate,
   asyncHandler(async (req, res) => {
-    const result = await listResources(req.tenantPrisma, req.query);
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const result = await listResources(req.tenantPrisma, { ...req.query, locationFilter });
     return ok(res, result);
   })
 );
@@ -55,7 +57,11 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
-    const resource = await createResource(req.tenantPrisma, req.body);
+    const locationContext = await req.getLocationContext();
+    const resource = await createResource(req.tenantPrisma, {
+      ...req.body,
+      locationId: req.body.locationId || locationContext.currentLocationId,
+    });
 
     await logFromRequest(req, {
       action: 'CREATE',

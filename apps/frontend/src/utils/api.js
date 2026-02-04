@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../state/useAuthStore.js';
 import { updateSocketToken } from '../lib/socket.js';
+import useLocationStore from '../state/useLocationStore.js';
 
 const normalizeBaseUrl = (baseUrl) => {
   const fallback = 'http://localhost:5000/api';
@@ -103,6 +104,13 @@ API.interceptors.request.use(
     // Add CSRF token for state-changing requests
     if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
       config.headers['x-csrf-token'] = csrfToken;
+    }
+
+    // Add location header for location-scoped requests
+    const { currentLocationId } = useLocationStore.getState();
+    if (currentLocationId) {
+      config.headers['X-Location-Id'] = currentLocationId;
+      console.log('[API] Request to', config.url, 'with X-Location-Id:', currentLocationId);
     }
 
     return config;

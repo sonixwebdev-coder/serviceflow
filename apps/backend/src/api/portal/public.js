@@ -46,7 +46,7 @@ router.get(
   '/:slug/slots',
   asyncHandler(async (req, res) => {
     const { slug } = req.params;
-    const { date, duration } = req.query;
+    const { date, duration, locationId } = req.query;
 
     if (!date) {
       return res.status(400).json({ error: 'Date is required' });
@@ -60,6 +60,7 @@ router.get(
       date,
       duration: slotDuration,
       settings: organization.publicBookingSettings,
+      locationId: locationId || null,
     });
 
     res.json(slots);
@@ -80,6 +81,7 @@ router.post(
       asset,
       createAccount,
       password,
+      locationId,
     } = req.body;
 
     // Validate required fields
@@ -117,6 +119,7 @@ router.post(
       assetData: asset,
       createAccount,
       password,
+      locationId: locationId || null,
     });
 
     res.status(201).json(result);

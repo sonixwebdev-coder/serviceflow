@@ -1,5 +1,6 @@
 const { AppError } = require('../utils/errors');
 const { broadcastMemberChange } = require('../realtime/chatEvents');
+const globalPrisma = require('../../lib/prisma');
 
 /**
  * Chat Service - Channel Management
@@ -125,9 +126,17 @@ async function createChannel(prisma, data, currentUser) {
 async function listChannels(prisma, filters = {}, currentUser) {
   const { type, archived = false } = filters;
 
+  // Get user's location IDs for LOCATION channel access
+  const userLocations = await globalPrisma.userLocation.findMany({
+    where: { userId: currentUser.id },
+    select: { locationId: true },
+  });
+  const userLocationIds = userLocations.map((ul) => ul.locationId);
+
   // Build the OR conditions for channel visibility:
   // 1. User is a member of the channel
   // 2. Channel is PUBLIC (anyone in org can see)
+  // 3. Channel is LOCATION type and user is assigned to that location
   const orConditions = [
     {
       members: {
@@ -140,6 +149,14 @@ async function listChannels(prisma, filters = {}, currentUser) {
       type: 'PUBLIC',
     },
   ];
+
+  // Add LOCATION channels for user's assigned locations
+  if (userLocationIds.length > 0) {
+    orConditions.push({
+      type: 'LOCATION',
+      locationId: { in: userLocationIds },
+    });
+  }
 
   const where = {
     isArchived: archived,
@@ -160,6 +177,12 @@ async function listChannels(prisma, filters = {}, currentUser) {
           lastName: true,
           email: true,
           avatarUrl: true,
+        },
+      },
+      location: {
+        select: {
+          id: true,
+          name: true,
         },
       },
       members: {
@@ -581,7 +604,7 @@ async function getOrCreateGroupDM(prisma, participantIds, name, currentUser) {
 
 /**
  * Ensure user has access to a channel
- * For PUBLIC channels, auto-join the user if not already a member
+ * For PUBLIC and LOCATION channels, auto-join the user if not already a member
  * @param {PrismaClient} prisma - Tenant-scoped Prisma client
  * @param {string} channelId - Channel ID
  * @param {Object} currentUser - Current authenticated user
@@ -602,18 +625,38 @@ async function ensureChannelAccess(prisma, channelId, currentUser) {
     return; // User is a member, access granted
   }
 
-  // Check if channel is PUBLIC - if so, auto-join the user
+  // Check channel type and location
   const channel = await prisma.chatChannel.findUnique({
     where: { id: channelId },
-    select: { type: true, organizationId: true },
+    select: { type: true, organizationId: true, locationId: true },
   });
 
   if (!channel) {
     throw new AppError('Channel not found', 404);
   }
 
+  // Check if user should have access to this channel
+  let shouldAutoJoin = false;
+
   // For PUBLIC channels in the same organization, auto-join the user
   if (channel.type === 'PUBLIC' && channel.organizationId === currentUser.organizationId) {
+    shouldAutoJoin = true;
+  }
+
+  // For LOCATION channels, check if user is assigned to that location
+  if (channel.type === 'LOCATION' && channel.locationId && channel.organizationId === currentUser.organizationId) {
+    const userLocation = await globalPrisma.userLocation.findFirst({
+      where: {
+        userId: currentUser.id,
+        locationId: channel.locationId,
+      },
+    });
+    if (userLocation) {
+      shouldAutoJoin = true;
+    }
+  }
+
+  if (shouldAutoJoin) {
     let memberCreated = false;
     try {
       // Use upsert to handle race conditions (multiple parallel requests)
@@ -671,7 +714,7 @@ async function ensureChannelAccess(prisma, channelId, currentUser) {
     return; // Access granted after auto-join
   }
 
-  // For non-public channels, deny access
+  // For non-public/non-location channels, deny access
   throw new AppError('Access denied to this channel', 403);
 }
 

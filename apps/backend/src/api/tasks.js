@@ -61,7 +61,8 @@ router.get(
   asyncHandler(async (req, res) => {
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
-    const tasks = await listTasks(req.tenantPrisma, req.query, req.user, { paginate });
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const tasks = await listTasks(req.tenantPrisma, req.query, req.user, { paginate, locationFilter });
     return ok(res, tasks);
   })
 );
@@ -81,13 +82,17 @@ router.post(
   // Allow all authenticated users to create tasks
   validate(createTaskSchema),
   asyncHandler(async (req, res) => {
-    const task = await createTask(req.tenantPrisma, req.body, req.user);
+    const locationContext = await req.getLocationContext();
+    const task = await createTask(req.tenantPrisma, req.body, req.user, {
+      locationId: locationContext.currentLocationId,
+    });
 
     await logFromRequest(req, {
       action: 'CREATE',
       entityType: ENTITY_TYPES.TASK,
       entityId: task.id,
       description: getActionDescription('CREATE', ENTITY_TYPES.TASK, task.title),
+      metadata: { locationId: task.locationId },
     });
 
     return created(res, task, 'Task created successfully');

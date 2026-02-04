@@ -17,6 +17,7 @@ import ClientAutocomplete from '../components/ui/ClientAutocomplete.jsx';
 import Pagination from '../components/Pagination.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 import DynamicAssetFields from '../components/DynamicAssetFields';
+import LocationBadge from '../components/LocationBadge';
 import useToast from '../context/useToast';
 import useAuth from '../context/useAuth';
 import { useTerminology } from '../context/TerminologyContext';
@@ -2388,6 +2389,13 @@ useEffect(() => {
                                     Nesincronizat
                                   </span>
                                 ) : null}
+                                {/* Location Badge */}
+                                <LocationBadge
+                                  locationId={selectedAppointment.locationId}
+                                  locationName={selectedAppointment.location?.name}
+                                  size="xs"
+                                  showAlways
+                                />
                               </div>
                               {selectedAppointment.status !== 'COMPLETED' ? (
                                 <div className="relative">

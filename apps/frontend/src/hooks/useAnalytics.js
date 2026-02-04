@@ -6,6 +6,7 @@ import {
   fetchClientAcquisition,
   fetchInvoiceAging,
   fetchTopClients,
+  fetchLocationComparison,
 } from '../services/analyticsService';
 
 /**
@@ -79,6 +80,20 @@ export function useTopClients(params = {}, options = {}) {
   return useQuery({
     queryKey: ['analytics', 'clients', 'top', params],
     queryFn: () => fetchTopClients(params),
+    staleTime: 1000 * 60 * 5,
+    ...options,
+  });
+}
+
+/**
+ * Hook for location comparison analytics (admin/manager only)
+ * @param {Object} params - { startDate, endDate }
+ * @param {Object} options - Additional query options
+ */
+export function useLocationComparison(params = {}, options = {}) {
+  return useQuery({
+    queryKey: ['analytics', 'locations', 'comparison', params],
+    queryFn: () => fetchLocationComparison(params),
     staleTime: 1000 * 60 * 5,
     ...options,
   });

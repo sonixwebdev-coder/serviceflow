@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useChannels } from '../../hooks/useChat';
-import { Hash, Lock, MessageSquare, Plus, Search, Users, UserPlus } from 'lucide-react';
+import { Hash, Lock, MapPin, MessageSquare, Plus, Search, Users, UserPlus } from 'lucide-react';
 import CreateDMDialog from './CreateDMDialog';
 import CreateChannelDialog from './CreateChannelDialog';
 
@@ -51,6 +51,7 @@ export default function ChatSidebar() {
   const displayChannels = searchQuery ? filteredChannels() : channels;
 
   // Group channels by type
+  const locationChannels = displayChannels.filter((ch) => ch.type === 'LOCATION');
   const publicChannels = displayChannels.filter((ch) => ch.type === 'PUBLIC');
   const privateChannels = displayChannels.filter((ch) => ch.type === 'PRIVATE');
   const directMessages = displayChannels.filter((ch) => ch.type === 'DIRECT');
@@ -82,6 +83,7 @@ export default function ChatSidebar() {
   };
 
   const getChannelIcon = (channel) => {
+    if (channel.type === 'LOCATION') return <MapPin className="h-4 w-4 text-orange-500" />;
     if (channel.type === 'PUBLIC') return <Hash className="h-4 w-4" />;
     if (channel.type === 'PRIVATE') return <Lock className="h-4 w-4" />;
     if (channel.type === 'DIRECT') return <MessageSquare className="h-4 w-4" />;
@@ -164,6 +166,7 @@ export default function ChatSidebar() {
           </>
         ) : (
           <>
+            <ChannelSection title="Locatii" channels={locationChannels} icon={MapPin} />
             <ChannelSection title="Canale Publice" channels={publicChannels} icon={Hash} />
             <ChannelSection title="Canale Private" channels={privateChannels} icon={Lock} />
             <ChannelSection title="Mesaje Directe" channels={directMessages} icon={MessageSquare} />

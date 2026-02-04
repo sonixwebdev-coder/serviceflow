@@ -3,7 +3,7 @@ const { AppError } = require('../utils/errors');
 /**
  * List resources with pagination and filtering
  */
-const listResources = async (prisma, { search, type, isActive, page = 1, limit = 50 }) => {
+const listResources = async (prisma, { search, type, isActive, locationId, page = 1, limit = 50 }, options = {}) => {
   const take = Math.min(limit, 100);
   const skip = (page - 1) * take;
 
@@ -17,6 +17,14 @@ const listResources = async (prisma, { search, type, isActive, page = 1, limit =
   // Filter by active status
   if (isActive !== undefined) {
     conditions.push({ isActive: isActive === 'true' || isActive === true });
+  }
+
+  // Filter by location
+  if (locationId) {
+    conditions.push({ locationId });
+  } else if (options.locationFilter) {
+    // Apply location filter from middleware
+    conditions.push(options.locationFilter);
   }
 
   // Search across multiple fields
@@ -45,6 +53,15 @@ const listResources = async (prisma, { search, type, isActive, page = 1, limit =
       },
       skip,
       take,
+      include: {
+        location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
     }),
     prisma.resource.count({ where }),
   ]);
@@ -81,6 +98,16 @@ const createResource = async (prisma, data) => {
         description: data.description,
         capacity: data.capacity ? Number(data.capacity) : 1,
         isActive: data.isActive !== undefined ? data.isActive : true,
+        locationId: data.locationId || null,
+      },
+      include: {
+        location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
       },
     });
 
@@ -100,6 +127,13 @@ const getResourceById = async (prisma, resourceId) => {
   const resource = await prisma.resource.findUnique({
     where: { id: resourceId },
     include: {
+      location: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
       appointments: {
         where: {
           scheduledStart: {
@@ -154,6 +188,16 @@ const updateResource = async (prisma, resourceId, data) => {
         description: data.description,
         capacity: data.capacity ? Number(data.capacity) : undefined,
         isActive: data.isActive,
+        locationId: data.locationId !== undefined ? data.locationId : undefined,
+      },
+      include: {
+        location: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
       },
     });
 
@@ -207,7 +251,7 @@ const deleteResource = async (prisma, resourceId) => {
 /**
  * Get available resources for a time slot
  */
-const getAvailableResources = async (prisma, { startTime, endTime, type }) => {
+const getAvailableResources = async (prisma, { startTime, endTime, type, locationId }, options = {}) => {
   const where = {
     isActive: true,
   };
@@ -216,10 +260,24 @@ const getAvailableResources = async (prisma, { startTime, endTime, type }) => {
     where.type = type;
   }
 
+  // Filter by location
+  if (locationId) {
+    where.locationId = locationId;
+  } else if (options.locationFilter) {
+    Object.assign(where, options.locationFilter);
+  }
+
   // Get all active resources
   const resources = await prisma.resource.findMany({
     where,
     include: {
+      location: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
       appointments: {
         where: {
           AND: [

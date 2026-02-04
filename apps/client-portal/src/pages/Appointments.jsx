@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Plus, X, ArrowLeft, ArrowRight, Loader2, Package, FileText } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -11,11 +11,13 @@ import { profileService } from '@/services/profileService';
 import { formatDateTime, cn } from '@/lib/utils';
 import useToast from '@/context/useToast';
 
-const modalSteps = [
+const baseModalSteps = [
   { id: 'date', title: 'Data', icon: Calendar },
   { id: 'time', title: 'Ora', icon: Clock },
   { id: 'details', title: 'Detalii', icon: FileText },
 ];
+
+const locationStep = { id: 'location', title: 'Locatie', icon: MapPin };
 
 const statusOptions = [
   { value: '', label: 'Toate' },
@@ -36,12 +38,9 @@ export default function Appointments() {
   const appointments = data?.items || [];
   const pagination = data?.pagination;
 
-  // Modal step state
-  const [currentStep, setCurrentStep] = useState(0);
-  const currentStepId = modalSteps[currentStep]?.id;
-
   // Form state
   const [formData, setFormData] = useState({
+    selectedLocation: null,
     selectedDate: null,
     selectedSlot: null,
     title: '',
@@ -49,6 +48,23 @@ export default function Appointments() {
     location: '',
     assetId: '',
   });
+
+  // Locations state
+  const [locations, setLocations] = useState([]);
+  const [hasMultipleLocations, setHasMultipleLocations] = useState(false);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  // Compute modal steps based on whether org has multiple locations
+  const modalSteps = useMemo(() => {
+    if (hasMultipleLocations) {
+      return [locationStep, ...baseModalSteps];
+    }
+    return baseModalSteps;
+  }, [hasMultipleLocations]);
+
+  // Modal step state
+  const [currentStep, setCurrentStep] = useState(0);
+  const currentStepId = modalSteps[currentStep]?.id;
 
   // Assets state
   const [assets, setAssets] = useState([]);
@@ -60,9 +76,26 @@ export default function Appointments() {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Fetch assets and available dates when modal opens
+  // Fetch locations, assets, and available dates when modal opens
   useEffect(() => {
     if (showCreateModal) {
+      // Fetch locations first
+      setLoadingLocations(true);
+      appointmentService.getLocations()
+        .then((data) => {
+          setLocations(data.locations || []);
+          setHasMultipleLocations(data.hasMultipleLocations || false);
+          // Auto-select if only one location
+          if (data.locations?.length === 1) {
+            setFormData((prev) => ({ ...prev, selectedLocation: data.locations[0] }));
+          }
+        })
+        .catch(() => {
+          setLocations([]);
+          setHasMultipleLocations(false);
+        })
+        .finally(() => setLoadingLocations(false));
+
       setLoadingAssets(true);
       profileService.getAssets()
         .then((data) => setAssets(data || []))
@@ -77,17 +110,17 @@ export default function Appointments() {
     }
   }, [showCreateModal]);
 
-  // Fetch available slots when date is selected
+  // Fetch available slots when date is selected (filtered by location if selected)
   useEffect(() => {
     if (formData.selectedDate) {
       setLoadingSlots(true);
       setAvailableSlots([]);
-      appointmentService.getAvailableSlots(formData.selectedDate)
+      appointmentService.getAvailableSlots(formData.selectedDate, 60, formData.selectedLocation?.id)
         .then((data) => setAvailableSlots(data || []))
         .catch(() => setAvailableSlots([]))
         .finally(() => setLoadingSlots(false));
     }
-  }, [formData.selectedDate]);
+  }, [formData.selectedDate, formData.selectedLocation?.id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -100,6 +133,7 @@ export default function Appointments() {
 
   const resetForm = () => {
     setFormData({
+      selectedLocation: null,
       selectedDate: null,
       selectedSlot: null,
       title: '',
@@ -109,6 +143,8 @@ export default function Appointments() {
     });
     setCurrentStep(0);
     setAvailableSlots([]);
+    setLocations([]);
+    setHasMultipleLocations(false);
   };
 
   const closeModal = () => {
@@ -118,6 +154,8 @@ export default function Appointments() {
 
   const canProceed = () => {
     switch (currentStepId) {
+      case 'location':
+        return !!formData.selectedLocation;
       case 'date':
         return !!formData.selectedDate;
       case 'time':
@@ -157,6 +195,7 @@ export default function Appointments() {
         scheduledStart: formData.selectedSlot.start,
         scheduledEnd: formData.selectedSlot.end,
         location: formData.location || undefined,
+        locationId: formData.selectedLocation?.id || undefined,
         assetId: formData.assetId || undefined,
       });
 
@@ -232,6 +271,76 @@ export default function Appointments() {
 
             {/* Step content */}
             <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {/* Select Location */}
+              {currentStepId === 'location' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 mb-4">Selecteaza locatia pentru programare:</p>
+                  {loadingLocations ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary-600" />
+                    </div>
+                  ) : locations.length === 0 ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Nu exista locatii disponibile.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                      {locations.map((loc) => (
+                        <button
+                          key={loc.id}
+                          type="button"
+                          onClick={() => {
+                            updateFormData('selectedLocation', loc);
+                            // Reset date and slot when changing location
+                            updateFormData('selectedDate', null);
+                            updateFormData('selectedSlot', null);
+                          }}
+                          className={cn(
+                            'p-4 rounded-lg border text-left transition-all',
+                            formData.selectedLocation?.id === loc.id
+                              ? 'border-primary-600 bg-primary-50 ring-1 ring-primary-600'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <MapPin className={cn(
+                              'h-5 w-5 mt-0.5 flex-shrink-0',
+                              formData.selectedLocation?.id === loc.id ? 'text-primary-600' : 'text-gray-400'
+                            )} />
+                            <div className="flex-1">
+                              <p className={cn(
+                                'font-medium',
+                                formData.selectedLocation?.id === loc.id ? 'text-primary-700' : 'text-gray-900'
+                              )}>
+                                {loc.name}
+                                {loc.isPrimary && (
+                                  <span className="ml-2 text-xs font-normal text-gray-500">(Principal)</span>
+                                )}
+                              </p>
+                              {(loc.address || loc.city) && (
+                                <p className="mt-1 text-sm text-gray-500">
+                                  {[loc.address, loc.city, loc.county].filter(Boolean).join(', ')}
+                                </p>
+                              )}
+                              {loc.phone && (
+                                <p className="mt-1 text-xs text-gray-400">{loc.phone}</p>
+                              )}
+                            </div>
+                            {formData.selectedLocation?.id === loc.id && (
+                              <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Select Date */}
               {currentStepId === 'date' && (
                 <div className="space-y-4">
@@ -324,7 +433,13 @@ export default function Appointments() {
               {currentStepId === 'details' && (
                 <div className="space-y-4">
                   {/* Summary */}
-                  <div className="bg-primary-50 border border-primary-100 rounded-lg p-3 mb-4">
+                  <div className="bg-primary-50 border border-primary-100 rounded-lg p-3 mb-4 space-y-2">
+                    {formData.selectedLocation && (
+                      <div className="flex items-center gap-2 text-sm text-primary-700">
+                        <MapPin className="h-4 w-4" />
+                        <span className="font-medium">{formData.selectedLocation.name}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-sm text-primary-700">
                       <Calendar className="h-4 w-4" />
                       <span className="font-medium">

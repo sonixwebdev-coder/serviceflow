@@ -4,6 +4,7 @@ const { mapUser } = require('../utils/transform');
 const { normalizeEmploymentType } = require('../utils/normalize');
 const { ensureRole, normalizeRoleKey } = require('./roleService');
 const cache = require('../utils/cache');
+const globalPrisma = require('../../lib/prisma');
 
 const normalizeKey = (value) => (typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '');
 const ADMIN_ROLE = 'admin';
@@ -20,16 +21,16 @@ const hasRole = (user, roleKey) => {
 };
 
 const listUsers = async (prisma, { search, role, isActive }, currentUser, options = {}) => {
-  const { skipCache = false } = options;
+  const { skipCache = false, locationId } = options;
   const isAdmin = hasRole(currentUser, ADMIN_ROLE);
   const isManager = hasRole(currentUser, 'manager');
 
   // Build cache key with organizationId to ensure tenant isolation
-  const filters = { search, role, isActive, organizationId: currentUser.organizationId };
+  const filters = { search, role, isActive, organizationId: currentUser.organizationId, locationId };
   const cacheKey = cache.userListKey(filters);
 
-  // Try cache first (only for non-search queries - search results change frequently)
-  if (!skipCache && !search) {
+  // Try cache first (only for non-search queries and non-location filtered queries)
+  if (!skipCache && !search && !locationId) {
     const cached = await cache.get(cacheKey);
     if (cached) {
       return cached;
@@ -70,6 +71,15 @@ const listUsers = async (prisma, { search, role, isActive }, currentUser, option
     ];
   }
 
+  // Filter by location - show only users assigned to this location
+  if (locationId) {
+    where.locations = {
+      some: {
+        locationId: locationId,
+      },
+    };
+  }
+
   const users = await prisma.user.findMany({
     where,
     include: {
@@ -85,6 +95,17 @@ const listUsers = async (prisma, { search, role, isActive }, currentUser, option
         select: {
           startDate: true,
           endDate: true,
+        },
+      },
+      locations: {
+        include: {
+          location: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+            },
+          },
         },
       },
     },
@@ -107,9 +128,19 @@ const listUsers = async (prisma, { search, role, isActive }, currentUser, option
     });
 
     const mapped = mapUser(user);
+
+    // Map user locations
+    const userLocations = (user.locations || []).map(ul => ({
+      id: ul.location.id,
+      name: ul.location.name,
+      isActive: ul.location.isActive,
+      isPrimary: ul.isPrimary,
+    }));
+
     return {
       ...mapped,
       leaveStatus: isOnLeave ? 'IN_CONCEDIU' : 'DISPONIBIL',
+      locations: userLocations,
     };
   });
 
