@@ -95,6 +95,7 @@ export default function Book() {
     },
     createAccount: false,
     password: '',
+    acceptedTerms: false,
   });
   const [bookingResult, setBookingResult] = useState(null);
 
@@ -176,7 +177,7 @@ export default function Book() {
       case 'asset':
         return true; // Asset is optional
       case 'confirm':
-        return !formData.createAccount || formData.password.length >= 6;
+        return formData.acceptedTerms && (!formData.createAccount || formData.password.length >= 6);
       default:
         return false;
     }
@@ -798,7 +799,27 @@ export default function Book() {
                   )}
                 </div>
 
-                <div className="border-t pt-4">
+                <div className="border-t pt-4 space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.acceptedTerms}
+                      onChange={(e) => updateFormData('acceptedTerms', e.target.checked)}
+                      className="w-4 h-4 mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Am citit si sunt de acord cu{' '}
+                      <Link to="/terms" target="_blank" className="text-primary-600 hover:text-primary-700 underline">
+                        Termenii si Conditiile
+                      </Link>{' '}
+                      si{' '}
+                      <Link to="/privacy" target="_blank" className="text-primary-600 hover:text-primary-700 underline">
+                        Politica de Confidentialitate
+                      </Link>
+                      <span className="text-red-500"> *</span>
+                    </span>
+                  </label>
+
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"

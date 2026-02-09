@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
-import { Calendar, FileText, User, LogOut, Home, Menu, X, Bell, Check } from 'lucide-react';
+import { Calendar, FileText, User, LogOut, Home, Menu, X, Bell, Check, Compass } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useAuthStore } from '@/state/useAuthStore';
 import { useLogout } from '@/hooks/useAuth';
@@ -8,9 +8,10 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Programari', href: '/appointments', icon: Calendar },
   { name: 'Facturi', href: '/invoices', icon: FileText },
+  { name: 'Descopera', href: '/discover', icon: Compass },
   { name: 'Profil', href: '/profile', icon: User },
 ];
 

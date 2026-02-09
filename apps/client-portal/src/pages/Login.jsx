@@ -22,7 +22,7 @@ export default function Login() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const loading = useAuthStore((state) => state.loading);
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/dashboard';
 
   // Redirect if already authenticated (after loading)
   useEffect(() => {

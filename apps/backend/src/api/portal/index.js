@@ -5,6 +5,7 @@ const appointmentsRouter = require('./appointments');
 const invoicesRouter = require('./invoices');
 const profileRouter = require('./profile');
 const publicRouter = require('./public');
+const marketplaceRouter = require('./marketplace');
 const notificationsRouter = require('./notifications');
 const websiteRouter = require('./website');
 
@@ -16,6 +17,7 @@ router.get('/health', (req, res) => {
 });
 
 // Public routes (no auth required)
+router.use('/public/marketplace', marketplaceRouter);
 router.use('/public', publicRouter);
 router.use('/website', websiteRouter);
 
