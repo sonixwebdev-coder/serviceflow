@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Calendar, Clock, User, Car, Package, CheckCircle, ArrowLeft, ArrowRight, Loader2, MapPin } from 'lucide-react';
+import { Calendar, Clock, User, Car, Package, CheckCircle, ArrowLeft, ArrowRight, Loader2, MapPin, Smartphone } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -33,7 +33,13 @@ const getStepsForSector = (sectorConfig, hasMultipleLocations) => {
   // Add asset step if sector uses assets
   if (sectorConfig?.hasAssets) {
     const assetStepTitle = sectorConfig.terminology?.asset?.singular || 'Activ';
-    const assetStepIcon = sectorConfig.assetType === 'vehicle' ? Car : Package;
+    // Select icon based on asset type
+    let assetStepIcon = Package;
+    if (sectorConfig.assetType === 'vehicle') {
+      assetStepIcon = Car;
+    } else if (sectorConfig.assetType === 'device') {
+      assetStepIcon = Smartphone;
+    }
     const assetStep = { id: 'asset', title: assetStepTitle, icon: assetStepIcon };
     steps.push(assetStep);
   }
@@ -69,6 +75,19 @@ export default function Book() {
       type: '',
       manufacturer: '',
       model: '',
+    },
+    device: {
+      deviceType: '',
+      brand: '',
+      model: '',
+      serialNumber: '',
+      imei: '',
+      condition: '',
+      storageCapacity: '',
+      color: '',
+      password: '',
+      accessories: '',
+      problemDescription: '',
     },
     appointment: {
       title: 'Programare service',
@@ -190,7 +209,25 @@ export default function Book() {
             // Generate name from vehicle data
             name: `${formData.vehicle.make || ''} ${formData.vehicle.model || ''}`.trim() || null,
           };
-        } else if (assetType !== 'vehicle' && (formData.asset.name || formData.asset.identifier)) {
+        } else if (assetType === 'device' && (formData.device.brand || formData.device.model || formData.device.serialNumber || formData.device.imei)) {
+          // Map device form data to asset structure
+          bookingData.asset = {
+            name: `${formData.device.brand || ''} ${formData.device.model || ''}`.trim() || formData.device.deviceType || null,
+            manufacturer: formData.device.brand,
+            model: formData.device.model,
+            identifier: formData.device.serialNumber || formData.device.imei,
+            metadata: {
+              deviceType: formData.device.deviceType,
+              imei: formData.device.imei,
+              condition: formData.device.condition,
+              storageCapacity: formData.device.storageCapacity,
+              color: formData.device.color,
+              password: formData.device.password,
+              accessories: formData.device.accessories,
+              problemDescription: formData.device.problemDescription,
+            },
+          };
+        } else if (assetType !== 'vehicle' && assetType !== 'device' && (formData.asset.name || formData.asset.identifier)) {
           bookingData.asset = formData.asset;
         }
       }
@@ -553,8 +590,100 @@ export default function Book() {
                   </>
                 )}
 
+                {/* Device-specific fields (phones, tablets, laptops) */}
+                {assetType === 'device' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Tip dispozitiv</label>
+                        <select
+                          value={formData.device.deviceType}
+                          onChange={(e) => updateNestedFormData('device', 'deviceType', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                          <option value="">Selecteaza...</option>
+                          <option value="Telefon">Telefon</option>
+                          <option value="Tableta">Tableta</option>
+                          <option value="Laptop">Laptop</option>
+                          <option value="PC Desktop">PC Desktop</option>
+                          <option value="Smartwatch">Smartwatch</option>
+                          <option value="Consola">Consola</option>
+                          <option value="Altele">Altele</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label">Brand</label>
+                        <Input
+                          value={formData.device.brand}
+                          onChange={(e) => updateNestedFormData('device', 'brand', e.target.value)}
+                          placeholder="ex: Apple, Samsung, Huawei"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Model</label>
+                        <Input
+                          value={formData.device.model}
+                          onChange={(e) => updateNestedFormData('device', 'model', e.target.value)}
+                          placeholder="ex: iPhone 14, Galaxy S23"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Stare la receptie</label>
+                        <select
+                          value={formData.device.condition}
+                          onChange={(e) => updateNestedFormData('device', 'condition', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                          <option value="">Selecteaza...</option>
+                          <option value="Functional">Functional</option>
+                          <option value="Partial functional">Partial functional</option>
+                          <option value="Nefunctional">Nefunctional</option>
+                          <option value="Deteriorat fizic">Deteriorat fizic</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">IMEI / Numar serie</label>
+                        <Input
+                          value={formData.device.imei || formData.device.serialNumber}
+                          onChange={(e) => updateNestedFormData('device', 'imei', e.target.value)}
+                          placeholder="ex: 123456789012345"
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Cod acces (optional)</label>
+                        <Input
+                          value={formData.device.password}
+                          onChange={(e) => updateNestedFormData('device', 'password', e.target.value)}
+                          placeholder="PIN/Pattern pentru testare"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label">Descriere problema</label>
+                      <textarea
+                        value={formData.device.problemDescription}
+                        onChange={(e) => updateNestedFormData('device', 'problemDescription', e.target.value)}
+                        placeholder="Descrieti problema dispozitivului..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent min-h-[80px]"
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Accesorii predate (optional)</label>
+                      <Input
+                        value={formData.device.accessories}
+                        onChange={(e) => updateNestedFormData('device', 'accessories', e.target.value)}
+                        placeholder="ex: Incarcator, husa, casti"
+                      />
+                    </div>
+                  </>
+                )}
+
                 {/* Generic asset fields for equipment, appliance, etc. */}
-                {assetType !== 'vehicle' && (
+                {assetType !== 'vehicle' && assetType !== 'device' && (
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -649,7 +778,17 @@ export default function Book() {
                       </span>
                     </div>
                   )}
-                  {hasAssets && assetType !== 'vehicle' && (formData.asset.name || formData.asset.identifier) && (
+                  {hasAssets && assetType === 'device' && (formData.device.brand || formData.device.model || formData.device.deviceType) && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{assetTerminology.singular}:</span>
+                      <span className="font-medium">
+                        {formData.device.deviceType && `${formData.device.deviceType}: `}
+                        {formData.device.brand} {formData.device.model}
+                        {formData.device.imei && ` (${formData.device.imei})`}
+                      </span>
+                    </div>
+                  )}
+                  {hasAssets && assetType !== 'vehicle' && assetType !== 'device' && (formData.asset.name || formData.asset.identifier) && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">{assetTerminology.singular}:</span>
                       <span className="font-medium">

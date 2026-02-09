@@ -181,12 +181,18 @@ const resolveAsset = async (tx, clientId, assetPayload, fallbackId, organization
 /**
  * List assets with pagination and filtering
  */
-const listAssets = async (prisma, { clientId, type, search, page = 1, limit = 50 }) => {
+const listAssets = async (prisma, { clientId, type, search, page = 1, limit = 50 }, options = {}) => {
+  const { locationFilter = {} } = options;
   // Parse pagination params as integers
   const pageNum = parseInt(page, 10) || 1;
   const limitNum = parseInt(limit, 10) || 50;
 
   const where = {};
+
+  // Filter assets through their client's locationId
+  if (locationFilter && Object.keys(locationFilter).length > 0) {
+    where.client = locationFilter;
+  }
 
   if (clientId) where.clientId = clientId;
   if (type) where.type = type;

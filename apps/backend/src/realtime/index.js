@@ -4,6 +4,7 @@ const { setIO } = require('./emitter');
 const prisma = require('../../lib/prisma');
 const { updatePresence, startTyping, stopTyping } = require('../services/chatPresenceService');
 const { broadcastTyping, broadcastPresence } = require('./chatEvents');
+const logger = require('../utils/logger');
 
 const createSocketServer = (httpServer) => {
   const io = new Server(httpServer, {
@@ -23,7 +24,7 @@ const createSocketServer = (httpServer) => {
 
   // Global error handler for the IO server
   io.engine.on('connection_error', (err) => {
-    console.error('[Socket.io Engine] Connection error:', err.code, err.message, err.context);
+    logger.error('[Socket.io Engine] Connection error', { code: err.code, message: err.message });
   });
 
   // ==========================================
@@ -33,26 +34,25 @@ const createSocketServer = (httpServer) => {
     try {
       const token = socket.handshake.auth?.token;
       const authType = socket.handshake.auth?.type; // 'user' or 'client'
-      const clientId = socket.handshake.auth?.clientId;
 
-      console.log('[Socket] Auth attempt:', { hasToken: !!token, authType, clientId: clientId?.substring(0, 8) });
+      logger.debug('[Socket] Auth attempt', { hasToken: !!token, authType });
 
       if (!token) {
-        console.log('[Socket] Auth failed: missing token');
+        logger.debug('[Socket] Auth failed: missing token');
         return next(new Error('AUTH_MISSING_TOKEN'));
       }
 
       const payload = verifyAccessToken(token);
       if (!payload || !payload.sub) {
-        console.log('[Socket] Auth failed: invalid token payload');
+        logger.debug('[Socket] Auth failed: invalid token payload');
         return next(new Error('AUTH_INVALID_TOKEN'));
       }
 
-      console.log('[Socket] Token verified:', { sub: payload.sub?.substring(0, 8), type: payload.type });
+      logger.debug('[Socket] Token verified', { type: payload.type });
 
       // Client portal authentication
       if (authType === 'client' || payload.type === 'client') {
-        console.log('[Socket] Processing client auth for:', payload.sub);
+        logger.debug('[Socket] Processing client auth');
 
         // For client portal, get client info
         const clientAccount = await prisma.clientAccount.findUnique({
@@ -62,10 +62,8 @@ const createSocketServer = (httpServer) => {
           },
         });
 
-        console.log('[Socket] Client account found:', !!clientAccount, 'Has client:', !!clientAccount?.client);
-
         if (!clientAccount || !clientAccount.client) {
-          console.log('[Socket] Client auth failed: no account or client');
+          logger.debug('[Socket] Client auth failed: no account or client');
           return next(new Error('AUTH_INVALID_CLIENT'));
         }
 
@@ -76,7 +74,7 @@ const createSocketServer = (httpServer) => {
           type: 'client',
         };
 
-        console.log('[Socket] Client authenticated, calling next()');
+        logger.debug('[Socket] Client authenticated');
         return next();
       }
 
@@ -89,10 +87,10 @@ const createSocketServer = (httpServer) => {
         type: 'user',
       };
 
-      console.log('[Socket] CRM user authenticated:', { userId: payload.sub?.substring(0, 8), orgId: payload.organizationId?.substring(0, 8) });
+      logger.debug('[Socket] CRM user authenticated');
       return next();
     } catch (err) {
-      console.error('[Socket] Auth error:', err.message, err.stack);
+      logger.error('[Socket] Auth error', err);
       return next(new Error('AUTH_INVALID_TOKEN'));
     }
   });
@@ -100,7 +98,7 @@ const createSocketServer = (httpServer) => {
   io.on('connection', (socket) => {
     // Handle client portal connections
     if (socket.portalClient) {
-      console.log(`[Portal] Client ${socket.portalClient.id} connected`);
+      logger.debug('[Portal] Client connected');
 
       // Join client-specific room for direct messages
       socket.join(`client:${socket.portalClient.id}`);
@@ -113,7 +111,7 @@ const createSocketServer = (httpServer) => {
       });
 
       socket.on('disconnect', () => {
-        console.log(`[Portal] Client ${socket.portalClient?.id || 'unknown'} disconnected`);
+        logger.debug('[Portal] Client disconnected');
       });
 
       return; // Client connections don't need CRM features below
@@ -121,21 +119,20 @@ const createSocketServer = (httpServer) => {
 
     // Handle CRM user connections
     if (!socket.user) {
-      console.error('[Socket CRM] Connection missing user data');
+      logger.error('[Socket CRM] Connection missing user data');
       return;
     }
 
-    console.log(`[CRM] User ${socket.user.id} connected`);
+    logger.debug('[CRM] User connected');
 
     // Join organization room for tenant-scoped broadcasts
     if (socket.user.organizationId) {
       const orgRoom = `org:${socket.user.organizationId}`;
       socket.join(orgRoom);
-      console.log(`[CRM] User ${socket.user.id} joined room: ${orgRoom}`);
 
       // Update user presence to online
       updatePresence(prisma, socket.user.id, true).catch((err) => {
-        console.error('Error updating presence on connect:', err);
+        logger.error('Error updating presence on connect', err);
       });
 
       // Broadcast user is online
@@ -157,7 +154,7 @@ const createSocketServer = (httpServer) => {
 
         broadcastTyping(socket.user.organizationId, channelId, user, true);
       } catch (error) {
-        console.error('Error handling typing start:', error);
+        logger.error('Error handling typing start', error);
       }
     });
 
@@ -172,15 +169,15 @@ const createSocketServer = (httpServer) => {
 
         broadcastTyping(socket.user.organizationId, channelId, user, false);
       } catch (error) {
-        console.error('Error handling typing stop:', error);
+        logger.error('Error handling typing stop', error);
       }
     });
 
     socket.on('disconnect', () => {
-      console.log(`[CRM] User ${socket.user?.id || 'unknown'} disconnected`);
+      logger.debug('[CRM] User disconnected');
       if (socket.user?.organizationId) {
         updatePresence(prisma, socket.user.id, false).catch((err) => {
-          console.error('Error updating presence on disconnect:', err);
+          logger.error('Error updating presence on disconnect', err);
         });
         broadcastPresence(socket.user.organizationId, socket.user.id, false);
       }

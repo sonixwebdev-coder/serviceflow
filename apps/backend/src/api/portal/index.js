@@ -6,6 +6,7 @@ const invoicesRouter = require('./invoices');
 const profileRouter = require('./profile');
 const publicRouter = require('./public');
 const notificationsRouter = require('./notifications');
+const websiteRouter = require('./website');
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.get('/health', (req, res) => {
 
 // Public routes (no auth required)
 router.use('/public', publicRouter);
+router.use('/website', websiteRouter);
 
 // Authenticated routes
 router.use('/auth', authRouter);

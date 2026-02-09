@@ -3,7 +3,6 @@ const crypto = require('crypto');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { signAccessToken, generateRefreshToken } = require('../utils/token');
-const { mapUser } = require('../utils/transform');
 const { normalizeEmploymentType } = require('../utils/normalize');
 const { ensureRole, normalizeRoleKey } = require('./roleService');
 const { sendCrmPasswordResetEmail } = require('./email/emailService');
@@ -16,16 +15,35 @@ const generateToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-const sanitizeUser = (user) => {
+/**
+ * Map user data for auth responses (login/refresh).
+ * Returns ONLY the fields the frontend actually uses.
+ * Sensitive/unused fields (hourlyRate, dateOfBirth, leaveBalance, permissions, etc.)
+ * are excluded to minimize data exposure.
+ */
+const mapAuthUser = (user) => {
   if (!user) return null;
-  const mapped = mapUser(user);
+
+  const primaryRole = user.roles?.[0]?.role?.key || user.role || null;
+  const mappedRoles = user.roles
+    ? user.roles.map((assignment) => ({
+        id: assignment.roleId || assignment.id,
+        key: assignment.role?.key || null,
+        name: assignment.role?.name || null,
+      }))
+    : [];
 
   return {
-    ...mapped,
-    permissions:
-      user.roles?.flatMap(
-        (assignment) => assignment.role?.permissions?.map((rp) => rp.permission.key) || []
-      ) || [],
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phoneNumber: user.phoneNumber,
+    avatarUrl: user.avatarUrl,
+    role: primaryRole,
+    roles: mappedRoles,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
   };
 };
 
@@ -82,7 +100,7 @@ const registerUser = async ({ firstName, lastName, email, password, phoneNumber,
     });
   });
 
-  return sanitizeUser(data);
+  return mapAuthUser(data);
 };
 
 const loginUser = async ({ email, password }) => {
@@ -135,7 +153,7 @@ const loginUser = async ({ email, password }) => {
   });
 
   return {
-    user: sanitizeUser(user),
+    user: mapAuthUser(user),
     accessToken,
     refreshToken,
   };
@@ -195,7 +213,7 @@ const refreshSession = async ({ token }) => {
   });
 
   return {
-    user: sanitizeUser(stored.user),
+    user: mapAuthUser(stored.user),
     accessToken,
     refreshToken: nextToken,
   };

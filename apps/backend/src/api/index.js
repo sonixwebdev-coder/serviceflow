@@ -32,6 +32,8 @@ const emailsRouter = require('./emails');
 const integrationsRouter = require('./integrations');
 const searchRouter = require('./search');
 const portalRouter = require('./portal');
+const websiteRouter = require('./website');
+const publicWebsiteRouter = require('./portal/website');
 
 const router = express.Router();
 
@@ -78,5 +80,7 @@ router.use('/emails', emailsRouter);
 router.use('/integrations', integrationsRouter);
 router.use('/search', searchRouter);
 router.use('/portal', portalRouter);
+router.use('/website', websiteRouter);
+router.use('/sites', publicWebsiteRouter);
 
 module.exports = router;

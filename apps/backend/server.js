@@ -11,18 +11,17 @@ const { initRedis, closeRedis } = require('./src/lib/redis');
 const apiRouter = require('./src/api');
 const errorHandler = require('./src/middleware/errorHandler');
 const createSocketServer = require('./src/realtime');
+const logger = require('./src/utils/logger');
 
 // Handle uncaught exceptions to prevent server crashes
 process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception:', err.message);
-  console.error(err.stack);
-  // Don't exit - keep the server running
+  logger.system('Uncaught Exception', { stack: err.stack, name: err.name, message: err.message });
+  logger.flush();
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise);
-  console.error('Reason:', reason);
-  // Don't exit - keep the server running
+  logger.system('Unhandled Rejection', { reason: String(reason) });
+  logger.flush();
 });
 
 const app = express();
@@ -33,7 +32,7 @@ const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname,
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
     ? ['https://viperx.online', 'https://portal.viperx.online']
-    : ['http://localhost:5173', 'http://localhost:5174'],
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true
 };
 
@@ -83,7 +82,18 @@ app.use((req, res, next) => {
       includeSubDomains: true,
       preload: true,
     },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   })(req, res, next);
+});
+
+// Permissions-Policy header
+app.use((req, res, next) => {
+  if (!res.locals.skipCSP) {
+    res.setHeader('Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+    );
+  }
+  next();
 });
 
 // Remove X-Powered-By header
@@ -137,6 +147,15 @@ const passwordChangeLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate limiting for forgot-password endpoints (CRITICAL SECURITY - enumeration prevention)
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window
+  message: 'Too many password reset attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Rate limiting for export endpoints (CRITICAL SECURITY - DoS prevention)
 const exportLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -153,6 +172,10 @@ const exportLimiter = rateLimit({
 // Apply rate limit to auth routes
 app.use('/api/auth', authLimiter);
 app.use('/api/portal/auth', authLimiter);
+
+// Apply rate limit to forgot-password routes
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
+app.use('/api/portal/auth/forgot-password', forgotPasswordLimiter);
 
 // Apply rate limiting to profile endpoints (CRITICAL SECURITY)
 app.use('/api/users/profile', (req, res, next) => {
@@ -226,13 +249,13 @@ async function startServer() {
   });
 
   const gracefulShutdown = async (signal) => {
-    console.log(`\n${signal} received. Shutting down gracefully...`);
+    logger.system(`${signal} received, shutting down gracefully`);
+    await logger.flush();
     await Promise.all([
       prisma.$disconnect(),
       closeRedis(),
     ]);
     httpServer.close(() => {
-      console.log('🛑 HTTP server closed.');
       process.exit(0);
     });
   };

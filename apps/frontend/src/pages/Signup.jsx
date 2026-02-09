@@ -169,10 +169,14 @@ const Signup = () => {
       const { confirmPassword, ...payload } = formData;
       const result = await signupOrganization(payload);
 
-      // Store auth data
-      localStorage.setItem('accessToken', result.accessToken);
-      localStorage.setItem('refreshToken', result.refreshToken);
-      localStorage.setItem('user', JSON.stringify(result.user));
+      // Store minimal display fields for cached UI (tokens handled via httpOnly cookies)
+      localStorage.setItem('user', JSON.stringify({
+        id: result.user.id,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        avatarUrl: result.user.avatarUrl,
+        role: result.user.role,
+      }));
 
       // Redirect to dashboard
       window.location.href = '/dashboard';

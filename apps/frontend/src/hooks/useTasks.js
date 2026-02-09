@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTasks } from '../services/taskService';
+import useLocationStore from '../state/useLocationStore';
 
 const EMPTY_ARRAY = [];
 
@@ -8,6 +9,7 @@ const useTasks = (initialFilters = {}, options = {}) => {
   const { enablePagination = false } = options;
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState(initialFilters);
+  const currentLocationId = useLocationStore((s) => s.currentLocationId);
 
   const queryParams = useMemo(() => {
     const params = { ...filters };
@@ -18,7 +20,7 @@ const useTasks = (initialFilters = {}, options = {}) => {
     return params;
   }, [filters, page, enablePagination]);
 
-  const queryKey = useMemo(() => ['tasks', queryParams], [queryParams]);
+  const queryKey = useMemo(() => ['tasks', queryParams, { locationId: currentLocationId }], [queryParams, currentLocationId]);
 
   const {
     data,

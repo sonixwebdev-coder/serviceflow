@@ -11,12 +11,15 @@ const {
   updateOrganization,
   getOrganizationStats,
 } = require('../services/organizationService');
+const { setRefreshCookie } = require('../utils/cookies');
 const {
   getOrganizationSettings,
   getSectorInfo,
   updatePublicBooking,
+  getServices,
+  updateServices,
 } = require('../services/organizationSettingsService');
-const { publicBookingSchema } = require('../schemas/organizationSettingsSchema');
+const { publicBookingSchema, servicesArraySchema } = require('../schemas/organizationSettingsSchema');
 const { logFromRequest } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 
@@ -51,7 +54,9 @@ router.post(
   '/signup',
   asyncHandler(async (req, res) => {
     const result = await createOrganization(req.body);
-    return created(res, result, 'Organization created successfully');
+    setRefreshCookie(res, result.refreshToken);
+    const { refreshToken: _rt, ...body } = result;
+    return created(res, body, 'Organization created successfully');
   })
 );
 
@@ -152,6 +157,46 @@ router.patch(
     });
 
     return ok(res, settings, 'Public booking settings updated successfully');
+  })
+);
+
+/**
+ * Get organization services
+ */
+router.get(
+  '/me/settings/services',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const services = await getServices(req.tenantPrisma, req.user.organizationId);
+    return ok(res, services);
+  })
+);
+
+/**
+ * Update organization services
+ * Only admins can update services
+ */
+router.put(
+  '/me/settings/services',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(servicesArraySchema),
+  asyncHandler(async (req, res) => {
+    const services = await updateServices(
+      req.tenantPrisma,
+      req.user.organizationId,
+      req.body.services
+    );
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Organization',
+      entityId: req.user.organizationId,
+      description: `Actualizat servicii organizatie`,
+      metadata: { servicesCount: req.body.services.length },
+    });
+
+    return ok(res, services, 'Services updated successfully');
   })
 );
 

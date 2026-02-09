@@ -4,6 +4,7 @@ import { Search, Package, User, Building, ExternalLink, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAssets } from '../services/assetService';
 import { useTerminology } from '../context/TerminologyContext';
+import useLocationStore from '../state/useLocationStore';
 import Pagination from '../components/Pagination';
 
 const PAGE_SIZE = 20;
@@ -13,9 +14,10 @@ const Assets = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const { assetPlural, assetIdentifier, assetSingular } = useTerminology();
+  const currentLocationId = useLocationStore((s) => s.currentLocationId);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['assets', { search, page: currentPage, limit: PAGE_SIZE }],
+    queryKey: ['assets', { search, page: currentPage, limit: PAGE_SIZE, locationId: currentLocationId }],
     queryFn: () => fetchAssets({ search, page: currentPage, limit: PAGE_SIZE }),
   });
 

@@ -16,10 +16,11 @@ const isManagerial = ({ roles }) => roles?.some((role) => ['admin', 'manager'].i
 const buildTaskWhere = (filters, currentUser, options = {}) => {
   const { locationFilter = {} } = options;
   const where = {};
+  const andConditions = [];
 
   // Apply location filter
   if (locationFilter && Object.keys(locationFilter).length > 0) {
-    Object.assign(where, locationFilter);
+    andConditions.push(locationFilter);
   }
 
   if (filters.status) {
@@ -42,17 +43,23 @@ const buildTaskWhere = (filters, currentUser, options = {}) => {
     };
   }
 
-  // All users (including admins) now only see tasks they created or are assigned to
-  where.OR = [
-    {
-      assignments: {
-        some: {
-          userId: currentUser.id,
+  // All users (including admins) only see tasks they created or are assigned to
+  andConditions.push({
+    OR: [
+      {
+        assignments: {
+          some: {
+            userId: currentUser.id,
+          },
         },
       },
-    },
-    { createdById: currentUser.id },
-  ];
+      { createdById: currentUser.id },
+    ],
+  });
+
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
+  }
 
   return where;
 };

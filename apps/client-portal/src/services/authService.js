@@ -1,11 +1,10 @@
 import api from '../utils/api';
-import { useAuthStore } from '../state/useAuthStore';
 
 export const authService = {
   async login(email, password) {
     const response = await api.post('/portal/auth/login', { email, password });
-    const { accessToken, refreshToken, account, client } = response.data;
-    return { accessToken, refreshToken, account, client };
+    const { accessToken, client } = response.data;
+    return { accessToken, client };
   },
 
   async register(email, password, clientId) {
@@ -15,8 +14,7 @@ export const authService = {
 
   async logout() {
     try {
-      const { refreshToken } = useAuthStore.getState();
-      await api.post('/portal/auth/logout', { refreshToken });
+      await api.post('/portal/auth/logout');
     } catch {
       // Ignore logout errors
     }

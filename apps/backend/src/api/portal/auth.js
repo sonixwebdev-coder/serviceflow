@@ -4,6 +4,9 @@ const asyncHandler = require('../../middleware/asyncHandler');
 const authenticateClient = require('../../middleware/authenticateClient');
 const portalAuthService = require('../../services/portalAuthService');
 const prisma = require('../../../lib/prisma');
+const { setRefreshCookie, clearRefreshCookie } = require('../../utils/cookies');
+
+const PORTAL_COOKIE = 'sf_portal_refresh';
 
 /**
  * POST /api/portal/auth/login
@@ -25,7 +28,9 @@ router.post(
       ipAddress: req.ip,
     });
 
-    res.json(result);
+    setRefreshCookie(res, result.refreshToken, PORTAL_COOKIE);
+    const { refreshToken: _rt, ...body } = result;
+    res.json(body);
   })
 );
 
@@ -59,27 +64,28 @@ router.post(
 router.post(
   '/logout',
   asyncHandler(async (req, res) => {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies[PORTAL_COOKIE];
 
     if (refreshToken) {
       await portalAuthService.logoutClient(prisma, refreshToken);
     }
 
+    clearRefreshCookie(res, PORTAL_COOKIE);
     res.json({ success: true });
   })
 );
 
 /**
  * POST /api/portal/auth/refresh
- * Refresh access token using refresh token
+ * Refresh access token using refresh token from httpOnly cookie
  */
 router.post(
   '/refresh',
   asyncHandler(async (req, res) => {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies[PORTAL_COOKIE];
 
     if (!refreshToken) {
-      return res.status(400).json({ error: 'Refresh token is required' });
+      return res.status(401).json({ error: 'No refresh token', code: 'AUTH_TOKEN_EXPIRED' });
     }
 
     try {
@@ -89,10 +95,13 @@ router.post(
         ipAddress: req.ip,
       });
 
-      res.json(result);
+      setRefreshCookie(res, result.refreshToken, PORTAL_COOKIE);
+      const { refreshToken: _rt, ...body } = result;
+      res.json(body);
     } catch (error) {
       // Return 401 for token errors to trigger re-login on frontend
       if (error.statusCode === 401) {
+        clearRefreshCookie(res, PORTAL_COOKIE);
         return res.status(401).json({ error: error.message, code: 'AUTH_TOKEN_EXPIRED' });
       }
       throw error;

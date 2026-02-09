@@ -34,32 +34,25 @@ const fetchCsrfToken = async () => {
     });
     csrfToken = data.csrfToken;
     return csrfToken;
-  } catch (error) {
-    console.error('Failed to fetch CSRF token:', error);
+  } catch {
     return null;
   }
 };
 
-// Refresh auth session
+// Refresh auth session via httpOnly cookie
 const refreshAuthSession = async () => {
-  const { refreshToken } = useAuthStore.getState();
-
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
   const response = await axios.post(
     `${API_BASE_URL}/portal/auth/refresh`,
-    { refreshToken },
+    {},
     { withCredentials: true }
   );
 
-  const { accessToken, refreshToken: newRefreshToken, account, client } = response.data;
+  const { accessToken, client } = response.data;
 
   // Update store
-  useAuthStore.getState().setAuth({ accessToken, refreshToken: newRefreshToken, account, client });
+  useAuthStore.getState().setAuth({ accessToken, client });
 
-  return { accessToken, refreshToken: newRefreshToken };
+  return { accessToken };
 };
 
 // Initialize CSRF token on app load
@@ -109,8 +102,7 @@ api.interceptors.response.use(
           }
 
           return api(config);
-        } catch (csrfError) {
-          console.error('CSRF token refresh failed:', csrfError);
+        } catch {
           return Promise.reject(response.data || {
             message: 'Security validation failed. Please refresh the page and try again.',
             code: 'CSRF_VALIDATION_FAILED'

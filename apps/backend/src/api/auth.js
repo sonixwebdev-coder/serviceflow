@@ -2,9 +2,10 @@ const express = require('express');
 const asyncHandler = require('../middleware/asyncHandler');
 const validate = require('../middleware/validate');
 const authenticate = require('../middleware/authenticate');
-const { loginSchema, refreshSchema, forgotPasswordSchema, resetPasswordSchema } = require('../schemas/authSchema');
+const { loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('../schemas/authSchema');
 const { loginUser, refreshSession, revokeRefreshToken, requestPasswordReset, resetPassword } = require('../services/authService');
 const { ok, noContent } = require('../utils/http');
+const { setRefreshCookie, clearRefreshCookie } = require('../utils/cookies');
 
 const router = express.Router();
 
@@ -13,25 +14,33 @@ router.post(
   validate(loginSchema),
   asyncHandler(async (req, res) => {
     const auth = await loginUser(req.body);
-    return ok(res, auth, 'Login successful');
+    setRefreshCookie(res, auth.refreshToken);
+    return ok(res, { user: auth.user, accessToken: auth.accessToken }, 'Login successful');
   })
 );
 
 router.post(
   '/refresh',
-  validate(refreshSchema),
   asyncHandler(async (req, res) => {
-    const auth = await refreshSession({ token: req.body.refreshToken });
-    return ok(res, auth, 'Token refreshed');
+    const token = req.cookies['sf_refresh'];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No refresh token', code: 'AUTH_TOKEN_EXPIRED' });
+    }
+    const auth = await refreshSession({ token });
+    setRefreshCookie(res, auth.refreshToken);
+    return ok(res, { user: auth.user, accessToken: auth.accessToken }, 'Token refreshed');
   })
 );
 
 router.post(
   '/logout',
   authenticate,
-  validate(refreshSchema),
   asyncHandler(async (req, res) => {
-    await revokeRefreshToken({ token: req.body.refreshToken });
+    const token = req.cookies['sf_refresh'];
+    if (token) {
+      await revokeRefreshToken({ token });
+    }
+    clearRefreshCookie(res);
     return noContent(res);
   })
 );

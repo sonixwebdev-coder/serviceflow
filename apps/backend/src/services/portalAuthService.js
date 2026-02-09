@@ -7,7 +7,24 @@ const { getSectorConfig } = require('../constants/activitySectors');
 const { sendPasswordResetEmail } = require('./email/emailService');
 
 const SALT_ROUNDS = 10;
-const SESSION_DURATION_DAYS = 30; // Keep for backward compatibility during migration
+
+/**
+ * Build a minimal client response for auth endpoints (login/refresh).
+ * Only includes fields the portal frontend actually uses.
+ * Sensitive/unused fields (phone, organizationId, org.id, org.slug, org.activitySector) are excluded.
+ */
+const buildClientResponse = (client, sectorConfig) => ({
+  id: client.id,
+  firstName: client.firstName,
+  lastName: client.lastName,
+  companyName: client.companyName,
+  email: client.email,
+  type: client.type,
+  organization: {
+    name: client.organization?.name || null,
+    sectorConfig,
+  },
+});
 
 /**
  * Hash a password
@@ -169,21 +186,7 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
   return {
     accessToken,
     refreshToken,
-    account: {
-      id: account.id,
-      email: account.email,
-      isVerified: account.isVerified,
-    },
-    client: {
-      ...account.client,
-      organization: {
-        id: account.client.organization?.id,
-        name: account.client.organization?.name,
-        slug: account.client.organization?.slug,
-        activitySector,
-        sectorConfig,
-      },
-    },
+    client: buildClientResponse(account.client, sectorConfig),
   };
 };
 
@@ -273,21 +276,7 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
   return {
     accessToken,
     refreshToken: newRefreshToken,
-    account: {
-      id: stored.account.id,
-      email: stored.account.email,
-      isVerified: stored.account.isVerified,
-    },
-    client: {
-      ...stored.account.client,
-      organization: {
-        id: stored.account.client.organization?.id,
-        name: stored.account.client.organization?.name,
-        slug: stored.account.client.organization?.slug,
-        activitySector,
-        sectorConfig,
-      },
-    },
+    client: buildClientResponse(stored.account.client, sectorConfig),
   };
 };
 

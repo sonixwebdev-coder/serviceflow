@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -6,6 +5,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import PortalLayout from '@/components/layout/PortalLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuthStore } from '@/state/useAuthStore';
+import { refreshAuthSession } from '@/utils/api';
 
 import Login from '@/pages/Login';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -27,8 +27,21 @@ const queryClient = new QueryClient({
   },
 });
 
-// Hydrate auth state from localStorage on app start
+// Clean up stale localStorage keys from pre-migration auth
+localStorage.removeItem('portal-accessToken');
+localStorage.removeItem('portal-refreshToken');
+localStorage.removeItem('portal-account');
+
+// Hydrate cached UI data from localStorage, then attempt silent refresh
 useAuthStore.getState().hydrate();
+refreshAuthSession()
+  .catch(() => {
+    // No valid refresh cookie - user needs to re-login
+    useAuthStore.getState().logout();
+  })
+  .finally(() => {
+    useAuthStore.getState().setLoading(false);
+  });
 
 function App() {
   return (

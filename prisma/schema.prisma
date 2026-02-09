@@ -43,6 +43,7 @@ model Organization {
   chatChannels         ChatChannel[]
   emailLogs            EmailLog[]
   emailTemplates       EmailTemplate[]
+  website              Website?
 
   @@index([slug])
   @@index([status])
@@ -1229,6 +1230,43 @@ enum ChatMessageType {
   IMAGE
 }
 
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+enum LogCategory {
+  REQUEST
+  AUTH
+  ERROR
+  SYSTEM
+  EMAIL
+  REALTIME
+}
+
+model SystemLog {
+  id        String      @id @default(cuid())
+  level     LogLevel
+  category  LogCategory
+  message   String
+  data      Json?
+  stack     String?
+  path      String?
+  method    String?
+  userId    String?
+  ip        String?
+  duration  Int?
+  createdAt DateTime    @default(now())
+
+  @@index([level])
+  @@index([category])
+  @@index([createdAt])
+  @@index([category, createdAt])
+  @@index([level, createdAt])
+}
+
 model EmailLog {
   id             String       @id @default(cuid())
   organizationId String
@@ -1317,6 +1355,26 @@ enum CalendarSyncStatus {
   ERROR
 }
 
+enum WebsitePageType {
+  HOME
+  SERVICES
+  ABOUT
+  TEAM
+  LOCATIONS
+  GALLERY
+  CONTACT
+  BOOKING
+  CUSTOM
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
 model ClientAccount {
   id                String               @id @default(cuid())
   clientId          String               @unique
@@ -1368,4 +1426,72 @@ model ClientRefreshToken {
   @@index([accountId])
   @@index([token])
   @@index([expiresAt])
+}
+
+model Website {
+  id              String           @id @default(cuid())
+  organizationId  String           @unique
+  subdomain       String           @unique
+  customDomain    String?          @unique
+  domainVerified  Boolean          @default(false)
+  isPublished     Boolean          @default(false)
+  publishedAt     DateTime?
+  branding        Json?            // { primaryColor, secondaryColor, fontFamily, logoUrl, faviconUrl }
+  seoDefaults     Json?            // { title, description, keywords, ogImage }
+  templateId      String?
+  theme           Json?
+  integrations    Json?            // { googleAnalyticsId, facebookPixelId }
+  showBranding    Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  pages           WebsitePage[]
+  leads           WebsiteLead[]
+
+  @@index([subdomain])
+  @@index([customDomain])
+}
+
+model WebsitePage {
+  id              String           @id @default(cuid())
+  websiteId       String
+  slug            String
+  title           String
+  pageType        WebsitePageType  @default(CUSTOM)
+  content         Json             // Array of blocks
+  seo             Json?
+  isPublished     Boolean          @default(false)
+  sortOrder       Int              @default(0)
+  autoSync        Boolean          @default(false)
+  syncConfig      Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  website         Website          @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, slug])
+  @@index([websiteId])
+  @@index([pageType])
+}
+
+model WebsiteLead {
+  id              String           @id @default(cuid())
+  websiteId       String
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  message         String?
+  source          String?
+  status          LeadStatus       @default(NEW)
+  clientId        String?
+  createdAt       DateTime         @default(now())
+
+  website         Website          @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
 }

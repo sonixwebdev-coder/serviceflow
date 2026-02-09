@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import API from '../utils/api';
+import { useAuthStore } from '../state/useAuthStore';
 
 const TerminologyContext = createContext();
 
@@ -45,6 +46,11 @@ const DEFAULT_ASSET_FIELD_CONFIG = {
     requiredFields: ['serialNumber'],
     fieldLabels: {},
   },
+  device: {
+    visibleFields: ['deviceType', 'brand', 'model', 'serialNumber', 'imei', 'condition', 'storageCapacity', 'color', 'password', 'accessories', 'problemDescription'],
+    requiredFields: ['deviceType'],
+    fieldLabels: {},
+  },
   other: {
     visibleFields: ['description', 'identifier', 'brand', 'model'],
     requiredFields: [],
@@ -67,59 +73,44 @@ export const TerminologyProvider = ({ children }) => {
   const [sectorConfig, setSectorConfig] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch terminology from API
+  const accessToken = useAuthStore((s) => s.accessToken);
+
+  const applySettings = (settings) => {
+    if (settings.terminology) setTerminology(settings.terminology);
+    if (settings.features) setFeatures(settings.features);
+    if (settings.assetFieldConfig) setAssetFieldConfig(settings.assetFieldConfig);
+    if (settings.publicBooking) setPublicBooking(settings.publicBooking);
+    if (settings.sectorConfig) setSectorConfig(settings.sectorConfig);
+  };
+
+  // Fetch terminology from API - only when access token is available
   useEffect(() => {
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchSettings = async () => {
-      // Check if user is authenticated before fetching settings
-      const hasToken = localStorage.getItem('accessToken');
-
-      if (!hasToken) {
-        // User is not logged in, skip API call and use defaults
-        setLoading(false);
-        return;
-      }
-
       try {
         const response = await API.get('/organizations/me/settings');
-        const settings = response.data.data;
-
-        if (settings.terminology) {
-          setTerminology(settings.terminology);
+        if (!cancelled) {
+          applySettings(response.data.data);
         }
-
-        if (settings.features) {
-          setFeatures(settings.features);
-        }
-
-        if (settings.assetFieldConfig) {
-          setAssetFieldConfig(settings.assetFieldConfig);
-        }
-
-        if (settings.publicBooking) {
-          setPublicBooking(settings.publicBooking);
-        }
-
-        if (settings.sectorConfig) {
-          setSectorConfig(settings.sectorConfig);
-        }
-      } catch (error) {
-        console.error('Failed to load organization settings:', error);
+      } catch {
         // Use defaults on error
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchSettings();
 
-    // Listen for login events
-    const handleLoginEvent = () => {
-      fetchSettings();
-    };
-
-    window.addEventListener('userLoggedIn', handleLoginEvent);
-    return () => window.removeEventListener('userLoggedIn', handleLoginEvent);
-  }, []);
+    return () => { cancelled = true; };
+  }, [accessToken]);
 
   /**
    * Refresh settings from API (call after updating settings)
@@ -128,27 +119,7 @@ export const TerminologyProvider = ({ children }) => {
     try {
       const response = await API.get('/organizations/me/settings');
       const settings = response.data.data;
-
-      if (settings.terminology) {
-        setTerminology(settings.terminology);
-      }
-
-      if (settings.features) {
-        setFeatures(settings.features);
-      }
-
-      if (settings.assetFieldConfig) {
-        setAssetFieldConfig(settings.assetFieldConfig);
-      }
-
-      if (settings.publicBooking) {
-        setPublicBooking(settings.publicBooking);
-      }
-
-      if (settings.sectorConfig) {
-        setSectorConfig(settings.sectorConfig);
-      }
-
+      applySettings(settings);
       return settings;
     } catch (error) {
       console.error('Failed to refresh settings:', error);

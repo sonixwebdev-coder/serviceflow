@@ -156,7 +156,9 @@ const DashboardLayout = ({ children }) => {
       icon: Settings,
       roles: [USER_ROLES.ADMIN],
       children: [
+        { name: 'Website', href: '/settings/website', icon: Globe, roles: [USER_ROLES.ADMIN] },
         { name: 'Locatii', href: '/settings/locations', icon: MapPin, roles: [USER_ROLES.ADMIN] },
+        { name: 'Servicii', href: '/settings/services', icon: Briefcase, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari organizatie', href: '/settings/organization', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Template-uri Email', href: '/settings/email-templates', icon: Mail, roles: [USER_ROLES.ADMIN] },

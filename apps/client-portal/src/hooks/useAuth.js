@@ -6,8 +6,8 @@ import { useAuthStore } from '../state/useAuthStore';
  * Simple hook to access current auth state
  */
 export function useAuth() {
-  const { client, account, accessToken, isAuthenticated } = useAuthStore();
-  return { client, account, accessToken, isAuthenticated };
+  const { client, accessToken, isAuthenticated } = useAuthStore();
+  return { client, accessToken, isAuthenticated };
 }
 
 export function useLogin() {
@@ -35,14 +35,14 @@ export function useLogout() {
 }
 
 export function useMe() {
-  const { accessToken, refreshToken } = useAuthStore();
+  const { accessToken } = useAuthStore();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   return useQuery({
     queryKey: ['me'],
     queryFn: async () => {
       const data = await authService.getMe();
-      setAuth({ accessToken, refreshToken, account: data.account, client: data.client });
+      setAuth({ accessToken, client: data.client });
       return data;
     },
     enabled: !!accessToken,

@@ -25,10 +25,22 @@ export const checkSlugAvailability = async (slug) => {
   return response.data?.data || response.data;
 };
 
+export const fetchServices = async () => {
+  const response = await API.get('/organizations/me/settings/services');
+  return response.data?.data || response.data;
+};
+
+export const updateServices = async (services) => {
+  const response = await API.put('/organizations/me/settings/services', { services });
+  return response.data?.data || response.data;
+};
+
 export default {
   signupOrganization,
   fetchCurrentOrganization,
   fetchOrganizationStats,
   updateOrganization,
   checkSlugAvailability,
+  fetchServices,
+  updateServices,
 };

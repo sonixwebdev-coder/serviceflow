@@ -160,9 +160,15 @@ const Profile = () => {
         phoneNumber: profileForm.phoneNumber || undefined,
       });
 
-      // Update the user context and persist to localStorage
+      // Update the user context and persist minimal display fields to localStorage
       setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem('user', JSON.stringify({
+        id: updatedUser.id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        avatarUrl: updatedUser.avatarUrl,
+        role: updatedUser.role,
+      }));
 
       showToast({
         title: 'Profil actualizat',

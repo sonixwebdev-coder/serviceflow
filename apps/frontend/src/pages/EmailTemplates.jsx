@@ -23,6 +23,7 @@ import {
   useSendTestEmail,
 } from '../hooks/useEmailTemplates';
 import { TEMPLATE_VARIABLES } from '../services/emailTemplateService';
+import DOMPurify from 'dompurify';
 import useToast from '../context/useToast';
 import useAuth from '../context/useAuth';
 
@@ -400,7 +401,7 @@ const EmailTemplates = () => {
                         </div>
                         <div
                           className="p-4 bg-white max-h-96 overflow-auto"
-                          dangerouslySetInnerHTML={{ __html: previewHtml }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
                         />
                       </div>
                     )}

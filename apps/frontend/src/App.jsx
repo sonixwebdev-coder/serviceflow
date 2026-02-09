@@ -34,6 +34,9 @@ import CompanySettings from './pages/CompanySettings.jsx';
 import OrganizationSettings from './pages/OrganizationSettings.jsx';
 import EmailTemplates from './pages/EmailTemplates.jsx';
 import Locations from './pages/Locations.jsx';
+import WebsiteBuilder from './pages/WebsiteBuilder.jsx';
+import WebsiteLeads from './pages/WebsiteLeads.jsx';
+import Services from './pages/Services.jsx';
 import GlobalSearch from './components/search/GlobalSearch.jsx';
 
 function App() {
@@ -244,6 +247,17 @@ function App() {
           />
 
           <Route
+            path="/settings/services"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <Services />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/settings/company"
             element={
               <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
@@ -271,6 +285,28 @@ function App() {
               <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
                 <DashboardLayout>
                   <EmailTemplates />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/website"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <WebsiteBuilder />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/website/leads"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <WebsiteLeads />
                 </DashboardLayout>
               </ProtectedRoute>
             }

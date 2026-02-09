@@ -68,10 +68,31 @@ const updateOrganizationSettingsSchema = z.object({
   publicBooking: publicBookingSchema.optional(),
 });
 
+/**
+ * Schema for a single service
+ */
+const serviceSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional().default(''),
+  price: z.string().max(50).optional().default(''),
+  duration: z.string().max(50).optional().default(''),
+  image: z.string().max(500).optional().default(''),
+});
+
+/**
+ * Schema for updating services array
+ */
+const servicesArraySchema = z.object({
+  services: z.array(serviceSchema).max(50),
+});
+
 module.exports = {
   terminologySchema,
   featuresSchema,
   assetFieldConfigSchema,
   publicBookingSchema,
   updateOrganizationSettingsSchema,
+  serviceSchema,
+  servicesArraySchema,
 };

@@ -124,9 +124,62 @@ const updatePublicBooking = async (prisma, organizationId, publicBooking) => {
   return updatedSettings;
 };
 
+/**
+ * Get services from organization settings
+ * @param {Object} prisma - Prisma client
+ * @param {String} organizationId - Organization ID
+ * @returns {Array} Services array
+ */
+const getServices = async (prisma, organizationId) => {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { settings: true },
+  });
+
+  if (!org) {
+    throw new AppError('Organization not found', 404);
+  }
+
+  return (org.settings || {}).services || [];
+};
+
+/**
+ * Update services in organization settings (full replacement)
+ * @param {Object} prisma - Prisma client
+ * @param {String} organizationId - Organization ID
+ * @param {Array} services - Services array
+ * @returns {Array} Updated services array
+ */
+const updateServices = async (prisma, organizationId, services) => {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { settings: true },
+  });
+
+  if (!org) {
+    throw new AppError('Organization not found', 404);
+  }
+
+  const currentSettings = org.settings || {};
+
+  const updatedSettings = {
+    ...currentSettings,
+    services,
+  };
+
+  await prisma.organization.update({
+    where: { id: organizationId },
+    data: { settings: updatedSettings },
+  });
+
+  return services;
+};
+
 module.exports = {
   getOrganizationSettings,
   getSectorInfo,
   updatePublicBooking,
+  getServices,
+  updateServices,
   DEFAULT_PUBLIC_BOOKING,
 };

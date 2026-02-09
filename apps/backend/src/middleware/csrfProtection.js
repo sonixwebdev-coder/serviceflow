@@ -58,6 +58,9 @@ const CSRF_EXEMPT_PATHS = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/refresh',
+  '/api/portal/auth/login',
+  '/api/portal/auth/register',
+  '/api/portal/auth/refresh',
   '/api/organizations/signup',
   '/api/organizations/check-slug',
   '/files', // Static file serving

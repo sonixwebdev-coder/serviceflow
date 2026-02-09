@@ -17,7 +17,7 @@ const API = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Required for CSRF cookie
+  withCredentials: true,
 });
 
 const refreshClient = axios.create({
@@ -25,7 +25,7 @@ const refreshClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Required for CSRF cookie
+  withCredentials: true,
 });
 
 let refreshPromise = null;
@@ -35,12 +35,11 @@ let csrfToken = null;
 const fetchCsrfToken = async () => {
   try {
     const { data } = await axios.get(`${API_BASE_URL}/csrf-token`, {
-      withCredentials: true, // Required to receive CSRF cookie
+      withCredentials: true,
     });
     csrfToken = data.csrfToken;
     return csrfToken;
-  } catch (error) {
-    console.error('Failed to fetch CSRF token:', error);
+  } catch {
     return null;
   }
 };
@@ -51,28 +50,25 @@ fetchCsrfToken();
 const clearSession = () => {
   const { clear } = useAuthStore.getState();
   clear();
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
 };
 
 const performTokenRefresh = async () => {
-  const { refreshToken, setSession } = useAuthStore.getState();
-  const token = refreshToken || localStorage.getItem('refreshToken');
+  const { setSession } = useAuthStore.getState();
 
-  if (!token) {
-    clearSession();
-    throw Object.assign(new Error('Session expired'), { code: 'NO_REFRESH_TOKEN' });
-  }
-
-  const { data } = await refreshClient.post('/auth/refresh', { refreshToken: token });
+  const { data } = await refreshClient.post('/auth/refresh');
   const payload = data.data || data;
-  const { user, accessToken: nextAccessToken, refreshToken: nextRefreshToken } = payload;
+  const { user, accessToken: nextAccessToken } = payload;
 
-  setSession({ user, accessToken: nextAccessToken, refreshToken: nextRefreshToken });
-  localStorage.setItem('accessToken', nextAccessToken);
-  localStorage.setItem('refreshToken', nextRefreshToken);
-  localStorage.setItem('user', JSON.stringify(user));
+  setSession({ user, accessToken: nextAccessToken });
+  // Only cache minimal display fields in localStorage (no sensitive data)
+  localStorage.setItem('user', JSON.stringify({
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    avatarUrl: user.avatarUrl,
+    role: user.role,
+  }));
 
   updateSocketToken(nextAccessToken);
 
@@ -96,9 +92,8 @@ const queueTokenRefresh = () => {
 API.interceptors.request.use(
   (config) => {
     const { accessToken } = useAuthStore.getState();
-    const token = accessToken || localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     // Add CSRF token for state-changing requests
@@ -110,7 +105,6 @@ API.interceptors.request.use(
     const { currentLocationId } = useLocationStore.getState();
     if (currentLocationId) {
       config.headers['X-Location-Id'] = currentLocationId;
-      console.log('[API] Request to', config.url, 'with X-Location-Id:', currentLocationId);
     }
 
     return config;
@@ -149,8 +143,7 @@ API.interceptors.response.use(
           }
 
           return API(config);
-        } catch (csrfError) {
-          console.error('CSRF token refresh failed:', csrfError);
+        } catch {
           return Promise.reject(response.data || {
             message: 'Security validation failed. Please refresh the page and try again.',
             code: 'CSRF_VALIDATION_FAILED'
@@ -165,7 +158,7 @@ API.interceptors.response.use(
 
     try {
       const refreshed = await queueTokenRefresh();
-      const nextAccessToken = refreshed.accessToken || refreshed.accessTokenToken || refreshed.accessToken;
+      const nextAccessToken = refreshed.accessToken;
       config._retry = true;
       config.headers.Authorization = `Bearer ${nextAccessToken}`;
       return API(config);

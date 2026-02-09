@@ -2,45 +2,35 @@ import { create } from 'zustand';
 
 export const useAuthStore = create((set, get) => ({
   accessToken: null,
-  refreshToken: null,
-  account: null,
   client: null,
   isAuthenticated: false,
   loading: true,
 
-  setAuth: ({ accessToken, refreshToken, account, client }) => {
-    // Persist to localStorage
-    localStorage.setItem('portal-accessToken', accessToken);
-    localStorage.setItem('portal-refreshToken', refreshToken);
-    localStorage.setItem('portal-account', JSON.stringify(account));
-    localStorage.setItem('portal-client', JSON.stringify(client));
+  setAuth: ({ accessToken, client }) => {
+    // Only cache minimal display fields in localStorage (no sensitive data)
+    localStorage.setItem('portal-client', JSON.stringify({
+      id: client.id,
+      firstName: client.firstName,
+      lastName: client.lastName,
+      companyName: client.companyName,
+    }));
 
     set({
       accessToken,
-      refreshToken,
-      account,
       client,
       isAuthenticated: true,
     });
   },
 
-  setTokens: ({ accessToken, refreshToken }) => {
-    localStorage.setItem('portal-accessToken', accessToken);
-    localStorage.setItem('portal-refreshToken', refreshToken);
-    set({ accessToken, refreshToken });
+  setTokens: ({ accessToken }) => {
+    set({ accessToken });
   },
 
   logout: () => {
-    // Clear localStorage
-    localStorage.removeItem('portal-accessToken');
-    localStorage.removeItem('portal-refreshToken');
-    localStorage.removeItem('portal-account');
     localStorage.removeItem('portal-client');
 
     set({
       accessToken: null,
-      refreshToken: null,
-      account: null,
       client: null,
       isAuthenticated: false,
     });
@@ -49,44 +39,41 @@ export const useAuthStore = create((set, get) => ({
   updateClient: (clientData) => {
     set((state) => {
       const updatedClient = { ...state.client, ...clientData };
-      localStorage.setItem('portal-client', JSON.stringify(updatedClient));
+      // Update localStorage cache with only display fields
+      localStorage.setItem('portal-client', JSON.stringify({
+        id: updatedClient.id,
+        firstName: updatedClient.firstName,
+        lastName: updatedClient.lastName,
+        companyName: updatedClient.companyName,
+      }));
       return { client: updatedClient };
     });
   },
 
-  // Hydrate from localStorage on app start
+  // Hydrate cached UI data from localStorage, then refresh via cookie
   hydrate: () => {
     try {
-      const accessToken = localStorage.getItem('portal-accessToken');
-      const refreshToken = localStorage.getItem('portal-refreshToken');
-      const accountStr = localStorage.getItem('portal-account');
       const clientStr = localStorage.getItem('portal-client');
 
-      if (accessToken && refreshToken) {
-        const account = accountStr ? JSON.parse(accountStr) : null;
-        const client = clientStr ? JSON.parse(clientStr) : null;
+      if (clientStr) {
+        const client = JSON.parse(clientStr);
 
         set({
-          accessToken,
-          refreshToken,
-          account,
           client,
-          isAuthenticated: true,
-          loading: false,
+          // Don't set isAuthenticated yet - need access token from refresh
+          isAuthenticated: false,
+          loading: true,
         });
       } else {
         set({ loading: false });
       }
-    } catch (error) {
-      console.error('Error hydrating auth state:', error);
-      // Clear corrupted data
-      localStorage.removeItem('portal-accessToken');
-      localStorage.removeItem('portal-refreshToken');
-      localStorage.removeItem('portal-account');
+    } catch {
       localStorage.removeItem('portal-client');
       set({ loading: false });
     }
   },
+
+  setLoading: (loading) => set({ loading }),
 
   // For backward compatibility
   get token() {

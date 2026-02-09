@@ -20,7 +20,8 @@ router.get(
   '/',
   authenticate,
   asyncHandler(async (req, res) => {
-    const result = await listAssets(req.tenantPrisma, req.query);
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const result = await listAssets(req.tenantPrisma, req.query, { locationFilter });
     return ok(res, result);
   })
 );

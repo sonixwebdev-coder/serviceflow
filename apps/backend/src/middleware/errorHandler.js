@@ -1,4 +1,5 @@
 const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 /**
  * Sanitize error messages for user display
@@ -79,14 +80,15 @@ const errorHandler = (err, req, res, next) => {
     return next(err);
   }
 
-  // Log the full error for debugging
-  console.error('[Error]', {
+  // Log the full error for debugging (with request context)
+  logger.error(err.message, {
     name: err.name,
-    message: err.message,
     code: err.code,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    stack: err.stack,
     path: req.path,
     method: req.method,
+    ip: req.ip,
+    userId: req.user?.id,
   });
 
   const status = err instanceof AppError ? err.status : err.status || err.statusCode || 500;
