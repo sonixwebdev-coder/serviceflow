@@ -3,9 +3,14 @@ import API from '../utils/api';
 /**
  * Get the Google OAuth authorization URL to initiate connection
  * @param {string} returnUrl - URL to redirect to after OAuth completion
+ * @param {string} [locationId] - Optional location ID to associate the connection with
  */
-export const getConnectUrl = async (returnUrl = '/settings') => {
-  const response = await API.get(`/integrations/google/connect?returnUrl=${encodeURIComponent(returnUrl)}`);
+export const getConnectUrl = async (returnUrl = '/settings', locationId) => {
+  let url = `/integrations/google/connect?returnUrl=${encodeURIComponent(returnUrl)}`;
+  if (locationId) {
+    url += `&locationId=${encodeURIComponent(locationId)}`;
+  }
+  const response = await API.get(url);
   return response.data?.data || response.data;
 };
 
@@ -19,9 +24,14 @@ export const getConnectionStatus = async () => {
 
 /**
  * Disconnect Google Calendar integration
+ * @param {string} [locationId] - Optional location ID to disconnect a specific location config
  */
-export const disconnect = async () => {
-  const response = await API.post('/integrations/google/disconnect');
+export const disconnect = async (locationId) => {
+  let url = '/integrations/google/disconnect';
+  if (locationId) {
+    url += `?locationId=${encodeURIComponent(locationId)}`;
+  }
+  const response = await API.post(url);
   return response.data?.data || response.data;
 };
 
@@ -38,9 +48,14 @@ export const listCalendars = async () => {
  * @param {Object} settings - Settings object
  * @param {string} settings.calendarId - Selected calendar ID
  * @param {boolean} settings.syncEnabled - Whether sync is enabled
+ * @param {string} [settings.locationId] - Optional location ID for location-specific settings
  */
 export const updateSettings = async (settings) => {
-  const response = await API.put('/integrations/google/settings', settings);
+  const body = { ...settings };
+  if (settings.locationId) {
+    body.locationId = settings.locationId;
+  }
+  const response = await API.put('/integrations/google/settings', body);
   return response.data?.data || response.data;
 };
 

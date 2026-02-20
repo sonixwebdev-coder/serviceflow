@@ -143,7 +143,7 @@ router.post(
       issueDate: new Date().toLocaleDateString('ro-RO'),
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('ro-RO'),
       total: '500.00',
-      companyName: 'ServiceFlow Test',
+      companyName: 'ForjaIt Test',
       companyPhone: '0721 123 456',
     };
 

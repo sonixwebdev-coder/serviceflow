@@ -13,6 +13,7 @@ import {
 import {
   useOverview,
   useRevenueTrends,
+  usePaymentTrends,
   useAppointmentStats,
   useClientAcquisition,
   useInvoiceAging,
@@ -20,6 +21,7 @@ import {
 } from '../hooks/useAnalytics';
 import MetricCard from '../components/analytics/MetricCard';
 import RevenueCard from '../components/analytics/RevenueCard';
+import PaymentCard from '../components/analytics/PaymentCard';
 import RevenueChart from '../components/analytics/RevenueChart';
 import AppointmentMetrics from '../components/analytics/AppointmentMetrics';
 import ClientGrowthChart from '../components/analytics/ClientGrowthChart';
@@ -51,6 +53,7 @@ export default function Analytics() {
   // Fetch all analytics data
   const { data: overview, isLoading: overviewLoading, isFetching: overviewFetching, refetch: refetchOverview } = useOverview();
   const { data: revenue, isLoading: revenueLoading, isFetching: revenueFetching, refetch: refetchRevenue } = useRevenueTrends(queryParams);
+  const { data: payments, isLoading: paymentsLoading, isFetching: paymentsFetching, refetch: refetchPayments } = usePaymentTrends(queryParams);
   const { data: appointments, isLoading: appointmentsLoading, isFetching: appointmentsFetching, refetch: refetchAppointments } = useAppointmentStats(queryParams);
   const { data: clients, isLoading: clientsLoading, isFetching: clientsFetching, refetch: refetchClients } = useClientAcquisition(queryParams);
   const { data: invoiceAging, isLoading: agingLoading, isFetching: agingFetching, refetch: refetchAging } = useInvoiceAging();
@@ -59,6 +62,7 @@ export default function Analytics() {
   const handleRefreshAll = () => {
     refetchOverview();
     refetchRevenue();
+    refetchPayments();
     refetchAppointments();
     refetchClients();
     refetchAging();
@@ -69,6 +73,7 @@ export default function Analytics() {
   const isAnyLoading =
     overviewLoading ||
     revenueLoading ||
+    paymentsLoading ||
     appointmentsLoading ||
     clientsLoading ||
     agingLoading ||
@@ -78,6 +83,7 @@ export default function Analytics() {
   const isAnyFetching =
     overviewFetching ||
     revenueFetching ||
+    paymentsFetching ||
     appointmentsFetching ||
     clientsFetching ||
     agingFetching ||
@@ -123,50 +129,55 @@ export default function Analytics() {
 
       {/* Overview Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Revenue Card - uses selected date range */}
+        {/* Revenue Card - invoices */}
         <RevenueCard
           data={revenue?.summary}
           dateRange={dateRange}
           isLoading={revenueLoading || revenueFetching}
         />
 
-        {/* Other metrics - 2x2 grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <MetricCard
-            title="Programari azi"
-            value={overview?.appointments?.today || 0}
-            subtitle={`${overview?.appointments?.thisWeek || 0} saptamana aceasta`}
-            icon={Calendar}
-            iconColor="text-blue-600"
-            iconBg="bg-blue-100"
-            isLoading={overviewLoading || overviewFetching}
-          />
-          <MetricCard
-            title="Total clienti"
-            value={overview?.clients?.total || 0}
-            icon={Users}
-            iconColor="text-viperx-primary"
-            iconBg="bg-viperx-primary/10"
-            isLoading={overviewLoading || overviewFetching}
-          />
-          <MetricCard
-            title="Facturi restante"
-            value={overview?.invoices?.overdue || 0}
-            subtitle={`${overview?.invoices?.pending || 0} in asteptare`}
-            icon={FileText}
-            iconColor="text-red-600"
-            iconBg="bg-red-100"
-            isLoading={overviewLoading || overviewFetching}
-          />
-          <MetricCard
-            title="Task-uri active"
-            value={overview?.tasks?.active || 0}
-            icon={CheckSquare}
-            iconColor="text-amber-600"
-            iconBg="bg-amber-100"
-            isLoading={overviewLoading || overviewFetching}
-          />
-        </div>
+        {/* Payment Card - all payments */}
+        <PaymentCard
+          data={payments?.summary}
+          isLoading={paymentsLoading || paymentsFetching}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          title="Programari azi"
+          value={overview?.appointments?.today || 0}
+          subtitle={`${overview?.appointments?.thisWeek || 0} saptamana aceasta`}
+          icon={Calendar}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-100"
+          isLoading={overviewLoading || overviewFetching}
+        />
+        <MetricCard
+          title="Total clienti"
+          value={overview?.clients?.total || 0}
+          icon={Users}
+          iconColor="text-viperx-primary"
+          iconBg="bg-viperx-primary/10"
+          isLoading={overviewLoading || overviewFetching}
+        />
+        <MetricCard
+          title="Facturi restante"
+          value={overview?.invoices?.overdue || 0}
+          subtitle={`${overview?.invoices?.pending || 0} in asteptare`}
+          icon={FileText}
+          iconColor="text-red-600"
+          iconBg="bg-red-100"
+          isLoading={overviewLoading || overviewFetching}
+        />
+        <MetricCard
+          title="Task-uri active"
+          value={overview?.tasks?.active || 0}
+          icon={CheckSquare}
+          iconColor="text-amber-600"
+          iconBg="bg-amber-100"
+          isLoading={overviewLoading || overviewFetching}
+        />
       </div>
 
       {/* Location Comparison (admin/manager only) */}
@@ -184,7 +195,7 @@ export default function Analytics() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-viperx-primary" />
-              Evolutia veniturilor
+              Evolutia facturilor
             </h2>
           </div>
           <RevenueChart data={revenue?.data} isLoading={revenueLoading || revenueFetching} />

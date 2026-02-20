@@ -103,15 +103,20 @@ const refreshAccessToken = async (refreshToken) => {
 };
 
 /**
- * Store Google calendar config for user
+ * Store Google calendar config for user (per-location)
  */
-const storeCalendarConfig = async (prisma, userId, tokens) => {
+const storeCalendarConfig = async (prisma, userId, tokens, locationId = null) => {
   const expiresAt = tokens.expiry_date
     ? new Date(tokens.expiry_date)
     : new Date(Date.now() + 3600 * 1000);
 
   return prisma.googleCalendarConfig.upsert({
-    where: { userId },
+    where: {
+      userId_locationId: {
+        userId,
+        locationId: locationId || null,
+      },
+    },
     update: {
       accessToken: encrypt(tokens.access_token),
       refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : undefined,
@@ -120,6 +125,7 @@ const storeCalendarConfig = async (prisma, userId, tokens) => {
     },
     create: {
       userId,
+      locationId: locationId || null,
       accessToken: encrypt(tokens.access_token),
       refreshToken: encrypt(tokens.refresh_token),
       expiresAt,
@@ -128,19 +134,43 @@ const storeCalendarConfig = async (prisma, userId, tokens) => {
 };
 
 /**
- * Get user's calendar config
+ * Get user's calendar config for a specific location (or default)
  */
-const getCalendarConfig = async (prisma, userId) => {
+const getCalendarConfig = async (prisma, userId, locationId = null) => {
   return prisma.googleCalendarConfig.findUnique({
+    where: {
+      userId_locationId: {
+        userId,
+        locationId: locationId || null,
+      },
+    },
+  });
+};
+
+/**
+ * Get all calendar configs for a user (all locations)
+ */
+const getAllCalendarConfigs = async (prisma, userId) => {
+  return prisma.googleCalendarConfig.findMany({
     where: { userId },
+    include: {
+      location: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
   });
 };
 
 /**
  * Get authenticated Google Calendar client
  */
-const getAuthenticatedCalendarClient = async (prisma, userId) => {
-  const config = await getCalendarConfig(prisma, userId);
+const getAuthenticatedCalendarClient = async (prisma, userId, locationId = null) => {
+  const config = await getCalendarConfig(prisma, userId, locationId);
 
   if (!config) {
     throw new Error('Google Calendar not connected');
@@ -153,7 +183,7 @@ const getAuthenticatedCalendarClient = async (prisma, userId) => {
   if (config.expiresAt <= now) {
     try {
       const newCredentials = await refreshAccessToken(config.refreshToken);
-      await storeCalendarConfig(prisma, userId, newCredentials);
+      await storeCalendarConfig(prisma, userId, newCredentials, locationId);
       oauth2Client.setCredentials({
         access_token: newCredentials.access_token,
         refresh_token: decrypt(config.refreshToken),
@@ -173,10 +203,10 @@ const getAuthenticatedCalendarClient = async (prisma, userId) => {
 };
 
 /**
- * Disconnect Google Calendar
+ * Disconnect Google Calendar for a specific location (or default)
  */
-const disconnectCalendar = async (prisma, userId) => {
-  const config = await getCalendarConfig(prisma, userId);
+const disconnectCalendar = async (prisma, userId, locationId = null) => {
+  const config = await getCalendarConfig(prisma, userId, locationId);
 
   if (!config) {
     return { success: true };
@@ -200,38 +230,49 @@ const disconnectCalendar = async (prisma, userId) => {
 
   // Delete config
   await prisma.googleCalendarConfig.delete({
-    where: { userId },
+    where: {
+      userId_locationId: {
+        userId,
+        locationId: locationId || null,
+      },
+    },
   });
 
   return { success: true };
 };
 
 /**
- * Check if user has Google Calendar connected
+ * Check if user has Google Calendar connected (for a specific location or default)
  */
-const isConnected = async (prisma, userId) => {
-  const config = await getCalendarConfig(prisma, userId);
+const isConnected = async (prisma, userId, locationId = null) => {
+  const config = await getCalendarConfig(prisma, userId, locationId);
   return !!config;
 };
 
 /**
- * Get connection status
+ * Get connection status - returns ALL configs for the user with location info
  */
 const getConnectionStatus = async (prisma, userId) => {
-  const config = await getCalendarConfig(prisma, userId);
+  const configs = await getAllCalendarConfigs(prisma, userId);
 
-  if (!config) {
+  if (!configs || configs.length === 0) {
     return {
       connected: false,
+      configs: [],
     };
   }
 
   return {
     connected: true,
-    calendarId: config.calendarId,
-    syncEnabled: config.syncEnabled,
-    lastSyncAt: config.lastSyncAt,
-    createdAt: config.createdAt,
+    configs: configs.map((config) => ({
+      id: config.id,
+      locationId: config.locationId,
+      locationName: config.location?.name || null,
+      calendarId: config.calendarId,
+      syncEnabled: config.syncEnabled,
+      lastSyncAt: config.lastSyncAt,
+      createdAt: config.createdAt,
+    })),
   };
 };
 
@@ -241,6 +282,7 @@ module.exports = {
   refreshAccessToken,
   storeCalendarConfig,
   getCalendarConfig,
+  getAllCalendarConfigs,
   getAuthenticatedCalendarClient,
   disconnectCalendar,
   isConnected,

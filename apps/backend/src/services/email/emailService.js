@@ -77,7 +77,7 @@ const sendViaBrevo = async (to, subject, html, text) => {
     sendSmtpEmail.textContent = text;
   }
   sendSmtpEmail.sender = {
-    name: process.env.EMAIL_FROM_NAME || 'ServiceFlow',
+    name: process.env.EMAIL_FROM_NAME || 'ForjaIt',
     email: process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@example.com',
   };
   sendSmtpEmail.to = [{ email: to }];
@@ -139,7 +139,7 @@ const compileTemplate = (templateString, data) => {
  */
 const SYSTEM_TEMPLATES = {
   'crm-password-reset': {
-    subject: 'Resetare parola - ServiceFlow',
+    subject: 'Resetare parola - ForjaIt',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -152,7 +152,7 @@ const SYSTEM_TEMPLATES = {
     .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
     .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
     .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
-    .button { display: inline-block; background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
     .warning { color: #ef4444; font-size: 12px; margin-top: 15px; }
   </style>
 </head>
@@ -163,7 +163,7 @@ const SYSTEM_TEMPLATES = {
     </div>
     <div class="content">
       <p>Buna ziua, {{userName}}!</p>
-      <p>Am primit o cerere de resetare a parolei pentru contul tau ServiceFlow.</p>
+      <p>Am primit o cerere de resetare a parolei pentru contul tau ForjaIt.</p>
       <div class="info">
         <p>Click pe butonul de mai jos pentru a-ti reseta parola:</p>
         <a href="{{resetLink}}" class="button">Reseteaza Parola</a>
@@ -172,7 +172,7 @@ const SYSTEM_TEMPLATES = {
       <p>Daca nu ai solicitat resetarea parolei, ignora acest email.</p>
     </div>
     <div class="footer">
-      <p>ServiceFlow - Platformă de management</p>
+      <p>ForjaIt - Platformă de management</p>
       <p>Acest email a fost trimis automat. Te rugăm să nu răspunzi la acest mesaj.</p>
     </div>
   </div>
@@ -181,7 +181,7 @@ const SYSTEM_TEMPLATES = {
 `,
   },
   'crm-welcome': {
-    subject: 'Bine ai venit in ServiceFlow!',
+    subject: 'Bine ai venit in ForjaIt!',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -204,19 +204,19 @@ const SYSTEM_TEMPLATES = {
     </div>
     <div class="content">
       <p>Buna ziua, {{userName}}!</p>
-      <p>Contul tau ServiceFlow a fost creat cu succes.</p>
+      <p>Contul tau ForjaIt a fost creat cu succes.</p>
       <div class="info">
         <p><strong>Email:</strong> {{email}}</p>
         {{#if organizationName}}<p><strong>Organizatie:</strong> {{organizationName}}</p>{{/if}}
       </div>
       <p>Poti accesa platforma folosind butonul de mai jos:</p>
       <div style="text-align: center;">
-        <a href="{{loginUrl}}" class="button">Acceseaza ServiceFlow</a>
+        <a href="{{loginUrl}}" class="button">Acceseaza ForjaIt</a>
       </div>
       <p style="margin-top: 20px;">Daca ai intrebari sau ai nevoie de ajutor, echipa noastra de suport iti sta la dispozitie.</p>
     </div>
     <div class="footer">
-      <p>ServiceFlow - Platformă de management</p>
+      <p>ForjaIt - Platformă de management</p>
       <p>Acest email a fost trimis automat. Te rugăm să nu răspunzi la acest mesaj.</p>
     </div>
   </div>
@@ -595,6 +595,122 @@ const getDefaultTemplate = (templateName) => {
 </html>
 `,
     },
+    'loyalty-points-earned': {
+      subject: 'Ai castigat {{points}} puncte de fidelitate!',
+      bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #8b5cf6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .points { font-size: 32px; color: #8b5cf6; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Puncte de Fidelitate</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{clientName}}!</p>
+      <p>Ai castigat puncte de fidelitate pentru plata ta:</p>
+      <div class="info">
+        <p class="points">+{{points}} puncte</p>
+        <p>Plata: {{amount}} RON</p>
+        <p><strong>Total puncte:</strong> {{totalPoints}}</p>
+      </div>
+      <p>Continua sa acumulezi puncte pentru recompense mai bune!</p>
+    </div>
+    <div class="footer">
+      <p>{{companyName}}</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+    },
+    'loyalty-tier-upgrade': {
+      subject: 'Felicitari! Ai avansat la nivelul {{tierName}}!',
+      bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .tier { font-size: 28px; font-weight: bold; color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Nivel Nou Deblocat!</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{clientName}}!</p>
+      <p>Felicitari! Ai avansat de la {{previousTier}} la un nivel superior:</p>
+      <div class="info">
+        <p class="tier">{{tierName}}</p>
+        <p>Bucura-te de beneficii mai mari la fiecare vizita!</p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>{{companyName}}</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+    },
+    'loyalty-reward-available': {
+      subject: 'Ai o recompensa disponibila!',
+      bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #22c55e; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .reward { font-size: 20px; font-weight: bold; color: #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Recompensa Disponibila!</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{clientName}}!</p>
+      <p>Ai acumulat {{visitCount}} vizite si ai deblocat o recompensa:</p>
+      <div class="info">
+        <p class="reward">{{rewardDescription}}</p>
+      </div>
+      <p>Te asteptam!</p>
+    </div>
+    <div class="footer">
+      <p>{{companyName}}</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+    },
     'payment-received': {
       subject: 'Confirmare plata - {{companyName}}',
       bodyHtml: `
@@ -781,7 +897,7 @@ const sendAppointmentReminder = async (prisma, { appointment, client, companySet
     time: new Date(appointment.scheduledStart).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
     location: appointment.location,
     description: appointment.description,
-    companyName: companySettings?.name || 'ServiceFlow',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -815,7 +931,7 @@ const sendInvoiceCreatedEmail = async (prisma, { invoice, client, companySetting
     dueDate: new Date(invoice.dueDate).toLocaleDateString('ro-RO'),
     total: Number(invoice.total).toFixed(2),
     pdfUrl: invoice.pdfUrl,
-    companyName: companySettings?.name || 'ServiceFlow',
+    companyName: companySettings?.name || 'Forja',
     companyPhone: companySettings?.phone,
   };
 
@@ -844,7 +960,7 @@ const sendWelcomeEmail = async (prisma, { client, companySettings, organizationI
 
   const templateData = {
     clientName: clientName || 'Client',
-    companyName: companySettings?.name || 'ServiceFlow',
+    companyName: companySettings?.name || 'Forja',
     companyPhone: companySettings?.phone,
   };
 
@@ -871,7 +987,7 @@ const sendPasswordResetEmail = async (prisma, { email, clientName, resetLink, ex
     clientName: clientName || 'Client',
     resetLink,
     expiresIn: expiresIn || '1 ora',
-    companyName: companySettings?.name || 'ServiceFlow',
+    companyName: companySettings?.name || 'Forja',
     companyPhone: companySettings?.phone,
   };
 
@@ -905,7 +1021,7 @@ const sendAppointmentCancelledEmail = async (prisma, { appointment, client, canc
     time: appointmentDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
     location: appointment.location,
     cancellationReason: cancellationReason || appointment.cancellationReason,
-    companyName: companySettings?.name || 'ServiceFlow',
+    companyName: companySettings?.name || 'Forja',
     companyPhone: companySettings?.phone,
   };
 
@@ -941,7 +1057,7 @@ const sendAppointmentRescheduledEmail = async (prisma, { appointment, client, ol
     newDate: newDate.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }),
     newTime: newDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
     location: appointment.location,
-    companyName: companySettings?.name || 'ServiceFlow',
+    companyName: companySettings?.name || 'Forja',
     companyPhone: companySettings?.phone,
   };
 
@@ -983,7 +1099,7 @@ const sendPaymentReceivedEmail = async (prisma, { client, amount, paymentDate, p
       : new Date(paymentDate).toLocaleDateString('ro-RO'),
     paymentMethod: paymentMethods[paymentMethod] || paymentMethod,
     invoiceNumber,
-    companyName: companySettings?.name || 'ServiceFlow',
+    companyName: companySettings?.name || 'Forja',
     companyPhone: companySettings?.phone,
   };
 
@@ -1103,6 +1219,9 @@ const listTemplates = async (prisma) => {
     'welcome',
     'password-reset',
     'payment-received',
+    'loyalty-points-earned',
+    'loyalty-tier-upgrade',
+    'loyalty-reward-available',
   ];
   const customTemplateNames = new Set(customTemplates.map((t) => t.name));
 

@@ -18,6 +18,8 @@ const {
   exportTimeTracking,
   exportTasks,
   exportAllData,
+  exportBulkInvoicePDFs,
+  exportInvoicesAnafXML,
 } = require('../services/exportService');
 const {
   exportAppointmentsSchema,
@@ -93,6 +95,7 @@ router.get(
     };
 
     const result = await exportAppointments(
+      req.tenantPrisma,
       req.validated.format,
       filters,
       req.user.id,
@@ -121,6 +124,7 @@ router.get(
     };
 
     const result = await exportInvoices(
+      req.tenantPrisma,
       req.validated.format,
       filters,
       req.user.id,
@@ -146,6 +150,7 @@ router.get(
     };
 
     const result = await exportClients(
+      req.tenantPrisma,
       req.validated.format,
       filters,
       req.user.id,
@@ -172,6 +177,7 @@ router.get(
     };
 
     const result = await exportUsers(
+      req.tenantPrisma,
       req.validated.format,
       filters,
       req.user.id,
@@ -200,6 +206,7 @@ router.get(
     };
 
     const result = await exportLeaveRequests(
+      req.tenantPrisma,
       req.validated.format,
       filters,
       req.user.id,
@@ -226,6 +233,7 @@ router.get(
     };
 
     const result = await exportTimeTracking(
+      req.tenantPrisma,
       req.validated.format,
       filters,
       req.user.id,
@@ -253,8 +261,59 @@ router.get(
     };
 
     const result = await exportTasks(
+      req.tenantPrisma,
       req.validated.format,
       filters,
+      req.user.id,
+      req.userRoles
+    );
+
+    setDownloadHeaders(res, result.filename, result.contentType);
+    return res.send(result.buffer);
+  })
+);
+
+/**
+ * Export selected invoices as bulk PDF ZIP
+ * POST /api/exports/invoices/bulk-pdf
+ */
+router.post(
+  '/invoices/bulk-pdf',
+  asyncHandler(async (req, res) => {
+    const { invoiceIds } = req.body;
+
+    if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
+      throw new AppError('invoiceIds array is required', 400);
+    }
+
+    const result = await exportBulkInvoicePDFs(
+      req.tenantPrisma,
+      invoiceIds,
+      req.user.id,
+      req.userRoles
+    );
+
+    setDownloadHeaders(res, result.filename, result.contentType);
+    return res.send(result.buffer);
+  })
+);
+
+/**
+ * Export selected invoices as ANAF UBL XML ZIP
+ * POST /api/exports/invoices/anaf-xml
+ */
+router.post(
+  '/invoices/anaf-xml',
+  asyncHandler(async (req, res) => {
+    const { invoiceIds } = req.body;
+
+    if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
+      throw new AppError('invoiceIds array is required', 400);
+    }
+
+    const result = await exportInvoicesAnafXML(
+      req.tenantPrisma,
+      invoiceIds,
       req.user.id,
       req.userRoles
     );
@@ -284,7 +343,7 @@ router.post(
       throw new AppError('Only administrators can export all data', 403);
     }
 
-    const result = await exportAllData(req.user.id, req.userRoles);
+    const result = await exportAllData(req.tenantPrisma, req.user.id, req.userRoles);
 
     setDownloadHeaders(res, result.filename, result.contentType);
     return res.send(result.buffer);
@@ -325,6 +384,12 @@ router.get(
             name: 'PDF',
             description: 'Portable Document Format',
             mimeType: 'application/pdf',
+          },
+          {
+            key: 'xml',
+            name: 'XML',
+            description: 'Extensible Markup Language',
+            mimeType: 'application/xml',
           },
         ],
       },

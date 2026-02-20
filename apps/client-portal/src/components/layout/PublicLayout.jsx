@@ -11,7 +11,7 @@ export default function PublicLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="text-xl font-bold text-primary-600">
-              ServiceFlow
+              ForjaIt
             </Link>
             <nav className="flex items-center gap-6">
               <NavLink
@@ -68,7 +68,7 @@ export default function PublicLayout() {
               </Link>
             </div>
             <p className="text-sm text-gray-400">
-              &copy; 2026 ServiceFlow. Toate drepturile rezervate.
+              &copy; 2026 ForjaIt. Toate drepturile rezervate.
             </p>
           </div>
         </div>

@@ -566,7 +566,7 @@ const Employees = () => {
                               {employee.firstName} {employee.lastName}
                             </div>
                             <div className="text-xs text-gray-500">
-                              Angajat din: {employee.createdAt ? format(new Date(employee.createdAt), 'dd MMM yyyy', { locale: roDateLocale }) : '—'}
+                              Angajat din: {employee.createdAt ? format(new Date(employee.createdAt), 'dd MMM yyyy', { locale: roDateLocale }) : '-'}
                             </div>
                           </div>
                         </div>
@@ -728,7 +728,7 @@ const Employees = () => {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Calendar size={14} className="text-gray-400" />
-                          Angajat din: {employee.createdAt ? format(new Date(employee.createdAt), 'dd MMM yyyy', { locale: roDateLocale }) : '—'}
+                          Angajat din: {employee.createdAt ? format(new Date(employee.createdAt), 'dd MMM yyyy', { locale: roDateLocale }) : '-'}
                         </div>
                         {(employee.locations || []).length > 0 && (
                           <div className="flex items-center gap-2">

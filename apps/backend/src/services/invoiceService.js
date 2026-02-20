@@ -631,6 +631,21 @@ const createInvoice = async (prisma, payload, options = {}) => {
   debugLog('Sanitizing payload...');
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, null, companySettings);
 
+  // Apply loyalty tier discount if applicable
+  let loyaltyDiscount = null;
+  let loyaltyTierAtTime = null;
+  try {
+    const loyaltyService = require('./loyaltyService');
+    const tierInfo = await loyaltyService.getTierDiscount(prisma, clientId);
+    if (tierInfo && tierInfo.discountPercent > 0) {
+      loyaltyTierAtTime = tierInfo.tier;
+      loyaltyDiscount = roundCurrency(totals.subtotal * (tierInfo.discountPercent / 100));
+      totals.total = roundCurrency(totals.total - loyaltyDiscount);
+    }
+  } catch (err) {
+    // Loyalty failures never block invoice creation
+  }
+
   debugLog('Building PDF path...');
   const relativePdfPath = buildRelativePdfPath(payload.appointmentId, invoiceNumber);
 
@@ -667,6 +682,8 @@ const createInvoice = async (prisma, payload, options = {}) => {
         total: totals.total,
         notes,
         pdfUrl: relativePdfPath,
+        loyaltyDiscount,
+        loyaltyTierAtTime,
         // Payment tracking (from Payment records, not appointment fields)
         advancePayment: totalPaid,
         remainingBalance,

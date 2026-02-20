@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Phone, Calendar, Lock, Save, X, Edit2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import useAuth from '../context/useAuth';
 import useToast from '../context/useToast';
-import { updateProfile, changePassword } from '../services/userService';
+import { updateProfile, changePassword, fetchProfile } from '../services/userService';
 import NotificationSettings from '../components/NotificationSettings';
 
 const Profile = () => {
   const { user, setUser } = useAuth();
   const { showToast } = useToast();
+
+  // Fetch full profile data (includes phoneNumber, createdAt, etc.)
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: fetchProfile,
+    enabled: Boolean(user),
+  });
 
   // Personal Information State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -29,17 +37,18 @@ const Profile = () => {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState({});
 
-  // Initialize profile form when user data loads
+  // Initialize profile form when profile data loads
   useEffect(() => {
-    if (user) {
+    const source = profile || user;
+    if (source) {
       setProfileForm({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phoneNumber: user.phoneNumber || '',
+        firstName: source.firstName || '',
+        lastName: source.lastName || '',
+        email: source.email || '',
+        phoneNumber: source.phoneNumber || '',
       });
     }
-  }, [user]);
+  }, [profile, user]);
 
   // Handle profile input changes
   const handleProfileChange = (e) => {
@@ -190,11 +199,12 @@ const Profile = () => {
 
   // Cancel profile editing
   const handleCancelProfile = () => {
+    const source = profile || user;
     setProfileForm({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      email: user.email || '',
-      phoneNumber: user.phoneNumber || '',
+      firstName: source.firstName || '',
+      lastName: source.lastName || '',
+      email: source.email || '',
+      phoneNumber: source.phoneNumber || '',
     });
     setIsEditingProfile(false);
   };
@@ -283,11 +293,11 @@ const Profile = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Prenume</label>
-                <p className="mt-1 text-base text-gray-900">{user?.firstName || '—'}</p>
+                <p className="mt-1 text-base text-gray-900">{user?.firstName || '-'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Nume</label>
-                <p className="mt-1 text-base text-gray-900">{user?.lastName || '—'}</p>
+                <p className="mt-1 text-base text-gray-900">{user?.lastName || '-'}</p>
               </div>
             </div>
 
@@ -296,7 +306,7 @@ const Profile = () => {
                 <Mail size={16} className="text-gray-400" />
                 Email
               </label>
-              <p className="text-base text-gray-900">{user?.email || '—'}</p>
+              <p className="text-base text-gray-900">{user?.email || '-'}</p>
             </div>
 
             <div>
@@ -304,12 +314,12 @@ const Profile = () => {
                 <Phone size={16} className="text-gray-400" />
                 Telefon
               </label>
-              <p className="text-base text-gray-900">{user?.phoneNumber || 'Nespecificat'}</p>
+              <p className="text-base text-gray-900">{profile?.phoneNumber || user?.phoneNumber || 'Nespecificat'}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Rol</label>
-              <p className="mt-1 text-base capitalize text-gray-900">{user?.role || '—'}</p>
+              <p className="mt-1 text-base capitalize text-gray-900">{user?.role || '-'}</p>
             </div>
           </div>
         ) : (
@@ -530,7 +540,7 @@ const Profile = () => {
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between py-2 border-b border-gray-100">
             <span className="text-gray-600">Tip cont</span>
-            <span className="font-medium capitalize text-gray-900">{user?.role || '—'}</span>
+            <span className="font-medium capitalize text-gray-900">{user?.role || '-'}</span>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-gray-100">
             <span className="text-gray-600">Status</span>
@@ -538,14 +548,14 @@ const Profile = () => {
               {user?.isActive ? 'Activ' : 'Inactiv'}
             </span>
           </div>
-          {user?.createdAt && (
+          {(profile?.createdAt || user?.createdAt) && (
             <div className="flex items-center justify-between py-2">
               <span className="text-gray-600 flex items-center gap-2">
                 <Calendar size={16} className="text-gray-400" />
                 Membru din
               </span>
               <span className="font-medium text-gray-900">
-                {new Date(user.createdAt).toLocaleDateString('ro-RO', {
+                {new Date(profile?.createdAt || user.createdAt).toLocaleDateString('ro-RO', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'

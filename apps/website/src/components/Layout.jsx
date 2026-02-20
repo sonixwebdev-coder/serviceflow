@@ -436,13 +436,13 @@ export default function WebsiteLayout() {
                 <p className="mt-2">
                   Creat cu{' '}
                   <a
-                    href="https://serviceflow.ro"
+                    href="https://forja.it.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-gray-300 transition-colors"
                     style={{ color: primaryColor }}
                   >
-                    ServiceFlow
+                    ForjaIt
                   </a>
                 </p>
               )}

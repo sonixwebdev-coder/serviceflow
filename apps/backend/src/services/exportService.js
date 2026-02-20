@@ -1,17 +1,22 @@
 /**
  * Export Service
  * Handles data export for all entities in multiple formats
+ *
+ * IMPORTANT: All export functions require a tenant-scoped prismaClient
+ * to ensure data isolation between organizations.
  */
 
-const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { validateFormat, generateFilename, getEntityNameRO, formatDate, formatDateTime, formatCurrency, getStatusLabelRO, applyFilters } = require('../utils/export/exportUtils');
 const { exportEntityToCSV } = require('../utils/export/csvExporter');
 const { exportEntityToExcel, fieldConfigToColumns } = require('../utils/export/excelExporter');
 const { exportEntityToJSON } = require('../utils/export/jsonExporter');
 const { exportEntityToPDF } = require('../utils/export/pdfExporter');
-const { exportEntitiesToZip } = require('../utils/export/zipExporter');
+const { exportEntitiesToZip, createZipArchive } = require('../utils/export/zipExporter');
 const { FIELD_CONFIGS } = require('../utils/export/csvExporter');
+const { exportEntityToXML } = require('../utils/export/xmlExporter');
+const { exportInvoiceToAnafXML } = require('../utils/export/anafExporter');
+const { buildInvoicePdf } = require('../utils/pdf');
 
 // Maximum number of records to export in a single request (security limit)
 const MAX_EXPORT_RECORDS = 10000;
@@ -110,7 +115,7 @@ const transformAppointmentData = (appointments) => {
 /**
  * Export appointments
  */
-const exportAppointments = async (format, filters = {}, userId, userRoles) => {
+const exportAppointments = async (prismaClient, format, filters = {}, userId, userRoles) => {
   const normalizedFormat = validateFormat(format);
   const permission = checkExportPermission(userId, userRoles, 'appointments', filters);
 
@@ -149,7 +154,7 @@ const exportAppointments = async (format, filters = {}, userId, userRoles) => {
   // Fetch data with limit to prevent memory exhaustion
   let appointments;
   try {
-    appointments = await prisma.appointment.findMany({
+    appointments = await prismaClient.appointment.findMany({
       where,
       include: {
         client: true,
@@ -249,7 +254,7 @@ const transformInvoiceData = (invoices) => {
 /**
  * Export invoices
  */
-const exportInvoices = async (format, filters = {}, userId, userRoles) => {
+const exportInvoices = async (prismaClient, format, filters = {}, userId, userRoles) => {
   const normalizedFormat = validateFormat(format);
   const permission = checkExportPermission(userId, userRoles, 'invoices', filters);
 
@@ -286,7 +291,7 @@ const exportInvoices = async (format, filters = {}, userId, userRoles) => {
 
   let invoices;
   try {
-    invoices = await prisma.invoice.findMany({
+    invoices = await prismaClient.invoice.findMany({
       where,
       include: {
         client: true,
@@ -346,11 +351,126 @@ const exportInvoices = async (format, filters = {}, userId, userRoles) => {
       const columns = fieldConfigToColumns(FIELD_CONFIGS.invoices);
       buffer = await exportEntityToPDF('invoices', transformedData, columns);
       break;
+    case 'xml':
+      buffer = exportEntityToXML('invoices', transformedData);
+      break;
     default:
       throw new AppError(`Unsupported format: ${format}`, 400);
   }
 
   return { buffer, filename, contentType: getContentType(normalizedFormat) };
+};
+
+/**
+ * Export bulk invoice PDFs as ZIP
+ */
+const exportBulkInvoicePDFs = async (prismaClient, invoiceIds, userId, userRoles) => {
+  const permission = checkExportPermission(userId, userRoles, 'invoices');
+
+  if (!permission.canExport) {
+    throw new AppError('You do not have permission to export invoices', 403);
+  }
+
+  if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
+    throw new AppError('No invoice IDs provided', 400);
+  }
+
+  if (invoiceIds.length > 100) {
+    throw new AppError('Maximum 100 invoices can be exported at once', 400);
+  }
+
+  const invoices = await prismaClient.invoice.findMany({
+    where: { id: { in: invoiceIds } },
+    include: {
+      client: true,
+      lineItems: true,
+    },
+  });
+
+  if (invoices.length === 0) {
+    throw new AppError('No invoices found', 404);
+  }
+
+  const files = [];
+  for (const invoice of invoices) {
+    try {
+      const pdfBuffer = await buildInvoicePdf(invoice);
+      const safeNumber = (invoice.invoiceNumber || invoice.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+      files.push({
+        name: `factura_${safeNumber}.pdf`,
+        buffer: pdfBuffer,
+      });
+    } catch (err) {
+      console.error(`Failed to generate PDF for invoice ${invoice.id}:`, err.message);
+    }
+  }
+
+  if (files.length === 0) {
+    throw new AppError('Failed to generate any PDFs', 500);
+  }
+
+  const zipBuffer = await createZipArchive(files);
+  const filename = generateFilename('facturi_pdf', 'zip');
+
+  return { buffer: zipBuffer, filename, contentType: 'application/zip' };
+};
+
+/**
+ * Export invoices as ANAF UBL XML ZIP
+ */
+const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles) => {
+  const permission = checkExportPermission(userId, userRoles, 'invoices');
+
+  if (!permission.canExport) {
+    throw new AppError('You do not have permission to export invoices', 403);
+  }
+
+  if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
+    throw new AppError('No invoice IDs provided', 400);
+  }
+
+  if (invoiceIds.length > 100) {
+    throw new AppError('Maximum 100 invoices can be exported at once', 400);
+  }
+
+  const invoices = await prismaClient.invoice.findMany({
+    where: { id: { in: invoiceIds } },
+    include: {
+      client: true,
+      lineItems: true,
+    },
+  });
+
+  if (invoices.length === 0) {
+    throw new AppError('No invoices found', 404);
+  }
+
+  // Get company settings for the supplier data
+  const companySettings = await prismaClient.companySetting.findFirst();
+  const company = companySettings || {};
+
+  const files = [];
+  for (const invoice of invoices) {
+    try {
+      const xmlBuffer = exportInvoiceToAnafXML(invoice, company, invoice.client);
+      const safeNumber = (invoice.invoiceNumber || invoice.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+      files.push({
+        name: `efactura_${safeNumber}.xml`,
+        buffer: xmlBuffer,
+      });
+    } catch (err) {
+      console.error(`Failed to generate ANAF XML for invoice ${invoice.id}:`, err.message);
+    }
+  }
+
+  if (files.length === 0) {
+    throw new AppError('Failed to generate any XML files', 500);
+  }
+
+  const zipBuffer = await createZipArchive(files);
+  const filename = generateFilename('efacturi_anaf', 'zip');
+
+  return { buffer: zipBuffer, filename, contentType: 'application/zip' };
 };
 
 /**
@@ -376,7 +496,7 @@ const transformClientData = (clients) => {
 /**
  * Export clients
  */
-const exportClients = async (format, filters = {}, userId, userRoles) => {
+const exportClients = async (prismaClient, format, filters = {}, userId, userRoles) => {
   const normalizedFormat = validateFormat(format);
   const permission = checkExportPermission(userId, userRoles, 'clients', filters);
 
@@ -409,7 +529,7 @@ const exportClients = async (format, filters = {}, userId, userRoles) => {
 
   let clients;
   try {
-    clients = await prisma.client.findMany({
+    clients = await prismaClient.client.findMany({
       where,
       orderBy: [
         { type: 'asc' },
@@ -493,7 +613,7 @@ const transformUserData = (users) => {
 /**
  * Export users/employees
  */
-const exportUsers = async (format, filters = {}, userId, userRoles) => {
+const exportUsers = async (prismaClient, format, filters = {}, userId, userRoles) => {
   const normalizedFormat = validateFormat(format);
   const permission = checkExportPermission(userId, userRoles, 'users', filters);
 
@@ -526,7 +646,7 @@ const exportUsers = async (format, filters = {}, userId, userRoles) => {
 
   let users;
   try {
-    users = await prisma.user.findMany({
+    users = await prismaClient.user.findMany({
       where,
       include: {
         roles: {
@@ -628,7 +748,7 @@ const transformLeaveRequestData = (requests) => {
 /**
  * Export leave requests
  */
-const exportLeaveRequests = async (format, filters = {}, userId, userRoles) => {
+const exportLeaveRequests = async (prismaClient, format, filters = {}, userId, userRoles) => {
   const normalizedFormat = validateFormat(format);
   const permission = checkExportPermission(userId, userRoles, 'leaveRequests', filters);
 
@@ -670,7 +790,7 @@ const exportLeaveRequests = async (format, filters = {}, userId, userRoles) => {
 
   let requests;
   try {
-    requests = await prisma.timeOffRequest.findMany({
+    requests = await prismaClient.timeOffRequest.findMany({
       where,
       include: {
         employee: {
@@ -767,7 +887,7 @@ const transformTimeTrackingData = (entries) => {
 /**
  * Export time tracking entries
  */
-const exportTimeTracking = async (format, filters = {}, userId, userRoles) => {
+const exportTimeTracking = async (prismaClient, format, filters = {}, userId, userRoles) => {
   const normalizedFormat = validateFormat(format);
   const permission = checkExportPermission(userId, userRoles, 'timeTracking', filters);
 
@@ -805,7 +925,7 @@ const exportTimeTracking = async (format, filters = {}, userId, userRoles) => {
 
   let entries;
   try {
-    entries = await prisma.timeEntry.findMany({
+    entries = await prismaClient.timeEntry.findMany({
       where,
       include: {
         employee: {
@@ -875,7 +995,7 @@ const exportTimeTracking = async (format, filters = {}, userId, userRoles) => {
 /**
  * Export tasks
  */
-const exportTasks = async (format, filters = {}, userId, userRoles) => {
+const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles) => {
   const normalizedFormat = validateFormat(format);
   const permission = checkExportPermission(userId, userRoles, 'tasks', filters);
 
@@ -914,7 +1034,7 @@ const exportTasks = async (format, filters = {}, userId, userRoles) => {
 
   let tasks;
   try {
-    tasks = await prisma.task.findMany({
+    tasks = await prismaClient.task.findMany({
       where,
       include: {
         createdBy: {
@@ -1012,7 +1132,7 @@ const exportTasks = async (format, filters = {}, userId, userRoles) => {
 /**
  * Export all data as ZIP archive (admin only)
  */
-const exportAllData = async (userId, userRoles) => {
+const exportAllData = async (prismaClient, userId, userRoles) => {
   const roleKeys = userRoles?.map(r => {
     if (typeof r === 'string') return r;
     return r.role?.key || r.key;
@@ -1028,49 +1148,49 @@ const exportAllData = async (userId, userRoles) => {
   try {
     // Export each entity
     const exportPromises = [
-      exportAppointments('excel', {}, userId, userRoles).then(result => ({
+      exportAppointments(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
         name: 'Programari',
         fileName: result.filename,
         buffer: result.buffer,
         recordCount: 0,
       })).catch(() => null),
 
-      exportInvoices('excel', {}, userId, userRoles).then(result => ({
+      exportInvoices(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
         name: 'Facturi',
         fileName: result.filename,
         buffer: result.buffer,
         recordCount: 0,
       })).catch(() => null),
 
-      exportClients('excel', {}, userId, userRoles).then(result => ({
+      exportClients(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
         name: 'Clienti',
         fileName: result.filename,
         buffer: result.buffer,
         recordCount: 0,
       })).catch(() => null),
 
-      exportUsers('excel', {}, userId, userRoles).then(result => ({
+      exportUsers(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
         name: 'Angajati',
         fileName: result.filename,
         buffer: result.buffer,
         recordCount: 0,
       })).catch(() => null),
 
-      exportLeaveRequests('excel', {}, userId, userRoles).then(result => ({
+      exportLeaveRequests(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
         name: 'Cereri_Concediu',
         fileName: result.filename,
         buffer: result.buffer,
         recordCount: 0,
       })).catch(() => null),
 
-      exportTimeTracking('excel', {}, userId, userRoles).then(result => ({
+      exportTimeTracking(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
         name: 'Pontaj',
         fileName: result.filename,
         buffer: result.buffer,
         recordCount: 0,
       })).catch(() => null),
 
-      exportTasks('excel', {}, userId, userRoles).then(result => ({
+      exportTasks(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
         name: 'Sarcini',
         fileName: result.filename,
         buffer: result.buffer,
@@ -1136,4 +1256,6 @@ module.exports = {
   exportTimeTracking,
   exportTasks,
   exportAllData,
+  exportBulkInvoicePDFs,
+  exportInvoicesAnafXML,
 };

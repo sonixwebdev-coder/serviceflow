@@ -130,7 +130,7 @@ export default function DynamicPage() {
     <>
       <title>{pageTitle} | {website?.organization?.name}</title>
       {pageDescription && <meta name="description" content={pageDescription} />}
-      {seo?.keywords && <meta name="keywords" content={seo.keywords} />}
+      {seo?.keywords && <meta name="keywords" content={Array.isArray(seo.keywords) ? seo.keywords.join(', ') : seo.keywords} />}
       {seo?.ogImage && <meta property="og:image" content={seo.ogImage} />}
       <meta property="og:title" content={pageTitle} />
       {pageDescription && <meta property="og:description" content={pageDescription} />}
@@ -140,7 +140,7 @@ export default function DynamicPage() {
         <script
           key={i}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
         />
       ))}
 

@@ -6,8 +6,8 @@ import DatePicker from '../components/ui/DatePicker';
 const CreateFirstAdmin = () => {
   const [formData, setFormData] = useState({
     firstName: 'Admin',
-    lastName: 'ServiceFlow',
-    email: 'admin@serviceflow.ro',
+    lastName: 'ForjaIt',
+    email: 'admin@forja.it.com',
     password: 'Admin@2025',
     confirmPassword: 'Admin@2025',
     phoneNumber: '+40700000000',

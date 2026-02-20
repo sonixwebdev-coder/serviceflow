@@ -41,6 +41,27 @@ router.get(
 );
 
 /**
+ * GET /api/analytics/payments
+ * Get payment trends (independent of invoices)
+ * Query params: startDate, endDate, groupBy (day|week|month)
+ */
+router.get(
+  '/payments',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const { startDate, endDate, groupBy } = req.query;
+    const locationFilter = await req.getLocationFilter({ includeNull: true });
+    const data = await analyticsService.getPaymentTrends(req.tenantPrisma, {
+      startDate,
+      endDate,
+      groupBy,
+      locationFilter,
+    });
+    res.json(data);
+  })
+);
+
+/**
  * GET /api/analytics/appointments
  * Get appointment statistics
  * Query params: startDate, endDate

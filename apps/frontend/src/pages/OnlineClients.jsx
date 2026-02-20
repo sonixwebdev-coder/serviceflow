@@ -27,11 +27,11 @@ import { getErrorMessage } from '../utils/errorUtils.js';
 import { useTerminology } from '../context/TerminologyContext';
 
 const formatDateTime = (value) => {
-  if (!value) return '—';
+  if (!value) return '-';
   try {
     return format(new Date(value), 'dd MMM yyyy HH:mm', { locale: roDateLocale });
   } catch {
-    return '—';
+    return '-';
   }
 };
 
@@ -615,14 +615,13 @@ const OnlineClients = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Desktop Table */}
         <div className="hidden lg:block">
-          <div className="grid grid-cols-9 gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50">
+          <div className="grid grid-cols-8 gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50">
             <span>Client</span>
             <span>Email</span>
             <span>Telefon</span>
             <span>Adresa</span>
             <span>Card fidelitate</span>
             <span>Vehicule</span>
-            <span>Ultima actualizare</span>
             <span>Status Online</span>
             <span>Actiuni</span>
           </div>
@@ -646,17 +645,17 @@ const OnlineClients = () => {
           ) : (
             <div className="divide-y">
               {clients.map((client) => (
-                <div key={client.id} className="grid grid-cols-9 gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <div key={client.id} className="grid grid-cols-8 gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                   <div className="font-medium text-gray-900">
                     {client.type === 'SRL'
                       ? client.companyName || 'Client companie'
-                      : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
+                      : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '-'}
                     {client.type === 'SRL' && client.contactName ? (
                       <p className="text-xs text-gray-500">Contact: {client.contactName}</p>
                     ) : null}
                   </div>
-                  <div className="truncate">{client.email || '—'}</div>
-                  <div>{client.phone || '—'}</div>
+                  <div className="truncate">{client.email || '-'}</div>
+                  <div>{client.phone || '-'}</div>
                   <div className="truncate">
                     {client.address ? (
                       <span className="flex items-center gap-1.5" title={client.address}>
@@ -674,11 +673,10 @@ const OnlineClients = () => {
                         <span>{client.fidelityCardSerie}</span>
                       </div>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-400">-</span>
                     )}
                   </div>
                   <div>{client.vehicles?.length || 0}</div>
-                  <div>{formatDateTime(client.updatedAt)}</div>
                   <div>
                     <button
                       type="button"
@@ -749,7 +747,7 @@ const OnlineClients = () => {
                         <p className="font-semibold text-gray-900">
                           {client.type === 'SRL'
                             ? client.companyName || 'Client companie'
-                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
+                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '-'}
                         </p>
                         {client.type === 'SRL' && client.contactName && (
                           <p className="text-xs text-gray-500 mt-1">Contact: {client.contactName}</p>
@@ -1082,19 +1080,19 @@ const OnlineClients = () => {
                         <>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Nume Companie</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.companyName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.companyName || 'Persoana fizica'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Persoana de contact</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.contactName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.contactName || '-'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">CUI</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.vatNumber || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.vatNumber || '-'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Nr. Reg. Com.</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.registrationNumber || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.registrationNumber || '-'}</p>
                           </div>
                         </>
                       ) : (

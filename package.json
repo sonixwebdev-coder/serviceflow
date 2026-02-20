@@ -1,12 +1,13 @@
 {
-  "name": "serviceflow-crm",
+  "name": "forja-crm",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "workspaces": [
     "apps/frontend",
     "apps/backend",
-    "apps/client-portal"
+    "apps/client-portal",
+    "apps/admin"
   ],
   "scripts": {
     "dev": "node scripts/start-all.js",

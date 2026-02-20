@@ -22,10 +22,10 @@ export default function Contact() {
               Trimite-ne un email si iti vom raspunde in cel mai scurt timp.
             </p>
             <a
-              href="mailto:contact@serviceflow.ro"
+              href="mailto:contact@forja.it.com"
               className="text-sm font-medium text-primary-600 hover:text-primary-700"
             >
-              contact@serviceflow.ro
+              contact@forja.it.com
             </a>
           </CardContent>
         </Card>

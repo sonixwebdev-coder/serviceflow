@@ -503,6 +503,7 @@ const updateLeadSchema = z.object({
 
 const listLeadsQuerySchema = z.object({
   status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'CONVERTED', 'LOST']).optional(),
+  source: z.enum(['contact-form', 'review']).optional(),
   search: z.string().max(200).optional(),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),

@@ -25,6 +25,7 @@ import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import Contact from '@/pages/Contact';
 import DiscoverDetail from '@/pages/DiscoverDetail';
+import Loyalty from '@/pages/Loyalty';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +95,7 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="discover" element={<Marketplace basePath="/discover" />} />
             <Route path="discover/:slug" element={<DiscoverDetail />} />
+            <Route path="loyalty" element={<Loyalty />} />
           </Route>
 
           {/* Catch all */}

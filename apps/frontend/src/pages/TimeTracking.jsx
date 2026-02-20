@@ -26,7 +26,8 @@ const TimeTracking = () => {
   const { user, hasRole } = useAuth();
   const { showToast } = useToast();
   const userId = user?.id || user?._id || '';
-  const isManagerial = hasRole(USER_ROLES.ADMIN);
+  const isManagerial = hasRole(USER_ROLES.ADMIN, USER_ROLES.MANAGER);
+  const isAdmin = hasRole(USER_ROLES.ADMIN);
   const [filters, setFilters] = useState({});
   const [dateFilters, setDateFilters] = useState({ startDate: null, endDate: null });
   const { records, meta, loading, error, page, setPage, refresh, setFilters: setHookFilters } = useTimeTracking(filters, { enablePagination: true });
@@ -405,23 +406,25 @@ const TimeTracking = () => {
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-500">Angajat</th>
+                    {isManagerial && <th className="px-4 py-3 text-left font-semibold text-gray-500">Angajat</th>}
                     <th className="px-4 py-3 text-left font-semibold text-gray-500">Intrare</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-500">Iesire</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-500">Pauza (min)</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-500">Total ore</th>
-                    {isManagerial && <th className="px-4 py-3" />}
+                    {isAdmin && <th className="px-4 py-3" />}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {records.map((record) => (
                     <tr key={record._id} className={!record.clockOut ? 'bg-green-50' : ''}>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">
-                          {record.employee?.firstName} {record.employee?.lastName}
-                        </div>
-                        <div className="text-xs text-gray-500">{record.employee?.email}</div>
-                      </td>
+                      {isManagerial && (
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-900">
+                            {record.employee?.firstName} {record.employee?.lastName}
+                          </div>
+                          <div className="text-xs text-gray-500">{record.employee?.email}</div>
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <LogIn size={14} className="text-green-600" />
@@ -457,9 +460,9 @@ const TimeTracking = () => {
                       </td>
                       <td className="px-4 py-3">{record.breakDuration ?? 0}</td>
                       <td className="px-4 py-3 font-medium">
-                        {record.totalHours ? formatHoursToRomanian(record.totalHours) : '—'}
+                        {record.totalHours ? formatHoursToRomanian(record.totalHours) : '-'}
                       </td>
-                      {isManagerial && (
+                      {isAdmin && (
                         <td className="px-4 py-3 text-right">
                           <button
                             type="button"
@@ -482,12 +485,20 @@ const TimeTracking = () => {
               {records.map((record) => (
                 <div key={record._id} className={`p-4 ${!record.clockOut ? 'bg-green-50' : ''}`}>
                   <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {record.employee?.firstName} {record.employee?.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500">{record.employee?.email}</p>
-                    </div>
+                    {isManagerial ? (
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {record.employee?.firstName} {record.employee?.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500">{record.employee?.email}</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {format(new Date(record.clockIn), 'dd MMMM yyyy', { locale: roDateLocale })}
+                        </p>
+                      </div>
+                    )}
                     {!record.clockOut && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
                         <Clock size={12} />
@@ -531,7 +542,7 @@ const TimeTracking = () => {
                       <div className="flex items-center gap-2">
                         <LogOut size={14} className="text-gray-400" />
                         <span className="text-gray-600">Iesire:</span>
-                        <span className="text-gray-400">—</span>
+                        <span className="text-gray-400">-</span>
                       </div>
                     )}
 
@@ -543,10 +554,10 @@ const TimeTracking = () => {
                         </div>
                         <div>
                           <span className="text-gray-500">Total: </span>
-                          <span className="font-medium">{record.totalHours ? formatHoursToRomanian(record.totalHours) : '—'}</span>
+                          <span className="font-medium">{record.totalHours ? formatHoursToRomanian(record.totalHours) : '-'}</span>
                         </div>
                       </div>
-                      {isManagerial && (
+                      {isAdmin && (
                         <button
                           type="button"
                           onClick={() => handleDeleteRecord(record._id)}

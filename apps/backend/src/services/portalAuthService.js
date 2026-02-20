@@ -50,7 +50,7 @@ const generateToken = () => {
 /**
  * Register a new client account
  */
-const registerClient = async (prisma, { email, password, clientId }) => {
+const registerClient = async (prisma, { email, password, clientId, referralCode }) => {
   // Check if client exists
   const client = await prisma.client.findUnique({
     where: { id: clientId },
@@ -100,6 +100,20 @@ const registerClient = async (prisma, { email, password, clientId }) => {
       },
     },
   });
+
+  // Process referral if code provided (fire-and-forget)
+  if (referralCode && account.client?.organizationId) {
+    try {
+      const loyaltyService = require('./loyaltyService');
+      loyaltyService.processReferral(prisma, {
+        newClientId: clientId,
+        referralCode,
+        organizationId: account.client.organizationId,
+      });
+    } catch (err) {
+      logger.error('[LOYALTY] Failed to process referral:', err.message);
+    }
+  }
 
   return {
     id: account.id,
@@ -358,7 +372,7 @@ const requestPasswordReset = async (prisma, email, organizationSlug) => {
       resetLink,
       expiresIn: '1 ora',
       companySettings: {
-        name: organization?.name || 'ServiceFlow',
+        name: organization?.name || 'ForjaIt',
         phone: organization?.settings?.phone,
       },
       organizationId: organization?.id,

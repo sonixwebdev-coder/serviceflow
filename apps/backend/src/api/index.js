@@ -34,13 +34,17 @@ const searchRouter = require('./search');
 const portalRouter = require('./portal');
 const websiteRouter = require('./website');
 const publicWebsiteRouter = require('./portal/website');
+const billingRouter = require('./billing');
+const loyaltyRouter = require('./loyalty');
+const supportRouter = require('./support');
+
 
 const router = express.Router();
 
 router.get(
   '/health',
   asyncHandler(async (req, res) => {
-    return ok(res, { timestamp: new Date().toISOString() }, 'ServiceFlow API is healthy');
+    return ok(res, { timestamp: new Date().toISOString() }, 'ForjaIt API is healthy');
   })
 );
 
@@ -82,5 +86,9 @@ router.use('/search', searchRouter);
 router.use('/portal', portalRouter);
 router.use('/website', websiteRouter);
 router.use('/sites', publicWebsiteRouter);
+router.use('/billing', billingRouter);
+router.use('/loyalty', loyaltyRouter);
+router.use('/support', supportRouter);
+
 
 module.exports = router;

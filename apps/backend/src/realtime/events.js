@@ -199,6 +199,17 @@ const broadcastAssetUpdate = (action, asset, organizationId, source = 'crm') => 
   }
 };
 
+const broadcastSupportTicket = (action, ticket) => {
+  if (!ticket || !ticket.organizationId) return;
+  const event = `support-ticket:${action}`;
+  emitToOrganization(ticket.organizationId, event, ticket);
+};
+
+const broadcastSupportMessage = (organizationId, ticketId, message) => {
+  if (!message || !organizationId) return;
+  emitToOrganization(organizationId, 'support-message:new', { ...message, ticketId });
+};
+
 module.exports = {
   broadcastAuditLog,
   broadcastTask,
@@ -218,4 +229,7 @@ module.exports = {
   broadcastAssetUpdate,
   broadcastMessageToClient,
   broadcastTypingToClient,
+  // Support ticket broadcasts
+  broadcastSupportTicket,
+  broadcastSupportMessage,
 };

@@ -1,5 +1,5 @@
-import { Calendar } from 'lucide-react';
-import { subDays, subMonths, startOfMonth, endOfMonth, format } from 'date-fns';
+import { subDays, subMonths, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
+import DatePicker from '../ui/DatePicker';
 
 const PRESET_RANGES = [
   { label: '7 zile', value: '7d', getDates: () => ({ startDate: subDays(new Date(), 7), endDate: new Date() }) },
@@ -60,21 +60,19 @@ export default function DateRangeFilter({
       {/* Custom date inputs */}
       {showCustom && (
         <div className="flex items-center gap-2 ml-2">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4 text-gray-400" />
-            <input
-              type="date"
-              value={startDate || ''}
-              onChange={(e) => handleCustomChange('startDate', e.target.value)}
-              className="px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 focus:border-viperx-primary"
-            />
-          </div>
+          <DatePicker
+            value={startDate ? parseISO(startDate) : null}
+            onChange={(date) => handleCustomChange('startDate', date ? format(date, 'yyyy-MM-dd') : '')}
+            maxDate={new Date()}
+            placeholder="De la"
+          />
           <span className="text-gray-400">-</span>
-          <input
-            type="date"
-            value={endDate || ''}
-            onChange={(e) => handleCustomChange('endDate', e.target.value)}
-            className="px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 focus:border-viperx-primary"
+          <DatePicker
+            value={endDate ? parseISO(endDate) : null}
+            onChange={(date) => handleCustomChange('endDate', date ? format(date, 'yyyy-MM-dd') : '')}
+            minDate={startDate ? parseISO(startDate) : undefined}
+            maxDate={new Date()}
+            placeholder="Pana la"
           />
         </div>
       )}

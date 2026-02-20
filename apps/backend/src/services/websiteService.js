@@ -1,5 +1,8 @@
 const { AppError } = require('../utils/errors');
 const { getPlanLimit } = require('../utils/planLimits');
+const { createNotification } = require('./notificationService');
+const { sendPushToUser } = require('./pushNotificationService');
+const logger = require('../utils/logger');
 
 /**
  * Generate a URL-safe slug from a string
@@ -62,7 +65,7 @@ function buildWebsiteUrl(website) {
   if (baseUrl) {
     return `${baseUrl}/${website.subdomain}`;
   }
-  return `https://${website.subdomain}.serviceflow.ro`;
+  return `https://${website.subdomain}.forja.it.com`;
 }
 
 /**
@@ -227,7 +230,7 @@ const updateWebsite = async (prisma, websiteId, data, organizationId) => {
 
     const canRemoveBranding = getPlanLimit(org.plan, 'removeBranding');
     if (!canRemoveBranding) {
-      throw new AppError('Planul dvs. nu permite eliminarea brand-ului ServiceFlow', 403);
+      throw new AppError('Planul dvs. nu permite eliminarea brand-ului ForjaIt', 403);
     }
   }
 
@@ -557,7 +560,7 @@ const reorderPages = async (prisma, websiteId, pageIds, organizationId) => {
  * List leads for a website
  */
 const listLeads = async (prisma, websiteId, query = {}) => {
-  const { status, search, page = 1, limit = 50 } = query;
+  const { status, source, search, page = 1, limit = 50 } = query;
   const take = Math.min(limit, 100);
   const skip = (page - 1) * take;
 
@@ -565,6 +568,10 @@ const listLeads = async (prisma, websiteId, query = {}) => {
 
   if (status) {
     where.status = status;
+  }
+
+  if (source) {
+    where.source = source;
   }
 
   if (search) {
@@ -642,6 +649,35 @@ const createLead = async (prisma, websiteId, data) => {
     },
   });
 
+  // Notify admins/managers about new lead
+  try {
+    const admins = await prisma.user.findMany({
+      where: {
+        organizationId: website.organizationId,
+        isActive: true,
+        roles: { some: { role: { key: { in: ['admin', 'manager'] } } } },
+      },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      await createNotification({
+        recipientId: admin.id,
+        title: 'Lead nou de pe website',
+        message: `${data.firstName} ${data.lastName || ''} a trimis un mesaj prin formularul de contact.`.trim(),
+        type: 'SYSTEM',
+        entityType: 'websiteLead',
+        entityId: lead.id,
+        organizationId: website.organizationId,
+      });
+      sendPushToUser(admin.id, {
+        title: 'Lead nou de pe website',
+        body: `${data.firstName} ${data.lastName || ''} a trimis un mesaj prin formularul de contact.`.trim(),
+      }).catch(() => {});
+    }
+  } catch (err) {
+    logger.error('[WEBSITE] Failed to send lead notifications:', err.message);
+  }
+
   return lead;
 };
 
@@ -715,7 +751,7 @@ const deleteLead = async (prisma, leadId, organizationId) => {
 const createReview = async (prisma, websiteId, data) => {
   const website = await prisma.website.findUnique({
     where: { id: websiteId },
-    select: { id: true, isPublished: true },
+    select: { id: true, isPublished: true, organizationId: true },
   });
 
   if (!website) {
@@ -739,13 +775,42 @@ const createReview = async (prisma, websiteId, data) => {
     },
   });
 
+  // Notify admins/managers about new review
+  try {
+    const admins = await prisma.user.findMany({
+      where: {
+        organizationId: website.organizationId,
+        isActive: true,
+        roles: { some: { role: { key: { in: ['admin', 'manager'] } } } },
+      },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      await createNotification({
+        recipientId: admin.id,
+        title: 'Recenzie noua de pe website',
+        message: `${data.name} a lasat o recenzie cu ${data.rating} stele.`,
+        type: 'SYSTEM',
+        entityType: 'websiteLead',
+        entityId: lead.id,
+        organizationId: website.organizationId,
+      });
+      sendPushToUser(admin.id, {
+        title: 'Recenzie noua de pe website',
+        body: `${data.name} a lasat o recenzie cu ${data.rating} stele.`,
+      }).catch(() => {});
+    }
+  } catch (err) {
+    logger.error('[WEBSITE] Failed to send review notifications:', err.message);
+  }
+
   return lead;
 };
 
 /**
  * Convert lead to client
  */
-const convertLeadToClient = async (prisma, leadId, organizationId) => {
+const convertLeadToClient = async (prisma, leadId, organizationId, locationId = null) => {
   const lead = await prisma.websiteLead.findUnique({
     where: { id: leadId },
     include: {
@@ -782,6 +847,7 @@ const convertLeadToClient = async (prisma, leadId, organizationId) => {
     client = await prisma.client.create({
       data: {
         organizationId,
+        locationId: locationId || undefined,
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
@@ -1084,7 +1150,7 @@ const generateSitemapData = async (prisma, websiteId) => {
 
   const baseUrl = website.customDomain && website.domainVerified
     ? `https://${website.customDomain}`
-    : `https://${website.subdomain}.serviceflow.ro`;
+    : `https://${website.subdomain}.forja.it.com`;
 
   const urls = website.pages.map(page => ({
     loc: page.slug === 'home' ? baseUrl : `${baseUrl}/${page.slug}`,

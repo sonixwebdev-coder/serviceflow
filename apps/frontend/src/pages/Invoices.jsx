@@ -52,11 +52,11 @@ const formatCurrency = (value) => {
 };
 
 const formatDate = (value) => {
-  if (!value) return '—';
+  if (!value) return '-';
   try {
     return format(new Date(value), 'dd MMM yyyy', { locale: roDateLocale });
   } catch {
-    return '—';
+    return '-';
   }
 };
 
@@ -315,12 +315,12 @@ const Invoices = () => {
   };
 
   const getClientName = (invoice) => {
-    if (!invoice.client) return '—';
+    if (!invoice.client) return '-';
     const { client } = invoice;
     if (client.type === 'SRL') {
-      return client.companyName || '—';
+      return client.companyName || '-';
     }
-    return `${client.firstName || ''} ${client.lastName || ''}`.trim() || '—';
+    return `${client.firstName || ''} ${client.lastName || ''}`.trim() || '-';
   };
 
   return (

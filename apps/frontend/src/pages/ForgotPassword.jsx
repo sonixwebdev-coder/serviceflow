@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft, Mail } from 'lucide-react';
 import API from '../utils/api';
 
 const ForgotPassword = () => {
@@ -24,82 +25,106 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-viperx-secondary via-gray-900 to-viperx-secondary flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-viperx-primary mb-2">ServiceFlow</h1>
-            <p className="text-gray-600">Recuperare parola</p>
+    <div className="flex min-h-screen flex-col bg-gray-50/80">
+      {/* Header */}
+      <header className="border-b border-gray-200/60 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+          <Link to="/business" className="text-lg font-bold tracking-tight text-gray-900">
+            ForjaIt
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Autentificare
+            </Link>
           </div>
+        </div>
+      </header>
 
-          {success ? (
-            <div className="text-center">
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-                <p className="text-sm">
-                  Daca exista un cont cu aceasta adresa de email, vei primi un link pentru resetarea parolei.
-                </p>
-              </div>
-              <Link
-                to="/login"
-                className="text-viperx-primary hover:underline font-medium"
-              >
-                Inapoi la autentificare
-              </Link>
-            </div>
-          ) : (
-            <>
-              {/* Error Message */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                  <p className="text-sm">{error}</p>
-                </div>
-              )}
-
-              <p className="text-gray-600 text-sm mb-6">
+      {/* Main */}
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">Recuperare parola</h1>
+              <p className="mt-2 text-sm text-gray-500">
                 Introdu adresa de email asociata contului tau si iti vom trimite un link pentru resetarea parolei.
               </p>
+            </div>
 
-              {/* Forgot Password Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
-                    placeholder="ion.popescu@example.com"
-                    disabled={loading}
-                  />
+            {success ? (
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                  <Mail className="h-6 w-6 text-green-600" />
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-viperx-primary hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Se trimite...' : 'Trimite link de resetare'}
-                </button>
-              </form>
-
-              {/* Footer */}
-              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-700">
+                  Daca exista un cont cu aceasta adresa de email, vei primi un link pentru resetarea parolei.
+                </p>
                 <Link
                   to="/login"
-                  className="text-viperx-primary hover:underline font-medium text-sm"
+                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
                 >
+                  <ArrowLeft className="h-4 w-4" />
                   Inapoi la autentificare
                 </Link>
               </div>
-            </>
-          )}
+            ) : (
+              <>
+                {error && (
+                  <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                      placeholder="ion.popescu@example.com"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Se trimite...' : 'Trimite link de resetare'}
+                  </button>
+                </form>
+
+                <div className="mt-6 text-center">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Inapoi la autentificare
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100">
+        <div className="mx-auto max-w-6xl px-4 py-6 text-center text-xs text-gray-400 sm:px-6">
+          &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+        </div>
+      </footer>
     </div>
   );
 };

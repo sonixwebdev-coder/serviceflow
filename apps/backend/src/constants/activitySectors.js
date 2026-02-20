@@ -30,6 +30,19 @@ const ACTIVITY_SECTORS = {
       resource: { singular: 'Specialist', plural: 'Specialisti' },
     },
   },
+  DIGITAL_SERVICES: {
+    key: 'DIGITAL_SERVICES',
+    label: 'Digital Services',
+    labelRo: 'Servicii Digitale',
+    description: 'Web development, design grafic, marketing digital, consultanta IT',
+    icon: 'Globe',
+    assetType: null,
+    hasAssets: false,
+    terminology: {
+      asset: { singular: 'Proiect', plural: 'Proiecte', identifier: 'Cod proiect' },
+      resource: { singular: 'Specialist', plural: 'Specialisti' },
+    },
+  },
   HOME_SERVICES: {
     key: 'HOME_SERVICES',
     label: 'Home Services',

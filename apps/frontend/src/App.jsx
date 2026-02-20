@@ -38,6 +38,18 @@ import WebsiteBuilder from './pages/WebsiteBuilder.jsx';
 import WebsiteLeads from './pages/WebsiteLeads.jsx';
 import Services from './pages/Services.jsx';
 import GlobalSearch from './components/search/GlobalSearch.jsx';
+import BusinessLanding from './pages/BusinessLanding.jsx';
+import Onboarding from './pages/Onboarding.jsx';
+import TermeniConditii from './pages/TermeniConditii.jsx';
+import Confidentialitate from './pages/Confidentialitate.jsx';
+import DataPreferences from './components/ui/DataPreferences.jsx';
+import Preturi from './pages/Preturi.jsx';
+import BillingSettings from './pages/BillingSettings.jsx';
+import LoyaltySettings from './pages/LoyaltySettings.jsx';
+import LoyaltyDashboard from './pages/LoyaltyDashboard.jsx';
+import SupportTickets from './pages/SupportTickets.jsx';
+import SupportTicketDetail from './pages/SupportTicketDetail.jsx';
+
 
 function App() {
   return (
@@ -47,6 +59,7 @@ function App() {
           <TerminologyProvider>
             <RealtimeBridge />
             <GlobalSearch />
+            <DataPreferences />
             <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -54,8 +67,22 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/create-admin" element={<CreateFirstAdmin />} />
+          <Route path="/business" element={<BusinessLanding />} />
+          <Route path="/terms" element={<TermeniConditii />} />
+          <Route path="/privacy" element={<Confidentialitate />} />
+          <Route path="/pricing" element={<Preturi />} />
           {/* ANAF functionality temporarily disabled */}
           {/* <Route path="/anaf/callback" element={<AnafCallback />} /> */}
+
+          {/* Onboarding (protected, no DashboardLayout) */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <Onboarding />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected Routes */}
           <Route
@@ -180,6 +207,17 @@ function App() {
           />
 
           <Route
+            path="/crm/loyalty"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <LoyaltyDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/profile"
             element={
               <ProtectedRoute>
@@ -222,6 +260,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
 
           <Route
             path="/employees"
@@ -312,6 +351,28 @@ function App() {
             }
           />
 
+          <Route
+            path="/settings/billing"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <BillingSettings />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/settings/loyalty"
+            element={
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <DashboardLayout>
+                  <LoyaltySettings />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
           {/* ANAF functionality temporarily disabled */}
           {/* <Route
             path="/anaf"
@@ -323,6 +384,28 @@ function App() {
               </ProtectedRoute>
             }
           /> */}
+
+          <Route
+            path="/support"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SupportTickets />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/support/:id"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SupportTicketDetail />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

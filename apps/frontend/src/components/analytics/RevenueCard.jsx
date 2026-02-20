@@ -50,7 +50,7 @@ export default function RevenueCard({ data, dateRange, isLoading }) {
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
-            <p className="text-sm font-medium text-green-800">Venituri perioada selectata</p>
+            <p className="text-sm font-medium text-green-800">Venituri din facturi</p>
             <p className="text-3xl font-bold text-gray-900 mt-1">
               {formatCurrency(totalRevenue)}
             </p>

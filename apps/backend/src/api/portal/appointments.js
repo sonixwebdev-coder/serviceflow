@@ -405,6 +405,25 @@ router.post(
       },
     });
 
+    // Create an empty service order so it exists for future payments/PDF generation
+    try {
+      const soCount = await prisma.serviceOrder.count({ where: { organizationId } });
+      const orderNumber = `CS-${String(soCount + 1).padStart(5, '0')}`;
+      await prisma.serviceOrder.create({
+        data: {
+          appointmentId: appointment.id,
+          organizationId,
+          orderNumber,
+          status: 'DRAFT',
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+        },
+      });
+    } catch (soError) {
+      logger.warn('Failed to create service order for portal appointment', { error: soError.message });
+    }
+
     logger.info('Portal appointment created', {
       appointmentId: appointment.id,
       clientId: client.id,

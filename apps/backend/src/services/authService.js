@@ -38,12 +38,10 @@ const mapAuthUser = (user) => {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-    phoneNumber: user.phoneNumber,
     avatarUrl: user.avatarUrl,
     role: primaryRole,
     roles: mappedRoles,
     isActive: user.isActive,
-    createdAt: user.createdAt,
   };
 };
 

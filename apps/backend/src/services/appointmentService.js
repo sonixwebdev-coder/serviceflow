@@ -334,7 +334,7 @@ const syncToGoogleCalendar = async (prisma, appointment, action = 'create') => {
 };
 
 const listAppointments = async (prisma, filters = {}, options = {}) => {
-  const { status, from, to, clientId, assigneeId, locationId } = filters;
+  const { status, from, to, clientId, assigneeId, locationId, fields } = filters;
   const where = {};
 
   if (status) {
@@ -391,11 +391,12 @@ const listAppointments = async (prisma, filters = {}, options = {}) => {
   }
 
   // Backward compatible: return all appointments (but with safety limit)
+  const useMinimal = options.minimal || fields === 'calendar';
   const appointments = await prisma.appointment.findMany({
     where,
-    include: includeConfig,
+    include: useMinimal ? minimalAppointmentIncludes : includeConfig,
     orderBy,
-    take: 100, // Safety limit
+    take: 500, // Safety limit
   });
 
   return appointments;
@@ -884,6 +885,19 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
   } catch (notifError) {
     logger.error('[APPOINTMENT] Failed to send status change notification:', notifError);
     // Don't fail the whole operation if notifications fail
+  }
+
+  // Record loyalty visit if status changed to COMPLETED
+  if (updated.status === 'COMPLETED' && existing.status !== 'COMPLETED' && updated.clientId) {
+    try {
+      const loyaltyService = require('./loyaltyService');
+      loyaltyService.recordCompletedVisit(prisma, {
+        clientId: updated.clientId,
+        appointmentId: updated.id,
+      });
+    } catch (err) {
+      logger.error('[LOYALTY] Failed to record completed visit:', err.message);
+    }
   }
 
   // Sync to Google Calendar (fire and forget, doesn't block the response)

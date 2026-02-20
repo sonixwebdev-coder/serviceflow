@@ -1,4 +1,4 @@
-const { getAuthenticatedCalendarClient, getCalendarConfig } = require('./googleOAuthService');
+const { getAuthenticatedCalendarClient, getCalendarConfig, getAllCalendarConfigs } = require('./googleOAuthService');
 const logger = require('../../utils/logger');
 
 /**
@@ -51,17 +51,41 @@ const getColorByStatus = (status) => {
 };
 
 /**
+ * Resolve the locationId to use for calendar config lookup.
+ * Priority: explicit locationId param > appointment.locationId > null (default)
+ */
+const resolveLocationId = (locationId, appointment) => {
+  if (locationId !== undefined && locationId !== null) return locationId;
+  if (appointment?.locationId) return appointment.locationId;
+  return null;
+};
+
+/**
+ * Get calendar config with fallback: try location-specific first, then default (null locationId)
+ */
+const getConfigWithFallback = async (prisma, userId, locationId) => {
+  if (locationId) {
+    const locationConfig = await getCalendarConfig(prisma, userId, locationId);
+    if (locationConfig) return locationConfig;
+  }
+  // Fall back to default config (no location)
+  return getCalendarConfig(prisma, userId, null);
+};
+
+/**
  * Create event in Google Calendar
  */
-const createEvent = async (prisma, userId, appointment, client) => {
+const createEvent = async (prisma, userId, appointment, client, locationId) => {
   try {
-    const calendar = await getAuthenticatedCalendarClient(prisma, userId);
-    const config = await getCalendarConfig(prisma, userId);
+    const resolvedLocationId = resolveLocationId(locationId, appointment);
+    const config = await getConfigWithFallback(prisma, userId, resolvedLocationId);
 
     if (!config || !config.syncEnabled) {
       logger.info(`Google Calendar sync disabled for user ${userId}`);
       return null;
     }
+
+    const calendar = await getAuthenticatedCalendarClient(prisma, userId, config.locationId);
 
     const event = appointmentToGoogleEvent(appointment, client);
 
@@ -87,7 +111,8 @@ const createEvent = async (prisma, userId, appointment, client) => {
     logger.error(`Failed to create Google Calendar event:`, error);
 
     // Record the error
-    const config = await getCalendarConfig(prisma, userId);
+    const resolvedLocationId = resolveLocationId(locationId, appointment);
+    const config = await getConfigWithFallback(prisma, userId, resolvedLocationId);
     if (config) {
       await prisma.calendarEventSync.upsert({
         where: {
@@ -117,14 +142,16 @@ const createEvent = async (prisma, userId, appointment, client) => {
 /**
  * Update event in Google Calendar
  */
-const updateEvent = async (prisma, userId, appointment, client) => {
+const updateEvent = async (prisma, userId, appointment, client, locationId) => {
   try {
-    const calendar = await getAuthenticatedCalendarClient(prisma, userId);
-    const config = await getCalendarConfig(prisma, userId);
+    const resolvedLocationId = resolveLocationId(locationId, appointment);
+    const config = await getConfigWithFallback(prisma, userId, resolvedLocationId);
 
     if (!config || !config.syncEnabled) {
       return null;
     }
+
+    const calendar = await getAuthenticatedCalendarClient(prisma, userId, config.locationId);
 
     // Get existing sync record
     const syncRecord = await prisma.calendarEventSync.findUnique({
@@ -138,7 +165,7 @@ const updateEvent = async (prisma, userId, appointment, client) => {
 
     if (!syncRecord || !syncRecord.googleEventId) {
       // Create new event if not synced before
-      return createEvent(prisma, userId, appointment, client);
+      return createEvent(prisma, userId, appointment, client, resolvedLocationId);
     }
 
     const event = appointmentToGoogleEvent(appointment, client);
@@ -164,7 +191,8 @@ const updateEvent = async (prisma, userId, appointment, client) => {
   } catch (error) {
     logger.error(`Failed to update Google Calendar event:`, error);
 
-    const config = await getCalendarConfig(prisma, userId);
+    const resolvedLocationId = resolveLocationId(locationId, appointment);
+    const config = await getConfigWithFallback(prisma, userId, resolvedLocationId);
     if (config) {
       await prisma.calendarEventSync.upsert({
         where: {
@@ -194,14 +222,16 @@ const updateEvent = async (prisma, userId, appointment, client) => {
 /**
  * Delete event from Google Calendar
  */
-const deleteEvent = async (prisma, userId, appointmentId) => {
+const deleteEvent = async (prisma, userId, appointmentId, locationId) => {
   try {
-    const calendar = await getAuthenticatedCalendarClient(prisma, userId);
-    const config = await getCalendarConfig(prisma, userId);
+    const resolvedLocationId = locationId !== undefined ? locationId : null;
+    const config = await getConfigWithFallback(prisma, userId, resolvedLocationId);
 
     if (!config) {
       return null;
     }
+
+    const calendar = await getAuthenticatedCalendarClient(prisma, userId, config.locationId);
 
     const syncRecord = await prisma.calendarEventSync.findUnique({
       where: {
@@ -235,18 +265,28 @@ const deleteEvent = async (prisma, userId, appointmentId) => {
 };
 
 /**
- * Sync all appointments for a user
+ * Sync all appointments for a user.
+ * Groups appointments by locationId and syncs each group with its matching config.
+ * Falls back to default config (locationId: null) for appointments without a location-specific config.
  */
-const syncAllAppointments = async (prisma, userId) => {
-  const config = await getCalendarConfig(prisma, userId);
+const syncAllAppointments = async (prisma, userId, locationId) => {
+  // Get all configs for the user
+  const allConfigs = await getAllCalendarConfigs(prisma, userId);
 
-  if (!config || !config.syncEnabled) {
+  if (!allConfigs || allConfigs.length === 0) {
+    return { success: false, error: 'No calendar configs found' };
+  }
+
+  // If a specific locationId is provided, only sync that config
+  const enabledConfigs = locationId !== undefined && locationId !== null
+    ? allConfigs.filter((c) => c.locationId === locationId && c.syncEnabled)
+    : allConfigs.filter((c) => c.syncEnabled);
+
+  if (enabledConfigs.length === 0) {
     return { success: false, error: 'Calendar sync not enabled' };
   }
 
   try {
-    const calendar = await getAuthenticatedCalendarClient(prisma, userId);
-
     // Get user's appointments
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -274,6 +314,15 @@ const syncAllAppointments = async (prisma, userId) => {
       take: 100,
     });
 
+    // Build a map of locationId -> config
+    const configByLocation = new Map();
+    const defaultConfig = enabledConfigs.find((c) => !c.locationId);
+    for (const config of enabledConfigs) {
+      if (config.locationId) {
+        configByLocation.set(config.locationId, config);
+      }
+    }
+
     const results = {
       total: appointments.length,
       created: 0,
@@ -282,6 +331,14 @@ const syncAllAppointments = async (prisma, userId) => {
     };
 
     for (const appointment of appointments) {
+      // Find the matching config: location-specific first, then default
+      const config = configByLocation.get(appointment.locationId) || defaultConfig;
+
+      if (!config) {
+        // No config available for this appointment's location
+        continue;
+      }
+
       const existing = await prisma.calendarEventSync.findUnique({
         where: {
           appointmentId_configId: {
@@ -292,21 +349,23 @@ const syncAllAppointments = async (prisma, userId) => {
       });
 
       if (existing?.googleEventId) {
-        const result = await updateEvent(prisma, userId, appointment, appointment.client);
+        const result = await updateEvent(prisma, userId, appointment, appointment.client, config.locationId);
         if (result) results.updated++;
         else results.errors++;
       } else {
-        const result = await createEvent(prisma, userId, appointment, appointment.client);
+        const result = await createEvent(prisma, userId, appointment, appointment.client, config.locationId);
         if (result) results.created++;
         else results.errors++;
       }
     }
 
-    // Update last sync time
-    await prisma.googleCalendarConfig.update({
-      where: { userId },
-      data: { lastSyncAt: new Date() },
-    });
+    // Update last sync time on all enabled configs
+    for (const config of enabledConfigs) {
+      await prisma.googleCalendarConfig.update({
+        where: { id: config.id },
+        data: { lastSyncAt: new Date() },
+      });
+    }
 
     logger.info(`Synced ${results.created + results.updated} appointments for user ${userId}`);
     return { success: true, results };
@@ -339,15 +398,20 @@ const listCalendars = async (prisma, userId) => {
 /**
  * Update sync settings
  */
-const updateSyncSettings = async (prisma, userId, { calendarId, syncEnabled }) => {
-  const config = await getCalendarConfig(prisma, userId);
+const updateSyncSettings = async (prisma, userId, { calendarId, syncEnabled, locationId = null }) => {
+  const config = await getCalendarConfig(prisma, userId, locationId);
 
   if (!config) {
     throw new Error('Google Calendar not connected');
   }
 
   return prisma.googleCalendarConfig.update({
-    where: { userId },
+    where: {
+      userId_locationId: {
+        userId,
+        locationId: locationId || null,
+      },
+    },
     data: {
       calendarId: calendarId ?? config.calendarId,
       syncEnabled: syncEnabled ?? config.syncEnabled,
@@ -358,8 +422,8 @@ const updateSyncSettings = async (prisma, userId, { calendarId, syncEnabled }) =
 /**
  * Get sync status for an appointment
  */
-const getAppointmentSyncStatus = async (prisma, userId, appointmentId) => {
-  const config = await getCalendarConfig(prisma, userId);
+const getAppointmentSyncStatus = async (prisma, userId, appointmentId, locationId = null) => {
+  const config = await getConfigWithFallback(prisma, userId, locationId);
 
   if (!config) {
     return null;
@@ -377,7 +441,7 @@ const getAppointmentSyncStatus = async (prisma, userId, appointmentId) => {
 
 /**
  * Import events from Google Calendar into CRM
- * Only imports events that don't already exist in the CRM
+ * Iterates through all user configs (all locations) and imports from each.
  * @param {object} prisma - Prisma client
  * @param {string} userId - User ID
  * @param {object} options - Import options
@@ -386,15 +450,14 @@ const getAppointmentSyncStatus = async (prisma, userId, appointmentId) => {
  * @param {number} options.maxResults - Maximum events to fetch (default: 50)
  */
 const importEventsFromGoogle = async (prisma, userId, options = {}) => {
-  const config = await getCalendarConfig(prisma, userId);
+  const allConfigs = await getAllCalendarConfigs(prisma, userId);
+  const enabledConfigs = (allConfigs || []).filter((c) => c.syncEnabled);
 
-  if (!config || !config.syncEnabled) {
+  if (enabledConfigs.length === 0) {
     return { success: false, error: 'Calendar sync not enabled' };
   }
 
   try {
-    const calendar = await getAuthenticatedCalendarClient(prisma, userId);
-
     // Get user info
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -407,27 +470,6 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
 
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    // Fetch events from Google Calendar
-    const response = await calendar.events.list({
-      calendarId: config.calendarId || 'primary',
-      timeMin: (options.timeMin || now).toISOString(),
-      timeMax: (options.timeMax || thirtyDaysFromNow).toISOString(),
-      maxResults: options.maxResults || 50,
-      singleEvents: true,
-      orderBy: 'startTime',
-    });
-
-    const googleEvents = response.data.items || [];
-    logger.info(`[GCAL] Fetched ${googleEvents.length} events from Google Calendar for user ${userId}`);
-
-    // Get all existing sync records to know which events are already synced
-    const existingSyncRecords = await prisma.calendarEventSync.findMany({
-      where: { configId: config.id },
-      select: { googleEventId: true, appointmentId: true },
-    });
-
-    const syncedGoogleEventIds = new Set(existingSyncRecords.map((r) => r.googleEventId));
 
     // Also check appointments with googleEventId in metadata (for previously imported)
     const appointmentsWithGoogleEvent = await prisma.appointment.findMany({
@@ -447,86 +489,123 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
     });
 
     const results = {
-      total: googleEvents.length,
+      total: 0,
       imported: 0,
       skipped: 0,
       errors: 0,
       importedAppointments: [],
     };
 
-    for (const event of googleEvents) {
-      // Skip events without proper date/time
-      if (!event.start?.dateTime || !event.end?.dateTime) {
-        logger.debug(`[GCAL] Skipping all-day or invalid event: ${event.summary}`);
-        results.skipped++;
-        continue;
-      }
-
-      // Skip if already synced from CRM
-      if (syncedGoogleEventIds.has(event.id)) {
-        logger.debug(`[GCAL] Skipping already synced event: ${event.summary}`);
-        results.skipped++;
-        continue;
-      }
-
-      // Skip if already imported
-      if (importedGoogleEventIds.has(event.id)) {
-        logger.debug(`[GCAL] Skipping already imported event: ${event.summary}`);
-        results.skipped++;
-        continue;
-      }
-
+    for (const config of enabledConfigs) {
       try {
-        // Create appointment from Google event
-        const appointment = await prisma.appointment.create({
-          data: {
-            title: event.summary || 'Google Calendar Event',
-            description: event.description || null,
-            location: event.location || null,
-            scheduledStart: new Date(event.start.dateTime),
-            scheduledEnd: new Date(event.end.dateTime),
-            status: 'PENDING',
-            createdById: userId,
-            updatedById: userId,
-            organizationId: user.organizationId,
-            metadata: {
+        const calendar = await getAuthenticatedCalendarClient(prisma, userId, config.locationId);
+
+        // Fetch events from Google Calendar
+        const response = await calendar.events.list({
+          calendarId: config.calendarId || 'primary',
+          timeMin: (options.timeMin || now).toISOString(),
+          timeMax: (options.timeMax || thirtyDaysFromNow).toISOString(),
+          maxResults: options.maxResults || 50,
+          singleEvents: true,
+          orderBy: 'startTime',
+        });
+
+        const googleEvents = response.data.items || [];
+        logger.info(`[GCAL] Fetched ${googleEvents.length} events from config ${config.id} (location: ${config.locationId || 'default'}) for user ${userId}`);
+        results.total += googleEvents.length;
+
+        // Get all existing sync records for this config
+        const existingSyncRecords = await prisma.calendarEventSync.findMany({
+          where: { configId: config.id },
+          select: { googleEventId: true, appointmentId: true },
+        });
+
+        const syncedGoogleEventIds = new Set(existingSyncRecords.map((r) => r.googleEventId));
+
+        for (const event of googleEvents) {
+          // Skip events without proper date/time
+          if (!event.start?.dateTime || !event.end?.dateTime) {
+            logger.debug(`[GCAL] Skipping all-day or invalid event: ${event.summary}`);
+            results.skipped++;
+            continue;
+          }
+
+          // Skip if already synced from CRM
+          if (syncedGoogleEventIds.has(event.id)) {
+            logger.debug(`[GCAL] Skipping already synced event: ${event.summary}`);
+            results.skipped++;
+            continue;
+          }
+
+          // Skip if already imported
+          if (importedGoogleEventIds.has(event.id)) {
+            logger.debug(`[GCAL] Skipping already imported event: ${event.summary}`);
+            results.skipped++;
+            continue;
+          }
+
+          try {
+            // Create appointment from Google event
+            const appointment = await prisma.appointment.create({
+              data: {
+                title: event.summary || 'Google Calendar Event',
+                description: event.description || null,
+                location: event.location || null,
+                scheduledStart: new Date(event.start.dateTime),
+                scheduledEnd: new Date(event.end.dateTime),
+                status: 'PENDING',
+                createdById: userId,
+                updatedById: userId,
+                organizationId: user.organizationId,
+                locationId: config.locationId || undefined,
+                metadata: {
+                  googleEventId: event.id,
+                  importedFromGoogle: true,
+                  importedAt: new Date().toISOString(),
+                  sourceLocationId: config.locationId || null,
+                },
+              },
+            });
+
+            // Create sync record
+            await prisma.calendarEventSync.create({
+              data: {
+                appointmentId: appointment.id,
+                googleEventId: event.id,
+                configId: config.id,
+                syncStatus: 'SYNCED',
+                lastSyncAt: new Date(),
+              },
+            });
+
+            results.imported++;
+            results.importedAppointments.push({
+              id: appointment.id,
+              title: appointment.title,
               googleEventId: event.id,
-              importedFromGoogle: true,
-              importedAt: new Date().toISOString(),
-            },
-          },
-        });
+              locationId: config.locationId || null,
+            });
 
-        // Create sync record
-        await prisma.calendarEventSync.create({
-          data: {
-            appointmentId: appointment.id,
-            googleEventId: event.id,
-            configId: config.id,
-            syncStatus: 'SYNCED',
-            lastSyncAt: new Date(),
-          },
-        });
+            // Track this event as imported so other configs don't re-import it
+            importedGoogleEventIds.add(event.id);
 
-        results.imported++;
-        results.importedAppointments.push({
-          id: appointment.id,
-          title: appointment.title,
-          googleEventId: event.id,
-        });
+            logger.info(`[GCAL] Imported event "${event.summary}" as appointment ${appointment.id}`);
+          } catch (err) {
+            logger.error(`[GCAL] Failed to import event "${event.summary}":`, err);
+            results.errors++;
+          }
+        }
 
-        logger.info(`[GCAL] Imported event "${event.summary}" as appointment ${appointment.id}`);
-      } catch (err) {
-        logger.error(`[GCAL] Failed to import event "${event.summary}":`, err);
+        // Update last sync time for this config
+        await prisma.googleCalendarConfig.update({
+          where: { id: config.id },
+          data: { lastSyncAt: new Date() },
+        });
+      } catch (configError) {
+        logger.error(`[GCAL] Failed to import from config ${config.id} (location: ${config.locationId || 'default'}):`, configError);
         results.errors++;
       }
     }
-
-    // Update last sync time
-    await prisma.googleCalendarConfig.update({
-      where: { userId },
-      data: { lastSyncAt: new Date() },
-    });
 
     logger.info(`[GCAL] Import complete for user ${userId}: ${results.imported} imported, ${results.skipped} skipped, ${results.errors} errors`);
     return { success: true, results };
@@ -538,13 +617,15 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
 
 /**
  * Two-way sync: Export CRM appointments to Google and import Google events to CRM
+ * Iterates through all user configs (all locations).
  * @param {object} prisma - Prisma client
  * @param {string} userId - User ID
  */
 const syncBidirectional = async (prisma, userId) => {
-  const config = await getCalendarConfig(prisma, userId);
+  const allConfigs = await getAllCalendarConfigs(prisma, userId);
+  const enabledConfigs = (allConfigs || []).filter((c) => c.syncEnabled);
 
-  if (!config || !config.syncEnabled) {
+  if (enabledConfigs.length === 0) {
     return { success: false, error: 'Calendar sync not enabled' };
   }
 
@@ -553,10 +634,10 @@ const syncBidirectional = async (prisma, userId) => {
     import: null,
   };
 
-  // First, export CRM appointments to Google
+  // First, export CRM appointments to Google (handles all configs internally)
   results.export = await syncAllAppointments(prisma, userId);
 
-  // Then, import Google events to CRM
+  // Then, import Google events to CRM (handles all configs internally)
   results.import = await importEventsFromGoogle(prisma, userId);
 
   return {

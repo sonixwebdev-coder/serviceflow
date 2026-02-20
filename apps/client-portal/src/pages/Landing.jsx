@@ -104,7 +104,7 @@ export default function Landing() {
       <header className="relative bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
           <div className="flex items-center justify-between">
-            <span className="text-xl font-bold text-white tracking-tight">ServiceFlow</span>
+            <span className="text-xl font-bold text-white tracking-tight">ForjaIt</span>
             <div className="flex items-center gap-4">
               <Link
                 to="/marketplace"
@@ -309,7 +309,7 @@ export default function Landing() {
               </Link>
             </div>
             <p className="text-sm text-gray-400">
-              &copy; 2026 ServiceFlow. Toate drepturile rezervate.
+              &copy; 2026 ForjaIt. Toate drepturile rezervate.
             </p>
           </div>
         </div>

@@ -101,6 +101,7 @@ const listAppointmentsQuerySchema = z.object({
   assigneeId: z.string().optional(),
   page: z.string().optional(),
   limit: z.string().optional(),
+  fields: z.enum(['calendar']).optional(),
 });
 
 const recordPaymentSchema = z.object({

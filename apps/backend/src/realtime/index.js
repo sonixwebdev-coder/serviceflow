@@ -7,14 +7,17 @@ const { broadcastTyping, broadcastPresence } = require('./chatEvents');
 const logger = require('../utils/logger');
 
 const createSocketServer = (httpServer) => {
+  const corsOrigins = [
+    process.env.FRONTEND_URL || 'https://viperx.online',
+    process.env.CLIENT_PORTAL_URL || 'http://localhost:5174',
+  ];
+  if (process.env.NODE_ENV !== 'production') {
+    corsOrigins.push('http://localhost:5173', 'http://localhost:5174');
+  }
+
   const io = new Server(httpServer, {
     cors: {
-      origin: [
-        process.env.FRONTEND_URL || 'https://viperx.online',
-        process.env.CLIENT_PORTAL_URL || 'http://localhost:5174',
-        'http://localhost:5173', // CRM frontend dev
-        'http://localhost:5174', // Portal frontend dev
-      ],
+      origin: corsOrigins,
       credentials: true,
     },
     transports: ['websocket', 'polling'],
@@ -78,12 +81,26 @@ const createSocketServer = (httpServer) => {
         return next();
       }
 
-      // CRM user authentication
+      // CRM user authentication — re-validate against DB
+      const dbUser = await prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, isActive: true, organizationId: true, organization: { select: { status: true } } },
+      });
+
+      if (!dbUser || !dbUser.isActive) {
+        logger.debug('[Socket] CRM auth failed: user inactive or not found');
+        return next(new Error('AUTH_USER_INACTIVE'));
+      }
+      if (dbUser.organization?.status === 'SUSPENDED') {
+        logger.debug('[Socket] CRM auth failed: organization suspended');
+        return next(new Error('AUTH_ORG_SUSPENDED'));
+      }
+
       socket.user = {
         id: payload.sub,
         email: payload.email,
         roles: payload.roles,
-        organizationId: payload.organizationId,
+        organizationId: dbUser.organizationId,
         type: 'user',
       };
 
@@ -142,9 +159,33 @@ const createSocketServer = (httpServer) => {
     // Join user-specific room for direct notifications
     socket.join(`user:${socket.user.id}`);
 
+    // Per-socket typing throttle: max one event per 2s per channel
+    const typingThrottle = new Map();
+    const TYPING_THROTTLE_MS = 2000;
+
+    const isTypingThrottled = (channelId) => {
+      const now = Date.now();
+      const last = typingThrottle.get(channelId) || 0;
+      if (now - last < TYPING_THROTTLE_MS) return true;
+      typingThrottle.set(channelId, now);
+      return false;
+    };
+
+    // Verify channel membership before processing typing
+    const verifyChannelMember = async (channelId) => {
+      const member = await prisma.chatChannelMember.findFirst({
+        where: { channelId, userId: socket.user.id },
+        select: { id: true },
+      });
+      return !!member;
+    };
+
     // Handle typing indicators
     socket.on('chat:typing:start', async ({ channelId }) => {
       try {
+        if (!channelId || isTypingThrottled(channelId)) return;
+        if (!(await verifyChannelMember(channelId))) return;
+
         await startTyping(prisma, channelId, socket.user.id);
 
         const user = await prisma.user.findUnique({
@@ -160,6 +201,9 @@ const createSocketServer = (httpServer) => {
 
     socket.on('chat:typing:stop', async ({ channelId }) => {
       try {
+        if (!channelId) return;
+        if (!(await verifyChannelMember(channelId))) return;
+
         await stopTyping(prisma, channelId, socket.user.id);
 
         const user = await prisma.user.findUnique({

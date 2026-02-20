@@ -14,10 +14,10 @@ export default function NotFound() {
         <p className="text-sm text-gray-500">
           Vizitati{' '}
           <a
-            href="https://serviceflow.ro"
+            href="https://forja.it.com"
             className="text-primary-600 hover:text-primary-700 underline"
           >
-            ServiceFlow
+            ForjaIt
           </a>{' '}
           pentru a va crea propriul website.
         </p>

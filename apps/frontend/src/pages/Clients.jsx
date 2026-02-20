@@ -12,15 +12,81 @@ import useToast from '../context/useToast.js';
 import { useTerminology } from '../context/TerminologyContext';
 import DatePicker from '../components/ui/DatePicker';
 import LocationBadge from '../components/LocationBadge';
+import { useClientLoyalty } from '../hooks/useLoyalty';
+import TierBadge from '../components/loyalty/TierBadge';
+import ProgressToNextTier from '../components/loyalty/ProgressToNextTier';
+import AdjustPointsDialog from '../components/loyalty/AdjustPointsDialog';
 
 const formatDateTime = (value) => {
-  if (!value) return '—';
+  if (!value) return '-';
   try {
     return format(new Date(value), 'dd MMM yyyy HH:mm', { locale: roDateLocale });
   } catch {
-    return '—';
+    return '-';
   }
 };
+
+function ClientLoyaltySection({ clientId }) {
+  const { data: loyaltyData, isLoading } = useClientLoyalty(clientId);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+
+  const account = loyaltyData?.data || loyaltyData;
+  if (isLoading || !account) return null;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+          <CreditCard size={18} className="text-indigo-600" />
+          Fidelitate
+        </h3>
+        <button
+          onClick={() => setAdjustOpen(true)}
+          className="inline-flex items-center gap-1 rounded-lg border border-indigo-500 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 transition-colors"
+        >
+          <Edit2 size={14} />
+          Ajusteaza puncte
+        </button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label className="text-xs font-medium text-gray-500">Nivel</label>
+          <div className="mt-1">
+            <TierBadge tier={account.currentTier} size="lg" />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-500">Puncte curente</label>
+          <p className="text-lg font-bold text-indigo-600 mt-1">{account.currentPoints}</p>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-500">Puncte lifetime</label>
+          <p className="text-lg font-bold text-gray-900 mt-1">{account.lifetimePoints}</p>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-500">Vizite completate</label>
+          <p className="text-lg font-bold text-gray-900 mt-1">{account.completedVisits}</p>
+        </div>
+      </div>
+      {account.program && (
+        <ProgressToNextTier
+          currentTier={account.currentTier}
+          lifetimePoints={account.lifetimePoints}
+          thresholds={account.program}
+        />
+      )}
+      {account.referralCode && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <label className="text-xs font-medium text-gray-500">Cod referral</label>
+          <p className="text-sm font-mono text-gray-900 mt-0.5">{account.referralCode}</p>
+        </div>
+      )}
+      {adjustOpen && (
+        <AdjustPointsDialog clientId={clientId} onClose={() => setAdjustOpen(false)} />
+      )}
+    </div>
+  );
+}
 
 const STATUS_META = {
   PENDING: { label: 'In asteptare', class: 'bg-yellow-50 text-yellow-800 border-yellow-200' },
@@ -459,14 +525,13 @@ const Clients = () => {
       <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}>
         {/* Desktop Table */}
         <div className="hidden lg:block">
-          <div className={`grid gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50 ${hasAssets ? 'grid-cols-8' : 'grid-cols-7'}`}>
+          <div className={`grid gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50 ${hasAssets ? 'grid-cols-7' : 'grid-cols-6'}`}>
             <span>Client</span>
             <span>Email</span>
             <span>Telefon</span>
             <span>Companie</span>
             <span>Card fidelitate</span>
             {hasAssets && <span>{assetPlural}</span>}
-            <span>Ultima actualizare</span>
             <span>Actiuni</span>
           </div>
 
@@ -487,13 +552,13 @@ const Clients = () => {
           ) : (
             <div className="divide-y">
               {clients.map((client) => (
-                <div key={client.id} className={`grid gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors ${hasAssets ? 'grid-cols-8' : 'grid-cols-7'}`}>
+                <div key={client.id} className={`grid gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors ${hasAssets ? 'grid-cols-7' : 'grid-cols-6'}`}>
                   <div className="font-medium text-gray-900">
                     <div className="flex items-center gap-2">
                       <span>
                         {client.type === 'SRL'
                           ? client.companyName || 'Client companie'
-                          : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
+                          : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '-'}
                       </span>
                       <LocationBadge locationId={client.locationId} size="xs" />
                     </div>
@@ -501,9 +566,9 @@ const Clients = () => {
                       <p className="text-xs text-gray-500">Contact: {client.contactName}</p>
                     ) : null}
                   </div>
-                  <div>{client.email || '—'}</div>
-                  <div>{client.phone || '—'}</div>
-                  <div>{client.companyName || '—'}</div>
+                  <div>{client.email || '-'}</div>
+                  <div>{client.phone || '-'}</div>
+                  <div>{client.companyName || <span className="text-gray-400">PF</span>}</div>
                   <div>
                     {client.fidelityCardSerie ? (
                       <div className="flex items-center gap-1 text-sm">
@@ -511,11 +576,10 @@ const Clients = () => {
                         <span>{client.fidelityCardSerie}</span>
                       </div>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-gray-400">-</span>
                     )}
                   </div>
                   {hasAssets && <div>{client.assets?.length || 0}</div>}
-                  <div>{formatDateTime(client.updatedAt)}</div>
                   <div>
                     <button
                       type="button"
@@ -558,7 +622,7 @@ const Clients = () => {
                         <p className="font-semibold text-gray-900">
                           {client.type === 'SRL'
                             ? client.companyName || 'Client companie'
-                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '—'}
+                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '-'}
                         </p>
                         <LocationBadge locationId={client.locationId} size="xs" />
                       </div>
@@ -890,30 +954,30 @@ const Clients = () => {
                         <>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Nume Companie</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.companyName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.companyName || 'Persoana fizica'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Persoana de contact</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.contactName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.contactName || '-'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">CUI</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.vatNumber || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.vatNumber || '-'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Nr. Reg. Com.</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.registrationNumber || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.registrationNumber || '-'}</p>
                           </div>
                         </>
                       ) : (
                         <>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Prenume</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.firstName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.firstName || '-'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Nume</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.lastName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.lastName || '-'}</p>
                           </div>
                         </>
                       )}
@@ -921,14 +985,14 @@ const Clients = () => {
                         <label className="text-xs font-medium text-gray-500">Email</label>
                         <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
                           <Mail size={14} className="text-gray-400" />
-                          {selectedClient.email || '—'}
+                          {selectedClient.email || '-'}
                         </p>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500">Telefon</label>
                         <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
                           <Phone size={14} className="text-gray-400" />
-                          {selectedClient.phone || '—'}
+                          {selectedClient.phone || '-'}
                         </p>
                       </div>
                       <div className="col-span-2">
@@ -960,6 +1024,9 @@ const Clients = () => {
                       )}
                     </div>
                   </div>
+
+                      {/* Loyalty Section */}
+                      <ClientLoyaltySection clientId={selectedClient.id} />
 
                       {/* Assets - only shown for sectors with assets */}
                       {hasAssets && (

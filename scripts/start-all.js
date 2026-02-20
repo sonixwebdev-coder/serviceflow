@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('🚀 Starting ServiceFlow...\n');
+console.log('🚀 Starting Forja...\n');
 
 // Check if .env file exists
 function checkEnvFile() {
@@ -86,6 +86,21 @@ function startFrontend() {
     return frontend;
 }
 
+function startAdmin() {
+    console.log('🟣 Starting Admin on port 5176...\n');
+    const admin = spawn('npm', ['run', 'dev'], {
+        cwd: path.join(__dirname, '../apps/admin'),
+        stdio: 'inherit',
+        shell: true
+    });
+
+    admin.on('error', (error) => {
+        console.error('❌ Admin error:', error);
+    });
+
+    return admin;
+}
+
 async function main() {
     if (!checkEnvFile()) {
         console.log('⚠️  Please set up backend/.env before starting\n');
@@ -98,11 +113,13 @@ async function main() {
     await new Promise(resolve => setTimeout(resolve, 3000));
 
     const frontend = startFrontend();
+    const admin = startAdmin();
 
     const cleanup = () => {
       console.log('\n\n🛑 Stopping all services...');
         backend.kill('SIGTERM');
         frontend.kill('SIGTERM');
+        admin.kill('SIGTERM');
     };
 
     process.on('SIGINT', cleanup);

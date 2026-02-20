@@ -37,6 +37,19 @@ async function createChannel(prisma, data, currentUser) {
     throw new AppError('Group channels must have at least 3 members', 400);
   }
 
+  // Validate all memberIds belong to the caller's organization
+  if (memberIds.length > 0) {
+    const validMembers = await prisma.user.count({
+      where: {
+        id: { in: memberIds },
+        organizationId: currentUser.organizationId,
+      },
+    });
+    if (validMembers !== memberIds.length) {
+      throw new AppError('One or more users not found in organization', 400);
+    }
+  }
+
   // Create channel and add members in a transaction
   const channelId = await prisma.$transaction(async (tx) => {
     // Create the channel
@@ -515,10 +528,11 @@ async function getOrCreateDMChannel(prisma, participantIds, currentUser) {
     throw new AppError('User not found in organization', 404);
   }
 
-  // Try to find existing DM channel
+  // Try to find existing DM channel (explicit org scope for defense in depth)
   const existingChannel = await prisma.chatChannel.findFirst({
     where: {
       type: 'DIRECT',
+      organizationId: currentUser.organizationId,
       members: {
         every: {
           userId: { in: participantIds },

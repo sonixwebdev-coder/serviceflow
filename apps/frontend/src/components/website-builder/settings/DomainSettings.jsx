@@ -47,8 +47,8 @@ const DomainSettings = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const subdomainUrl = `https://${localSubdomain || 'company'}.serviceflow.ro`;
-  const cnameTarget = 'websites.serviceflow.ro';
+  const subdomainUrl = `https://${localSubdomain || 'company'}.forja.it.com`;
+  const cnameTarget = 'websites.forja.it.com';
 
   return (
     <div className="space-y-6">
@@ -57,7 +57,7 @@ const DomainSettings = ({
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Subdomain ServiceFlow
+            Subdomain ForjaIt
           </h3>
           <p className="text-sm text-gray-500 mt-1">
             Adresa gratuita pentru website-ul dvs.
@@ -75,7 +75,7 @@ const DomainSettings = ({
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <div className="flex items-center px-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-600 text-sm">
-                .serviceflow.ro
+                .forja.it.com
               </div>
             </div>
             <div className="flex items-center gap-2 mt-2">

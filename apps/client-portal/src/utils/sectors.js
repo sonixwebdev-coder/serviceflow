@@ -1,4 +1,4 @@
-import { Car, Scissors, Wrench, Smartphone } from 'lucide-react';
+import { Car, Scissors, Wrench, Smartphone, Globe } from 'lucide-react';
 
 export const SECTORS = {
   AUTOMOTIVE: {
@@ -24,6 +24,18 @@ export const SECTORS = {
     lightBg: 'bg-pink-50',
     borderColor: 'border-pink-200',
     description: 'Frizerie, coafor, makeup, cosmetica, manichiura',
+  },
+  DIGITAL_SERVICES: {
+    label: 'Servicii Digitale',
+    icon: Globe,
+    color: 'indigo',
+    bgClass: 'bg-indigo-100 text-indigo-800',
+    iconBg: 'bg-indigo-100',
+    iconColor: 'text-indigo-600',
+    gradient: 'from-indigo-500 to-indigo-600',
+    lightBg: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
+    description: 'Web development, design grafic, marketing digital, consultanta IT',
   },
   HOME_SERVICES: {
     label: 'Servicii la Domiciliu',

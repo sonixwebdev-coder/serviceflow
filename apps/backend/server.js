@@ -32,7 +32,7 @@ const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname,
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
     ? ['https://viperx.online', 'https://portal.viperx.online']
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
   credentials: true
 };
 
@@ -102,6 +102,10 @@ app.disable('x-powered-by');
 // CORS middleware for API routes
 app.use(cors(corsOptions));
 
+// Stripe webhook route — MUST be mounted before body-parser (needs raw body)
+const stripeWebhookRouter = require('./src/api/webhooks');
+app.use('/api/webhooks', stripeWebhookRouter);
+
 // Body parser middleware with size limits
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -125,8 +129,15 @@ const authLimiter = rateLimit({
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting for token refresh to allow seamless session continuation
-  skip: (req) => req.path === '/api/auth/refresh',
+});
+
+// Separate, higher-limit rate limiter for token refresh (allows seamless session continuation)
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  message: 'Too many refresh attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Rate limiting for profile update endpoints (CRITICAL SECURITY)
@@ -170,6 +181,7 @@ const exportLimiter = rateLimit({
 });
 
 // Apply rate limit to auth routes
+app.use('/api/auth/refresh', refreshLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/portal/auth', authLimiter);
 
@@ -190,6 +202,19 @@ app.use('/api/users/profile', (req, res, next) => {
   next();
 });
 
+// Rate limiting for super admin API
+const superAdminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200,
+  message: 'Too many requests to admin API, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Super Admin API (mounted before main API to bypass tenant/location scoping)
+const superAdminRouter = require('./src/api/superAdmin');
+app.use('/api/super-admin', superAdminLimiter, superAdminRouter);
+
 // Prisma-powered API
 app.use('/api', apiRouter);
 
@@ -197,7 +222,7 @@ app.use('/api', apiRouter);
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
-    message: 'ServiceFlow API',
+    message: 'ForjaIt API',
     timestamp: new Date().toISOString()
   });
 });
@@ -205,7 +230,7 @@ app.get('/health', (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'ServiceFlow API',
+    message: 'ForjaIt API',
     version: '2.0.0',
     endpoints: {
       health: '/health',
@@ -231,6 +256,13 @@ async function startServer() {
   try {
     await prisma.$connect();
     console.log('✅ Prisma connected to PostgreSQL');
+
+    // Ensure PlatformSettings singleton exists
+    await prisma.platformSettings.upsert({
+      where: { id: 'singleton' },
+      create: { id: 'singleton' },
+      update: {},
+    });
   } catch (error) {
     console.error('❌ Prisma connection error:', error);
     process.exit(1);

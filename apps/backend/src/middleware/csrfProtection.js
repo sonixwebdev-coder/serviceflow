@@ -64,6 +64,9 @@ const CSRF_EXEMPT_PATHS = [
   '/api/organizations/signup',
   '/api/organizations/check-slug',
   '/files', // Static file serving
+  '/api/webhooks/stripe', // Stripe webhook (uses signature verification instead)
+  '/api/sites/:subdomain/lead', // Public contact form (rate-limited + validated)
+  '/api/sites/:subdomain/review', // Public review submission (rate-limited + validated)
 ];
 
 /**

@@ -19,6 +19,7 @@ router.get(
       JSON.stringify({
         userId: req.user.id,
         returnUrl: req.query.returnUrl || '/profile',
+        locationId: req.query.locationId || null,
       })
     ).toString('base64');
 
@@ -35,6 +36,7 @@ router.get(
   '/google/callback',
   asyncHandler(async (req, res) => {
     const { code, state, error } = req.query;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     // Parse state to get user info
     let stateData;
@@ -42,12 +44,14 @@ router.get(
       stateData = JSON.parse(Buffer.from(state, 'base64').toString());
     } catch (e) {
       logger.error('Invalid OAuth state:', e);
-      return res.redirect('/profile?error=invalid_state');
+      return res.redirect(`${frontendUrl}/profile?error=invalid_state`);
     }
+
+    const returnUrl = stateData.returnUrl || '/profile';
 
     if (error) {
       logger.error('Google OAuth error:', error);
-      return res.redirect(`${stateData.returnUrl || '/profile'}?error=${error}`);
+      return res.redirect(`${frontendUrl}${returnUrl}?error=${error}`);
     }
 
     try {
@@ -55,16 +59,15 @@ router.get(
       const tokens = await googleOAuthService.exchangeCodeForTokens(code);
 
       // Store config using global prisma (no tenant context in callback)
-      await googleOAuthService.storeCalendarConfig(prisma, stateData.userId, tokens);
+      await googleOAuthService.storeCalendarConfig(prisma, stateData.userId, tokens, stateData.locationId || null);
 
-      logger.info(`Google Calendar connected for user ${stateData.userId}`);
+      logger.info(`Google Calendar connected for user ${stateData.userId} (location: ${stateData.locationId || 'default'})`);
 
       // Redirect back to the app
-      const returnUrl = stateData.returnUrl || '/profile';
-      res.redirect(`${process.env.FRONTEND_URL || ''}${returnUrl}?google_connected=true`);
+      res.redirect(`${frontendUrl}${returnUrl}?google_connected=true`);
     } catch (err) {
       logger.error('Failed to complete Google OAuth:', err);
-      res.redirect(`${stateData.returnUrl || '/profile'}?error=oauth_failed`);
+      res.redirect(`${frontendUrl}${returnUrl}?error=oauth_failed`);
     }
   })
 );
@@ -84,13 +87,14 @@ router.get(
 
 /**
  * POST /api/integrations/google/disconnect
- * Disconnect Google Calendar
+ * Disconnect Google Calendar for a specific location (or default)
  */
 router.post(
   '/google/disconnect',
   authenticate,
   asyncHandler(async (req, res) => {
-    await googleOAuthService.disconnectCalendar(req.tenantPrisma, req.user.id);
+    const locationId = req.query.locationId || null;
+    await googleOAuthService.disconnectCalendar(req.tenantPrisma, req.user.id, locationId);
     res.json({ success: true, message: 'Google Calendar disconnected' });
   })
 );
@@ -110,16 +114,17 @@ router.get(
 
 /**
  * PUT /api/integrations/google/settings
- * Update sync settings
+ * Update sync settings for a specific location (or default)
  */
 router.put(
   '/google/settings',
   authenticate,
   asyncHandler(async (req, res) => {
-    const { calendarId, syncEnabled } = req.body;
+    const { calendarId, syncEnabled, locationId } = req.body;
     const config = await googleCalendarService.updateSyncSettings(req.tenantPrisma, req.user.id, {
       calendarId,
       syncEnabled,
+      locationId: locationId || null,
     });
     res.json(config);
   })
@@ -127,13 +132,14 @@ router.put(
 
 /**
  * POST /api/integrations/google/sync
- * Manually trigger sync
+ * Manually trigger sync (optionally for a specific location)
  */
 router.post(
   '/google/sync',
   authenticate,
   asyncHandler(async (req, res) => {
-    const result = await googleCalendarService.syncAllAppointments(req.tenantPrisma, req.user.id);
+    const { locationId } = req.body;
+    const result = await googleCalendarService.syncAllAppointments(req.tenantPrisma, req.user.id, locationId);
     res.json(result);
   })
 );

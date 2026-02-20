@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 let ioInstance = null;
 
 const setIO = (io) => {
@@ -34,10 +36,10 @@ const emitToUser = (userId, event, payload) => {
 
 const emitToOrganization = (organizationId, event, payload) => {
   if (!ioInstance || !organizationId) {
-    console.log(`[Socket] emitToOrganization skipped: ioInstance=${!!ioInstance}, organizationId=${organizationId}`);
+    logger.debug(`[Socket] emitToOrganization skipped`, { hasIO: !!ioInstance, organizationId });
     return;
   }
-  console.log(`[Socket] Emitting ${event} to org:${organizationId}`);
+  logger.debug(`[Socket] Emitting ${event} to org:${organizationId}`);
   ioInstance.to(`org:${organizationId}`).emit(event, payload);
 };
 
@@ -47,10 +49,10 @@ const emitToOrganization = (organizationId, event, payload) => {
  */
 const emitToClient = (clientId, event, payload) => {
   if (!ioInstance || !clientId) {
-    console.log(`[Socket] emitToClient skipped: ioInstance=${!!ioInstance}, clientId=${clientId}`);
+    logger.debug(`[Socket] emitToClient skipped`, { hasIO: !!ioInstance, clientId });
     return;
   }
-  console.log(`[Socket] Emitting ${event} to client:${clientId}`);
+  logger.debug(`[Socket] Emitting ${event} to client:${clientId}`);
   ioInstance.to(`client:${clientId}`).emit(event, payload);
 };
 

@@ -36,6 +36,7 @@ const Signup = () => {
     password: '',
     confirmPassword: '',
     activitySector: '',
+    acceptedTerms: false,
   });
 
   const sectors = getSectorList();
@@ -77,7 +78,6 @@ const Signup = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Track if slug was manually edited
     if (name === 'slug') {
       setSlugManuallyEdited(true);
     }
@@ -93,7 +93,7 @@ const Signup = () => {
 
   const validateStep = (step) => {
     switch (step) {
-      case 0: // Organization
+      case 0:
         if (!formData.organizationName.trim()) {
           setError('Numele organizatiei este obligatoriu');
           return false;
@@ -111,7 +111,7 @@ const Signup = () => {
           return false;
         }
         return true;
-      case 1: // Admin
+      case 1:
         if (!formData.firstName.trim()) {
           setError('Prenumele este obligatoriu');
           return false;
@@ -132,8 +132,12 @@ const Signup = () => {
           setError('Parolele nu se potrivesc');
           return false;
         }
+        if (!formData.acceptedTerms) {
+          setError('Trebuie sa accepti termenii si conditiile');
+          return false;
+        }
         return true;
-      case 2: // Sector
+      case 2:
         if (!formData.activitySector) {
           setError('Selectati un domeniu de activitate');
           return false;
@@ -166,10 +170,9 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const { confirmPassword, ...payload } = formData;
+      const { confirmPassword, acceptedTerms, ...payload } = formData;
       const result = await signupOrganization(payload);
 
-      // Store minimal display fields for cached UI (tokens handled via httpOnly cookies)
       localStorage.setItem('user', JSON.stringify({
         id: result.user.id,
         firstName: result.user.firstName,
@@ -178,7 +181,6 @@ const Signup = () => {
         role: result.user.role,
       }));
 
-      // Redirect to dashboard
       window.location.href = '/dashboard';
     } catch (err) {
       setError(err.response?.data?.message || 'Inregistrarea a esuat. Va rugam incercati din nou.');
@@ -187,25 +189,28 @@ const Signup = () => {
     }
   };
 
+  const inputClasses =
+    'w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none';
+
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8">
       {STEPS.map((step, index) => (
         <div key={step.id} className="flex items-center">
           <div className="flex flex-col items-center">
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+              className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all ${
                 index < currentStep
                   ? 'bg-green-500 text-white'
                   : index === currentStep
-                  ? 'bg-viperx-primary text-white'
-                  : 'bg-gray-200 text-gray-500'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-400'
               }`}
             >
-              {index < currentStep ? <Check className="w-5 h-5" /> : index + 1}
+              {index < currentStep ? <Check className="h-4 w-4" /> : index + 1}
             </div>
             <span
-              className={`text-xs mt-1 ${
-                index === currentStep ? 'text-viperx-primary font-medium' : 'text-gray-500'
+              className={`mt-1.5 text-xs ${
+                index === currentStep ? 'font-medium text-gray-900' : 'text-gray-400'
               }`}
             >
               {step.title}
@@ -213,7 +218,7 @@ const Signup = () => {
           </div>
           {index < STEPS.length - 1 && (
             <div
-              className={`w-16 h-1 mx-2 ${
+              className={`mx-3 h-0.5 w-12 ${
                 index < currentStep ? 'bg-green-500' : 'bg-gray-200'
               }`}
             />
@@ -224,11 +229,9 @@ const Signup = () => {
   );
 
   const renderOrganizationStep = () => (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-700 mb-4">Detalii Organizatie</h2>
-
+    <div className="space-y-5">
       <div>
-        <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-1.5">
           Numele Organizatiei *
         </label>
         <input
@@ -238,14 +241,14 @@ const Signup = () => {
           required
           value={formData.organizationName}
           onChange={handleChange}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
+          className={inputClasses}
           placeholder="Service Auto Expert SRL"
           disabled={loading}
         />
       </div>
 
       <div>
-        <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1.5">
           Slug Organizatie *
         </label>
         <div className="relative">
@@ -256,35 +259,37 @@ const Signup = () => {
             required
             value={formData.slug}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition ${
-              slugAvailable === false ? 'border-red-500' : slugAvailable === true ? 'border-green-500' : 'border-gray-300'
+            className={`${inputClasses} ${
+              slugAvailable === false
+                ? '!border-red-400 focus:!border-red-500 focus:!ring-red-500/20'
+                : slugAvailable === true
+                ? '!border-green-400 focus:!border-green-500 focus:!ring-green-500/20'
+                : ''
             }`}
             placeholder="service-auto-expert"
             disabled={loading}
             pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
           />
           {slugChecking && (
-            <div className="absolute right-3 top-3">
-              <div className="animate-spin h-6 w-6 border-2 border-viperx-primary border-t-transparent rounded-full"></div>
+            <div className="absolute right-3 top-2.5">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
             </div>
           )}
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Litere mici, numere si cratime. Acesta va fi adresa portalului clientilor (ex: {formData.slug || 'slug'}.serviceflow.ro)
-          {slugAvailable === false && <span className="text-red-600 font-medium ml-2">Nu este disponibil</span>}
-          {slugAvailable === true && <span className="text-green-600 font-medium ml-2">Disponibil!</span>}
+        <p className="mt-1.5 text-xs text-gray-500">
+          Litere mici, numere si cratime. Adresa portalului: {formData.slug || 'slug'}.forja.it.com
+          {slugAvailable === false && <span className="ml-2 font-medium text-red-600">Nu este disponibil</span>}
+          {slugAvailable === true && <span className="ml-2 font-medium text-green-600">Disponibil</span>}
         </p>
       </div>
     </div>
   );
 
   const renderAdminStep = () => (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-700 mb-4">Cont Administrator</h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1.5">
             Prenume *
           </label>
           <input
@@ -294,14 +299,14 @@ const Signup = () => {
             required
             value={formData.firstName}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
+            className={inputClasses}
             placeholder="Ion"
             disabled={loading}
           />
         </div>
 
         <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1.5">
             Nume *
           </label>
           <input
@@ -311,14 +316,14 @@ const Signup = () => {
             required
             value={formData.lastName}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
+            className={inputClasses}
             placeholder="Popescu"
             disabled={loading}
           />
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
             Email *
           </label>
           <input
@@ -328,14 +333,14 @@ const Signup = () => {
             required
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
+            className={inputClasses}
             placeholder="ion@example.com"
             disabled={loading}
           />
         </div>
 
         <div>
-          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1.5">
             Telefon
           </label>
           <input
@@ -344,14 +349,14 @@ const Signup = () => {
             type="tel"
             value={formData.phoneNumber}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
+            className={inputClasses}
             placeholder="+40 712 345 678"
             disabled={loading}
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
             Parola *
           </label>
           <input
@@ -361,16 +366,15 @@ const Signup = () => {
             required
             value={formData.password}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
-            placeholder="••••••••"
+            className={inputClasses}
+            placeholder="Minim 8 caractere"
             disabled={loading}
             minLength={8}
           />
-          <p className="text-xs text-gray-500 mt-1">Minim 8 caractere</p>
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
             Confirmare Parola *
           </label>
           <input
@@ -380,23 +384,47 @@ const Signup = () => {
             required
             value={formData.confirmPassword}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition"
-            placeholder="••••••••"
+            className={inputClasses}
+            placeholder="Repeta parola"
             disabled={loading}
           />
         </div>
+      </div>
+
+      <div>
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.acceptedTerms}
+            onChange={(e) => {
+              setFormData((prev) => ({ ...prev, acceptedTerms: e.target.checked }));
+              setError('');
+            }}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            disabled={loading}
+          />
+          <span className="text-sm text-gray-600">
+            Am citit si accept{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:text-blue-800">
+              Termenii si Conditiile
+            </a>{' '}
+            si{' '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:text-blue-800">
+              Politica de Confidentialitate
+            </a>
+          </span>
+        </label>
       </div>
     </div>
   );
 
   const renderSectorStep = () => (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-700 mb-2">Domeniu de Activitate</h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Selectati domeniul principal de activitate al organizatiei. Aceasta optiune va configura automat tipul de active si terminologia utilizata.
+      <p className="text-sm text-gray-500">
+        Selectati domeniul principal. Aceasta optiune configureaza automat tipul de active si terminologia.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {sectors.map((sector) => {
           const IconComponent = SECTOR_ICONS[sector.icon] || Car;
           const isSelected = formData.activitySector === sector.key;
@@ -406,39 +434,32 @@ const Signup = () => {
               key={sector.key}
               type="button"
               onClick={() => handleSectorSelect(sector.key)}
-              className={`p-4 rounded-xl border-2 text-left transition-all ${
+              className={`rounded-xl border-2 p-4 text-left transition-all ${
                 isSelected
-                  ? 'border-viperx-primary bg-orange-50 shadow-md'
+                  ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
               <div className="flex items-start gap-3">
                 <div
-                  className={`p-2 rounded-lg ${
-                    isSelected ? 'bg-viperx-primary text-white' : 'bg-gray-100 text-gray-600'
+                  className={`rounded-lg p-2 ${
+                    isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
                   }`}
                 >
-                  <IconComponent className="w-6 h-6" />
+                  <IconComponent className="h-5 w-5" />
                 </div>
-                <div className="flex-1">
-                  <h3 className={`font-semibold ${isSelected ? 'text-viperx-primary' : 'text-gray-800'}`}>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`text-sm font-semibold ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
                     {sector.labelRo}
                   </h3>
-                  <p className="text-sm text-gray-500 mt-1">{sector.description}</p>
-                  {sector.hasAssets && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Tip activ: {sector.terminology.asset.singular}
-                    </p>
-                  )}
-                  {!sector.hasAssets && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Fara gestiune active
-                    </p>
-                  )}
+                  <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">{sector.description}</p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {sector.hasAssets ? `Tip activ: ${sector.terminology.asset.singular}` : 'Fara gestiune active'}
+                  </p>
                 </div>
                 {isSelected && (
-                  <div className="bg-viperx-primary text-white rounded-full p-1">
-                    <Check className="w-4 h-4" />
+                  <div className="rounded-full bg-blue-600 p-0.5 text-white">
+                    <Check className="h-3.5 w-3.5" />
                   </div>
                 )}
               </div>
@@ -463,82 +484,102 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-viperx-secondary via-gray-900 to-viperx-secondary flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {/* Header */}
+    <div className="flex min-h-screen flex-col bg-gray-50/80">
+      {/* Header */}
+      <header className="border-b border-gray-200/60 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+          <Link to="/business" className="text-lg font-bold tracking-tight text-gray-900">
+            ForjaIt
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Autentificare
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Main */}
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
+        <div className="w-full max-w-2xl">
           <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-viperx-primary mb-2">ServiceFlow</h1>
-            <p className="text-gray-600">Creeaza contul organizatiei tale</p>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Creeaza contul organizatiei</h1>
+            <p className="mt-2 text-sm text-gray-500">
+              14 zile gratuit pe orice plan. Fara card bancar.
+            </p>
           </div>
 
-          {/* Step Indicator */}
-          {renderStepIndicator()}
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+            {renderStepIndicator()}
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
+            {error && (
+              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-            {renderCurrentStep()}
+            <form onSubmit={handleSubmit}>
+              {renderCurrentStep()}
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t">
-              {currentStep > 0 ? (
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Inapoi
-                </button>
-              ) : (
-                <div />
-              )}
+              <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+                {currentStep > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Inapoi
+                  </button>
+                ) : (
+                  <div />
+                )}
 
-              {currentStep < STEPS.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={loading || (currentStep === 0 && (slugChecking || !slugAvailable))}
-                  className="flex items-center gap-2 bg-viperx-primary hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Urmatorul
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={loading || !formData.activitySector}
-                  className="flex items-center gap-2 bg-viperx-primary hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Se creeaza...' : 'Creeaza Contul'}
-                  {!loading && <Check className="w-4 h-4" />}
-                </button>
-              )}
-            </div>
-          </form>
+                {currentStep < STEPS.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={loading || (currentStep === 0 && (slugChecking || !slugAvailable))}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Urmatorul
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={loading || !formData.activitySector}
+                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Se creeaza...' : 'Creeaza Contul'}
+                    {!loading && <Check className="h-4 w-4" />}
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
 
-          {/* Footer */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500">
               Ai deja un cont?{' '}
-              <Link to="/login" className="text-viperx-primary hover:underline font-medium">
+              <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">
                 Conecteaza-te
               </Link>
-            </p>
-            <p className="text-xs text-gray-500 mt-4">
-              ServiceFlow © 2025 - 14 zile gratuit incluse
             </p>
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100">
+        <div className="mx-auto max-w-6xl px-4 py-6 text-center text-xs text-gray-400 sm:px-6">
+          &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+        </div>
+      </footer>
     </div>
   );
 };

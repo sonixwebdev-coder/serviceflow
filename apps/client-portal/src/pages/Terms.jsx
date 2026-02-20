@@ -9,7 +9,7 @@ export default function Terms() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">1. Utilizarea Platformei</h2>
           <p>
-            ServiceFlow este o platforma digitala care faciliteaza conexiunea intre furnizori de servicii si clienti.
+            ForjaIt este o platforma digitala care faciliteaza conexiunea intre furnizori de servicii si clienti.
             Prin accesarea si utilizarea platformei, acceptati sa respectati acesti termeni si conditii.
           </p>
           <p>
@@ -34,7 +34,7 @@ export default function Terms() {
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">3. Programari si Servicii</h2>
           <p>
             Programarile efectuate prin platforma sunt supuse politicilor individuale ale fiecarui furnizor de servicii.
-            ServiceFlow actioneaza exclusiv ca intermediar si nu este responsabil pentru calitatea,
+            ForjaIt actioneaza exclusiv ca intermediar si nu este responsabil pentru calitatea,
             disponibilitatea sau pretul serviciilor oferite de furnizori.
           </p>
           <p>
@@ -46,7 +46,7 @@ export default function Terms() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">4. Plati si Facturare</h2>
           <p>
-            Platile pentru servicii se efectueaza direct catre furnizorul de servicii. ServiceFlow poate facilita
+            Platile pentru servicii se efectueaza direct catre furnizorul de servicii. ForjaIt poate facilita
             procesul de facturare, insa nu proceseaza plati in numele furnizorilor, cu exceptia cazului
             in care se specifica altfel.
           </p>
@@ -55,19 +55,19 @@ export default function Terms() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Proprietate Intelectuala</h2>
           <p>
-            Toate drepturile de proprietate intelectuala asupra platformei ServiceFlow, inclusiv dar fara
-            a se limita la design, cod sursa, texte si grafice, apartin ServiceFlow sau licentiatorilor sai.
+            Toate drepturile de proprietate intelectuala asupra platformei ForjaIt, inclusiv dar fara
+            a se limita la design, cod sursa, texte si grafice, apartin ForjaIt sau licentiatorilor sai.
           </p>
         </section>
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">6. Limitarea Raspunderii</h2>
           <p>
-            ServiceFlow nu garanteaza disponibilitatea neintrerupta a platformei si nu este responsabil
+            ForjaIt nu garanteaza disponibilitatea neintrerupta a platformei si nu este responsabil
             pentru pierderi directe sau indirecte cauzate de utilizarea sau imposibilitatea utilizarii platformei.
           </p>
           <p>
-            In nicio situatie raspunderea ServiceFlow nu va depasi valoarea serviciilor platite
+            In nicio situatie raspunderea ForjaIt nu va depasi valoarea serviciilor platite
             in ultimele 12 luni.
           </p>
         </section>
@@ -85,7 +85,7 @@ export default function Terms() {
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">8. Contact</h2>
           <p>
             Pentru intrebari legate de acesti termeni, ne puteti contacta la adresa de email:
-            contact@serviceflow.ro
+            contact@forja.it.com
           </p>
         </section>
       </div>

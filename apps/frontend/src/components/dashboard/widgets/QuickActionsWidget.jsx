@@ -5,7 +5,7 @@ import {
   Users,
   MessageSquare,
   ListTodo,
-  FileText,
+
   UserPlus,
   CalendarPlus,
 } from 'lucide-react';
@@ -16,7 +16,7 @@ const QUICK_ACTIONS = [
   { icon: Users, label: 'Clienti', link: '/crm/clients', color: 'text-purple-600', bg: 'bg-purple-50' },
   { icon: MessageSquare, label: 'Chat', link: '/chat', color: 'text-orange-600', bg: 'bg-orange-50' },
   { icon: ListTodo, label: 'Reminder-e', link: '/personal-todos', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  { icon: FileText, label: 'Rapoarte', link: '/reports', color: 'text-gray-600', bg: 'bg-gray-100' },
+
 ];
 
 export default function QuickActionsWidget() {

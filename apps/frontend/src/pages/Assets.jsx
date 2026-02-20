@@ -119,14 +119,14 @@ const Assets = () => {
                   return (
                     <tr key={asset.id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{asset.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{asset.identifier || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{asset.identifier || '-'}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {assetSingular}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{asset.manufacturer || '—'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{asset.model || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{asset.manufacturer || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{asset.model || '-'}</td>
                       <td className="px-6 py-4 text-sm">
                         {clientName ? (
                           <button
@@ -144,7 +144,7 @@ const Assets = () => {
                             <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition" />
                           </button>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-gray-400">-</span>
                         )}
                       </td>
                     </tr>

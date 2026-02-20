@@ -1,7 +1,7 @@
 {
-  "name": "serviceflow-backend",
+  "name": "forjait-backend",
   "version": "1.0.0",
-  "description": "ServiceFlow - Backend API",
+  "description": "ForjaIt - Backend API",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
@@ -16,10 +16,10 @@
   "keywords": [
     "employee-management",
     "team-management",
-    "serviceflow",
+    "forjaIt",
     "crm"
   ],
-  "author": "ServiceFlow",
+  "author": "ForjaIt",
   "license": "PRIVATE",
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
@@ -48,6 +48,8 @@
     "pdf-lib": "^1.17.1",
     "pg": "^8.13.1",
     "socket.io": "^4.8.1",
+    "stripe": "^20.3.1",
+    "web-push": "^3.6.7",
     "xml2js": "^0.6.2",
     "zod": "^3.23.8"
   },

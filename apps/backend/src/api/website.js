@@ -438,10 +438,12 @@ router.post(
   '/:websiteId/leads/:leadId/convert',
   authenticate,
   asyncHandler(async (req, res) => {
+    const { currentLocationId } = await req.getLocationContext();
     const result = await convertLeadToClient(
       req.tenantPrisma,
       req.params.leadId,
-      req.user.organizationId
+      req.user.organizationId,
+      currentLocationId
     );
 
     await logFromRequest(req, {

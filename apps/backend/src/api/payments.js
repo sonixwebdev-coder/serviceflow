@@ -54,8 +54,14 @@ router.post(
     // Regenerate service order PDF to reflect new payment (async, don't block response)
     setImmediate(async () => {
       try {
-        // Force PDF regeneration with refresh flag
-        await generateServiceOrderPdf(req.tenantPrisma, payment.appointmentId, { refresh: true });
+        // Check if service order exists before attempting PDF regeneration
+        const serviceOrder = await req.tenantPrisma.serviceOrder.findUnique({
+          where: { appointmentId: payment.appointmentId },
+          select: { id: true },
+        });
+        if (serviceOrder) {
+          await generateServiceOrderPdf(req.tenantPrisma, payment.appointmentId, { refresh: true });
+        }
       } catch (pdfError) {
         console.error('❌ Failed to regenerate service order PDF after payment creation:', pdfError);
       }
@@ -120,8 +126,13 @@ router.delete(
     // Regenerate service order PDF to reflect payment deletion (async, don't block response)
     setImmediate(async () => {
       try {
-        // Force PDF regeneration with refresh flag
-        await generateServiceOrderPdf(req.tenantPrisma, appointmentId, { refresh: true });
+        const serviceOrder = await req.tenantPrisma.serviceOrder.findUnique({
+          where: { appointmentId },
+          select: { id: true },
+        });
+        if (serviceOrder) {
+          await generateServiceOrderPdf(req.tenantPrisma, appointmentId, { refresh: true });
+        }
       } catch (pdfError) {
         console.error('❌ Failed to regenerate service order PDF after payment deletion:', pdfError);
       }

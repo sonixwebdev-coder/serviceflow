@@ -29,7 +29,7 @@ import {
   useCrmData,
 } from '@/hooks/useWebsiteBuilder';
 import BlockEditor from '@/components/website-builder/BlockEditor';
-import { BrandingSettings, SeoSettings, DomainSettings, HeaderFooterSettings } from '@/components/website-builder/settings';
+import { BrandingSettings, SeoSettings, PageSeoSettings, DomainSettings, HeaderFooterSettings } from '@/components/website-builder/settings';
 import { TemplateSelector, getTemplateById, templates as allTemplates, getTemplatesBySector } from '@/components/website-builder/templates';
 import { createPage as createPageService, fetchPages as fetchPagesService } from '@/services/websiteService';
 import useToast from '@/context/useToast';
@@ -82,6 +82,9 @@ const WebsiteBuilder = () => {
   const [previewMode, setPreviewMode] = useState(false);
   const [openPageMenuId, setOpenPageMenuId] = useState(null);
   const [showTemplateConfirm, setShowTemplateConfirm] = useState(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [pageTitleDraft, setPageTitleDraft] = useState('');
+  const [showPageSeo, setShowPageSeo] = useState(false);
 
   // Block editor state
   const {
@@ -180,6 +183,45 @@ const WebsiteBuilder = () => {
       showToast({ title: 'Pagina salvata cu succes!', type: 'success' });
     } catch (error) {
       showToast({ title: 'Eroare la salvarea paginii', type: 'error' });
+    }
+  };
+
+  // Save page title inline
+  const handleSavePageTitle = async () => {
+    if (!selectedPage || !pageTitleDraft.trim()) {
+      setEditingTitle(false);
+      return;
+    }
+    if (pageTitleDraft.trim() === selectedPage.title) {
+      setEditingTitle(false);
+      return;
+    }
+    try {
+      await updatePage({
+        pageId: selectedPage.id,
+        data: { title: pageTitleDraft.trim() },
+      });
+      refreshPages();
+      setEditingTitle(false);
+      showToast({ title: 'Titlul paginii a fost actualizat!', type: 'success' });
+    } catch (error) {
+      showToast({ title: 'Eroare la actualizarea titlului', type: 'error' });
+    }
+  };
+
+  // Save page SEO
+  const handleSavePageSeo = async (seoData) => {
+    if (!selectedPage) return;
+    try {
+      await updatePage({
+        pageId: selectedPage.id,
+        data: { seo: seoData },
+      });
+      refreshPages();
+      setShowPageSeo(false);
+      showToast({ title: 'Setarile SEO ale paginii au fost salvate!', type: 'success' });
+    } catch (error) {
+      showToast({ title: 'Eroare la salvarea setarilor SEO', type: 'error' });
     }
   };
 
@@ -563,7 +605,36 @@ const WebsiteBuilder = () => {
                       {/* Editor Header */}
                       <div className="flex items-center justify-between p-4 border-b bg-gray-50">
                         <div>
-                          <h2 className="font-semibold">{selectedPage.title}</h2>
+                          {editingTitle ? (
+                            <input
+                              type="text"
+                              value={pageTitleDraft}
+                              onChange={(e) => setPageTitleDraft(e.target.value)}
+                              onBlur={handleSavePageTitle}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleSavePageTitle();
+                                }
+                                if (e.key === 'Escape') {
+                                  setEditingTitle(false);
+                                }
+                              }}
+                              autoFocus
+                              className="font-semibold text-lg px-2 py-1 border border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                          ) : (
+                            <h2
+                              className="font-semibold flex items-center gap-2 cursor-pointer group"
+                              onClick={() => {
+                                setEditingTitle(true);
+                                setPageTitleDraft(selectedPage.title);
+                              }}
+                            >
+                              {selectedPage.title}
+                              <Pencil className="h-3.5 w-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </h2>
+                          )}
                           <p className="text-sm text-gray-500">/{selectedPage.slug}</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -572,6 +643,17 @@ const WebsiteBuilder = () => {
                               Modificari nesalvate
                             </span>
                           )}
+                          <button
+                            onClick={() => setShowPageSeo(!showPageSeo)}
+                            className={`inline-flex items-center px-3 py-2 text-sm border rounded-lg transition-colors ${
+                              showPageSeo
+                                ? 'border-blue-400 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            <Search className="h-4 w-4 mr-2" />
+                            SEO
+                          </button>
                           <button
                             onClick={() => setPreviewMode(!previewMode)}
                             className="inline-flex items-center px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
@@ -596,22 +678,44 @@ const WebsiteBuilder = () => {
                         </div>
                       </div>
 
+                      {/* Page SEO Panel */}
+                      {showPageSeo && (
+                        <div className="h-[calc(100%-65px)] overflow-y-auto p-6 bg-gray-50">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold">Setari SEO - {selectedPage.title}</h3>
+                            <button
+                              onClick={() => setShowPageSeo(false)}
+                              className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+                            >
+                              <X className="h-5 w-5" />
+                            </button>
+                          </div>
+                          <PageSeoSettings
+                            pageSeo={selectedPage.seo || {}}
+                            onSave={handleSavePageSeo}
+                            isLoading={isUpdatingPage}
+                          />
+                        </div>
+                      )}
+
                       {/* Block Editor */}
-                      <div className="h-[calc(100%-65px)]">
-                        <BlockEditor
-                          blocks={blocks}
-                          selectedBlockId={selectedBlockId}
-                          onSelectBlock={setSelectedBlockId}
-                          onAddBlock={addBlock}
-                          onUpdateBlock={updateBlock}
-                          onRemoveBlock={removeBlock}
-                          onMoveBlock={moveBlock}
-                          onDuplicateBlock={duplicateBlock}
-                          crmData={crmData}
-                          previewMode={previewMode}
-                          onTogglePreview={() => setPreviewMode(!previewMode)}
-                        />
-                      </div>
+                      {!showPageSeo && (
+                        <div className="h-[calc(100%-65px)]">
+                          <BlockEditor
+                            blocks={blocks}
+                            selectedBlockId={selectedBlockId}
+                            onSelectBlock={setSelectedBlockId}
+                            onAddBlock={addBlock}
+                            onUpdateBlock={updateBlock}
+                            onRemoveBlock={removeBlock}
+                            onMoveBlock={moveBlock}
+                            onDuplicateBlock={duplicateBlock}
+                            crmData={crmData}
+                            previewMode={previewMode}
+                            onTogglePreview={() => setPreviewMode(!previewMode)}
+                          />
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-[400px] text-gray-500">
@@ -727,7 +831,7 @@ const WebsiteBuilder = () => {
                     className="flex-1 px-3 py-2 border border-gray-200 rounded-l-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
                   />
                   <div className="flex items-center px-3 bg-gray-100 border border-l-0 border-gray-200 rounded-r-lg text-gray-600 text-sm">
-                    .serviceflow.ro
+                    .forja.it.com
                   </div>
                 </div>
                 <div className="mt-1 text-sm">

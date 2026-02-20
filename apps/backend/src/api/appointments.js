@@ -100,7 +100,8 @@ router.get(
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
     const locationFilter = await req.getLocationFilter({ includeNull: true });
-    const appointments = await listAppointments(req.tenantPrisma, req.query, { paginate, locationFilter });
+    const minimal = req.query.fields === 'calendar';
+    const appointments = await listAppointments(req.tenantPrisma, req.query, { paginate, locationFilter, minimal });
     return ok(res, appointments);
   })
 );

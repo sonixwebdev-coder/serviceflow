@@ -7,16 +7,16 @@ const EMPTY_ARRAY = [];
 export const useAppointments = (initialParams = {}, options = {}) => {
   const { enablePagination = false } = options;
   const [page, setPage] = useState(1);
-  const [params, setParams] = useState(initialParams);
+  const [overrides, setParams] = useState({});
 
   const queryParams = useMemo(() => {
-    const mergedParams = { ...params };
-    if (enablePagination) {
+    const mergedParams = { ...initialParams, ...overrides };
+    if (enablePagination && !mergedParams.from && !mergedParams.to) {
       mergedParams.page = page;
-      mergedParams.limit = params.limit || 20;
+      mergedParams.limit = mergedParams.limit || 20;
     }
     return mergedParams;
-  }, [params, page, enablePagination]);
+  }, [initialParams, overrides, page, enablePagination]);
 
   const queryKey = useMemo(() => ['appointments', queryParams], [queryParams]);
 
@@ -33,7 +33,7 @@ export const useAppointments = (initialParams = {}, options = {}) => {
     meta: data?.meta || null,
     loading: isLoading,
     error: errorMessage,
-    params,
+    params: queryParams,
     setParams,
     page,
     setPage,

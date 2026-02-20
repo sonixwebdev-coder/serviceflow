@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   fetchOverview,
   fetchRevenueTrends,
+  fetchPaymentTrends,
   fetchAppointmentStats,
   fetchClientAcquisition,
   fetchInvoiceAging,
@@ -29,6 +30,19 @@ export function useRevenueTrends(params = {}, options = {}) {
   return useQuery({
     queryKey: ['analytics', 'revenue', params],
     queryFn: () => fetchRevenueTrends(params),
+    staleTime: 1000 * 60 * 5,
+    ...options,
+  });
+}
+
+/**
+ * Hook for payment trends (independent of invoices)
+ * @param {Object} params - { startDate, endDate, groupBy }
+ */
+export function usePaymentTrends(params = {}, options = {}) {
+  return useQuery({
+    queryKey: ['analytics', 'payments', params],
+    queryFn: () => fetchPaymentTrends(params),
     staleTime: 1000 * 60 * 5,
     ...options,
   });

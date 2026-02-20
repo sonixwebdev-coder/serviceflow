@@ -14,6 +14,13 @@ const {
   getUnreadMessageCount,
   createFileMessage,
 } = require('../../services/portalMessageService');
+const { z } = require('zod');
+
+const portalMessageSchema = z.object({
+  body: z.string().min(1).max(5000),
+  type: z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE']).optional().default('TEXT'),
+  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+});
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -109,12 +116,12 @@ router.post(
   authenticateClient,
   asyncHandler(async (req, res) => {
     const { appointmentId } = req.params;
-    const { body, type, metadata } = req.body;
+    const parsed = portalMessageSchema.parse(req.body);
 
     const message = await createMessage(prisma, req.client.id, appointmentId, {
-      body,
-      type,
-      metadata,
+      body: parsed.body,
+      type: parsed.type,
+      metadata: parsed.metadata,
     });
 
     res.status(201).json(message);
@@ -209,7 +216,7 @@ router.post(
         metadata: {
           ...message.metadata,
           isVoice: true,
-          duration: req.body.duration ? parseInt(req.body.duration, 10) : null,
+          duration: req.body.duration ? Math.min(Math.max(0, parseInt(req.body.duration, 10) || 0), 600) : null,
         },
       },
     });

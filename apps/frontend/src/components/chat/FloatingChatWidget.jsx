@@ -23,6 +23,10 @@ export default function FloatingChatWidget() {
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // Draggable button state
+  const [btnPos, setBtnPos] = useState({ bottom: 24, right: 24 });
+  const dragRef = useRef({ active: false, lastX: 0, lastY: 0, moved: false });
+
   const { user: currentUser } = useAuthStore();
   const {
     channels,
@@ -234,6 +238,35 @@ export default function FloatingChatWidget() {
     setBody('');
   };
 
+  // Drag handlers for floating button
+  const onPointerDown = (e) => {
+    dragRef.current = { active: true, lastX: e.clientX, lastY: e.clientY, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e) => {
+    if (!dragRef.current.active) return;
+    const dx = e.clientX - dragRef.current.lastX;
+    const dy = e.clientY - dragRef.current.lastY;
+    if (!dragRef.current.moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+      dragRef.current.moved = true;
+    }
+    if (!dragRef.current.moved) return;
+    setBtnPos((prev) => ({
+      right: Math.max(8, Math.min(window.innerWidth - 64, prev.right - dx)),
+      bottom: Math.max(8, Math.min(window.innerHeight - 64, prev.bottom - dy)),
+    }));
+    dragRef.current.lastX = e.clientX;
+    dragRef.current.lastY = e.clientY;
+  };
+
+  const onPointerUp = () => {
+    if (!dragRef.current.moved) {
+      handleOpen();
+    }
+    dragRef.current.active = false;
+  };
+
   // Selected channel object
   const selectedChannel = channels.find(c => c.id === selectedChannelId);
 
@@ -269,8 +302,11 @@ export default function FloatingChatWidget() {
       {/* Floating Button */}
       {!isOpen && (
         <button
-          onClick={handleOpen}
-          className="group fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-viperx-primary text-white shadow-lg transition-all duration-300 hover:scale-110 hover:bg-orange-600 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-viperx-primary focus:ring-offset-2"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          className="group fixed z-50 flex h-14 w-14 cursor-grab items-center justify-center rounded-full bg-viperx-primary text-white shadow-lg transition-colors duration-200 hover:bg-orange-600 hover:shadow-xl focus:outline-none active:cursor-grabbing"
+          style={{ bottom: btnPos.bottom, right: btnPos.right, touchAction: 'none' }}
           title="Deschide chat rapid"
         >
           <MessageSquare className="h-6 w-6 transition-transform group-hover:scale-110" />
@@ -287,9 +323,13 @@ export default function FloatingChatWidget() {
       {/* Chat Popup */}
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex h-[520px] w-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-gray-900/20 ring-1 ring-gray-900/5 transition-all duration-200 ${
+          className={`fixed z-50 flex h-[520px] w-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-gray-900/20 ring-1 ring-gray-900/5 transition-all duration-200 ${
             isAnimating ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'
           }`}
+          style={{
+            bottom: btnPos.bottom,
+            right: Math.min(btnPos.right, window.innerWidth - 368),
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between bg-viperx-primary px-4 py-4">

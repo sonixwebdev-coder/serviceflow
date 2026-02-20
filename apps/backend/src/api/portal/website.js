@@ -200,7 +200,7 @@ router.get(
 
     const baseUrl = website.customDomain && website.domainVerified
       ? `https://${website.customDomain}`
-      : `https://${website.subdomain}.serviceflow.ro`;
+      : `https://${website.subdomain}.forja.it.com`;
 
     const robotsTxt = `User-agent: *
 Allow: /

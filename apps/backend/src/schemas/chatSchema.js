@@ -44,8 +44,8 @@ const listMessagesQuerySchema = z.object({
 // Create message schema
 const createMessageSchema = z.object({
   body: z.string().min(1).max(10000),
-  type: z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE', 'SYSTEM']).optional().default('TEXT'),
-  metadata: z.any().optional(),
+  type: z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE']).optional().default('TEXT'),
+  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
 
 // Update message schema

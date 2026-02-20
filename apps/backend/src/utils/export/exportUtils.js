@@ -186,6 +186,8 @@ const generateFilename = (entityName, format, timestamp = new Date()) => {
     json: 'json',
     pdf: 'pdf',
     zip: 'zip',
+    xml: 'xml',
+    'anaf-xml': 'xml',
   };
 
   const extension = extensionMap[format.toLowerCase()] || format;
@@ -216,7 +218,7 @@ const getEntityNameRO = (entityKey) => {
 /**
  * Validate export format
  */
-const VALID_FORMATS = ['csv', 'excel', 'json', 'pdf'];
+const VALID_FORMATS = ['csv', 'excel', 'json', 'pdf', 'xml', 'anaf-xml'];
 
 const validateFormat = (format) => {
   const normalized = (format || '').toLowerCase();
@@ -236,6 +238,8 @@ const getContentType = (format) => {
     json: 'application/json; charset=utf-8',
     pdf: 'application/pdf',
     zip: 'application/zip',
+    xml: 'application/xml; charset=utf-8',
+    'anaf-xml': 'application/xml; charset=utf-8',
   };
   return contentTypes[format] || 'application/octet-stream';
 };

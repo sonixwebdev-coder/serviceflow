@@ -8,6 +8,7 @@ const publicRouter = require('./public');
 const marketplaceRouter = require('./marketplace');
 const notificationsRouter = require('./notifications');
 const websiteRouter = require('./website');
+const loyaltyRouter = require('./loyalty');
 
 const router = express.Router();
 
@@ -27,5 +28,6 @@ router.use('/appointments', appointmentsRouter);
 router.use('/invoices', invoicesRouter);
 router.use('/profile', profileRouter);
 router.use('/notifications', notificationsRouter);
+router.use('/loyalty', loyaltyRouter);
 
 module.exports = router;

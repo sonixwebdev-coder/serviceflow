@@ -10,6 +10,7 @@ const chatService = require('../services/chatService');
 const chatMessageService = require('../services/chatMessageService');
 const { createNotification } = require('../services/notificationService');
 const { sendChatMessageNotification } = require('../services/pushNotificationService');
+const logger = require('../utils/logger');
 const {
   broadcastChatMessage,
   broadcastChatMessageUpdate,
@@ -302,14 +303,14 @@ router.post(
                   authorName,
                 },
                 organizationId: req.user.organizationId,
-              }).catch((err) => console.error('Failed to create chat notification:', err))
+              }).catch((err) => logger.error('Failed to create chat notification:', err))
             )
           );
 
           // Send push notifications
           await sendChatMessageNotification(message, channel, recipientIds);
         } catch (error) {
-          console.error('Failed to send chat notifications:', error);
+          logger.error('Failed to send chat notifications:', error);
         }
       })();
     }
@@ -493,14 +494,14 @@ router.post(
                   authorName,
                 },
                 organizationId: req.user.organizationId,
-              }).catch((err) => console.error('Failed to create chat notification:', err))
+              }).catch((err) => logger.error('Failed to create chat notification:', err))
             )
           );
 
           // Send push notifications
           await sendChatMessageNotification(messageWithAttachment, channel, recipientIds);
         } catch (error) {
-          console.error('Failed to send chat notifications:', error);
+          logger.error('Failed to send chat notifications:', error);
         }
       })();
     }
@@ -595,14 +596,14 @@ router.post(
                   authorName,
                 },
                 organizationId: req.user.organizationId,
-              }).catch((err) => console.error('Failed to create chat notification:', err))
+              }).catch((err) => logger.error('Failed to create chat notification:', err))
             )
           );
 
           // Send push notifications
           await sendChatMessageNotification(messageWithAttachment, channel, recipientIds);
         } catch (error) {
-          console.error('Failed to send chat notifications:', error);
+          logger.error('Failed to send chat notifications:', error);
         }
       })();
     }

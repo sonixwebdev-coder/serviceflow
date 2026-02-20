@@ -8,7 +8,7 @@ export default function Privacy() {
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">1. Date Colectate</h2>
-          <p>In cadrul utilizarii platformei ServiceFlow, colectam urmatoarele categorii de date personale:</p>
+          <p>In cadrul utilizarii platformei ForjaIt, colectam urmatoarele categorii de date personale:</p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
             <li>Date de identificare: nume, prenume, adresa de email, numar de telefon</li>
             <li>Date de cont: adresa de email, parola (stocata criptat)</li>
@@ -61,7 +61,7 @@ export default function Privacy() {
             <li><strong>Dreptul la restrictionarea prelucrarii</strong> — puteti solicita limitarea prelucrarii</li>
           </ul>
           <p className="mt-3">
-            Pentru exercitarea acestor drepturi, va rugam sa ne contactati la adresa: privacy@serviceflow.ro
+            Pentru exercitarea acestor drepturi, va rugam sa ne contactati la adresa: privacy@forja.ro
           </p>
         </section>
 
@@ -90,7 +90,7 @@ export default function Privacy() {
             dumneavoastra, ne puteti contacta la:
           </p>
           <p className="mt-2">
-            Email: privacy@serviceflow.ro
+            Email: privacy@forja.ro
           </p>
           <p>
             De asemenea, aveti dreptul de a depune o plangere la Autoritatea Nationala de Supraveghere

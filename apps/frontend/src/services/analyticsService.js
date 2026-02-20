@@ -18,6 +18,15 @@ export const fetchRevenueTrends = async (params = {}) => {
 };
 
 /**
+ * Get payment trends (independent of invoices)
+ * @param {Object} params - { startDate, endDate, groupBy }
+ */
+export const fetchPaymentTrends = async (params = {}) => {
+  const response = await api.get('/analytics/payments', { params });
+  return response.data;
+};
+
+/**
  * Get appointment statistics
  * @param {Object} params - { startDate, endDate }
  */

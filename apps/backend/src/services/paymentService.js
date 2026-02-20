@@ -86,6 +86,19 @@ const createPayment = async (prisma, data, options = {}) => {
     },
   });
 
+  // Award loyalty points (fire-and-forget)
+  try {
+    const loyaltyService = require('./loyaltyService');
+    loyaltyService.awardPointsForPayment(prisma, {
+      paymentId: payment.id,
+      clientId: payment.appointment?.clientId,
+      amount: roundedAmount,
+      organizationId: payment.appointment?.organizationId,
+    });
+  } catch (err) {
+    // Loyalty failures never block payment
+  }
+
   // Update appointment payment status
   await updateAppointmentPaymentStatus(prisma, appointmentId, { tx: client });
 

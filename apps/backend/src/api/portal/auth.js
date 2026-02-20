@@ -41,7 +41,7 @@ router.post(
 router.post(
   '/register',
   asyncHandler(async (req, res) => {
-    const { email, password, clientId } = req.body;
+    const { email, password, clientId, referralCode } = req.body;
 
     if (!email || !password || !clientId) {
       return res.status(400).json({ error: 'Email, password, and clientId are required' });
@@ -51,6 +51,7 @@ router.post(
       email,
       password,
       clientId,
+      referralCode,
     });
 
     res.status(201).json(result);

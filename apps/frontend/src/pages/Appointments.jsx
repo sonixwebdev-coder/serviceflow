@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MessageSquare, X, Send, Plus, Trash2, FileText, CheckCircle2, Clock, AlertCircle, Edit2, Save, Cloud, CloudOff, Paperclip, Mic, Square, Play, Pause, Download, Image as ImageIcon, User } from 'lucide-react';
-import { format, isBefore, startOfDay, parse, startOfWeek, getDay } from 'date-fns';
+import { format, isBefore, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parse, getDay } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
@@ -14,7 +14,7 @@ import useUsers from '../hooks/useUsers.js';
 import { useCompanySettings } from '../hooks/useCompanySettings.js';
 import DatePicker from '../components/ui/DatePicker.jsx';
 import ClientAutocomplete from '../components/ui/ClientAutocomplete.jsx';
-import Pagination from '../components/Pagination.jsx';
+
 import ExportButton from '../components/ExportButton.jsx';
 import DynamicAssetFields from '../components/DynamicAssetFields';
 import LocationBadge from '../components/LocationBadge';
@@ -83,6 +83,34 @@ const PAYMENT_STATUS_META = {
 const getPaymentStatusMeta = (status) => {
   return PAYMENT_STATUS_META[status] || PAYMENT_STATUS_META.UNPAID;
 };
+
+const STATUS_DOT_COLORS = {
+  PENDING: 'rgb(250, 204, 21)',
+  PREZENTAT: 'rgb(96, 165, 250)',
+  IN_PROGRESS: 'rgb(251, 191, 36)',
+  COMPLETED: 'rgb(52, 211, 153)',
+  CANCELLED: 'rgb(248, 113, 113)',
+};
+
+function MonthEvent({ event }) {
+  const status = event.resource?.status;
+  const dotColor = STATUS_DOT_COLORS[status] || 'rgb(229, 231, 235)';
+  const timeStr = event.start ? format(event.start, 'HH:mm') : '';
+  const endStr = event.end ? format(event.end, 'HH:mm') : '';
+
+  return (
+    <div
+      className="flex items-center gap-1 truncate"
+      title={`${event.title} — ${timeStr} - ${endStr}`}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full shrink-0"
+        style={{ backgroundColor: dotColor }}
+      />
+      <span className="truncate text-[11px]">{event.title}</span>
+    </div>
+  );
+}
 
 // Inline VoiceRecorder component for appointment messages
 const VoiceRecorder = ({ onUpload, disabled, isUploading }) => {
@@ -336,6 +364,34 @@ const Appointments = () => {
   // Calendar state
   const [calendarView, setCalendarView] = useState('week');
   const [calendarDate, setCalendarDate] = useState(new Date());
+
+  // Compute visible date range for on-demand loading
+  const calendarRange = useMemo(() => {
+    const opts = { weekStartsOn: 1 };
+    switch (calendarView) {
+      case 'month': {
+        const ms = startOfMonth(calendarDate);
+        const me = endOfMonth(calendarDate);
+        return {
+          from: startOfWeek(ms, opts).toISOString(),
+          to: endOfWeek(me, opts).toISOString(),
+        };
+      }
+      case 'week':
+        return {
+          from: startOfWeek(calendarDate, opts).toISOString(),
+          to: endOfWeek(calendarDate, opts).toISOString(),
+        };
+      case 'day':
+        return {
+          from: startOfDay(calendarDate).toISOString(),
+          to: endOfDay(calendarDate).toISOString(),
+        };
+      default:
+        return {};
+    }
+  }, [calendarView, calendarDate]);
+
   const [unreadCount, setUnreadCount] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [sendError, setSendError] = useState(null);
@@ -574,7 +630,8 @@ const Appointments = () => {
 
   const { hasRole } = useAuth();
   const isAdmin = hasRole(USER_ROLES.ADMIN);
-  const { data: allAppointments = [], meta, loading: isLoading, page, setPage } = useAppointments({}, { enablePagination: true });
+  const calendarParams = useMemo(() => ({ ...calendarRange, fields: 'calendar' }), [calendarRange]);
+  const { data: allAppointments = [], loading: isLoading } = useAppointments(calendarParams);
   const { users: employees } = useUsers({}, { enabled: true });
   const { data: companySettings } = useCompanySettings();
   const assigneeOptions = useMemo(() => {
@@ -1380,7 +1437,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="page-header">
@@ -1498,7 +1555,7 @@ useEffect(() => {
               events={calendarEvents}
               startAccessor="start"
               endAccessor="end"
-              style={{ height: 750 }}
+              style={{ height: calendarView === 'month' ? 800 : 1000 }}
               view={calendarView}
               date={calendarDate}
               onView={handleViewChange}
@@ -1507,13 +1564,17 @@ useEffect(() => {
               onSelectSlot={handleSelectSlot}
               onSelectEvent={handleSelectEvent}
               selectable
+              popup
               eventPropGetter={eventStyleGetter}
+              components={{
+                month: { event: MonthEvent },
+              }}
               messages={calendarMessages}
               culture="ro"
-              min={new Date(2024, 0, 1, 6, 0, 0)}
-              max={new Date(2024, 0, 1, 20, 0, 0)}
-              step={30}
-              timeslots={2}
+              min={new Date(2024, 0, 1, 7, 0, 0)}
+              max={new Date(2024, 0, 1, 21, 0, 0)}
+              step={15}
+              timeslots={4}
               formats={{
                 timeGutterFormat: 'HH:mm',
                 eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
@@ -1536,19 +1597,6 @@ useEffect(() => {
           </>
         )}
       </div>
-
-      {/* Pagination */}
-      {meta && meta.totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination
-            currentPage={meta.page}
-            totalPages={meta.totalPages}
-            onPageChange={setPage}
-            totalItems={meta.total}
-            pageSize={meta.limit}
-          />
-        </div>
-      )}
 
       {isCreateOpen && (
         <div
@@ -1943,6 +1991,7 @@ useEffect(() => {
               </div>
               )}
 
+              {hasAssets && (
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <div className="mb-4">
                   <h3 className="text-base font-semibold text-gray-900">Articole comanda service</h3>
@@ -2025,7 +2074,7 @@ useEffect(() => {
                                       onChange={(event) => handleLineItemChange(index, 'hardwareUnit', event.target.value)}
                                       className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-viperx-primary focus:outline-none"
                                     >
-                                      <option value="">—</option>
+                                      <option value="">-</option>
                                       {HARDWARE_UNITS.map((unit) => (
                                         <option key={unit.value} value={unit.value}>
                                           {unit.label}
@@ -2078,7 +2127,7 @@ useEffect(() => {
                                     onChange={(event) => handleLineItemChange(index, 'laborUnit', event.target.value)}
                                     className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-viperx-primary focus:outline-none"
                                   >
-                                    <option value="">—</option>
+                                    <option value="">-</option>
                                     {LABOR_UNITS.map((unit) => (
                                       <option key={unit.value} value={unit.value}>
                                         {unit.label}
@@ -2174,6 +2223,7 @@ useEffect(() => {
                   )}
                 </div>
               </div>
+              )}
 
               <div className="flex justify-end gap-3 border-t pt-4">
                 <button
@@ -2472,32 +2522,32 @@ useEffect(() => {
                           <dd className="font-medium text-gray-900">
                             {selectedAppointment.client.type === 'SRL'
                               ? selectedAppointment.client.companyName || 'Client companie'
-                              : `${selectedAppointment.client.firstName || ''} ${selectedAppointment.client.lastName || ''}`.trim() || selectedAppointment.client.contactName || '—'}
+                              : `${selectedAppointment.client.firstName || ''} ${selectedAppointment.client.lastName || ''}`.trim() || selectedAppointment.client.contactName || '-'}
                           </dd>
                         </div>
                         <div>
                           <dt className="text-gray-500">Persoana de contact</dt>
                           <dd className="font-medium text-gray-900">
-                            {selectedAppointment.client.contactName || `${selectedAppointment.client.firstName || ''} ${selectedAppointment.client.lastName || ''}`.trim() || '—'}
+                            {selectedAppointment.client.contactName || `${selectedAppointment.client.firstName || ''} ${selectedAppointment.client.lastName || ''}`.trim() || '-'}
                           </dd>
                         </div>
                         <div>
                           <dt className="text-gray-500">Telefon</dt>
-                          <dd className="font-medium text-gray-900">{selectedAppointment.client.phone || '—'}</dd>
+                          <dd className="font-medium text-gray-900">{selectedAppointment.client.phone || '-'}</dd>
                         </div>
                         <div>
                           <dt className="text-gray-500">Email</dt>
-                          <dd className="font-medium text-gray-900">{selectedAppointment.client.email || '—'}</dd>
+                          <dd className="font-medium text-gray-900">{selectedAppointment.client.email || '-'}</dd>
                         </div>
                         {selectedAppointment.client.type === 'SRL' ? (
                           <>
                             <div>
                               <dt className="text-gray-500">CUI</dt>
-                              <dd className="font-medium text-gray-900">{selectedAppointment.client.vatNumber || '—'}</dd>
+                              <dd className="font-medium text-gray-900">{selectedAppointment.client.vatNumber || '-'}</dd>
                             </div>
                             <div>
                               <dt className="text-gray-500">Nr. registru comert</dt>
-                              <dd className="font-medium text-gray-900">{selectedAppointment.client.registrationNumber || '—'}</dd>
+                              <dd className="font-medium text-gray-900">{selectedAppointment.client.registrationNumber || '-'}</dd>
                             </div>
                           </>
                         ) : null}
@@ -2604,6 +2654,7 @@ useEffect(() => {
                     )}
                   </div>
 
+                  {hasAssets && (
                   <div className="rounded-xl border border-gray-100 bg-white p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -3086,6 +3137,7 @@ useEffect(() => {
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Payment Section */}
                   {serviceOrder && (

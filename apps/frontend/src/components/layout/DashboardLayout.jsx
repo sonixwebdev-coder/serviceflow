@@ -29,6 +29,10 @@ import {
   Package,
   Mail,
   MapPin,
+  CreditCard,
+  Gift,
+  LifeBuoy,
+
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { USER_ROLES } from '../../utils/constants';
@@ -91,6 +95,7 @@ const DashboardLayout = ({ children }) => {
       { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
       { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
       { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
+      { name: 'Fidelitate', href: '/crm/loyalty', icon: Gift, roles: [] },
     ];
 
     // Only show Assets nav item for sectors with assets (not BEAUTY)
@@ -121,6 +126,13 @@ const DashboardLayout = ({ children }) => {
       name: 'Statistici',
       href: '/analytics',
       icon: BarChart3,
+      roles: []
+    },
+
+    {
+      name: 'Suport',
+      href: '/support',
+      icon: LifeBuoy,
       roles: []
     },
     {
@@ -162,6 +174,8 @@ const DashboardLayout = ({ children }) => {
         { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari organizatie', href: '/settings/organization', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Template-uri Email', href: '/settings/email-templates', icon: Mail, roles: [USER_ROLES.ADMIN] },
+        { name: 'Abonament', href: '/settings/billing', icon: CreditCard, roles: [USER_ROLES.ADMIN] },
+        { name: 'Fidelitate', href: '/settings/loyalty', icon: Gift, roles: [USER_ROLES.ADMIN] },
       ]
     },
   ];
@@ -269,7 +283,7 @@ const DashboardLayout = ({ children }) => {
   const renderSidebarContent = (onNavigate) => (
     <div className="flex h-full flex-col text-white">
       <div className="flex h-16 items-center justify-between px-6">
-        <span className="text-2xl font-bold text-viperx-primary">ServiceFlow</span>
+        <span className="text-2xl font-bold text-viperx-primary">ForjaIt</span>
         <button
           type="button"
           className="lg:hidden text-gray-400 hover:text-white"
