@@ -2,6 +2,7 @@ const prisma = require('../../lib/prisma');
 const { mapNotification } = require('../utils/transform');
 const { AppError } = require('../utils/errors');
 const { broadcastNotification } = require('../realtime/events');
+const logger = require('../utils/logger');
 
 const createNotification = async ({ recipientId, title, message, type, entityType, entityId, metadata, organizationId }) => {
   // Get organization ID from recipient if not provided
@@ -15,7 +16,7 @@ const createNotification = async ({ recipientId, title, message, type, entityTyp
   }
 
   if (!orgId) {
-    console.error('Cannot create notification without organizationId');
+    logger.error('Cannot create notification without organizationId', { recipientId });
     return null;
   }
 
@@ -32,12 +33,12 @@ const createNotification = async ({ recipientId, title, message, type, entityTyp
     },
     include: {
       recipient: {
-        include: {
-          roles: {
-            include: {
-              role: true,
-            },
-          },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          avatarUrl: true,
         },
       },
     },
@@ -55,14 +56,15 @@ const listNotifications = async (prisma, userId, { isRead } = {}) => {
       ...(typeof isRead === 'boolean' ? { isRead } : {}),
     },
     orderBy: { createdAt: 'desc' },
+    take: 100, // Safety limit — UI paginates or shows recent only
     include: {
       recipient: {
-        include: {
-          roles: {
-            include: {
-              role: true,
-            },
-          },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          avatarUrl: true,
         },
       },
     },

@@ -33,6 +33,13 @@ export default function OrganizationCard({ org, basePath = '/marketplace' }) {
             {org.name}
           </h3>
 
+          {/* Description */}
+          {org.description && (
+            <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+              {org.description}
+            </p>
+          )}
+
           {/* Info row */}
           <div className="mt-3 flex flex-col gap-2">
             {org.city && (

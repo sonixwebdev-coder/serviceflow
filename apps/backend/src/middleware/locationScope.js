@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma');
+const cache = require('../utils/cache');
 
 /**
  * Helper to check if a user has any of the specified roles
@@ -50,19 +51,20 @@ const getLocationData = async (req) => {
     };
   }
 
-  // Check cache first
+  // Check per-request cache first (avoids multiple calls within the same request)
   if (locationDataCache.has(req)) {
     return locationDataCache.get(req);
   }
 
-  // Fetch user's location assignments
-  const userLocations = await prisma.userLocation.findMany({
-    where: { userId: req.user.id },
-    select: {
-      locationId: true,
-      isPrimary: true,
-    },
-  });
+  // Fetch user's location assignments (Redis-cached across requests to avoid a DB hit per request)
+  const userLocations = await cache.wrap(
+    `user:locations:${req.user.id}`,
+    () => prisma.userLocation.findMany({
+      where: { userId: req.user.id },
+      select: { locationId: true, isPrimary: true },
+    }),
+    cache.TTL.MEDIUM // 5 minutes — invalidate via cache.del(`user:locations:${userId}`) on assignment changes
+  );
 
   // Extract location IDs
   const locationIds = userLocations.map((ul) => ul.locationId);

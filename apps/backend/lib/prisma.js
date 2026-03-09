@@ -1,12 +1,70 @@
 const { PrismaClient } = require('@prisma/client');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Prisma client singleton to avoid exhausting DB connections
  * during local development with hot-reloads.
+ *
+ * Connection pool size is configured via DATABASE_URL query params:
+ *   ?connection_limit=20&pool_timeout=30
+ * Defaults: connection_limit = num_cpus * 2 + 1 (too small for 1000 concurrent users)
  */
-const prisma = global.__prisma || new PrismaClient();
+const isDev = process.env.NODE_ENV !== 'production';
+const SLOW_QUERY_THRESHOLD = Number(process.env.SLOW_QUERY_THRESHOLD) || 500; // ms
 
-if (process.env.NODE_ENV !== 'production') {
+// Append connection pool params if not already present in DATABASE_URL
+const buildDbUrl = () => {
+  const url = process.env.DATABASE_URL || '';
+  if (url.includes('connection_limit')) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}connection_limit=${process.env.DB_POOL_SIZE || 20}&pool_timeout=${process.env.DB_POOL_TIMEOUT || 30}`;
+};
+
+// --- Slow query file logger ---
+
+const LOG_DIR = path.join(__dirname, '..', 'logs');
+if (!fs.existsSync(LOG_DIR)) {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
+}
+
+const slowQueryLogPath = path.join(LOG_DIR, 'slow-queries.log');
+let slowQueryStream = null;
+
+const getSlowQueryStream = () => {
+  if (!slowQueryStream) {
+    slowQueryStream = fs.createWriteStream(slowQueryLogPath, { flags: 'a' });
+  }
+  return slowQueryStream;
+};
+
+const logSlowQuery = (e) => {
+  const timestamp = new Date().toISOString();
+  const line = `[${timestamp}] ${e.duration}ms | ${e.query}` +
+    (e.params && e.params !== '[]' ? ` | params: ${e.params}` : '') +
+    '\n';
+  getSlowQueryStream().write(line);
+};
+
+// --- Prisma client ---
+
+const prisma = global.__prisma || new PrismaClient({
+  datasources: {
+    db: {
+      url: buildDbUrl(),
+    },
+  },
+  log: [{ level: 'query', emit: 'event' }],
+});
+
+// Log slow queries to dedicated file (all environments)
+prisma.$on('query', (e) => {
+  if (e.duration > SLOW_QUERY_THRESHOLD) {
+    logSlowQuery(e);
+  }
+});
+
+if (isDev) {
   global.__prisma = prisma;
 }
 

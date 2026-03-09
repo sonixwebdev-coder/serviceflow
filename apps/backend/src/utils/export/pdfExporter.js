@@ -213,7 +213,7 @@ const exportToPDF = async (data, options = {}) => {
   const {
     columns,
     title = 'Export Date',
-    companyName = process.env.COMPANY_NAME || 'ViperX CRM',
+    companyName = process.env.COMPANY_NAME || 'ForjaIt CRM',
   } = options;
 
   const pdfDoc = await PDFDocument.create();
@@ -293,7 +293,7 @@ const exportToPDF = async (data, options = {}) => {
   });
   context.cursor -= 10;
 
-  context.page.drawText(sanitizeForPdf('Document generat automat de ViperX CRM'), {
+  context.page.drawText(sanitizeForPdf('Document generat automat de ForjaIt CRM'), {
     x: context.margin,
     y: context.cursor,
     size: 8,

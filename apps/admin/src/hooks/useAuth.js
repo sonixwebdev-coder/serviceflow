@@ -10,12 +10,15 @@ export function useLogin() {
   return useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
-      if (!data.user?.isSuperAdmin) {
-        throw new Error('Access denied: not a super admin');
-      }
       loginStore({ user: data.user, accessToken: data.accessToken });
       navigate('/', { replace: true });
     },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: authService.changePassword,
   });
 }
 

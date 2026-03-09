@@ -10,6 +10,11 @@ const { createPayment } = require('./paymentService');
 const { resolveAsset } = require('./assetService');
 const logger = require('../utils/logger');
 const googleCalendarService = require('./google/googleCalendarService');
+const {
+  sendAppointmentReminder,
+  sendAppointmentCancelledEmail,
+  sendAppointmentRescheduledEmail,
+} = require('./email/emailService');
 
 const STATUS_MAP = new Map([
   ['pending', 'PENDING'],
@@ -260,6 +265,9 @@ const resolveClient = async (tx, clientPayload, fallbackId, organizationId) => {
 
   if (organizationId) {
     data.organizationId = organizationId;
+    // Quota check: clients (new client creation inside appointment)
+    const { checkOrganizationLimits: checkLimits } = require('./organizationService');
+    await checkLimits(organizationId, 'clients');
   }
 
   return tx.client.create({ data });
@@ -417,6 +425,10 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
     throw new AppError('Data si ora de sfarsit trebuie sa fie dupa data si ora de inceput.', 400);
   }
 
+  // Quota check: appointments (monthly)
+  const { checkOrganizationLimits } = require('./organizationService');
+  await checkOrganizationLimits(currentUser.organizationId, 'appointments');
+
   let appointment = null;
   let serviceOrderEvent = null;
 
@@ -562,9 +574,7 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
         isActive: true,
         roles: {
           some: {
-            role: {
-              name: { in: ['admin', 'ADMIN', 'Admin'] },
-            },
+            role: { key: 'admin' },
           },
         },
       },
@@ -648,6 +658,18 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
   syncToGoogleCalendar(prisma, appointment, 'create').catch((err) => {
     logger.error('[GCAL] Background sync failed:', { appointmentId: appointment.id, error: err.message });
   });
+
+  // Send appointment confirmation email to client (fire-and-forget)
+  if (appointment.client?.email) {
+    getCompanySettings(appointment.organizationId).then((companySettings) => {
+      sendAppointmentReminder(prisma, {
+        appointment,
+        client: appointment.client,
+        companySettings,
+        organizationId: appointment.organizationId,
+      }).catch((err) => logger.error('[EMAIL] Appointment confirmation failed:', err.message));
+    }).catch(() => {});
+  }
 
   return appointment;
 };
@@ -833,11 +855,7 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
           isActive: true,
           roles: {
             some: {
-              role: {
-                key: {
-                  in: ['admin', 'ADMIN', 'Admin'],
-                },
-              },
+              role: { key: 'admin' },
             },
           },
         },
@@ -905,6 +923,24 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     logger.error('[GCAL] Background sync failed:', { appointmentId: updated.id, error: err.message });
   });
 
+  // Send reschedule email if date/time changed (fire-and-forget)
+  const dateChanged = existing.scheduledStart.getTime() !== updated.scheduledStart.getTime()
+    || existing.scheduledEnd.getTime() !== updated.scheduledEnd.getTime();
+  if (dateChanged && updated.client?.email) {
+    const oldDate = existing.scheduledStart.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' });
+    const oldTime = existing.scheduledStart.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+    getCompanySettings(updated.organizationId).then((companySettings) => {
+      sendAppointmentRescheduledEmail(prisma, {
+        appointment: updated,
+        client: updated.client,
+        oldDate,
+        oldTime,
+        companySettings,
+        organizationId: updated.organizationId,
+      }).catch((err) => logger.error('[EMAIL] Appointment reschedule email failed:', err.message));
+    }).catch(() => {});
+  }
+
   return updated;
 };
 
@@ -932,19 +968,42 @@ const cancelAppointment = async (prisma, appointmentId, reason, currentUser) => 
   // Broadcast to client portal
   broadcastAppointmentToClient('cancelled', updated);
 
-  // Send push notifications for cancellation
+  // Send in-app + push notifications for cancellation
   try {
+    const recipientIds = updated.assignees?.map(a => a.userId || a.user?.id).filter(Boolean) || [];
+    await Promise.all(recipientIds.map((recipientId) =>
+      createNotification({
+        recipientId,
+        title: 'Programare anulata',
+        message: `Programarea "${updated.title}" a fost anulata`,
+        type: 'APPOINTMENT',
+        entityType: 'APPOINTMENT',
+        entityId: updated.id,
+        organizationId: updated.organizationId,
+      }).catch(() => {})
+    ));
     await sendAppointmentNotification(updated, 'cancelled');
-    logger.notification('Push notifications sent for appointment cancellation', { appointmentId: updated.id });
   } catch (pushError) {
-    logger.error('Failed to send push notifications for appointment cancellation', { error: pushError.message, appointmentId: updated.id });
-    // Don't fail if push notifications fail
+    logger.error('Failed to send notifications for appointment cancellation', { error: pushError.message, appointmentId: updated.id });
   }
 
   // Delete from Google Calendar (fire and forget, doesn't block the response)
   syncToGoogleCalendar(prisma, updated, 'delete').catch((err) => {
     logger.error('[GCAL] Background delete failed:', { appointmentId: updated.id, error: err.message });
   });
+
+  // Send cancellation email to client (fire-and-forget)
+  if (updated.client?.email) {
+    getCompanySettings(updated.organizationId).then((companySettings) => {
+      sendAppointmentCancelledEmail(prisma, {
+        appointment: updated,
+        client: updated.client,
+        cancellationReason: reason,
+        companySettings,
+        organizationId: updated.organizationId,
+      }).catch((err) => logger.error('[EMAIL] Appointment cancellation email failed:', err.message));
+    }).catch(() => {});
+  }
 
   return updated;
 };
@@ -959,12 +1018,13 @@ const calculateAppointmentTotal = (appointment) => {
     return 0;
   }
 
-  const total = appointment.serviceOrder.lineItems.reduce((sum, item) => {
+  const subtotal = appointment.serviceOrder.lineItems.reduce((sum, item) => {
     const itemTotal = Number(item.totalPrice || 0);
     return sum + itemTotal;
   }, 0);
 
-  return roundCurrency(total);
+  // Include service order tax (TVA) so total matches the invoiced amount
+  return roundCurrency(subtotal + Number(appointment.serviceOrder.tax || 0));
 };
 
 const recordAdvancePayment = async (prisma, appointmentId, amount, userId) => {
@@ -1113,6 +1173,11 @@ const getPaymentStatus = async (prisma, appointmentId) => {
           lineItems: true,
         },
       },
+      invoices: {
+        where: { status: { not: 'CANCELLED' } },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
     },
   });
 
@@ -1120,23 +1185,32 @@ const getPaymentStatus = async (prisma, appointmentId) => {
     throw new AppError('Programarea nu a fost gasita. Verificati ID-ul programarii.', 404);
   }
 
-  const total = calculateAppointmentTotal(appointment);
-
   // Calculate total paid from Payment records
   const { calculateTotalPaid } = require('./paymentService');
   const totalPaid = await calculateTotalPaid(prisma, appointmentId);
 
-  const remaining = Number(appointment.remainingBalance || 0);
+  // Use invoice total if available (accounts for loyalty discount), otherwise use service order total
+  const activeInvoice = appointment.invoices?.[0];
+  const total = activeInvoice
+    ? Number(activeInvoice.total)
+    : calculateAppointmentTotal(appointment);
+
+  const loyaltyDiscount = activeInvoice ? Number(activeInvoice.loyaltyDiscount || 0) : 0;
+  const loyaltyTierAtTime = activeInvoice?.loyaltyTierAtTime || null;
+
+  const remaining = Math.max(0, Math.round((total - totalPaid) * 100) / 100);
 
   return {
-    total: total,
-    totalPaid: totalPaid, // Total from all Payment records
+    total,
+    totalPaid,
     status: appointment.paymentStatus,
     advancePayment: totalPaid > 0 ? {
-      amount: totalPaid, // Use totalPaid from Payment records
+      amount: totalPaid,
       paidAt: appointment.advancePaidAt,
     } : null,
-    remaining: remaining,
+    remaining,
+    loyaltyDiscount,
+    loyaltyTierAtTime,
     finalPayment: appointment.finalPaidAt ? {
       paidAt: appointment.finalPaidAt,
     } : null,

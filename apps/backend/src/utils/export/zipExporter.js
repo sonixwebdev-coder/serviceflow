@@ -64,7 +64,7 @@ const createZipArchive = (files) => {
 const createMetadataFile = (metadata) => {
   const content = {
     exportDate: formatDateTime(new Date()),
-    generatedBy: 'ViperX CRM',
+    generatedBy: 'ForjaIt CRM',
     version: '2.0.0',
     ...metadata,
   };

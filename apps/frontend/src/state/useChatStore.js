@@ -8,6 +8,7 @@ export const useChatStore = create((set, get) => ({
   // Active channel
   activeChannelId: null,
   setActiveChannel: (channelId) => set({ activeChannelId: channelId }),
+  setActiveChannelId: (channelId) => set({ activeChannelId: channelId }),
 
   // Channels list
   channels: [],

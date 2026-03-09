@@ -9,7 +9,7 @@ const LocationSwitcher = () => {
   const dropdownRef = useRef(null);
   const { hasRole } = useAuth();
 
-  const { locations: userLocations, currentLocationId, setCurrentLocation, getCurrentLocation } = useLocationStore();
+  const { locations: userLocations, currentLocationId, setCurrentLocation, getCurrentLocation, initLocation } = useLocationStore();
   const { loading: loadingUserLocations } = useMyLocations();
 
   // Check if user can switch between locations (admin/manager)
@@ -24,6 +24,18 @@ const LocationSwitcher = () => {
   const availableLocations = canSwitchLocations && allOrgLocations.length > 0 ? allOrgLocations : userLocations;
   const currentLocation = getCurrentLocation() || availableLocations.find((l) => l.id === currentLocationId);
 
+  const loading = loadingUserLocations || (canSwitchLocations && loadingOrgLocations);
+
+  // Auto-initialize currentLocationId when locations load but none is selected.
+  // Uses initLocation (not setCurrentLocation) so queries refetch with X-Location-Id
+  // without triggering the full-screen switching overlay.
+  useEffect(() => {
+    if (!loading && !currentLocationId && availableLocations.length > 0) {
+      const primary = availableLocations.find((l) => l.isPrimary || l.isPrimaryForUser) || availableLocations[0];
+      initLocation(primary.id);
+    }
+  }, [loading, currentLocationId, availableLocations, initLocation]);
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -35,8 +47,6 @@ const LocationSwitcher = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const loading = loadingUserLocations || (canSwitchLocations && loadingOrgLocations);
 
   if (loading) {
     return (
@@ -51,7 +61,7 @@ const LocationSwitcher = () => {
   if (!canSwitchLocations || availableLocations.length <= 1) {
     return currentLocation ? (
       <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600">
-        <MapPin size={16} className="text-viperx-primary" />
+        <MapPin size={16} className="text-primary" />
         <span className="max-w-[150px] truncate font-medium">{currentLocation.name}</span>
       </div>
     ) : null;
@@ -63,9 +73,9 @@ const LocationSwitcher = () => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-viperx-primary focus:ring-offset-1"
+        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
       >
-        <MapPin size={16} className="text-viperx-primary" />
+        <MapPin size={16} className="text-primary" />
         <span className="max-w-[150px] truncate">
           {currentLocation?.name || 'Selecteaza locatia'}
         </span>
@@ -86,16 +96,15 @@ const LocationSwitcher = () => {
                 key={location.id}
                 type="button"
                 onClick={() => {
-                  console.log('[LocationSwitcher] Switching to location:', location.id, location.name);
                   setCurrentLocation(location.id);
                   setIsOpen(false);
                 }}
                 className={`flex w-full items-center justify-between px-3 py-2 text-sm transition hover:bg-gray-50 ${
-                  currentLocationId === location.id ? 'bg-orange-50 text-viperx-primary' : 'text-gray-700'
+                  currentLocationId === location.id ? 'bg-orange-50 text-primary' : 'text-gray-700'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <MapPin size={14} className={currentLocationId === location.id ? 'text-viperx-primary' : 'text-gray-400'} />
+                  <MapPin size={14} className={currentLocationId === location.id ? 'text-primary' : 'text-gray-400'} />
                   <div className="text-left">
                     <div className="font-medium">{location.name}</div>
                     {location.city && (
@@ -104,7 +113,7 @@ const LocationSwitcher = () => {
                   </div>
                 </div>
                 {currentLocationId === location.id && (
-                  <Check size={16} className="text-viperx-primary" />
+                  <Check size={16} className="text-primary" />
                 )}
               </button>
             ))}

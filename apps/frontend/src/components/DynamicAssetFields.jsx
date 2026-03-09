@@ -44,7 +44,7 @@ const DynamicAssetFields = ({ assetType, formData, onChange, errors = {}, readOn
     const hasError = errors[field.key];
     const inputClasses = `w-full rounded-lg border ${
       hasError ? 'border-red-500' : 'border-gray-300'
-    } px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary ${
+    } px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${
       readOnly ? 'bg-gray-50 cursor-not-allowed' : ''
     }`;
 

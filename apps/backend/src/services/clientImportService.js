@@ -347,11 +347,27 @@ const importClientsFromCSV = async (fileBuffer, options = {}) => {
     throw new AppError('Fisierul CSV este gol sau nu contine date valide', 400);
   }
 
+  // Pre-check remaining client quota
+  let quotaRemaining = Infinity;
+  let quotaWarning = null;
+  if (organizationId) {
+    const { getRemainingQuota } = require('./organizationService');
+    const quotaInfo = await getRemainingQuota(organizationId, 'clients');
+    quotaRemaining = quotaInfo.remaining;
+    if (quotaRemaining === 0) {
+      throw new AppError(
+        `Ati atins limita de clienti (${quotaInfo.limit}). Upgradati planul sau achizitionati un pachet suplimentar.`,
+        403
+      );
+    }
+  }
+
   const results = {
     totalRows: parsedData.length,
     successful: 0,
     failed: 0,
     skipped: 0,
+    quotaLimited: 0,
     errors: [],
     duplicates: [],
     created: [],
@@ -401,6 +417,13 @@ const importClientsFromCSV = async (fileBuffer, options = {}) => {
       }
       clientsToCreate.push({ data: transformedData, rowNumber });
     }
+  }
+
+  // Cap at remaining quota
+  if (quotaRemaining !== Infinity && clientsToCreate.length > quotaRemaining) {
+    const excess = clientsToCreate.length - quotaRemaining;
+    results.quotaLimited = excess;
+    clientsToCreate.splice(quotaRemaining);
   }
 
   // Phase 3: Bulk insert with transaction

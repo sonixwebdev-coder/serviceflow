@@ -26,3 +26,13 @@ export const activateOrganization = async (id) => {
   const { data } = await api.post(`${BASE}/${id}/activate`);
   return data.data;
 };
+
+export const grantPlan = async ({ id, ...body }) => {
+  const { data } = await api.post(`${BASE}/${id}/grant-plan`, body);
+  return data.data;
+};
+
+export const revokeOverride = async ({ id, ...body }) => {
+  const { data } = await api.post(`${BASE}/${id}/revoke-override`, body);
+  return data.data;
+};

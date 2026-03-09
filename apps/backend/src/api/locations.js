@@ -65,6 +65,19 @@ router.post(
   asyncHandler(async (req, res) => {
     const location = await createLocation(req.tenantPrisma, req.body, req.user.organizationId);
 
+    // Auto-assign the creating admin to the new location
+    const existingPrimary = await req.tenantPrisma.userLocation.findFirst({
+      where: { userId: req.user.id, isPrimary: true },
+    });
+
+    await req.tenantPrisma.userLocation.create({
+      data: {
+        userId: req.user.id,
+        locationId: location.id,
+        isPrimary: !existingPrimary,
+      },
+    });
+
     await logFromRequest(req, {
       action: 'CREATE',
       entityType: 'Location',

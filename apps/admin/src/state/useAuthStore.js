@@ -1,27 +1,30 @@
 import { create } from 'zustand';
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   user: JSON.parse(localStorage.getItem('sf_admin_user') || 'null'),
-  accessToken: localStorage.getItem('sf_admin_token') || null,
-  isAuthenticated: !!localStorage.getItem('sf_admin_token'),
+  accessToken: null, // In-memory only — not persisted to localStorage
+  isAuthenticated: false,
 
   login: ({ user, accessToken }) => {
-    localStorage.setItem('sf_admin_token', accessToken);
+    // Only persist non-sensitive display fields
     localStorage.setItem('sf_admin_user', JSON.stringify(user));
     set({ user, accessToken, isAuthenticated: true });
   },
 
+  setAccessToken: (accessToken) => {
+    set({ accessToken, isAuthenticated: !!accessToken });
+  },
+
   logout: () => {
-    localStorage.removeItem('sf_admin_token');
     localStorage.removeItem('sf_admin_user');
     localStorage.removeItem('sf_admin_csrf');
     set({ user: null, accessToken: null, isAuthenticated: false });
   },
 
   hydrate: () => {
-    const token = localStorage.getItem('sf_admin_token');
     const user = JSON.parse(localStorage.getItem('sf_admin_user') || 'null');
-    set({ user, accessToken: token, isAuthenticated: !!token });
+    // Token must be re-acquired via refresh — not persisted
+    set({ user, accessToken: null, isAuthenticated: false });
   },
 }));
 

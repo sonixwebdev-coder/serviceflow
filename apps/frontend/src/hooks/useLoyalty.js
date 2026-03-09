@@ -13,8 +13,6 @@ export const useLoyaltyProgram = () => {
   return useQuery({
     queryKey: ['loyalty-program'],
     queryFn: getLoyaltyProgram,
-    staleTime: 0,
-    refetchOnMount: 'always',
   });
 };
 
@@ -33,8 +31,6 @@ export const useClientLoyalty = (clientId) => {
     queryKey: ['client-loyalty', clientId],
     queryFn: () => getClientLoyaltyAccount(clientId),
     enabled: !!clientId,
-    staleTime: 0,
-    refetchOnMount: 'always',
   });
 };
 
@@ -54,8 +50,6 @@ export const useLoyaltyAccounts = (params = {}) => {
   return useQuery({
     queryKey: ['loyalty-accounts', params],
     queryFn: () => getLoyaltyAccounts(params),
-    staleTime: 0,
-    refetchOnMount: 'always',
   });
 };
 
@@ -63,8 +57,6 @@ export const useLoyaltyTransactions = (params = {}) => {
   return useQuery({
     queryKey: ['loyalty-transactions', params],
     queryFn: () => getLoyaltyTransactions(params),
-    staleTime: 0,
-    refetchOnMount: 'always',
   });
 };
 
@@ -72,7 +64,5 @@ export const useLoyaltyAnalytics = (params = {}) => {
   return useQuery({
     queryKey: ['loyalty-analytics', params],
     queryFn: () => getLoyaltyAnalytics(params),
-    staleTime: 0,
-    refetchOnMount: 'always',
   });
 };

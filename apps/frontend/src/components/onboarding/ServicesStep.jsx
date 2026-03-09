@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Wrench, Plus, Trash2 } from 'lucide-react';
 
-const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition';
+const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition';
 
 const ServicesStep = ({ onNext, onBack, isSaving }) => {
   const [services, setServices] = useState([
@@ -47,8 +47,8 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
     const cleaned = services.map(s => ({
       id: s.id,
       name: s.name.trim(),
-      price: s.price ? Number(s.price) : undefined,
-      duration: s.duration ? Number(s.duration) : undefined,
+      price: s.price ? String(s.price) : '',
+      duration: s.duration ? String(s.duration) : '',
     }));
     onNext(cleaned);
   };
@@ -121,7 +121,7 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
       <button
         type="button"
         onClick={addService}
-        className="flex items-center gap-2 text-viperx-primary hover:text-viperx-primary/80 font-medium text-sm transition"
+        className="flex items-center gap-2 text-primary hover:text-primary/80 font-medium text-sm transition"
       >
         <Plus className="w-4 h-4" />
         Adauga alt serviciu
@@ -140,7 +140,7 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
           type="button"
           onClick={handleSubmit}
           disabled={isSaving}
-          className="px-8 py-2.5 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 font-medium transition disabled:opacity-50"
+          className="px-8 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition disabled:opacity-50"
         >
           {isSaving ? 'Se salveaza...' : 'Continua'}
         </button>

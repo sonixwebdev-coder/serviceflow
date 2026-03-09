@@ -12,6 +12,10 @@
     min-height: 100vh;
     background-color: #f9fafb;
   }
+
+  .margin-top-zero {
+    margin-top: 0 !important;
+  }
 }
 
 @layer components {
@@ -42,7 +46,7 @@
 
   .rbc-toolbar button:active,
   .rbc-toolbar button.rbc-active {
-    @apply border-viperx-primary bg-viperx-primary/10 text-viperx-primary shadow-sm;
+    @apply border-primary bg-primary/10 text-primary shadow-sm;
   }
 
   /* Header row (day names) */
@@ -100,7 +104,7 @@
   }
 
   .rbc-date-cell.rbc-now > a {
-    @apply text-viperx-primary font-bold;
+    @apply text-primary font-bold;
   }
 
   .rbc-date-cell.rbc-off-range > a {
@@ -160,12 +164,12 @@
   }
 
   .rbc-current-time-indicator {
-    @apply h-0.5 bg-viperx-primary;
+    @apply h-0.5 bg-primary;
   }
 
   .rbc-current-time-indicator::before {
     content: '';
-    @apply absolute -left-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-viperx-primary;
+    @apply absolute -left-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-primary;
   }
 
   /* ========================
@@ -183,11 +187,11 @@
   }
 
   .rbc-event:focus {
-    @apply outline-none ring-2 ring-viperx-primary ring-offset-1;
+    @apply outline-none ring-2 ring-primary ring-offset-1;
   }
 
   .rbc-event.rbc-selected {
-    @apply ring-2 ring-viperx-primary ring-offset-1;
+    @apply ring-2 ring-primary ring-offset-1;
   }
 
   .rbc-event-label {
@@ -239,12 +243,12 @@
   }
 
   .rbc-event.is-selected {
-    @apply ring-2 ring-viperx-primary ring-offset-1;
+    @apply ring-2 ring-primary ring-offset-1;
   }
 
   /* Show more link */
   .rbc-show-more {
-    @apply cursor-pointer text-xs font-medium text-viperx-primary hover:text-orange-700 hover:underline px-2 py-1;
+    @apply cursor-pointer text-xs font-medium text-primary hover:text-orange-700 hover:underline px-2 py-1;
   }
 
   /* Overlay (popup for more events) */
@@ -262,7 +266,7 @@
 
   /* Selected cell */
   .rbc-selected-cell {
-    @apply bg-viperx-primary/5;
+    @apply bg-primary/5;
   }
 
   /* ========================
@@ -337,7 +341,7 @@
   }
 
   .filter-pill.active {
-    @apply border-viperx-primary bg-viperx-primary/10 text-viperx-primary;
+    @apply border-primary bg-primary/10 text-primary;
   }
 
   /* Empty state pattern */

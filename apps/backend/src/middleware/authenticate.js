@@ -1,6 +1,40 @@
 const prisma = require('../../lib/prisma');
 const { verifyAccessToken } = require('../utils/token');
 const { AppError } = require('../utils/errors');
+const cache = require('../utils/cache');
+
+const AUTH_CACHE_TTL = cache.TTL.SHORT; // 60 seconds
+
+const fetchUserForAuth = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      organization: {
+        select: { id: true, status: true, trialEndsAt: true },
+      },
+      roles: {
+        select: {
+          role: {
+            select: { key: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!user || !user.isActive) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    organizationId: user.organizationId,
+    orgStatus: user.organization?.status,
+    orgTrialEndsAt: user.organization?.trialEndsAt,
+    roles: user.roles.map((assignment) => assignment.role.key),
+  };
+};
 
 const authenticate = async (req, res, next) => {
   try {
@@ -13,46 +47,59 @@ const authenticate = async (req, res, next) => {
     const token = header.replace('Bearer ', '');
     const payload = verifyAccessToken(token);
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-      include: {
-        organization: true,
-        roles: {
-          include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+    // Check if token was revoked (logout)
+    if (await cache.isTokenBlacklisted(token)) {
+      throw new AppError('Token revoked', 401);
+    }
 
-    if (!user || !user.isActive) {
+    const cacheKey = `auth:${payload.sub}`;
+    const userData = await cache.wrap(
+      cacheKey,
+      () => fetchUserForAuth(payload.sub),
+      AUTH_CACHE_TTL
+    );
+
+    if (!userData) {
       throw new AppError('User not found or inactive', 401);
     }
 
-    // Check organization status
-    if (!user.organization || user.organization.status === 'SUSPENDED' || user.organization.status === 'CANCELLED') {
+    if (!userData.orgStatus || userData.orgStatus === 'SUSPENDED' || userData.orgStatus === 'CANCELLED') {
       throw new AppError('Organization is not active', 403);
     }
 
+    // Lazy trial expiry: transition expired TRIAL → PAYMENT_REQUIRED
+    if (userData.orgStatus === 'TRIAL' && userData.orgTrialEndsAt && new Date() > new Date(userData.orgTrialEndsAt)) {
+      await prisma.organization.update({
+        where: { id: userData.organizationId },
+        data: { status: 'PAYMENT_REQUIRED' },
+      });
+      userData.orgStatus = 'PAYMENT_REQUIRED';
+      // Invalidate cached auth data so next request gets fresh status
+      await cache.del(cacheKey);
+    }
+
+    // PAYMENT_REQUIRED: restrict to billing, settings, auth, and user profile routes
+    if (userData.orgStatus === 'PAYMENT_REQUIRED') {
+      const allowedPrefixes = ['/api/billing', '/api/settings', '/api/auth', '/api/users/me', '/api/organizations/me'];
+      const isAllowed = allowedPrefixes.some(p => req.originalUrl.startsWith(p));
+      if (!isAllowed) {
+        return res.status(402).json({
+          error: 'Plata necesara',
+          code: 'PAYMENT_REQUIRED',
+          message: 'Abonamentul a expirat. Actualizeaza facturarea pentru a continua.',
+        });
+      }
+    }
+
     req.user = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      name: `${user.firstName} ${user.lastName}`,
-      organizationId: user.organizationId,
-      roles: user.roles.map((assignment) => assignment.role.key),
-      permissions: user.roles.flatMap(
-        (assignment) => assignment.role.permissions?.map((rp) => rp.permission.key) || []
-      ),
+      id: userData.id,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      name: `${userData.firstName} ${userData.lastName}`,
+      organizationId: userData.organizationId,
+      orgStatus: userData.orgStatus,
+      roles: userData.roles,
     };
 
     next();

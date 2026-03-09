@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   Globe,
@@ -29,9 +29,10 @@ import {
   useCrmData,
 } from '@/hooks/useWebsiteBuilder';
 import BlockEditor from '@/components/website-builder/BlockEditor';
+import FloatingHelperWidget from '@/components/website-builder/FloatingHelperWidget';
 import { BrandingSettings, SeoSettings, PageSeoSettings, DomainSettings, HeaderFooterSettings } from '@/components/website-builder/settings';
 import { TemplateSelector, getTemplateById, templates as allTemplates, getTemplatesBySector } from '@/components/website-builder/templates';
-import { createPage as createPageService, fetchPages as fetchPagesService } from '@/services/websiteService';
+import { createPage as createPageService, bulkUpsertPages, fetchPages as fetchPagesService } from '@/services/websiteService';
 import useToast from '@/context/useToast';
 import useAuth from '@/context/useAuth';
 
@@ -153,12 +154,13 @@ const WebsiteBuilder = () => {
       showToast({ title: 'Website creat cu succes!', type: 'success' });
       refreshWebsite();
 
-      // If template selected, create pages using the new website's ID
-      if (template?.pages && newWebsite?.id) {
+      // If template selected, bulk create pages using the new website's ID
+      if (template?.pages?.length && newWebsite?.id) {
         setIsCreatingPages(true);
-        for (const page of template.pages) {
-          await createPageService(newWebsite.id, page);
-        }
+        await bulkUpsertPages(
+          newWebsite.id,
+          template.pages.map((p) => ({ ...p, isPublished: true }))
+        );
         setIsCreatingPages(false);
         refreshPages();
       }
@@ -166,7 +168,7 @@ const WebsiteBuilder = () => {
       setShowSetupDialog(false);
     } catch (error) {
       setIsCreatingPages(false);
-      showToast({ title: createError || 'Eroare la crearea website-ului', type: 'error' });
+      showToast({ title: error.message || createError || 'Eroare la crearea website-ului', type: 'error' });
     }
   };
 
@@ -249,7 +251,7 @@ const WebsiteBuilder = () => {
       setSelectedPageId(newPage.id);
       showToast({ title: 'Pagina creata cu succes!', type: 'success' });
     } catch (error) {
-      showToast({ title: 'Eroare la crearea paginii', type: 'error' });
+      showToast({ title: error.message || 'Eroare la crearea paginii', type: 'error' });
     }
   };
 
@@ -319,7 +321,15 @@ const WebsiteBuilder = () => {
   const handleApplyTemplate = async (template) => {
     setIsApplyingTemplate(true);
     try {
-      // Update branding and SEO
+      // Bulk upsert pages FIRST — validates plan limits upfront before any changes
+      if (template.pages?.length) {
+        await bulkUpsertPages(
+          website.id,
+          template.pages.map((p) => ({ ...p, isPublished: true }))
+        );
+      }
+
+      // Only update branding/SEO after pages succeed
       await updateWebsite({
         websiteId: website.id,
         data: {
@@ -329,36 +339,25 @@ const WebsiteBuilder = () => {
         },
       });
 
-      // Fetch fresh pages to avoid stale state issues
-      const pagesResponse = await fetchPagesService(website.id);
-      const currentPages = pagesResponse?.items || pagesResponse || [];
-
-      // Upsert template pages
-      if (template.pages) {
-        for (const page of template.pages) {
-          const existingPage = currentPages.find((p) => p.slug === page.slug);
-          if (existingPage) {
-            await updatePage({
-              pageId: existingPage.id,
-              data: { content: page.content, title: page.title },
-            });
-          } else {
-            await createPageService(website.id, { ...page, isPublished: true });
-          }
-        }
-      }
-
       refreshWebsite();
       refreshPages();
       setShowTemplateConfirm(null);
       setActiveTab('pages');
       showToast({ title: 'Template aplicat cu succes!', type: 'success' });
     } catch (error) {
-      showToast({ title: 'Eroare la aplicarea template-ului', type: 'error' });
+      showToast({ title: error.message || 'Eroare la aplicarea template-ului', type: 'error' });
     } finally {
       setIsApplyingTemplate(false);
     }
   };
+
+  // Detect mobile viewport
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 1024);
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Loading state
   if (websiteLoading) {
@@ -369,7 +368,23 @@ const WebsiteBuilder = () => {
     );
   }
 
-  const isProfessional = ['PROFESSIONAL', 'ENTERPRISE'].includes(user?.organization?.plan);
+  // Mobile not supported for website builder
+  if (isMobileView) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center px-6">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
+            <Globe className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900">Website Builder</h2>
+          <p className="mt-2 text-sm text-gray-500 max-w-sm">
+            Website Builder-ul necesita un ecran mai mare pentru a functiona corect. Te rugam sa il accesezi de pe un calculator sau tableta.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const websiteUrl = website?.url || null;
 
   const tabs = [
@@ -388,7 +403,7 @@ const WebsiteBuilder = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <Globe className="h-6 w-6 text-viperx-primary" />
+              <Globe className="h-6 w-6 text-primary" />
               <div>
                 <h1 className="text-lg font-semibold">Website Builder</h1>
                 {website?.subdomain && (
@@ -436,7 +451,7 @@ const WebsiteBuilder = () => {
                     className={`inline-flex items-center px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
                       website.isPublished
                         ? 'border border-gray-200 hover:bg-gray-50'
-                        : 'bg-viperx-primary text-white hover:bg-orange-600'
+                        : 'bg-primary text-white hover:bg-orange-600'
                     }`}
                   >
                     {isPublishing ? (
@@ -502,7 +517,7 @@ const WebsiteBuilder = () => {
                             key={page.id}
                             className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
                               selectedPageId === page.id
-                                ? 'bg-viperx-primary/10 text-viperx-primary'
+                                ? 'bg-primary/10 text-primary'
                                 : 'hover:bg-gray-50'
                             }`}
                             onClick={() => setSelectedPageId(page.id)}
@@ -664,7 +679,7 @@ const WebsiteBuilder = () => {
                           <button
                             onClick={handleSavePage}
                             disabled={!isDirty || isUpdatingPage}
-                            className="inline-flex items-center px-3 py-2 text-sm bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                            className="inline-flex items-center px-3 py-2 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
                           >
                             {isUpdatingPage ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -751,11 +766,7 @@ const WebsiteBuilder = () => {
           {activeTab === 'domain' && (
             <DomainSettings
               subdomain={website?.subdomain}
-              customDomain={website?.customDomain}
-              domainVerified={website?.domainVerified}
-              isProfessional={isProfessional}
               onSubdomainChange={(subdomain) => handleUpdateWebsite({ subdomain })}
-              onCustomDomainChange={(customDomain) => handleUpdateWebsite({ customDomain })}
               checkingSubdomain={isChecking}
               subdomainAvailable={isAvailable}
             />
@@ -786,14 +797,14 @@ const WebsiteBuilder = () => {
       ) : (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="max-w-lg w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-            <Globe className="h-12 w-12 text-viperx-primary mx-auto mb-4" />
+            <Globe className="h-12 w-12 text-primary mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Creeaza website-ul tau</h2>
             <p className="text-gray-500 mb-6">
               Configureaza un website profesional in cateva minute
             </p>
             <button
               onClick={() => setShowSetupDialog(true)}
-              className="inline-flex items-center px-6 py-3 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               Incepe acum
             </button>
@@ -828,7 +839,7 @@ const WebsiteBuilder = () => {
                     value={setupSubdomain}
                     onChange={handleSetupSubdomainChange}
                     placeholder="compania-ta"
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-l-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                   <div className="flex items-center px-3 bg-gray-100 border border-l-0 border-gray-200 rounded-r-lg text-gray-600 text-sm">
                     .forja.it.com
@@ -897,7 +908,7 @@ const WebsiteBuilder = () => {
               <button
                 onClick={() => handleCreateWebsite(null)}
                 disabled={!setupSubdomain || setupSubdomain.length < 3 || isAvailable === false || isCreating || isCreatingPages}
-                className="px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
               >
                 {isCreating || isCreatingPages ? (
                   <span className="inline-flex items-center gap-2">
@@ -932,7 +943,7 @@ const WebsiteBuilder = () => {
                 value={newPageTitle}
                 onChange={(e) => setNewPageTitle(e.target.value)}
                 placeholder="Ex: Despre noi, Contact, Servicii"
-                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
             <div className="flex justify-end gap-3">
@@ -945,7 +956,7 @@ const WebsiteBuilder = () => {
               <button
                 onClick={handleCreatePage}
                 disabled={!newPageTitle.trim()}
-                className="px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
               >
                 Creeaza pagina
               </button>
@@ -988,7 +999,7 @@ const WebsiteBuilder = () => {
           <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             {isApplyingTemplate ? (
               <div className="flex flex-col items-center justify-center py-8">
-                <Loader2 className="h-10 w-10 animate-spin text-viperx-primary mb-4" />
+                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
                 <h3 className="text-lg font-semibold mb-1">Se aplica template-ul...</h3>
                 <p className="text-gray-500 text-sm">Se actualizeaza paginile si setarile website-ului</p>
               </div>
@@ -1010,7 +1021,7 @@ const WebsiteBuilder = () => {
                   </button>
                   <button
                     onClick={() => handleApplyTemplate(showTemplateConfirm)}
-                    className="px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
                   >
                     Aplica template
                   </button>
@@ -1019,6 +1030,13 @@ const WebsiteBuilder = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Floating Helper Widget — only when website exists */}
+      {hasWebsite && (
+        <FloatingHelperWidget
+          selectedBlockType={blocks.find((b) => b.id === selectedBlockId)?.type || null}
+        />
       )}
     </div>
   );

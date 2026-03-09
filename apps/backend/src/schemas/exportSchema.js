@@ -7,8 +7,8 @@ const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be i
 const uuidSchema = z.string().uuid('Invalid UUID format').optional();
 
 // Export format validation
-const formatSchema = z.enum(['csv', 'excel', 'json', 'pdf'], {
-  errorMap: () => ({ message: 'Format must be one of: csv, excel, json, pdf' })
+const formatSchema = z.enum(['csv', 'excel', 'json', 'xml'], {
+  errorMap: () => ({ message: 'Format must be one of: csv, excel, json, xml' })
 }).optional().default('excel');
 
 // Status enums for different entities

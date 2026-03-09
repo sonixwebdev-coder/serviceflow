@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 const { verifyAccessToken } = require('../utils/token');
 const { AppError } = require('../utils/errors');
+const cache = require('../utils/cache');
 
 const authenticateSuperAdmin = async (req, res, next) => {
   try {
@@ -12,6 +13,11 @@ const authenticateSuperAdmin = async (req, res, next) => {
 
     const token = header.replace('Bearer ', '');
     const payload = verifyAccessToken(token);
+
+    // Check if token was revoked (logout)
+    if (await cache.isTokenBlacklisted(token)) {
+      throw new AppError('Token revoked', 401);
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },

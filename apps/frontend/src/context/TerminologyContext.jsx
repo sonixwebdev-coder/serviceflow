@@ -71,6 +71,9 @@ export const TerminologyProvider = ({ children }) => {
   const [assetFieldConfig, setAssetFieldConfig] = useState(DEFAULT_ASSET_FIELD_CONFIG);
   const [publicBooking, setPublicBooking] = useState(DEFAULT_PUBLIC_BOOKING);
   const [sectorConfig, setSectorConfig] = useState(null);
+  const [orgDescription, setOrgDescription] = useState('');
+  const [publicListing, setPublicListing] = useState(true);
+  const [invoiceSequence, setInvoiceSequence] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -81,6 +84,9 @@ export const TerminologyProvider = ({ children }) => {
     if (settings.assetFieldConfig) setAssetFieldConfig(settings.assetFieldConfig);
     if (settings.publicBooking) setPublicBooking(settings.publicBooking);
     if (settings.sectorConfig) setSectorConfig(settings.sectorConfig);
+    if (settings.description !== undefined) setOrgDescription(settings.description || '');
+    if (settings.publicListing !== undefined) setPublicListing(settings.publicListing !== false);
+    if (settings.invoiceSequence !== undefined) setInvoiceSequence(settings.invoiceSequence || null);
   };
 
   // Fetch terminology from API - only when access token is available
@@ -133,6 +139,9 @@ export const TerminologyProvider = ({ children }) => {
     assetFieldConfig,
     publicBooking,
     sectorConfig,
+    orgDescription,
+    publicListing,
+    invoiceSequence,
     loading,
     refreshSettings,
 

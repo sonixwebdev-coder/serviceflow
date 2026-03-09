@@ -18,6 +18,33 @@ const DAY_NAMES = {
   sunday: 'Duminica',
 };
 
+/**
+ * Groups consecutive days with the same hours into ranges.
+ * e.g. "Luni - Vineri: 09:00 - 17:00" instead of 5 separate lines.
+ */
+const condenseBusinessHours = (operatingHours) => {
+  const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const entries = dayOrder
+    .filter((day) => operatingHours[day] && DAY_NAMES[day])
+    .map((day) => {
+      const hours = operatingHours[day];
+      const isOpen = hours.isOpen !== false;
+      const label = isOpen ? `${hours.open || '09:00'} - ${hours.close || '17:00'}` : 'Inchis';
+      return { day, dayName: DAY_NAMES[day], label, isOpen };
+    });
+
+  const groups = [];
+  for (const entry of entries) {
+    const last = groups[groups.length - 1];
+    if (last && last.label === entry.label) {
+      last.endDay = entry.dayName;
+    } else {
+      groups.push({ startDay: entry.dayName, endDay: entry.dayName, label: entry.label, isOpen: entry.isOpen });
+    }
+  }
+  return groups;
+};
+
 // Social media icons as inline SVGs
 const SocialIcon = ({ type, url, primaryColor }) => {
   if (!url) return null;
@@ -77,6 +104,14 @@ export default function WebsiteLayout() {
     }
   }, [website?.branding]);
 
+  // Set document title
+  useEffect(() => {
+    if (website) {
+      const { seoDefaults, organization } = website;
+      document.title = seoDefaults?.title || organization?.name || '';
+    }
+  }, [website]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -98,7 +133,10 @@ export default function WebsiteLayout() {
 
   const { organization, pages, branding, seoDefaults } = website;
   // Backend already filters pages with where: { isPublished: true }
-  const navPages = pages || [];
+  const allPages = pages || [];
+  const LEGAL_SLUGS = ['termeni-si-conditii', 'politica-de-confidentialitate'];
+  const navPages = allPages.filter((p) => !LEGAL_SLUGS.includes(p.slug));
+  const legalPages = allPages.filter((p) => LEGAL_SLUGS.includes(p.slug));
   const primaryColor = branding?.primaryColor || '#2563eb';
   const primaryLocation = organization?.primaryLocation;
   const hasBooking = !!organization?.slug;
@@ -293,13 +331,13 @@ export default function WebsiteLayout() {
         {/* Footer */}
         <footer className="bg-gray-900 text-gray-300">
           <div className="h-1" style={{ backgroundColor: primaryColor }} />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {footerColumns > 0 && (
-              <div className={cn('grid gap-8', gridColsClass)}>
+              <div className={cn('grid gap-6', gridColsClass)}>
                 {/* About */}
                 {footerSettings.showAbout && (
                   <div>
-                    <h3 className="text-white font-semibold text-lg mb-4">
+                    <h3 className="text-white font-semibold text-base mb-3">
                       {organization?.name}
                     </h3>
                     {seoDefaults?.description && (
@@ -313,15 +351,19 @@ export default function WebsiteLayout() {
                 {/* Quick Links */}
                 {footerSettings.showQuickLinks && (
                   <div>
-                    <h3 className="text-white font-semibold text-lg mb-4">
+                    <h3 className="text-white font-semibold text-base mb-3">
                       Link-uri rapide
                     </h3>
-                    <ul className="space-y-2">
-                      {navPages.slice(0, 5).map((page) => (
+                    <ul className={cn(
+                      navPages.length > 4
+                        ? 'grid grid-cols-2 gap-x-4 gap-y-2'
+                        : 'space-y-2'
+                    )}>
+                      {navPages.map((page) => (
                         <li key={page.id}>
                           <Link
                             to={getPagePath(page)}
-                            className="text-gray-400 hover:text-white transition-colors"
+                            className="text-gray-400 hover:text-white transition-colors text-sm"
                           >
                             {page.title}
                           </Link>
@@ -331,7 +373,7 @@ export default function WebsiteLayout() {
                         <li>
                           <Link
                             to={`/${subdomain}/booking`}
-                            className="text-gray-400 hover:text-white transition-colors"
+                            className="text-gray-400 hover:text-white transition-colors text-sm"
                           >
                             Programare online
                           </Link>
@@ -344,7 +386,7 @@ export default function WebsiteLayout() {
                 {/* Contact Info */}
                 {footerSettings.showContact && (
                   <div>
-                    <h3 className="text-white font-semibold text-lg mb-4">
+                    <h3 className="text-white font-semibold text-base mb-3">
                       Contact
                     </h3>
                     <ul className="space-y-3">
@@ -379,23 +421,23 @@ export default function WebsiteLayout() {
                 {/* Business Hours */}
                 {footerSettings.showHours && (
                   <div>
-                    <h3 className="text-white font-semibold text-lg mb-4">
+                    <h3 className="text-white font-semibold text-base mb-3">
                       Program
                     </h3>
                     {primaryLocation?.operatingHours ? (
-                      <ul className="space-y-2 text-sm">
-                        {Object.entries(primaryLocation.operatingHours).map(([day, hours]) => {
-                          if (!hours || !DAY_NAMES[day]) return null;
-                          const isOpen = hours.isOpen !== false;
-                          return (
-                            <li key={day} className="flex justify-between gap-2">
-                              <span className="text-gray-400">{DAY_NAMES[day]}</span>
-                              <span className={isOpen ? 'text-gray-300' : 'text-gray-500'}>
-                                {isOpen ? `${hours.open || '09:00'} - ${hours.close || '17:00'}` : 'Inchis'}
-                              </span>
-                            </li>
-                          );
-                        })}
+                      <ul className="space-y-1.5 text-sm">
+                        {condenseBusinessHours(primaryLocation.operatingHours).map((group, i) => (
+                          <li key={i} className="flex justify-between gap-2">
+                            <span className="text-gray-400">
+                              {group.startDay === group.endDay
+                                ? group.startDay
+                                : `${group.startDay} - ${group.endDay}`}
+                            </span>
+                            <span className={group.isOpen ? 'text-gray-300' : 'text-gray-500'}>
+                              {group.label}
+                            </span>
+                          </li>
+                        ))}
                       </ul>
                     ) : (
                       <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -410,7 +452,7 @@ export default function WebsiteLayout() {
 
             {/* Social Links */}
             {hasSocialLinks && (
-              <div className={cn('flex items-center justify-center gap-4', footerColumns > 0 ? 'border-t border-gray-800 mt-8 pt-8' : '')}>
+              <div className={cn('flex items-center justify-center gap-4', footerColumns > 0 ? 'border-t border-gray-800 mt-6 pt-6' : '')}>
                 {footerSettings.socialLinks.facebook && (
                   <SocialIcon type="facebook" url={footerSettings.socialLinks.facebook} primaryColor={primaryColor} />
                 )}
@@ -426,12 +468,27 @@ export default function WebsiteLayout() {
               </div>
             )}
 
-            <div className={cn('text-center text-sm text-gray-500', (footerColumns > 0 || hasSocialLinks) ? 'border-t border-gray-800 mt-8 pt-8' : '')}>
+            <div className={cn('text-center text-sm text-gray-500', (footerColumns > 0 || hasSocialLinks) ? 'border-t border-gray-800 mt-6 pt-6' : '')}>
               <p>
                 {footerSettings.copyrightText || (
                   <>&copy; {new Date().getFullYear()} {organization?.name}. Toate drepturile rezervate.</>
                 )}
               </p>
+              {legalPages.length > 0 && (
+                <div className="mt-2 flex items-center justify-center gap-3">
+                  {legalPages.map((page, i) => (
+                    <span key={page.id} className="inline-flex items-center gap-3">
+                      {i > 0 && <span className="text-gray-700">|</span>}
+                      <Link
+                        to={getPagePath(page)}
+                        className="hover:text-gray-300 transition-colors"
+                      >
+                        {page.title}
+                      </Link>
+                    </span>
+                  ))}
+                </div>
+              )}
               {website.showBranding && (
                 <p className="mt-2">
                   Creat cu{' '}

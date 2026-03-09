@@ -83,7 +83,7 @@ const AnafCallback = () => {
         <div className="text-center">
           {status === 'processing' && (
             <>
-              <RefreshCw className="mx-auto h-16 w-16 animate-spin text-viperx-primary" />
+              <RefreshCw className="mx-auto h-16 w-16 animate-spin text-primary" />
               <h2 className="mt-4 text-xl font-semibold text-gray-900">
                 Procesare autentificare...
               </h2>
@@ -112,7 +112,7 @@ const AnafCallback = () => {
                     navigate('/anaf');
                   }
                 }}
-                className="mt-6 w-full rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                className="mt-6 w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
               >
                 {window.opener ? 'Închide' : 'Înapoi la ANAF'}
               </button>

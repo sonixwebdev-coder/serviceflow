@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, memo } from 'react';
+import confirm from '../../utils/confirm';
 import { format } from 'date-fns';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useDeleteMessage, useUpdateMessage } from '../../hooks/useChat';
@@ -6,12 +7,13 @@ import { MoreVertical, Edit2, Trash2, File, Image, Mic, Clock, AlertCircle } fro
 import useToast from '../../context/useToast';
 import ImagePreviewModal from './ImagePreviewModal';
 import UserHoverCard from './UserHoverCard';
+import { getFileUrl } from '../../utils/api';
 
 /**
  * Message Item Component
  * Displays individual message with avatar, content, and actions
  */
-export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPending, status }) {
+function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPending, status }) {
   const { user: currentUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editedBody, setEditedBody] = useState(message.body);
@@ -24,7 +26,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
 
   // Use prop if provided, otherwise compute
   const isOwnMessage = isOwnMessageProp ?? (message.author?.id === currentUser?.id);
-  const timestamp = format(new Date(message.createdAt), 'HH:mm');
+  const timestamp = useMemo(() => format(new Date(message.createdAt), 'HH:mm'), [message.createdAt]);
 
   // Get display body based on message type
   const getDisplayBody = () => {
@@ -72,7 +74,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Ești sigur că vrei să ștergi acest mesaj?')) {
+    if (await confirm({ title: 'Sterge mesaj', text: 'Esti sigur ca vrei sa stergi acest mesaj?', confirmText: 'Sterge', danger: true })) {
       try {
         await deleteMessageMutation.mutateAsync(message.id);
         showToast({
@@ -100,7 +102,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
           const isVoice = message.type === 'VOICE';
 
           if (isImage) {
-            const imageSrc = `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/files/${attachment.fileUrl}`;
+            const imageSrc = getFileUrl(`/files/${attachment.fileUrl}`);
             return (
               <div key={attachment.id} className="max-w-sm">
                 <img
@@ -122,9 +124,9 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
                 }`}
               >
                 <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                  isOwnMessage ? 'bg-white/30' : 'bg-viperx-primary/10'
+                  isOwnMessage ? 'bg-white/30' : 'bg-primary/10'
                 }`}>
-                  <Mic className={`h-5 w-5 ${isOwnMessage ? 'text-white' : 'text-viperx-primary'}`} />
+                  <Mic className={`h-5 w-5 ${isOwnMessage ? 'text-white' : 'text-primary'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-xs font-medium mb-1 ${isOwnMessage ? 'text-white/80' : 'text-gray-500'}`}>
@@ -133,7 +135,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
                   <audio
                     controls
                     className="w-full max-w-[200px] h-8"
-                    src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/files/${attachment.fileUrl}`}
+                    src={getFileUrl(`/files/${attachment.fileUrl}`)}
                   >
                     Browserul tău nu suportă elementul audio.
                   </audio>
@@ -145,7 +147,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
           return (
             <a
               key={attachment.id}
-              href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/files/${attachment.fileUrl}`}
+              href={getFileUrl(`/files/${attachment.fileUrl}`)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-3 hover:bg-gray-50"
@@ -177,7 +179,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
         showAvatar ? (
           <UserHoverCard user={message.author}>
             <div className="flex-shrink-0 cursor-pointer">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-viperx-primary text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
                 {message.author?.firstName?.[0] || '?'}
                 {message.author?.lastName?.[0] || ''}
               </div>
@@ -211,7 +213,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
             <textarea
               value={editedBody}
               onChange={(e) => setEditedBody(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               rows={3}
               autoFocus
             />
@@ -219,7 +221,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
               <button
                 onClick={handleEdit}
                 disabled={updateMessageMutation.isPending}
-                className="rounded bg-viperx-primary px-3 py-1 text-sm text-white hover:bg-orange-600 disabled:opacity-50"
+                className="rounded bg-primary px-3 py-1 text-sm text-white hover:bg-orange-600 disabled:opacity-50"
               >
                 Salvează
               </button>
@@ -238,7 +240,7 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
           <div
             className={`inline-block rounded-2xl px-4 py-2 text-sm ${
               isOwnMessage
-                ? 'bg-viperx-primary text-white rounded-br-md'
+                ? 'bg-primary text-white rounded-br-md'
                 : 'bg-white text-gray-900 shadow-sm border border-gray-100 rounded-bl-md'
             } ${isPending ? 'opacity-70' : ''}`}
           >
@@ -297,3 +299,5 @@ export default function MessageItem({ message, showAvatar, isOwnMessage: isOwnMe
     </div>
   );
 }
+
+export default memo(MessageItem);

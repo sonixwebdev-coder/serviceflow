@@ -65,14 +65,14 @@ const Assets = () => {
             placeholder={`Cauta ${assetPlural.toLowerCase()} dupa nume, identificator, producator...`}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
         {search && (
           <button
             type="button"
             onClick={() => handleSearchChange('')}
-            className="text-sm text-gray-500 hover:text-viperx-primary transition-colors flex items-center gap-1"
+            className="text-sm text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
           >
             <X size={14} />
             Sterge cautarea
@@ -84,7 +84,7 @@ const Assets = () => {
       <div className={`bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}>
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         ) : assets.length === 0 ? (
           <div className="empty-state">
@@ -131,13 +131,13 @@ const Assets = () => {
                         {clientName ? (
                           <button
                             onClick={() => handleClientClick(asset.client)}
-                            className="inline-flex items-center gap-2 text-viperx-primary hover:text-orange-700 transition group"
+                            className="inline-flex items-center gap-2 text-primary hover:text-orange-700 transition group"
                           >
                             <span className="flex items-center gap-1.5">
                               {asset.client.type === 'SRL' ? (
                                 <Building size={14} className="text-blue-600" />
                               ) : (
-                                <User size={14} className="text-viperx-primary" />
+                                <User size={14} className="text-primary" />
                               )}
                               <span className="font-medium">{clientName}</span>
                             </span>

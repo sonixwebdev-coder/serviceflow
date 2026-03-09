@@ -15,7 +15,7 @@ import {
 const FORMAT_OPTIONS = [
   { value: 'csv', label: 'CSV', icon: FileText, description: 'Comma Separated Values' },
   { value: 'json', label: 'JSON', icon: Code, description: 'JavaScript Object Notation' },
-  { value: 'pdf', label: 'PDF', icon: FileText, description: 'Portable Document Format' },
+  { value: 'xml', label: 'XML', icon: Code, description: 'Extensible Markup Language' },
 ];
 
 const EXPORT_FUNCTIONS = {
@@ -151,16 +151,11 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
 
   const getFileExtension = (format) => {
     switch (format) {
-      case 'csv':
-        return 'csv';
-      case 'excel':
-        return 'xlsx';
-      case 'json':
-        return 'json';
-      case 'pdf':
-        return 'pdf';
-      default:
-        return 'txt';
+      case 'csv': return 'csv';
+      case 'excel': return 'xlsx';
+      case 'json': return 'json';
+      case 'xml': return 'xml';
+      default: return 'txt';
     }
   };
 
@@ -198,7 +193,7 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
           inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2
           text-sm font-medium text-gray-700 shadow-sm transition
           hover:bg-gray-50 hover:border-gray-400
-          focus:outline-none focus:ring-2 focus:ring-viperx-primary focus:ring-offset-2
+          focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
           disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white
           ${isOpen ? 'bg-gray-50 border-gray-400' : ''}
         `}
@@ -246,7 +241,7 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
                   `}
                 >
                   {isCurrentlyExporting ? (
-                    <Loader2 size={16} className="animate-spin text-viperx-primary" />
+                    <Loader2 size={16} className="animate-spin text-primary" />
                   ) : (
                     <Icon size={16} className="text-gray-500" />
                   )}

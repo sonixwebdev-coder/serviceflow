@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Download, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { useInvoices, useInvoiceSummary } from '@/hooks/useInvoices';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { invoiceService } from '@/services/invoiceService';
 
 const statusOptions = [
   { value: '', label: 'Toate' },
@@ -19,6 +20,26 @@ export default function Invoices() {
   const [filters, setFilters] = useState({ status: '', page: 1, limit: 10 });
   const { data, isLoading } = useInvoices(filters);
   const { data: summary } = useInvoiceSummary();
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const handleDownload = async (invoice) => {
+    setDownloadingId(invoice.id);
+    try {
+      const blob = await invoiceService.downloadInvoicePdf(invoice.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${invoice.invoiceNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      // silent — user can retry
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const invoices = data?.items || [];
   const pagination = data?.pagination;
@@ -128,16 +149,17 @@ export default function Invoices() {
                       <StatusBadge status={invoice.status} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {invoice.pdfUrl && (
-                        <a
-                          href={invoice.pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <Download className="h-5 w-5" />
-                        </a>
-                      )}
+                      <button
+                        onClick={() => handleDownload(invoice)}
+                        disabled={downloadingId === invoice.id}
+                        className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                        title="Descarca PDF"
+                      >
+                        {downloadingId === invoice.id
+                          ? <Loader2 className="h-5 w-5 animate-spin" />
+                          : <Download className="h-5 w-5" />
+                        }
+                      </button>
                     </td>
                   </tr>
                 ))}

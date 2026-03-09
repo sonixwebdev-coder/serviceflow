@@ -5,6 +5,7 @@ const { normalizeEmploymentType } = require('../utils/normalize');
 const { ensureRole, normalizeRoleKey } = require('./roleService');
 const cache = require('../utils/cache');
 const globalPrisma = require('../../lib/prisma');
+const logger = require('../utils/logger');
 
 const normalizeKey = (value) => (typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '');
 const ADMIN_ROLE = 'admin';
@@ -82,6 +83,7 @@ const listUsers = async (prisma, { search, role, isActive }, currentUser, option
 
   const users = await prisma.user.findMany({
     where,
+    take: 200, // Safety limit to prevent unbounded queries
     include: {
       roles: {
         include: {
@@ -207,9 +209,10 @@ const updateUserStatus = async (prisma, { userId, isActive }) => {
     },
   });
 
-  // Invalidate user cache and user list caches
+  // Invalidate user cache, auth cache, and user list caches
   await Promise.all([
     cache.del(cache.userWithRolesKey(userId)),
+    cache.del(`auth:${userId}`),
     cache.delPattern('users:list:*'),
   ]);
 
@@ -256,6 +259,12 @@ const createUser = async (prisma, payload, organizationId) => {
 
   if (!password) {
     throw new AppError('Password is required', 400);
+  }
+
+  // Quota check: users (concurrent seats)
+  if (organizationId) {
+    const { checkOrganizationLimits } = require('./organizationService');
+    await checkOrganizationLimits(organizationId, 'users');
   }
 
   // SECURITY: Normalize email to lowercase to prevent duplicate accounts
@@ -460,9 +469,10 @@ const deactivateUser = async (prisma, userId) => {
     },
   });
 
-  // Invalidate user cache and user list caches
+  // Invalidate user cache, auth cache, and user list caches
   await Promise.all([
     cache.del(cache.userWithRolesKey(userId)),
+    cache.del(`auth:${userId}`),
     cache.delPattern('users:list:*'),
   ]);
 
@@ -533,7 +543,7 @@ const changePassword = async (prisma, userId, { currentPassword, newPassword }) 
   const lockoutExpiry = await cache.get(lockoutKey);
   if (lockoutExpiry) {
     const remainingTime = Math.ceil((lockoutExpiry - Date.now()) / 60000);
-    console.warn(`[SECURITY] Password change blocked for user ${userId} - account locked for ${remainingTime} more minutes`);
+    logger.warn('Password change blocked - account locked', { userId, remainingMinutes: remainingTime });
     throw new AppError(`Account temporarily locked due to multiple failed attempts. Try again in ${remainingTime} minutes.`, 429);
   }
 
@@ -564,14 +574,14 @@ const changePassword = async (prisma, userId, { currentPassword, newPassword }) 
     let failedAttempts = (await cache.get(failedAttemptsKey)) || 0;
     failedAttempts++;
 
-    console.warn(`[SECURITY] Failed password change attempt for user ${userId} (${user.email}) - Attempt ${failedAttempts}/5`);
+    logger.warn('Failed password change attempt', { userId, email: user.email, attempt: failedAttempts, maxAttempts: 5 });
 
     if (failedAttempts >= 5) {
       // Lock account for 15 minutes
       const lockoutExpires = Date.now() + (15 * 60 * 1000);
       await cache.set(lockoutKey, lockoutExpires, 15 * 60); // 15 minutes in seconds
       await cache.del(failedAttemptsKey);
-      console.error(`[SECURITY] Account locked for user ${userId} (${user.email}) due to 5 failed password change attempts`);
+      logger.error('Account locked due to failed password change attempts', { userId, email: user.email, failedAttempts: 5 });
       throw new AppError('Too many failed attempts. Account locked for 15 minutes.', 429);
     }
 

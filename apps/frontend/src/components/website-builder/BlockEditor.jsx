@@ -213,7 +213,7 @@ const BlockEditor = ({
       </div>
 
       {/* Settings Sidebar (Slide-in Panel) */}
-      {showSettings && !previewMode && (
+      {showSettings && !previewMode && selectedBlock && (
         <div
           ref={settingsPanelRef}
           className="w-[400px] border-l bg-white flex-shrink-0 h-full overflow-hidden"

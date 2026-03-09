@@ -6,6 +6,7 @@ const {
   getAnafConfig,
 } = require('../services/anaf/anafInvoiceService');
 const { getValidToken, refreshAccessToken } = require('../services/anaf/anafOAuthService');
+const logger = require('../utils/logger');
 
 /**
  * ANAF Background Sync Jobs
@@ -13,6 +14,7 @@ const { getValidToken, refreshAccessToken } = require('../services/anaf/anafOAut
  */
 
 let jobs = {};
+const running = {};
 
 /**
  * Status sync job - Check pending uploads every 5 minutes
@@ -20,6 +22,8 @@ let jobs = {};
 function scheduleStatusSync() {
   // Run every 5 minutes
   const job = cron.schedule('*/5 * * * *', async () => {
+    if (running.statusSync) return;
+    running.statusSync = true;
     try {
       const result = await syncPendingInvoices({ limit: 20 });
 
@@ -29,10 +33,12 @@ function scheduleStatusSync() {
           .filter(d => !d.success)
           .map(d => `Invoice ${d.invoiceNumber}: ${d.error}`)
           .join(', ');
-        console.error('[ANAF Job] Status sync errors:', errorDetails);
+        logger.error('[ANAF Job] Status sync errors:', errorDetails);
       }
     } catch (error) {
-      console.error('[ANAF Job] Status sync failed:', error.message);
+      logger.error('[ANAF Job] Status sync failed:', error.message);
+    } finally {
+      running.statusSync = false;
     }
   }, {
     scheduled: false, // Don't start immediately
@@ -82,16 +88,16 @@ function scheduleTokenRefresh() {
             refreshed++;
 
           } else if (daysUntilExpiry < 0) {
-            console.warn(`[ANAF Job] Token expired for config ${config.id}. Manual re-authentication required.`);
+            logger.warn(`[ANAF Job] Token expired for config ${config.id}. Manual re-authentication required.`);
             errors++;
           }
         } catch (error) {
-          console.error(`[ANAF Job] Failed to refresh token for config ${config.id}:`, error.message);
+          logger.error(`[ANAF Job] Failed to refresh token for config ${config.id}:`, error.message);
           errors++;
         }
       }
     } catch (error) {
-      console.error('[ANAF Job] Token refresh job failed:', error.message);
+      logger.error('[ANAF Job] Token refresh job failed:', error.message);
     }
   }, {
     scheduled: false,
@@ -110,7 +116,7 @@ function scheduleMessageDownload() {
     try {
       const result = await downloadAnafMessages({ days: 7, filter: 'T' });
     } catch (error) {
-      console.error('[ANAF Job] Message download failed:', error.message);
+      logger.error('[ANAF Job] Message download failed:', error.message);
     }
   }, {
     scheduled: false,
@@ -163,13 +169,13 @@ function scheduleRetryFailed() {
           succeeded++;
 
         } catch (error) {
-          console.error(`[ANAF Job] Failed to retry invoice ${sync.invoice.invoiceNumber}:`, error.message);
+          logger.error(`[ANAF Job] Failed to retry invoice ${sync.invoice.invoiceNumber}:`, error.message);
           retried++;
           failed++;
         }
       }
     } catch (error) {
-      console.error('[ANAF Job] Retry job failed:', error.message);
+      logger.error('[ANAF Job] Retry job failed:', error.message);
     }
   }, {
     scheduled: false,
@@ -185,6 +191,8 @@ function scheduleRetryFailed() {
  */
 function scheduleAutoSubmit() {
   const job = cron.schedule('*/15 * * * *', async () => {
+    if (running.autoSubmit) return;
+    running.autoSubmit = true;
     try {
 
       // Find invoices that are SENT but not yet submitted to ANAF
@@ -214,12 +222,14 @@ function scheduleAutoSubmit() {
 
           submitted++;
         } catch (error) {
-          console.error(`[ANAF Job] Failed to auto-submit invoice ${invoice.invoiceNumber}:`, error.message);
+          logger.error(`[ANAF Job] Failed to auto-submit invoice ${invoice.invoiceNumber}:`, error.message);
           errors++;
         }
       }
     } catch (error) {
-      console.error('[ANAF Job] Auto-submit job failed:', error.message);
+      logger.error('[ANAF Job] Auto-submit job failed:', error.message);
+    } finally {
+      running.autoSubmit = false;
     }
   }, {
     scheduled: false,

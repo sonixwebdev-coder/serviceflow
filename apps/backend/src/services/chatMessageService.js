@@ -3,6 +3,7 @@ const { writeFile, removeFile } = require('../utils/storage');
 const { ensureChannelAccess } = require('./chatService');
 const crypto = require('crypto');
 const path = require('path');
+const logger = require('../utils/logger');
 
 /**
  * Chat Message Service
@@ -247,7 +248,7 @@ async function deleteMessage(prisma, messageId, currentUser) {
       try {
         await removeFile(attachment.fileUrl);
       } catch (error) {
-        console.error(`Failed to delete file: ${attachment.fileUrl}`, error);
+        logger.error('Failed to delete file', { fileUrl: attachment.fileUrl, error: error.message });
       }
     }
 

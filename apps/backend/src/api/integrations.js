@@ -32,10 +32,20 @@ router.get(
  * GET /api/integrations/google/callback
  * Handle OAuth callback (unauthenticated - called by Google)
  */
+/**
+ * Send an HTML page that redirects via JavaScript instead of a 302 redirect.
+ * This avoids ERR_FAILED issues when redirecting cross-port (e.g. 5000 → 5173)
+ * after a chain of OAuth redirects through Google.
+ */
+const sendRedirectPage = (res, url) => {
+  const safeUrl = url.replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  res.type('html').send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="2;url=${safeUrl}"><script>window.location.replace("${safeUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");</script></head><body style="font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;color:#666"><p>Se redirectioneaza...</p></body></html>`);
+};
+
 router.get(
   '/google/callback',
   asyncHandler(async (req, res) => {
-    const { code, state, error } = req.query;
+    const { code, state, error, error_description } = req.query;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     // Parse state to get user info
@@ -44,14 +54,14 @@ router.get(
       stateData = JSON.parse(Buffer.from(state, 'base64').toString());
     } catch (e) {
       logger.error('Invalid OAuth state:', e);
-      return res.redirect(`${frontendUrl}/profile?error=invalid_state`);
+      return sendRedirectPage(res, `${frontendUrl}/profile?error=invalid_state`);
     }
 
     const returnUrl = stateData.returnUrl || '/profile';
 
     if (error) {
-      logger.error('Google OAuth error:', error);
-      return res.redirect(`${frontendUrl}${returnUrl}?error=${error}`);
+      logger.error('Google OAuth error:', { error, error_description, userId: stateData.userId });
+      return sendRedirectPage(res, `${frontendUrl}${returnUrl}?error=${error}`);
     }
 
     try {
@@ -63,11 +73,18 @@ router.get(
 
       logger.info(`Google Calendar connected for user ${stateData.userId} (location: ${stateData.locationId || 'default'})`);
 
-      // Redirect back to the app
-      res.redirect(`${frontendUrl}${returnUrl}?google_connected=true`);
+      // Redirect back to the app, include locationId so frontend can restore the active location
+      const locParam = stateData.locationId ? `&locationId=${stateData.locationId}` : '';
+      sendRedirectPage(res, `${frontendUrl}${returnUrl}?google_connected=true${locParam}`);
     } catch (err) {
-      logger.error('Failed to complete Google OAuth:', err);
-      res.redirect(`${frontendUrl}${returnUrl}?error=oauth_failed`);
+      logger.error('Failed to complete Google OAuth:', {
+        message: err.message,
+        name: err.name,
+        stack: err.stack,
+        userId: stateData.userId,
+        locationId: stateData.locationId,
+      });
+      sendRedirectPage(res, `${frontendUrl}${returnUrl}?error=oauth_failed&detail=${encodeURIComponent(err.message || 'unknown')}`);
     }
   })
 );
@@ -107,7 +124,8 @@ router.get(
   '/google/calendars',
   authenticate,
   asyncHandler(async (req, res) => {
-    const calendars = await googleCalendarService.listCalendars(req.tenantPrisma, req.user.id);
+    const locationId = req.query.locationId || null;
+    const calendars = await googleCalendarService.listCalendars(req.tenantPrisma, req.user.id, locationId);
     res.json(calendars);
   })
 );

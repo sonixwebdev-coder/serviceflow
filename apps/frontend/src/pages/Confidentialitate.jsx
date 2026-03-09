@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
       {/* Content */}
       <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Politica de Confidentialitate</h1>
-        <p className="mt-2 text-sm text-gray-500">Ultima actualizare: 9 februarie 2026</p>
+        <p className="mt-2 text-sm text-gray-500">Ultima actualizare: 8 martie 2026</p>
 
         <div className="mt-10 space-y-8 text-sm leading-relaxed text-gray-700">
           {/* 1 */}

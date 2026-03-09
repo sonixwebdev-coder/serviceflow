@@ -61,6 +61,11 @@ export const createPage = async (websiteId, payload) => {
   return response.data?.data || response.data;
 };
 
+export const bulkUpsertPages = async (websiteId, pages) => {
+  const response = await API.post(`/website/${websiteId}/pages/bulk`, { pages });
+  return response.data?.data || response.data;
+};
+
 export const updatePage = async (websiteId, pageId, payload) => {
   const response = await API.patch(`/website/${websiteId}/pages/${pageId}`, payload);
   return response.data?.data || response.data;
@@ -103,6 +108,27 @@ export const convertLeadToClient = async (websiteId, leadId) => {
   return response.data?.data || response.data;
 };
 
+export const approveReview = async (websiteId, leadId) => {
+  const response = await API.patch(`/website/${websiteId}/leads/${leadId}/approve`);
+  return response.data?.data || response.data;
+};
+
+export const rejectReview = async (websiteId, leadId) => {
+  const response = await API.patch(`/website/${websiteId}/leads/${leadId}/reject`);
+  return response.data?.data || response.data;
+};
+
+// ============== Image Upload ==============
+
+export const uploadWebsiteImage = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await API.post('/website/images', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data?.data?.url || response.data?.url;
+};
+
 export default {
   // Website
   fetchWebsite,
@@ -118,6 +144,7 @@ export default {
   fetchPages,
   fetchPageById,
   createPage,
+  bulkUpsertPages,
   updatePage,
   deletePage,
   reorderPages,
@@ -127,4 +154,7 @@ export default {
   updateLead,
   deleteLead,
   convertLeadToClient,
+  approveReview,
+  rejectReview,
+  uploadWebsiteImage,
 };

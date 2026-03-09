@@ -3,10 +3,14 @@ const crypto = require('crypto');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { signAccessToken, generateRefreshToken } = require('../utils/token');
-const { normalizeEmploymentType } = require('../utils/normalize');
-const { ensureRole, normalizeRoleKey } = require('./roleService');
 const { sendCrmPasswordResetEmail } = require('./email/emailService');
+const cache = require('../utils/cache');
 const logger = require('../utils/logger');
+
+/** Reusable role include — only fetches fields mapAuthUser actually uses */
+const authRoleInclude = {
+  roles: { include: { role: { select: { id: true, key: true, name: true } } } },
+};
 
 /**
  * Generate a secure token
@@ -42,82 +46,17 @@ const mapAuthUser = (user) => {
     role: primaryRole,
     roles: mappedRoles,
     isActive: user.isActive,
+    isSuperAdmin: user.isSuperAdmin || false,
+    orgStatus: user.organization?.status || null,
   };
 };
 
-const registerUser = async ({ firstName, lastName, email, password, phoneNumber, roleKey, employmentType }) => {
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (existingUser) {
-    throw new AppError('Email is already in use', 409);
-  }
-
-  const hash = await bcrypt.hash(password, parseInt(process.env.HASH_SALT_ROUNDS || '10', 10));
-
-  const data = await prisma.$transaction(async (tx) => {
-    const targetRoleKey = normalizeRoleKey(roleKey);
-    const role = await ensureRole(targetRoleKey, tx);
-
-    const user = await tx.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        password: hash,
-        phoneNumber,
-        employmentType: normalizeEmploymentType(employmentType) || undefined,
-      },
-    });
-
-    await tx.userRole.create({
-      data: {
-        userId: user.id,
-        roleId: role.id,
-      },
-    });
-
-    return tx.user.findUnique({
-      where: { id: user.id },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-  });
-
-  return mapAuthUser(data);
-};
-
-const loginUser = async ({ email, password }) => {
-  const user = await prisma.user.findFirst({
+const loginUser = async ({ email, password, context }) => {
+  const user = await prisma.user.findUnique({
     where: { email },
     include: {
-      roles: {
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
-      },
+      organization: { select: { status: true } },
+      ...authRoleInclude,
     },
   });
 
@@ -125,11 +64,79 @@ const loginUser = async ({ email, password }) => {
     throw new AppError('Invalid credentials', 401);
   }
 
+  // Check if account is locked (brute-force protection)
+  if (user.lockedUntil && user.lockedUntil > new Date()) {
+    const minutesLeft = Math.ceil((user.lockedUntil - new Date()) / 60000);
+    throw new AppError(
+      `Contul este blocat temporar. Incercati din nou in ${minutesLeft} minute.`,
+      429,
+      null,
+      'ACCOUNT_LOCKED'
+    );
+  }
+
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
+    // Increment failed attempts, lock after 5 consecutive failures
+    const attempts = (user.failedLoginAttempts || 0) + 1;
+    const updateData = { failedLoginAttempts: attempts };
+
+    if (attempts >= 5) {
+      updateData.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 minutes
+      logger.warn(`Account locked after ${attempts} failed attempts`, { email, userId: user.id });
+    }
+
+    prisma.user.update({ where: { id: user.id }, data: updateData }).catch(() => {});
     throw new AppError('Invalid credentials', 401);
   }
+
+  // Reset failed attempts on successful login
+  if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+    prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    }).catch(() => {});
+  }
+
+  // Check if user account is active
+  if (!user.isActive) {
+    throw new AppError('Contul este dezactivat. Contactati administratorul.', 403, null, 'ACCOUNT_DEACTIVATED');
+  }
+
+  // Context-based login separation
+  if (context === 'admin' && !user.isSuperAdmin) {
+    throw new AppError('Acces interzis: nu esti super admin', 403);
+  }
+  if (context === 'crm' && user.isSuperAdmin) {
+    throw new AppError('Acest cont nu poate fi folosit aici', 403);
+  }
+
+  // Check organization status for non-super-admin users
+  if (!user.isSuperAdmin && user.organization) {
+    const orgStatus = user.organization.status;
+    if (orgStatus === 'SUSPENDED' || orgStatus === 'CANCELLED') {
+      const isAdmin = user.roles?.some((r) => r.role?.key === 'admin');
+      if (isAdmin) {
+        throw new AppError(
+          'Organizatia dvs. a fost dezactivata. Contactati suportul pentru reactivare.',
+          403,
+          null,
+          'ORG_DEACTIVATED_ADMIN'
+        );
+      } else {
+        throw new AppError(
+          'Organizatia dvs. a fost dezactivata. Contactati administratorul organizatiei.',
+          403,
+          null,
+          'ORG_DEACTIVATED'
+        );
+      }
+    }
+  }
+
+  // Track last login time (fire-and-forget)
+  prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
 
   const payload = {
     sub: user.id,
@@ -163,19 +170,8 @@ const refreshSession = async ({ token }) => {
     include: {
       user: {
         include: {
-          roles: {
-            include: {
-              role: {
-                include: {
-                  permissions: {
-                    include: {
-                      permission: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
+          organization: { select: { status: true } },
+          ...authRoleInclude,
         },
       },
     },
@@ -185,11 +181,21 @@ const refreshSession = async ({ token }) => {
     throw new AppError('Invalid refresh token', 401);
   }
 
-  // Rotate token
-  await prisma.refreshToken.update({
-    where: { id: stored.id },
-    data: { revokedAt: new Date() },
-  });
+  // Reject refresh for deactivated users
+  if (!stored.user.isActive) {
+    // Revoke the token so it can't be retried
+    await prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: new Date() } });
+    throw new AppError('Contul este dezactivat', 401);
+  }
+
+  // Reject refresh for suspended/cancelled organizations
+  if (!stored.user.isSuperAdmin && stored.user.organization) {
+    const orgStatus = stored.user.organization.status;
+    if (orgStatus === 'SUSPENDED' || orgStatus === 'CANCELLED') {
+      await prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: new Date() } });
+      throw new AppError('Organizatia nu este activa', 403);
+    }
+  }
 
   const payload = {
     sub: stored.user.id,
@@ -202,13 +208,20 @@ const refreshSession = async ({ token }) => {
   const accessToken = signAccessToken(payload);
   const { token: nextToken, expiresAt } = generateRefreshToken();
 
-  await prisma.refreshToken.create({
-    data: {
-      userId: stored.user.id,
-      token: nextToken,
-      expiresAt,
-    },
-  });
+  // Batch revoke old + create new token in a single transaction
+  await prisma.$transaction([
+    prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() },
+    }),
+    prisma.refreshToken.create({
+      data: {
+        userId: stored.user.id,
+        token: nextToken,
+        expiresAt,
+      },
+    }),
+  ]);
 
   return {
     user: mapAuthUser(stored.user),
@@ -314,11 +327,13 @@ const resetPassword = async ({ resetToken, newPassword }) => {
     data: { revokedAt: new Date() },
   });
 
+  // Clear auth cache so existing access tokens are re-validated
+  await cache.del(`auth:${user.id}`);
+
   return { success: true };
 };
 
 module.exports = {
-  registerUser,
   loginUser,
   refreshSession,
   revokeRefreshToken,

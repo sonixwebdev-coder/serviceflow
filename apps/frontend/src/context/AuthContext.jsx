@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import API, { refreshAuthSession } from '../utils/api';
 import AuthContext from './AuthContext';
 import { useAuthStore } from '../state/useAuthStore.js';
+import { queryClient } from '../lib/queryClient';
+import useLocationStore from '../state/useLocationStore';
 
 /**
  * Cache only minimal, non-sensitive user fields in localStorage.
@@ -55,7 +57,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await API.post('/auth/login', { email, password });
+      const response = await API.post('/auth/login', { email, password, context: 'crm' });
       const payload = response.data?.data || response.data;
       setSession({ user: payload.user, accessToken: payload.accessToken });
       // Only cache minimal display fields in localStorage (no sensitive data)
@@ -63,19 +65,26 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      const message = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
-      return { success: false, message };
+      const data = error?.response?.data;
+      const message = data?.message || error?.message || 'Login failed. Please try again.';
+      const code = data?.code || null;
+      return { success: false, message, code };
     }
   };
 
   const logout = async () => {
     try {
-      await API.post('/auth/logout');
+      await API.post('/auth/logout', { context: 'crm' });
     } catch (error) {
       console.warn('Failed to revoke refresh token:', error?.message || error);
     } finally {
+      // Clear auth state
       clear();
       localStorage.removeItem('user');
+      // Reset location store so the next user starts fresh (clears persisted currentLocationId)
+      useLocationStore.getState().reset();
+      // Clear all cached query data so the next user doesn't see stale data
+      queryClient.clear();
       navigate('/login');
     }
   };

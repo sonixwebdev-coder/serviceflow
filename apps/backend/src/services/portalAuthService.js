@@ -4,7 +4,8 @@ const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { signAccessToken, verifyAccessToken, generateRefreshToken, REFRESH_TOKEN_TTL_DAYS } = require('../utils/token');
 const { getSectorConfig } = require('../constants/activitySectors');
-const { sendPasswordResetEmail } = require('./email/emailService');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('./email/emailService');
+const { getCompanySettings } = require('./companySettingService');
 
 const SALT_ROUNDS = 10;
 
@@ -148,6 +149,7 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
               slug: true,
               activitySector: true,
               settings: true,
+              status: true,
             },
           },
         },
@@ -159,9 +161,44 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
     throw new AppError('Invalid email or password', 401);
   }
 
+  // Check if account is locked (brute-force protection)
+  if (account.lockedUntil && account.lockedUntil > new Date()) {
+    const minutesLeft = Math.ceil((account.lockedUntil - new Date()) / 60000);
+    throw new AppError(
+      `Contul este blocat temporar. Incercati din nou in ${minutesLeft} minute.`,
+      429,
+      null,
+      'ACCOUNT_LOCKED'
+    );
+  }
+
   const isValid = await verifyPassword(password, account.password);
   if (!isValid) {
+    // Increment failed attempts, lock after 5 consecutive failures
+    const attempts = (account.failedLoginAttempts || 0) + 1;
+    const updateData = { failedLoginAttempts: attempts };
+
+    if (attempts >= 5) {
+      updateData.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+      logger.warn(`Client account locked after ${attempts} failed attempts`, { email });
+    }
+
+    prisma.clientAccount.update({ where: { id: account.id }, data: updateData }).catch(() => {});
     throw new AppError('Invalid email or password', 401);
+  }
+
+  // Reset failed attempts on successful login
+  if (account.failedLoginAttempts > 0 || account.lockedUntil) {
+    prisma.clientAccount.update({
+      where: { id: account.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    }).catch(() => {});
+  }
+
+  // Check organization status
+  const orgStatus = account.client?.organization?.status;
+  if (orgStatus === 'SUSPENDED' || orgStatus === 'CANCELLED') {
+    throw new AppError('Organizatia nu este activa in acest moment', 403);
   }
 
   // Create JWT access token with client-specific payload
@@ -300,6 +337,19 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
 const verifyEmail = async (prisma, verificationToken) => {
   const account = await prisma.clientAccount.findFirst({
     where: { verificationToken },
+    include: {
+      client: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          companyName: true,
+          email: true,
+          type: true,
+          organizationId: true,
+        },
+      },
+    },
   });
 
   if (!account) {
@@ -313,6 +363,17 @@ const verifyEmail = async (prisma, verificationToken) => {
       verificationToken: null,
     },
   });
+
+  // Send welcome email after verification (fire-and-forget)
+  if (account.client?.email && account.client?.organizationId) {
+    getCompanySettings(account.client.organizationId).then((companySettings) => {
+      sendWelcomeEmail(prisma, {
+        client: account.client,
+        companySettings,
+        organizationId: account.client.organizationId,
+      }).catch((err) => logger.error('[EMAIL] Post-verification welcome email failed:', err.message));
+    }).catch(() => {});
+  }
 
   return { success: true };
 };

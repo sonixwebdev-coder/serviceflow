@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import confirm from '../utils/confirm';
 import { Search, Plus, Edit2, Trash2, Boxes } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchResources, createResource, updateResource, deleteResource } from '../services/resourceService';
@@ -95,7 +96,7 @@ const Resources = () => {
         </div>
         <button
           onClick={() => setIsCreating(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
         >
           <Plus size={16} />
           Adauga {resourceSingular.toLowerCase()}
@@ -111,7 +112,7 @@ const Resources = () => {
             placeholder={`Cauta ${resourcePlural.toLowerCase()} dupa nume, tip...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
       </div>
@@ -128,7 +129,7 @@ const Resources = () => {
                 required
                 value={resourceForm.name}
                 onChange={(e) => setResourceForm({ ...resourceForm, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                 placeholder="Service Bay 1"
               />
             </div>
@@ -139,7 +140,7 @@ const Resources = () => {
                 required
                 value={resourceForm.type}
                 onChange={(e) => setResourceForm({ ...resourceForm, type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
               >
                 <option value="workspace">Workspace</option>
                 <option value="bay">Service Bay</option>
@@ -154,7 +155,7 @@ const Resources = () => {
               <textarea
                 value={resourceForm.description}
                 onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                 placeholder="Optional description"
                 rows={2}
               />
@@ -168,7 +169,7 @@ const Resources = () => {
                 min="1"
                 value={resourceForm.capacity}
                 onChange={(e) => setResourceForm({ ...resourceForm, capacity: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                 placeholder="1"
               />
             </div>
@@ -179,7 +180,7 @@ const Resources = () => {
                   type="checkbox"
                   checked={resourceForm.isActive}
                   onChange={(e) => setResourceForm({ ...resourceForm, isActive: e.target.checked })}
-                  className="w-4 h-4 text-viperx-primary border-gray-300 rounded focus:ring-viperx-primary"
+                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                 />
                 <span className="ml-2 text-sm text-gray-700">Active</span>
               </label>
@@ -189,7 +190,7 @@ const Resources = () => {
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {editingResource ? `Update ${resourceSingular}` : `Create ${resourceSingular}`}
               </button>
@@ -213,7 +214,7 @@ const Resources = () => {
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         ) : resources.length === 0 ? (
           <div className="text-center py-12">
@@ -271,8 +272,8 @@ const Resources = () => {
                           <Edit2 size={16} />
                         </button>
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Are you sure you want to delete this ${resourceSingular.toLowerCase()}?`)) {
+                          onClick={async () => {
+                            if (await confirm({ title: 'Sterge resursa', text: `Esti sigur ca vrei sa stergi aceasta ${resourceSingular.toLowerCase()}?`, confirmText: 'Sterge', danger: true })) {
                               deleteMutation.mutate(resource.id);
                             }
                           }}

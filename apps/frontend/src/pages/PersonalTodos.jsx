@@ -385,7 +385,7 @@ const PersonalTodos = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-viperx-primary" />
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
@@ -414,7 +414,7 @@ const PersonalTodos = () => {
         <button
           type="button"
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
         >
           <Plus size={18} />
           Adauga Todo
@@ -457,7 +457,7 @@ const PersonalTodos = () => {
             <select
               value={completionFilter}
               onChange={(e) => setCompletionFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="all">Toate</option>
               <option value="active">Active</option>
@@ -473,7 +473,7 @@ const PersonalTodos = () => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="all">Toate</option>
               <option value={PRIORITY.LOW}>Scazuta</option>
@@ -491,7 +491,7 @@ const PersonalTodos = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="dueDate">Data scadenta</option>
               <option value="priority">Prioritate</option>
@@ -534,7 +534,7 @@ const PersonalTodos = () => {
             <button
               type="button"
               onClick={openCreateModal}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
             >
               <Plus size={18} />
               Adauga primul todo
@@ -565,11 +565,11 @@ const PersonalTodos = () => {
                     disabled={togglingTodoId === todo.id}
                   >
                     {togglingTodoId === todo.id ? (
-                      <Loader2 className="h-5 w-5 text-viperx-primary animate-spin" />
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     ) : todo.isCompleted ? (
                       <CheckCircle className="h-5 w-5 text-green-600" />
                     ) : (
-                      <div className="h-5 w-5 rounded border-2 border-gray-400 hover:border-viperx-primary transition" />
+                      <div className="h-5 w-5 rounded border-2 border-gray-400 hover:border-primary transition" />
                     )}
                   </button>
 
@@ -691,7 +691,7 @@ const PersonalTodos = () => {
                   value={todoForm.title}
                   onChange={handleFormChange}
                   maxLength={200}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Ex: Verifica stocul de ulei"
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -710,7 +710,7 @@ const PersonalTodos = () => {
                   onChange={handleFormChange}
                   maxLength={1000}
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Detalii suplimentare..."
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -727,7 +727,7 @@ const PersonalTodos = () => {
                   name="priority"
                   value={todoForm.priority}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value={PRIORITY.LOW}>Scazuta</option>
                   <option value={PRIORITY.MEDIUM}>Medie</option>
@@ -749,7 +749,7 @@ const PersonalTodos = () => {
                   timeFormat="HH:mm"
                   timeIntervals={15}
                   placeholderText="Selecteaza data si ora"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   wrapperClassName="w-full"
                   locale={roDateLocale}
                 />
@@ -780,7 +780,7 @@ const PersonalTodos = () => {
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {(createMutation.isPending || updateMutation.isPending) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

@@ -126,7 +126,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
               onClick={() => setIsPrivate(false)}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${
                 !isPrivate
-                  ? 'bg-viperx-primary text-white'
+                  ? 'bg-primary text-white'
                   : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -137,7 +137,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
               onClick={() => setIsPrivate(true)}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${
                 isPrivate
-                  ? 'bg-viperx-primary text-white'
+                  ? 'bg-primary text-white'
                   : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -163,7 +163,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="ex: general, suport-tehnic"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               disabled={isCreating}
             />
           </div>
@@ -177,7 +177,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descrie scopul acestui canal..."
               rows={2}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               disabled={isCreating}
             />
           </div>
@@ -192,7 +192,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                 Adaugă membri (opțional)
               </label>
               {selectedMembers.length > 0 && (
-                <span className="text-xs text-viperx-primary font-medium">
+                <span className="text-xs text-primary font-medium">
                   {selectedMembers.length} selectat(i)
                 </span>
               )}
@@ -204,7 +204,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                 value={memberSearchTerm}
                 onChange={(e) => setMemberSearchTerm(e.target.value)}
                 placeholder="Caută utilizatori..."
-                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 disabled={isCreating}
               />
             </div>
@@ -228,7 +228,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                       <button
                         type="button"
                         onClick={() => toggleMember(userId)}
-                        className="text-viperx-primary hover:text-orange-700"
+                        className="text-primary hover:text-orange-700"
                         disabled={isCreating}
                       >
                         <X className="h-3 w-3" />
@@ -262,7 +262,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                     >
                       <div
                         className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm text-white ${
-                          isSelected ? 'bg-viperx-primary' : 'bg-gray-500'
+                          isSelected ? 'bg-primary' : 'bg-gray-500'
                         }`}
                       >
                         {user.firstName[0]}
@@ -278,7 +278,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                       </div>
                       {isSelected && (
                         <div className="flex-shrink-0">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-viperx-primary">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                             <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
@@ -311,7 +311,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
             <button
               onClick={handleCreate}
               disabled={!name.trim() || isCreating}
-              className="flex-1 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCreating ? 'Se creează...' : 'Creează'}
             </button>

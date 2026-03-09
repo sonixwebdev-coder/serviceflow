@@ -58,6 +58,8 @@ const getOAuth2Client = () => {
     throw new Error('Google OAuth credentials not configured');
   }
 
+  logger.debug(`Google OAuth redirect URI: ${redirectUri}`);
+
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 };
 
@@ -110,22 +112,32 @@ const storeCalendarConfig = async (prisma, userId, tokens, locationId = null) =>
     ? new Date(tokens.expiry_date)
     : new Date(Date.now() + 3600 * 1000);
 
-  return prisma.googleCalendarConfig.upsert({
-    where: {
-      userId_locationId: {
-        userId,
-        locationId: locationId || null,
+  const resolvedLocationId = locationId || null;
+
+  // Prisma doesn't support null in composite unique keys for upsert,
+  // so manually find-then-create/update when locationId is null
+  const existing = resolvedLocationId === null
+    ? await prisma.googleCalendarConfig.findFirst({ where: { userId, locationId: null } })
+    : await prisma.googleCalendarConfig.findUnique({
+        where: { userId_locationId: { userId, locationId: resolvedLocationId } },
+      });
+
+  if (existing) {
+    return prisma.googleCalendarConfig.update({
+      where: { id: existing.id },
+      data: {
+        accessToken: encrypt(tokens.access_token),
+        refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : undefined,
+        expiresAt,
+        updatedAt: new Date(),
       },
-    },
-    update: {
-      accessToken: encrypt(tokens.access_token),
-      refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : undefined,
-      expiresAt,
-      updatedAt: new Date(),
-    },
-    create: {
+    });
+  }
+
+  return prisma.googleCalendarConfig.create({
+    data: {
       userId,
-      locationId: locationId || null,
+      locationId: resolvedLocationId,
       accessToken: encrypt(tokens.access_token),
       refreshToken: encrypt(tokens.refresh_token),
       expiresAt,
@@ -137,12 +149,16 @@ const storeCalendarConfig = async (prisma, userId, tokens, locationId = null) =>
  * Get user's calendar config for a specific location (or default)
  */
 const getCalendarConfig = async (prisma, userId, locationId = null) => {
+  // Prisma findUnique rejects null in composite unique keys in some versions;
+  // use findFirst when locationId is null to avoid PrismaClientValidationError
+  if (locationId === null || locationId === undefined) {
+    return prisma.googleCalendarConfig.findFirst({
+      where: { userId, locationId: null },
+    });
+  }
   return prisma.googleCalendarConfig.findUnique({
     where: {
-      userId_locationId: {
-        userId,
-        locationId: locationId || null,
-      },
+      userId_locationId: { userId, locationId },
     },
   });
 };
@@ -229,14 +245,17 @@ const disconnectCalendar = async (prisma, userId, locationId = null) => {
   });
 
   // Delete config
-  await prisma.googleCalendarConfig.delete({
-    where: {
-      userId_locationId: {
-        userId,
-        locationId: locationId || null,
+  if (locationId === null || locationId === undefined) {
+    await prisma.googleCalendarConfig.deleteMany({
+      where: { userId, locationId: null },
+    });
+  } else {
+    await prisma.googleCalendarConfig.delete({
+      where: {
+        userId_locationId: { userId, locationId },
       },
-    },
-  });
+    });
+  }
 
   return { success: true };
 };

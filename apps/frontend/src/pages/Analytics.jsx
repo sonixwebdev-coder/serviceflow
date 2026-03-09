@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { subDays, format } from 'date-fns';
 import {
   BarChart3,
-  DollarSign,
   Users,
   Calendar,
   FileText,
@@ -90,12 +89,12 @@ export default function Analytics() {
     topClientsFetching;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="page-header">
           <h1 className="page-title flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-viperx-primary" />
+            <BarChart3 className="h-6 w-6 text-primary" />
             Statistici
           </h1>
           <p className="page-subtitle">
@@ -143,7 +142,7 @@ export default function Analytics() {
         />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Programari azi"
           value={overview?.appointments?.today || 0}
@@ -157,8 +156,8 @@ export default function Analytics() {
           title="Total clienti"
           value={overview?.clients?.total || 0}
           icon={Users}
-          iconColor="text-viperx-primary"
-          iconBg="bg-viperx-primary/10"
+          iconColor="text-primary"
+          iconBg="bg-primary/10"
           isLoading={overviewLoading || overviewFetching}
         />
         <MetricCard
@@ -194,7 +193,7 @@ export default function Analytics() {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-viperx-primary" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               Evolutia facturilor
             </h2>
           </div>

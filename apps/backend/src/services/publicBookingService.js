@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { emitToOrganization } = require('../realtime/emitter');
 const { ACTIVITY_SECTORS, getSectorConfig } = require('../constants/activitySectors');
+const { sendAppointmentReminder } = require('./email/emailService');
+const { getCompanySettings } = require('./companySettingService');
+const logger = require('../utils/logger');
 
 const SALT_ROUNDS = 10;
 const DEFAULT_WORK_START = 9; // 9 AM
@@ -258,6 +261,10 @@ const createPublicBooking = async (prisma, {
   const hasAssets = sectorConfig?.hasAssets ?? false;
   const assetType = sectorConfig?.assetType || null;
 
+  // Quota check: appointments (monthly)
+  const { checkOrganizationLimits } = require('./organizationService');
+  await checkOrganizationLimits(organizationId, 'appointments');
+
   // Get a system user for createdById (required field)
   const systemUser = await getSystemUserForOrg(prisma, organizationId);
 
@@ -269,10 +276,20 @@ const createPublicBooking = async (prisma, {
     },
   });
 
+  // Pre-compute bcrypt hash outside the transaction to avoid timeout (bcrypt is CPU-intensive)
+  let preHashedPassword = null;
+  let preVerificationToken = null;
+  if (createAccount && password) {
+    preHashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    preVerificationToken = crypto.randomBytes(32).toString('hex');
+  }
+
   // Start a transaction
   const result = await prisma.$transaction(async (tx) => {
     // Create or update client
     if (!client) {
+      // Quota check: clients (new client in public booking)
+      await checkOrganizationLimits(organizationId, 'clients');
       client = await tx.client.create({
         data: {
           organization: { connect: { id: organizationId } },
@@ -356,31 +373,26 @@ const createPublicBooking = async (prisma, {
         // Email exists but for a different organization's client
         if (existingAccountWithEmail.client.organizationId !== organizationId) {
           // Different org - generate a unique email variant
-          const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-          const verificationToken = crypto.randomBytes(32).toString('hex');
           const uniqueEmail = `${clientData.email.toLowerCase().split('@')[0]}+${organizationId.slice(-6)}@${clientData.email.split('@')[1]}`;
 
           clientAccount = await tx.clientAccount.create({
             data: {
               client: { connect: { id: client.id } },
               email: uniqueEmail,
-              password: hashedPassword,
-              verificationToken,
+              password: preHashedPassword,
+              verificationToken: preVerificationToken,
               isVerified: false,
             },
           });
         }
       } else {
         // No existing account, create new one
-        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        const verificationToken = crypto.randomBytes(32).toString('hex');
-
         clientAccount = await tx.clientAccount.create({
           data: {
             client: { connect: { id: client.id } },
             email: clientData.email.toLowerCase(),
-            password: hashedPassword,
-            verificationToken,
+            password: preHashedPassword,
+            verificationToken: preVerificationToken,
             isVerified: false,
           },
         });
@@ -393,7 +405,7 @@ const createPublicBooking = async (prisma, {
       appointment,
       clientAccount,
     };
-  });
+  }, { timeout: 30000 });
 
   // Emit real-time event to organization for new public booking
   emitToOrganization(organizationId, 'appointment:public-booking', {
@@ -417,6 +429,18 @@ const createPublicBooking = async (prisma, {
       identifier: result.asset.identifier,
     } : null,
   });
+
+  // Send booking confirmation email to client (fire-and-forget)
+  if (result.client?.email) {
+    getCompanySettings(organizationId).then((companySettings) => {
+      sendAppointmentReminder(prisma, {
+        appointment: result.appointment,
+        client: result.client,
+        companySettings,
+        organizationId,
+      }).catch((err) => logger.error('[EMAIL] Public booking confirmation failed:', err.message));
+    }).catch(() => {});
+  }
 
   return {
     success: true,

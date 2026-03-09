@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import confirm from '../../utils/confirm';
 import { X, Settings, Edit2, LogOut, Archive, Bell, BellOff } from 'lucide-react';
 import { useUpdateChannel, useLeaveChannel, useArchiveChannel, useChannel } from '../../hooks/useChat';
 import { useChatStore } from '../../state/useChatStore';
@@ -81,7 +82,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
   };
 
   const handleLeave = async () => {
-    if (!window.confirm('Ești sigur că vrei să părăsești acest canal?')) return;
+    if (!await confirm({ title: 'Paraseste canal', text: 'Esti sigur ca vrei sa parasesti acest canal?', confirmText: 'Paraseste', danger: true })) return;
 
     setIsUpdating(true);
 
@@ -110,7 +111,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
   };
 
   const handleArchive = async () => {
-    if (!window.confirm('Ești sigur că vrei să arhivezi acest canal? Această acțiune nu poate fi anulată.')) return;
+    if (!await confirm({ title: 'Arhiveaza canal', text: 'Esti sigur ca vrei sa arhivezi acest canal? Aceasta actiune nu poate fi anulata.', confirmText: 'Arhiveaza', danger: true })) return;
 
     setIsUpdating(true);
 
@@ -186,7 +187,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
               {canEdit && !isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1 text-xs text-viperx-primary hover:text-orange-600"
+                  className="flex items-center gap-1 text-xs text-primary hover:text-orange-600"
                 >
                   <Edit2 className="h-3 w-3" />
                   Editează
@@ -202,7 +203,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="Numele canalului"
                   />
                 </div>
@@ -212,7 +213,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="Descrierea canalului (opțional)"
                   />
                 </div>
@@ -220,7 +221,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
                   <button
                     onClick={handleSave}
                     disabled={isUpdating}
-                    className="flex-1 rounded-lg bg-viperx-primary px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isUpdating ? 'Se salvează...' : 'Salvează'}
                   </button>
@@ -269,7 +270,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
               <button
                 onClick={() => setIsMuted(!isMuted)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isMuted ? 'bg-gray-300' : 'bg-viperx-primary'
+                  isMuted ? 'bg-gray-300' : 'bg-primary'
                 }`}
               >
                 <span

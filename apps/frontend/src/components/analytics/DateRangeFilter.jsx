@@ -48,7 +48,7 @@ export default function DateRangeFilter({
             onClick={() => handlePresetClick(preset)}
             className={`px-3 py-1.5 text-sm rounded-lg border transition ${
               selectedPreset === preset.value
-                ? 'bg-viperx-primary text-white border-viperx-primary'
+                ? 'bg-primary text-white border-primary'
                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
             }`}
           >

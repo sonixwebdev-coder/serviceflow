@@ -18,6 +18,7 @@ const {
   updatePublicBooking,
   getServices,
   updateServices,
+  updateDescription,
 } = require('../services/organizationSettingsService');
 const { publicBookingSchema, servicesArraySchema } = require('../schemas/organizationSettingsSchema');
 const { logFromRequest } = require('../services/auditLogService');
@@ -197,6 +198,165 @@ router.put(
     });
 
     return ok(res, services, 'Services updated successfully');
+  })
+);
+
+/**
+ * Update organization description (shown in marketplace)
+ * Only admins can update description
+ */
+router.patch(
+  '/me/settings/description',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(z.object({ description: z.string().max(500).optional().default('') })),
+  asyncHandler(async (req, res) => {
+    const result = await updateDescription(
+      req.tenantPrisma,
+      req.user.organizationId,
+      req.body.description
+    );
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Organization',
+      entityId: req.user.organizationId,
+      description: `Actualizat descriere organizatie`,
+    });
+
+    return ok(res, result, 'Description updated successfully');
+  })
+);
+
+/**
+ * Update invoice sequence settings
+ * Only admins can configure invoice numbering
+ */
+router.patch(
+  '/me/settings/invoiceSequence',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(z.object({
+    prefix: z.string().max(10).regex(/^[A-Z0-9]*$/i, 'Only letters and numbers allowed').optional(),
+    separator: z.enum(['-', '/', '_', '']).optional(),
+    includeYear: z.boolean().optional(),
+    paddingDigits: z.number().int().min(3).max(10).optional(),
+    startingNumber: z.number().int().min(1).optional(),
+  })),
+  asyncHandler(async (req, res) => {
+    const { AppError } = require('../utils/errors');
+    const org = await req.tenantPrisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+      select: { settings: true },
+    });
+    if (!org) throw new AppError('Organization not found', 404);
+
+    const currentSeq = org.settings?.invoiceSequence || {};
+    const now = new Date();
+
+    // When startingNumber changes, snapshot the current invoice count so the
+    // generator can offset correctly (startingNumber + invoicesSinceChange)
+    let baseCountPatch = {};
+    if (req.body.startingNumber !== undefined) {
+      const year = now.getFullYear();
+      const currentCount = await req.tenantPrisma.invoice.count({
+        where: {
+          issueDate: {
+            gte: new Date(year, 0, 1),
+            lt: new Date(year + 1, 0, 1),
+          },
+        },
+      });
+      baseCountPatch = { baseYear: year, baseCount: currentCount };
+    }
+
+    const updatedSeq = {
+      ...currentSeq,
+      ...req.body,
+      ...baseCountPatch,
+    };
+
+    const updatedSettings = { ...(org.settings || {}), invoiceSequence: updatedSeq };
+    await req.tenantPrisma.organization.update({
+      where: { id: req.user.organizationId },
+      data: { settings: updatedSettings },
+    });
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Organization',
+      entityId: req.user.organizationId,
+      description: 'Actualizat setari numerotare facturi',
+      metadata: updatedSeq,
+    });
+
+    return ok(res, { invoiceSequence: updatedSeq }, 'Invoice sequence settings updated');
+  })
+);
+
+/**
+ * Update marketplace visibility (publicListing setting)
+ * Only admins can toggle marketplace visibility
+ */
+router.patch(
+  '/me/settings/publicListing',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  validate(z.object({ publicListing: z.boolean() })),
+  asyncHandler(async (req, res) => {
+    const org = await req.tenantPrisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+      select: { settings: true },
+    });
+    if (!org) throw new (require('../utils/errors').AppError)('Organization not found', 404);
+
+    const updatedSettings = { ...(org.settings || {}), publicListing: req.body.publicListing };
+    await req.tenantPrisma.organization.update({
+      where: { id: req.user.organizationId },
+      data: { settings: updatedSettings },
+    });
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Organization',
+      entityId: req.user.organizationId,
+      description: `Actualizat vizibilitate marketplace: ${req.body.publicListing ? 'vizibil' : 'ascuns'}`,
+    });
+
+    return ok(res, { publicListing: req.body.publicListing }, 'Marketplace visibility updated');
+  })
+);
+
+/**
+ * Self-deactivate organization (soft-delete by setting status to CANCELLED)
+ * Only admins can do this
+ */
+router.post(
+  '/me/deactivate',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  asyncHandler(async (req, res) => {
+    const { AppError } = require('../utils/errors');
+    const org = await req.tenantPrisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+      select: { status: true },
+    });
+    if (!org) throw new AppError('Organization not found', 404);
+    if (org.status === 'CANCELLED') throw new AppError('Organization is already deactivated', 400);
+
+    await req.tenantPrisma.organization.update({
+      where: { id: req.user.organizationId },
+      data: { status: 'CANCELLED' },
+    });
+
+    await logFromRequest(req, {
+      action: 'UPDATE',
+      entityType: 'Organization',
+      entityId: req.user.organizationId,
+      description: 'Organizatie dezactivata de admin',
+    });
+
+    return ok(res, { status: 'CANCELLED' }, 'Organization deactivated');
   })
 );
 

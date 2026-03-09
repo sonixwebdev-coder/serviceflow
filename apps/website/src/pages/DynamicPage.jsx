@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { websiteService } from '@/services/websiteService';
@@ -103,6 +103,14 @@ export default function DynamicPage() {
     [website, page]
   );
 
+  // Set page-specific document title
+  const pageTitle = page?.seo?.title || page?.title;
+  useEffect(() => {
+    if (pageTitle && website?.organization?.name) {
+      document.title = `${pageTitle} | ${website.organization.name}`;
+    }
+  }, [pageTitle, website?.organization?.name]);
+
   if (isLoading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
@@ -122,13 +130,11 @@ export default function DynamicPage() {
     );
   }
 
-  const { title, content, seo } = page;
-  const pageTitle = seo?.title || title;
+  const { content, seo } = page;
   const pageDescription = seo?.description || website?.seoDefaults?.description;
 
   return (
     <>
-      <title>{pageTitle} | {website?.organization?.name}</title>
       {pageDescription && <meta name="description" content={pageDescription} />}
       {seo?.keywords && <meta name="keywords" content={Array.isArray(seo.keywords) ? seo.keywords.join(', ') : seo.keywords} />}
       {seo?.ogImage && <meta property="og:image" content={seo.ogImage} />}

@@ -23,7 +23,7 @@ export default function TermsAndConditions() {
       {/* Content */}
       <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Termeni si Conditii</h1>
-        <p className="mt-2 text-sm text-gray-500">Ultima actualizare: 9 februarie 2026</p>
+        <p className="mt-2 text-sm text-gray-500">Ultima actualizare: 8 martie 2026</p>
 
         <div className="mt-10 space-y-8 text-sm leading-relaxed text-gray-700">
           {/* 1 */}
@@ -52,6 +52,10 @@ export default function TermsAndConditions() {
               <li>Comunicare in timp real cu clientii</li>
               <li>Management echipa si angajati</li>
               <li>Portal dedicat pentru clienti</li>
+              <li>Program de fidelitate si puncte de loialitate</li>
+              <li>Management multi-locatie</li>
+              <li>Notificari push si in-app</li>
+              <li>Rapoarte si analize</li>
             </ul>
           </section>
 
@@ -121,7 +125,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">8. Limitarea raspunderii</h2>
             <p className="mt-2">
-              In masura maxima permisa de lege, Forja SRL nu va fi raspunzator pentru:
+              In masura maxima permisa de lege, ForjaIt SRL nu va fi raspunzator pentru:
             </p>
             <ul className="mt-3 list-disc pl-5 space-y-1">
               <li>Pierderi indirecte, incidentale sau consecvente rezultate din utilizarea Platformei</li>
@@ -130,7 +134,7 @@ export default function TermsAndConditions() {
               <li>Actiunile sau omisiunile tertilor</li>
             </ul>
             <p className="mt-3">
-              Raspunderea totala a Forja SRL nu va depasi suma platita de utilizator pentru servicii in
+              Raspunderea totala a ForjaIt SRL nu va depasi suma platita de utilizator pentru servicii in
               ultimele 12 luni.
             </p>
           </section>
@@ -139,7 +143,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">9. Rezilierea</h2>
             <p className="mt-2">
-              Puteti inceta utilizarea Platformei si sterge contul in orice moment. Forja isi rezerva
+              Puteti inceta utilizarea Platformei si sterge contul in orice moment. ForjaIt isi rezerva
               dreptul de a suspenda sau inchide contul dumneavoastra in cazul incalcarii acestor Termeni,
               dupa o notificare prealabila de 30 de zile, cu exceptia cazurilor de incalcare grava care pot
               duce la suspendarea imediata. La stergerea contului, datele dumneavoastra vor fi eliminate in
@@ -176,10 +180,10 @@ export default function TermsAndConditions() {
             </p>
             <ul className="mt-3 space-y-1">
               <li>
-                <strong>Email:</strong> contact@forja.ro
+                <strong>Email:</strong> contact@forja.it.com
               </li>
               <li>
-                <strong>Platforma:</strong> Forja SRL
+                <strong>Platforma:</strong> ForjaIt SRL
               </li>
             </ul>
           </section>

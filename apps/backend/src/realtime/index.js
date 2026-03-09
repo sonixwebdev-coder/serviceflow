@@ -2,13 +2,14 @@ const { Server } = require('socket.io');
 const { verifyAccessToken } = require('../utils/token');
 const { setIO } = require('./emitter');
 const prisma = require('../../lib/prisma');
+const cache = require('../utils/cache');
 const { updatePresence, startTyping, stopTyping } = require('../services/chatPresenceService');
 const { broadcastTyping, broadcastPresence } = require('./chatEvents');
 const logger = require('../utils/logger');
 
 const createSocketServer = (httpServer) => {
   const corsOrigins = [
-    process.env.FRONTEND_URL || 'https://viperx.online',
+    process.env.FRONTEND_URL || 'https://forja.it.com',
     process.env.CLIENT_PORTAL_URL || 'http://localhost:5174',
   ];
   if (process.env.NODE_ENV !== 'production') {
@@ -57,13 +58,15 @@ const createSocketServer = (httpServer) => {
       if (authType === 'client' || payload.type === 'client') {
         logger.debug('[Socket] Processing client auth');
 
-        // For client portal, get client info
-        const clientAccount = await prisma.clientAccount.findUnique({
-          where: { id: payload.sub },
-          include: {
-            client: true,
-          },
-        });
+        // For client portal, get client info (cached to avoid a DB hit on every reconnect)
+        const clientAccount = await cache.wrap(
+          `socket:client:${payload.sub}`,
+          () => prisma.clientAccount.findUnique({
+            where: { id: payload.sub },
+            include: { client: true },
+          }),
+          cache.TTL.SHORT
+        );
 
         if (!clientAccount || !clientAccount.client) {
           logger.debug('[Socket] Client auth failed: no account or client');
@@ -81,11 +84,15 @@ const createSocketServer = (httpServer) => {
         return next();
       }
 
-      // CRM user authentication — re-validate against DB
-      const dbUser = await prisma.user.findUnique({
-        where: { id: payload.sub },
-        select: { id: true, isActive: true, organizationId: true, organization: { select: { status: true } } },
-      });
+      // CRM user authentication — re-validate against DB (cached to avoid a DB hit on every reconnect)
+      const dbUser = await cache.wrap(
+        `socket:user:${payload.sub}`,
+        () => prisma.user.findUnique({
+          where: { id: payload.sub },
+          select: { id: true, isActive: true, organizationId: true, organization: { select: { status: true } } },
+        }),
+        cache.TTL.SHORT
+      );
 
       if (!dbUser || !dbUser.isActive) {
         logger.debug('[Socket] CRM auth failed: user inactive or not found');
@@ -162,12 +169,19 @@ const createSocketServer = (httpServer) => {
     // Per-socket typing throttle: max one event per 2s per channel
     const typingThrottle = new Map();
     const TYPING_THROTTLE_MS = 2000;
+    const TYPING_MAP_MAX_SIZE = 50;
 
     const isTypingThrottled = (channelId) => {
       const now = Date.now();
       const last = typingThrottle.get(channelId) || 0;
       if (now - last < TYPING_THROTTLE_MS) return true;
       typingThrottle.set(channelId, now);
+      // Evict stale entries to prevent unbounded growth
+      if (typingThrottle.size > TYPING_MAP_MAX_SIZE) {
+        for (const [key, ts] of typingThrottle) {
+          if (now - ts > TYPING_THROTTLE_MS * 5) typingThrottle.delete(key);
+        }
+      }
       return false;
     };
 

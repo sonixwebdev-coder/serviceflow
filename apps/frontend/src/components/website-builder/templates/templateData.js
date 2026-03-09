@@ -13,6 +13,109 @@ const block = (type, data = {}, settings = {}) => ({
   },
 });
 
+// Reusable legal pages added to all templates
+const legalPages = () => [
+  {
+    slug: 'termeni-si-conditii',
+    title: 'Termeni si conditii',
+    pageType: 'CUSTOM',
+    isPublished: true,
+    content: [
+      block('text', {
+        content: `<h1>Termeni si conditii</h1>
+<p><em>Ultima actualizare: ${new Date().toLocaleDateString('ro-RO')}</em></p>
+
+<h2>1. Informatii generale</h2>
+<p>Prezentul document stabileste termenii si conditiile de utilizare a site-ului web operat de compania noastra. Prin accesarea si utilizarea acestui site, sunteti de acord cu acesti termeni.</p>
+
+<h2>2. Servicii</h2>
+<p>Serviciile oferite prin intermediul acestui site sunt descrise in sectiunile dedicate. Ne rezervam dreptul de a modifica, suspenda sau intrerupe orice serviciu fara notificare prealabila.</p>
+
+<h2>3. Programari</h2>
+<p>Programarile efectuate prin site sunt supuse disponibilitatii. Confirmarea programarii va fi trimisa prin email sau telefon. Anularea sau reprogramarea trebuie facuta cu cel putin 24 de ore inainte.</p>
+
+<h2>4. Preturi si plati</h2>
+<p>Preturile afisate pe site sunt informative si pot fi modificate fara notificare prealabila. Pretul final va fi comunicat la momentul prestarii serviciului.</p>
+
+<h2>5. Proprietate intelectuala</h2>
+<p>Continutul acestui site (texte, imagini, logo-uri, design) este protejat de drepturile de autor si nu poate fi reprodus fara acordul scris al companiei.</p>
+
+<h2>6. Limitarea raspunderii</h2>
+<p>Compania nu isi asuma raspunderea pentru eventualele erori sau omisiuni in continutul site-ului. Informatiile sunt furnizate "ca atare", fara garantii de niciun fel.</p>
+
+<h2>7. Modificari</h2>
+<p>Ne rezervam dreptul de a modifica acesti termeni in orice moment. Modificarile intra in vigoare la data publicarii pe site.</p>
+
+<h2>8. Contact</h2>
+<p>Pentru intrebari legate de acesti termeni, ne puteti contacta folosind datele de contact disponibile pe site.</p>`,
+        format: 'prose',
+      }, { maxWidth: 'md', padding: { top: 60, bottom: 60 } }),
+    ],
+  },
+  {
+    slug: 'politica-de-confidentialitate',
+    title: 'Politica de confidentialitate',
+    pageType: 'CUSTOM',
+    isPublished: true,
+    content: [
+      block('text', {
+        content: `<h1>Politica de confidentialitate</h1>
+<p><em>Ultima actualizare: ${new Date().toLocaleDateString('ro-RO')}</em></p>
+
+<h2>1. Introducere</h2>
+<p>Protectia datelor dumneavoastra personale este importanta pentru noi. Aceasta politica descrie modul in care colectam, utilizam si protejam informatiile personale in conformitate cu Regulamentul General privind Protectia Datelor (GDPR).</p>
+
+<h2>2. Date colectate</h2>
+<p>Colectam urmatoarele tipuri de date personale:</p>
+<ul>
+<li>Nume si prenume</li>
+<li>Adresa de email</li>
+<li>Numar de telefon</li>
+<li>Date despre programari si servicii solicitate</li>
+<li>Date tehnice (adresa IP, tip browser) prin cookie-uri</li>
+</ul>
+
+<h2>3. Scopul prelucrarii</h2>
+<p>Datele personale sunt prelucrate in urmatoarele scopuri:</p>
+<ul>
+<li>Furnizarea serviciilor solicitate</li>
+<li>Gestionarea programarilor</li>
+<li>Comunicarea cu clientii</li>
+<li>Imbunatatirea serviciilor noastre</li>
+<li>Respectarea obligatiilor legale</li>
+</ul>
+
+<h2>4. Temeiul legal</h2>
+<p>Prelucrarea datelor se bazeaza pe: consimtamantul dumneavoastra, executarea unui contract, obligatii legale sau interesul nostru legitim.</p>
+
+<h2>5. Durata stocarii</h2>
+<p>Datele personale sunt stocate pe durata necesara indeplinirii scopurilor pentru care au fost colectate, dar nu mai mult de 5 ani de la ultima interactiune, cu exceptia cazurilor in care legea impune o perioada mai lunga.</p>
+
+<h2>6. Drepturile dumneavoastra</h2>
+<p>Aveti urmatoarele drepturi conform GDPR:</p>
+<ul>
+<li>Dreptul de acces la datele personale</li>
+<li>Dreptul la rectificarea datelor inexacte</li>
+<li>Dreptul la stergerea datelor ("dreptul de a fi uitat")</li>
+<li>Dreptul la restrictionarea prelucrarii</li>
+<li>Dreptul la portabilitatea datelor</li>
+<li>Dreptul de opozitie</li>
+</ul>
+
+<h2>7. Securitatea datelor</h2>
+<p>Implementam masuri tehnice si organizatorice adecvate pentru a proteja datele personale impotriva accesului neautorizat, pierderii sau distrugerii.</p>
+
+<h2>8. Cookie-uri</h2>
+<p>Acest site utilizeaza cookie-uri pentru a imbunatati experienta de navigare. Puteti gestiona preferintele legate de cookie-uri din setarile browserului.</p>
+
+<h2>9. Contact</h2>
+<p>Pentru exercitarea drepturilor sau intrebari privind prelucrarea datelor personale, ne puteti contacta folosind datele de contact disponibile pe site.</p>`,
+        format: 'prose',
+      }, { maxWidth: 'md', padding: { top: 60, bottom: 60 } }),
+    ],
+  },
+];
+
 // ─────────────────────────────────────────────
 // AUTO DETAILING
 // ─────────────────────────────────────────────
@@ -181,6 +284,7 @@ export const autoDetailingTemplate = {
         }),
       ],
     },
+    ...legalPages(),
   ],
   branding: {
     primaryColor: '#1e3a5f',
@@ -357,6 +461,7 @@ export const autoServiceTemplate = {
         }),
       ],
     },
+    ...legalPages(),
   ],
   branding: {
     primaryColor: '#b91c1c',
@@ -508,6 +613,7 @@ export const autoPartsTemplate = {
         }),
       ],
     },
+    ...legalPages(),
   ],
   branding: {
     primaryColor: '#0369a1',
@@ -742,6 +848,7 @@ export const beautySalonTemplate = {
         }),
       ],
     },
+    ...legalPages(),
   ],
   branding: {
     primaryColor: '#be185d',
@@ -958,6 +1065,7 @@ export const gsmRepairTemplate = {
         }),
       ],
     },
+    ...legalPages(),
   ],
   branding: {
     primaryColor: '#059669',
@@ -1130,6 +1238,7 @@ export const homeServicesTemplate = {
         }),
       ],
     },
+    ...legalPages(),
   ],
   branding: {
     primaryColor: '#ea580c',
@@ -1356,6 +1465,7 @@ export const fitnessStudioTemplate = {
         }),
       ],
     },
+    ...legalPages(),
   ],
   branding: {
     primaryColor: '#dc2626',
@@ -1368,12 +1478,230 @@ export const fitnessStudioTemplate = {
 };
 
 // Export all templates
+// ─────────────────────────────────────────────
+// SERVICII DIGITALE
+// ─────────────────────────────────────────────
+export const digitalServicesTemplate = {
+  id: 'digital-services',
+  name: 'Servicii Digitale',
+  description: 'Pentru agentii digitale, freelanceri IT, web development si marketing',
+  thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640&h=360&fit=crop&q=80',
+  sector: 'IT_ELECTRONICS',
+  pages: [
+    {
+      slug: 'home',
+      title: 'Acasa',
+      pageType: 'HOME',
+      isPublished: true,
+      content: [
+        block('hero', {
+          title: 'Solutii digitale pentru afacerea ta',
+          subtitle: 'Web development, design, marketing digital si consultanta IT — totul sub un singur acoperis',
+          backgroundImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920',
+          backgroundOverlay: 0.55,
+          ctaText: 'Solicita oferta',
+          ctaLink: '/contact',
+          secondaryCtaText: 'Descopera serviciile',
+          secondaryCtaLink: '/servicii',
+          layout: 'centered',
+          height: 'large',
+        }, { padding: { top: 0, bottom: 0 } }),
+        block('services-grid', {
+          title: 'Ce putem face pentru tine',
+          subtitle: 'Servicii profesionale de la A la Z',
+          autoSync: true,
+          columns: 3,
+          showPrices: true,
+          showBookButton: true,
+        }, { padding: { top: 60, bottom: 60 } }),
+        block('stats', {
+          title: '',
+          subtitle: '',
+          stats: [
+            { value: '200+', label: 'Proiecte livrate' },
+            { value: '8+', label: 'Ani experienta' },
+            { value: '50+', label: 'Clienti activi' },
+            { value: '99%', label: 'Satisfactie clienti' },
+          ],
+          columns: 4,
+        }, { padding: { top: 60, bottom: 60 }, backgroundColor: '#f5f3ff' }),
+        block('testimonials', {
+          title: 'Ce spun clientii nostri',
+          subtitle: 'Parteneriate de durata bazate pe rezultate',
+          testimonials: [
+            { name: 'Andrei Marinescu', content: 'Au creat un site modern si performant pentru afacerea noastra. Traficul a crescut cu 300% in primele 3 luni!', rating: 5, role: 'CEO, TechStart SRL' },
+            { name: 'Maria Stanescu', content: 'Echipa profesionista, comunicare excelenta si rezultate concrete. Recomand cu incredere!', rating: 5, role: 'Marketing Manager' },
+            { name: 'Cristian Popescu', content: 'Colaboram de peste 2 ani pentru mentenanta si dezvoltare continua. Mereu livreaza la timp.', rating: 5, role: 'Fondator, Digital Hub' },
+          ],
+          layout: 'carousel',
+          showRating: true,
+        }, { padding: { top: 60, bottom: 60 } }),
+        block('faq', {
+          title: 'Intrebari frecvente',
+          subtitle: '',
+          items: [
+            { question: 'Cat dureaza realizarea unui website?', answer: 'Un website de prezentare se realizeaza in 2-4 saptamani. Proiectele mai complexe (e-commerce, platforme) pot dura 1-3 luni.' },
+            { question: 'Oferiti si mentenanta dupa lansare?', answer: 'Da, oferim pachete de mentenanta lunara care includ update-uri, monitorizare, backup-uri si suport tehnic.' },
+            { question: 'Care sunt costurile?', answer: 'Preturile variaza in functie de complexitate. Oferim o consultatie gratuita pentru a estima bugetul proiectului tau.' },
+            { question: 'Lucrati si cu clienti din afara Romaniei?', answer: 'Da, colaboram cu clienti din toata Europa. Comunicam in romana si engleza.' },
+          ],
+        }, { padding: { top: 60, bottom: 60 }, backgroundColor: '#f9fafb' }),
+        block('button', {
+          text: 'Hai sa discutam despre proiectul tau',
+          link: '/contact',
+          variant: 'primary',
+          size: 'lg',
+          align: 'center',
+        }, { padding: { top: 20, bottom: 60 } }),
+      ],
+    },
+    {
+      slug: 'servicii',
+      title: 'Servicii',
+      pageType: 'SERVICES',
+      isPublished: true,
+      content: [
+        block('hero', {
+          title: 'Serviciile noastre',
+          subtitle: 'Solutii complete pentru prezenta ta digitala',
+          backgroundImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=1920',
+          backgroundOverlay: 0.6,
+          layout: 'centered',
+          height: 'small',
+        }, { padding: { top: 0, bottom: 0 } }),
+        block('pricing-table', {
+          title: 'Pachete si preturi',
+          subtitle: 'Alege pachetul potrivit pentru nevoile tale',
+          plans: [
+            {
+              name: 'Start',
+              description: 'Ideal pentru freelanceri si start-up-uri',
+              price: '1500',
+              currency: 'RON',
+              period: 'de la',
+              featured: false,
+              features: ['Website one-page', 'Design responsive', 'Optimizare SEO de baza', 'Formular de contact', 'Hosting 1 an inclus'],
+              ctaText: 'Solicita oferta',
+              ctaLink: '/contact',
+            },
+            {
+              name: 'Business',
+              description: 'Pentru companii in crestere',
+              price: '3500',
+              currency: 'RON',
+              period: 'de la',
+              featured: true,
+              features: ['Website multi-pagina', 'Design personalizat', 'SEO complet', 'Blog integrat', 'Integrari CRM', 'Suport 12 luni'],
+              ctaText: 'Solicita oferta',
+              ctaLink: '/contact',
+            },
+            {
+              name: 'Enterprise',
+              description: 'Solutii complexe la cheie',
+              price: '8000',
+              currency: 'RON',
+              period: 'de la',
+              featured: false,
+              features: ['Platforma personalizata', 'E-commerce / Booking', 'API integrations', 'Dashboard admin', 'SLA & suport prioritar', 'Mentenanta inclusa'],
+              ctaText: 'Solicita oferta',
+              ctaLink: '/contact',
+            },
+          ],
+          showCta: true,
+        }, { padding: { top: 60, bottom: 60 } }),
+        block('services-grid', {
+          title: 'Toate serviciile',
+          autoSync: true,
+          columns: 3,
+          showPrices: true,
+          showDuration: true,
+        }, { padding: { top: 40, bottom: 60 }, backgroundColor: '#f9fafb' }),
+      ],
+    },
+    {
+      slug: 'despre',
+      title: 'Despre noi',
+      pageType: 'ABOUT',
+      isPublished: true,
+      content: [
+        block('hero', {
+          title: 'Despre echipa noastra',
+          subtitle: 'Pasionati de tehnologie, dedicati rezultatelor',
+          backgroundImage: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920',
+          backgroundOverlay: 0.6,
+          layout: 'centered',
+          height: 'small',
+        }, { padding: { top: 0, bottom: 0 } }),
+        block('text', {
+          content: '<h2 style="text-align:center">Cine suntem</h2><p style="text-align:center">Suntem o echipa de profesionisti IT cu experienta in dezvoltare web, design, marketing digital si consultanta. Credem ca fiecare afacere merita o prezenta digitala puternica si lucram alaturi de clientii nostri pentru a le transforma viziunea in realitate.</p>',
+          format: 'prose',
+        }, { maxWidth: 'md', padding: { top: 60, bottom: 40 } }),
+        block('team-grid', {
+          title: 'Echipa',
+          subtitle: 'Oamenii din spatele proiectelor',
+          members: [
+            { name: 'Alex Ionescu', role: 'Full-Stack Developer', image: '' },
+            { name: 'Diana Radu', role: 'UI/UX Designer', image: '' },
+            { name: 'Mihai Gheorghe', role: 'Marketing Specialist', image: '' },
+          ],
+          columns: 3,
+        }, { padding: { top: 40, bottom: 60 }, backgroundColor: '#f5f3ff' }),
+      ],
+    },
+    {
+      slug: 'contact',
+      title: 'Contact',
+      pageType: 'CONTACT',
+      isPublished: true,
+      content: [
+        block('hero', {
+          title: 'Contacteaza-ne',
+          subtitle: 'Spune-ne despre proiectul tau si te contactam in cel mai scurt timp',
+          backgroundImage: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=1920',
+          backgroundOverlay: 0.6,
+          layout: 'centered',
+          height: 'small',
+        }, { padding: { top: 0, bottom: 0 } }),
+        block('contact-form', {
+          title: 'Trimite-ne un mesaj',
+          subtitle: 'Raspundem in maxim 24 de ore',
+          fields: [
+            { key: 'firstName', label: 'Prenume', type: 'text', required: true },
+            { key: 'lastName', label: 'Nume', type: 'text', required: true },
+            { key: 'email', label: 'Email', type: 'email', required: true },
+            { key: 'phone', label: 'Telefon', type: 'phone', required: false },
+            { key: 'projectType', label: 'Tip proiect', type: 'select', required: true, options: ['Website', 'Aplicatie web', 'E-commerce', 'Marketing digital', 'Consultanta IT', 'Altele'] },
+            { key: 'budget', label: 'Buget estimat', type: 'select', required: false, options: ['Sub 2000 RON', '2000-5000 RON', '5000-15000 RON', 'Peste 15000 RON'] },
+            { key: 'message', label: 'Descrierea proiectului', type: 'textarea', required: true },
+          ],
+          submitText: 'Trimite cererea',
+          showPhone: true,
+          contactInfo: {
+            phone: '0712 345 678',
+            email: 'contact@agentie.ro',
+          },
+        }),
+      ],
+    },
+    ...legalPages(),
+  ],
+  branding: {
+    primaryColor: '#6366f1',
+    secondaryColor: '#8b5cf6',
+  },
+  seoDefaults: {
+    title: 'Servicii digitale — Web Development & Marketing',
+    description: 'Agentie de servicii digitale: web development, design, marketing digital si consultanta IT. Solutii personalizate pentru afacerea ta.',
+  },
+};
+
 export const templates = [
   autoDetailingTemplate,
   autoServiceTemplate,
   autoPartsTemplate,
   beautySalonTemplate,
   gsmRepairTemplate,
+  digitalServicesTemplate,
   homeServicesTemplate,
   fitnessStudioTemplate,
 ];

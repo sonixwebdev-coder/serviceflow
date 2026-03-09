@@ -186,7 +186,10 @@ export default function DiscoverDetail() {
                               <div className="space-y-0.5">
                                 {Object.entries(loc.operatingHours).map(([day, hours]) => (
                                   <div key={day}>
-                                    <span className="font-medium capitalize">{day}:</span> {hours}
+                                    <span className="font-medium capitalize">{day}:</span>{' '}
+                                    {(hours.closed === true || hours.isOpen === false)
+                                      ? 'Inchis'
+                                      : `${hours.open || hours.openTime} - ${hours.close || hours.closeTime}`}
                                   </div>
                                 ))}
                               </div>

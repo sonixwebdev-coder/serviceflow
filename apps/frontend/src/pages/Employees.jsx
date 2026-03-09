@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
+import confirm from '../utils/confirm';
+import { useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import { X, UserPlus, Mail, Phone, Calendar, Shield, CheckCircle, Umbrella, Users, MapPin } from 'lucide-react';
@@ -48,6 +50,25 @@ const Employees = () => {
   const [formState, setFormState] = useState(initialFormState);
   const [targetUser, setTargetUser] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const deactivateMutation = useMutation({
+    mutationFn: deactivateUser,
+    onSuccess: () => {
+      refresh();
+      showToast({
+        title: 'Angajat dezactivat',
+        description: 'Accesul a fost revocat cu succes.',
+        type: 'success',
+      });
+    },
+    onError: (err) => {
+      showToast({
+        title: 'Dezactivarea a esuat',
+        description: err.message || 'Te rugam sa incerci din nou.',
+        type: 'error',
+      });
+    },
+  });
 
   const roles = useMemo(() => {
     // Use unique values to avoid duplicates from backward compatibility aliases
@@ -283,24 +304,10 @@ const Employees = () => {
   };
 
   const handleDeactivate = async (employeeId) => {
-    if (!window.confirm('Esti sigur ca vrei sa dezactivezi acest utilizator?')) {
+    if (!await confirm({ title: 'Dezactiveaza utilizator', text: 'Esti sigur ca vrei sa dezactivezi acest utilizator?', confirmText: 'Dezactiveaza', danger: true })) {
       return;
     }
-    try {
-      await deactivateUser(employeeId);
-      await refresh();
-      showToast({
-        title: 'Angajat dezactivat',
-        description: 'Accesul a fost revocat cu succes.',
-        type: 'success',
-      });
-    } catch (deactivateError) {
-      showToast({
-        title: 'Dezactivarea a esuat',
-        description: deactivateError.message || 'Te rugam sa incerci din nou.',
-        type: 'error',
-      });
-    }
+    deactivateMutation.mutate(employeeId);
   };
 
   if (!isAdmin) {
@@ -320,7 +327,7 @@ const Employees = () => {
             name="firstName"
             value={formState.firstName}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="Ion"
             required
           />
@@ -331,7 +338,7 @@ const Employees = () => {
             name="lastName"
             value={formState.lastName}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="Popescu"
             required
           />
@@ -345,8 +352,8 @@ const Employees = () => {
           name="email"
           value={formState.email}
           onChange={handleInputChange}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-          placeholder="ion.popescu@viperx.ro"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          placeholder="ion.popescu@exemplu.ro"
           required
         />
       </div>
@@ -358,7 +365,7 @@ const Employees = () => {
             name="phoneNumber"
             value={formState.phoneNumber}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="+40712345678"
             required
           />
@@ -382,7 +389,7 @@ const Employees = () => {
             name="role"
             value={formState.role}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
             {roles.map((role) => (
               <option key={role} value={role}>
@@ -400,7 +407,7 @@ const Employees = () => {
             name="password"
             value={formState.password}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder={modalMode === 'create' ? 'Parola temporara' : 'Lasa gol pentru a pastra'}
             required={modalMode === 'create'}
           />
@@ -427,7 +434,7 @@ const Employees = () => {
                     type="checkbox"
                     checked={formState.locationIds.includes(location.id)}
                     onChange={(e) => handleLocationToggle(location.id, e.target.checked)}
-                    className="rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <span className="flex-1 text-sm text-gray-700">{location.name}</span>
                   {formState.locationIds.includes(location.id) && (
@@ -437,7 +444,7 @@ const Employees = () => {
                         name="primaryLocation"
                         checked={formState.primaryLocationId === location.id}
                         onChange={() => handlePrimaryLocationChange(location.id)}
-                        className="text-viperx-primary focus:ring-viperx-primary"
+                        className="text-primary focus:ring-primary"
                       />
                       <span className="text-gray-500">Principal</span>
                     </label>
@@ -478,7 +485,7 @@ const Employees = () => {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
             >
               <UserPlus size={16} />
               Adauga angajat
@@ -495,7 +502,7 @@ const Employees = () => {
             name="role"
             value={filters.role || ''}
             onChange={handleFilterChange}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           >
             <option value="">Toate</option>
             {roles.map((role) => (
@@ -512,7 +519,7 @@ const Employees = () => {
             name="isActive"
             value={filters.isActive?.toString() ?? 'true'}
             onChange={handleFilterChange}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           >
             <option value="true">Activ</option>
             <option value="false">Inactiv</option>
@@ -526,7 +533,7 @@ const Employees = () => {
         <div className="hidden lg:block overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : error ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
@@ -556,8 +563,8 @@ const Employees = () => {
                     <tr key={employee._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-viperx-primary/10 flex items-center justify-center">
-                            <span className="text-sm font-semibold text-viperx-primary">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-semibold text-primary">
                               {employee.firstName?.[0]}{employee.lastName?.[0]}
                             </span>
                           </div>
@@ -612,7 +619,7 @@ const Employees = () => {
                                 key={loc.id}
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                                   loc.isPrimary
-                                    ? 'bg-viperx-primary/10 text-viperx-primary border border-viperx-primary/30'
+                                    ? 'bg-primary/10 text-primary border border-primary/30'
                                     : 'bg-gray-100 text-gray-600 border border-gray-200'
                                 }`}
                               >
@@ -641,7 +648,7 @@ const Employees = () => {
                             <button
                               type="button"
                               onClick={() => openEditModal(employee)}
-                              className="text-viperx-primary hover:text-orange-600 font-medium transition"
+                              className="text-primary hover:text-orange-600 font-medium transition"
                             >
                               Editeaza
                             </button>
@@ -650,9 +657,10 @@ const Employees = () => {
                             <button
                               type="button"
                               onClick={() => handleDeactivate(employee._id)}
-                              className="text-red-600 hover:text-red-700 font-medium transition"
+                              disabled={deactivateMutation.isPending && deactivateMutation.variables === employee._id}
+                              className="text-red-600 hover:text-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              Dezactiveaza
+                              {deactivateMutation.isPending && deactivateMutation.variables === employee._id ? 'Se dezactiveaza...' : 'Dezactiveaza'}
                             </button>
                           )}
                         </div>
@@ -669,7 +677,7 @@ const Employees = () => {
         <div className="lg:hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : error ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
@@ -683,8 +691,8 @@ const Employees = () => {
                   <div key={employee._id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-12 w-12 rounded-full bg-viperx-primary/10 flex items-center justify-center">
-                          <span className="text-base font-semibold text-viperx-primary">
+                        <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-base font-semibold text-primary">
                             {employee.firstName?.[0]}{employee.lastName?.[0]}
                           </span>
                         </div>
@@ -739,7 +747,7 @@ const Employees = () => {
                                   key={loc.id}
                                   className={`text-xs px-1.5 py-0.5 rounded ${
                                     loc.isPrimary
-                                      ? 'bg-viperx-primary/10 text-viperx-primary'
+                                      ? 'bg-primary/10 text-primary'
                                       : 'bg-gray-100 text-gray-600'
                                   }`}
                                 >
@@ -765,9 +773,10 @@ const Employees = () => {
                           <button
                             type="button"
                             onClick={() => handleDeactivate(employee._id)}
-                            className="flex-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition"
+                            disabled={deactivateMutation.isPending && deactivateMutation.variables === employee._id}
+                            className="flex-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Dezactiveaza
+                            {deactivateMutation.isPending && deactivateMutation.variables === employee._id ? 'Se dezactiveaza...' : 'Dezactiveaza'}
                           </button>
                         )}
                       </div>
@@ -821,7 +830,7 @@ const Employees = () => {
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {saving ? 'Se salveaza...' : modalMode === 'create' ? 'Creaza' : 'Salveaza'}
               </button>

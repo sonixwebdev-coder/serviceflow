@@ -44,6 +44,8 @@ const maskSecrets = (settings) => {
     'displayPriceStarterMonthly', 'displayPriceStarterAnnual',
     'displayPriceProfessionalMonthly', 'displayPriceProfessionalAnnual',
     'displayPriceEnterpriseMonthly', 'displayPriceEnterpriseAnnual',
+    'addonPriceClients100', 'addonPriceClients300',
+    'addonPriceAppointments200', 'addonPriceAppointments500',
   ]);
 
   const result = {};

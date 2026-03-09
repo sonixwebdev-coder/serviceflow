@@ -18,6 +18,13 @@ model Organization {
   stripeCustomerId     String?               @unique
   subscriptionId       String?               @unique
   subscriptionEndsAt   DateTime?
+  trialUsed            Boolean               @default(false) @map("trial_used")
+  subscriptionStartedAt DateTime?            @map("subscription_started_at")
+  billingInterval      String?               @map("billing_interval")
+  planOverride         Boolean               @default(false)
+  planOverrideBy       String?
+  planOverrideAt       DateTime?
+  planOverrideReason   String?
   settings             Json?
   activitySector       ActivitySector        @default(AUTOMOTIVE)
   maxUsers             Int                   @default(5)
@@ -47,9 +54,27 @@ model Organization {
   website              Website?
   loyaltyProgram       LoyaltyProgram?
   supportTickets       SupportTicket[]
+  quotaAddons          QuotaAddon[]
+  companySettings      CompanySetting[]
 
   @@index([slug])
   @@index([status])
+}
+
+model QuotaAddon {
+  id              String    @id @default(uuid())
+  organizationId  String    @map("organization_id")
+  type            String    // CLIENTS_100, CLIENTS_300, APPOINTMENTS_200, APPOINTMENTS_500
+  resource        String    // 'clients' or 'appointments'
+  amount          Int       // 100, 300, 200, 500
+  purchasedAt     DateTime  @default(now()) @map("purchased_at")
+  expiresAt       DateTime? @map("expires_at") // null = permanent (clients), end-of-month (appointments)
+  stripePaymentId String?   @map("stripe_payment_id")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, resource])
+  @@map("quota_addons")
 }
 
 model User {
@@ -73,6 +98,9 @@ model User {
   leaveBalancePersonal   Int                     @default(5)
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
+  lastLoginAt            DateTime?
+  failedLoginAttempts    Int                     @default(0)
+  lockedUntil            DateTime?
   organizationId         String?
   appointmentsCreated    Appointment[]           @relation("AppointmentCreatedBy")
   appointmentsUpdated    Appointment[]           @relation("AppointmentUpdatedBy")
@@ -111,6 +139,7 @@ model User {
 
   @@index([isActive])
   @@index([email])
+  @@index([organizationId])
 }
 
 model Location {
@@ -275,6 +304,8 @@ model Client {
   notifications      ClientNotification[]
   loyaltyAccount     LoyaltyAccount?
 
+  @@unique([organizationId, email], name: "client_org_email_unique")
+  @@index([organizationId])
   @@index([lastName, firstName])
   @@index([phone])
   @@index([email])
@@ -371,6 +402,8 @@ model Appointment {
   @@index([createdById])
   @@index([scheduledStart, scheduledEnd])
   @@index([paymentStatus])
+  // Compound index for dashboard queries that filter by org and date range
+  @@index([organizationId, scheduledStart])
 }
 
 model AppointmentAssignee {
@@ -405,6 +438,7 @@ model Payment {
   invoice        Invoice?      @relation(fields: [invoiceId], references: [id])
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
+  @@index([organizationId])
   @@index([appointmentId])
   @@index([invoiceId])
   @@index([paymentDate])
@@ -519,6 +553,7 @@ model ChatMessage {
   readReceipts    ChatReadReceipt[]
 
   @@index([channelId, createdAt])
+  @@index([channelId, isDeleted, createdAt])
   @@index([authorId])
 }
 
@@ -642,6 +677,10 @@ model Invoice {
   @@index([createdAt])
   @@index([paymentStatus])
   @@index([organizationId])
+  // Compound indexes for common filter combinations under concurrent load
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, paymentStatus])
+  @@index([organizationId, dueDate, status])
 }
 
 model InvoiceLineItem {
@@ -665,11 +704,15 @@ model InvoiceLineItem {
 }
 
 model CompanySetting {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String       @id @default(cuid())
+  name           String
+  value          Json
+  organizationId String?      @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, name])
 }
 
 model Schedule {
@@ -697,6 +740,7 @@ model Schedule {
   updatedBy       User?             @relation("ScheduleUpdatedBy", fields: [updatedById], references: [id])
   timeEntries     TimeEntry[]
 
+  @@index([organizationId])
   @@index([employeeId, date])
   @@index([date, status])
   @@index([locationId])
@@ -729,6 +773,7 @@ model Task {
   comments             TaskComment[]
   products             TaskProduct[]
 
+  @@index([organizationId])
   @@index([status, priority])
   @@index([dueDate])
   @@index([createdById])
@@ -792,6 +837,7 @@ model TimeEntry {
   schedule         Schedule?       @relation(fields: [scheduleId], references: [id])
   locationRef      Location?       @relation(fields: [locationId], references: [id])
 
+  @@index([organizationId])
   @@index([employeeId, clockIn])
   @@index([locationId])
 }
@@ -816,6 +862,7 @@ model TimeOffRequest {
   organization   Organization? @relation(fields: [organizationId], references: [id])
   reviewer       User?         @relation("TimeOffReviewer", fields: [reviewerId], references: [id])
 
+  @@index([organizationId])
   @@index([employeeId, status])
   @@index([status, startDate])
   @@index([startDate, endDate])
@@ -838,6 +885,7 @@ model Notification {
   organization   Organization?    @relation(fields: [organizationId], references: [id])
   recipient      User             @relation("NotificationRecipient", fields: [recipientId], references: [id])
 
+  @@index([organizationId])
   @@index([recipientId, isRead])
 }
 
@@ -875,6 +923,8 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([actorId, createdAt])
+  // Compound index for admin log views that filter by org and sort by date
+  @@index([organizationId, createdAt])
 }
 
 model PersonalTodo {
@@ -1181,6 +1231,7 @@ enum OrganizationStatus {
   SUSPENDED
   TRIAL
   CANCELLED
+  PAYMENT_REQUIRED
 }
 
 enum SubscriptionPlan {
@@ -1495,12 +1546,14 @@ model ClientAccount {
   verificationToken String?
   resetToken        String?
   resetTokenExpiry  DateTime?
-  lastLoginAt       DateTime?
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
-  client            Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  sessions          ClientSession[]
-  refreshTokens     ClientRefreshToken[]
+  lastLoginAt          DateTime?
+  failedLoginAttempts  Int                  @default(0)
+  lockedUntil          DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  client               Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sessions             ClientSession[]
+  refreshTokens        ClientRefreshToken[]
 
   @@unique([email])
   @@index([clientId])
@@ -1597,6 +1650,7 @@ model WebsiteLead {
   source          String?
   status          LeadStatus       @default(NEW)
   clientId        String?
+  isApproved      Boolean?
   createdAt       DateTime         @default(now())
 
   website         Website          @relation(fields: [websiteId], references: [id], onDelete: Cascade)
@@ -1605,6 +1659,7 @@ model WebsiteLead {
   @@index([status])
   @@index([email])
   @@index([createdAt])
+  @@index([websiteId, source, isApproved])
 }
 
 // ─── Platform Settings (singleton) ──────────────────────────────────────────
@@ -1627,6 +1682,16 @@ model PlatformSettings {
   displayPriceEnterpriseMonthly   Decimal? @db.Decimal(10, 2)
   displayPriceEnterpriseAnnual    Decimal? @db.Decimal(10, 2)
   trialDays                   Int      @default(14)
+  // Addon pack Stripe Price IDs (one-time prices created in Stripe dashboard)
+  addonPriceIdClients100      String?
+  addonPriceIdClients300      String?
+  addonPriceIdAppointments200 String?
+  addonPriceIdAppointments500 String?
+  // Addon pack fallback prices (in bani / RON cents) — used when no Price ID is set
+  addonPriceClients100        Int?
+  addonPriceClients300        Int?
+  addonPriceAppointments200   Int?
+  addonPriceAppointments500   Int?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 }

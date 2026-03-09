@@ -70,7 +70,7 @@ export default function EmojiPicker({ isOpen, onClose, onSelect, anchorRef }) {
             onClick={() => setActiveCategory(category)}
             className={`flex-shrink-0 px-3 py-2 text-xs font-medium transition-colors ${
               activeCategory === category
-                ? 'border-b-2 border-viperx-primary text-viperx-primary'
+                ? 'border-b-2 border-primary text-primary'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >

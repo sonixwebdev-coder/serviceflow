@@ -1,15 +1,15 @@
 import { useEffect, useState, useRef } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useCompanySettings, useUpdateCompanySettings } from '../hooks/useCompanySettings.js';
+import { useTerminology } from '../context/TerminologyContext';
 import useToast from '../context/useToast';
 import { exportAllData, downloadFile } from '../services/exportService';
+import { validateVatNumber } from '../services/settingsService';
 import API from '../utils/api.js';
 
 const fields = [
   { name: 'companyName', label: 'Nume companie', required: true },
   { name: 'legalName', label: 'Denumire legala', placeholder: 'Entitate inregistrata (optional)' },
-  { name: 'vatNumber', label: 'CUI', placeholder: 'Cod unic de identificare' },
-  { name: 'registrationNumber', label: 'Nr. registru comert', placeholder: 'J40/...' },
   { name: 'address', label: 'Adresa', component: 'textarea', rows: 3, required: true },
   { name: 'email', label: 'Email', type: 'email', required: true },
   { name: 'phone', label: 'Telefon', required: true },
@@ -29,6 +29,7 @@ const fields = [
 const CompanySettings = () => {
   const { data, isLoading, error } = useCompanySettings();
   const updateMutation = useUpdateCompanySettings();
+  const { invoiceSequence: currentInvoiceSequence } = useTerminology();
   const { showToast } = useToast();
   const [formState, setFormState] = useState({});
   const [isDirty, setIsDirty] = useState(false);
@@ -37,6 +38,37 @@ const CompanySettings = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isExportingAllData, setIsExportingAllData] = useState(false);
   const fileInputRef = useRef(null);
+
+  const [invoiceSeq, setInvoiceSeq] = useState({
+    prefix: 'INV',
+    separator: '-',
+    includeYear: true,
+    paddingDigits: 5,
+    startingNumber: 1,
+  });
+  const [savingInvoiceSeq, setSavingInvoiceSeq] = useState(false);
+
+  // VAT validation state
+  const [vatValidation, setVatValidation] = useState({ status: 'idle', message: '', data: null });
+
+  const handleVerifyVat = async () => {
+    const vat = formState.vatNumber?.trim();
+    if (!vat) return;
+    setVatValidation({ status: 'loading', message: '', data: null });
+    try {
+      const result = await validateVatNumber(vat);
+      setVatValidation({ status: 'valid', message: `CUI valid — ${result.name}`, data: result });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Eroare la verificare';
+      setVatValidation({ status: 'invalid', message: msg, data: null });
+    }
+  };
+
+  const handleApplyViesData = () => {
+    if (!vatValidation.data) return;
+    if (vatValidation.data.name) handleChange('legalName', vatValidation.data.name);
+    if (vatValidation.data.address) handleChange('address', vatValidation.data.address);
+  };
 
   useEffect(() => {
     if (data) {
@@ -47,6 +79,15 @@ const CompanySettings = () => {
         tvaPercentage: data.tvaPercentage !== undefined ? data.tvaPercentage : 19,
       };
       setFormState(formData);
+      if (data.invoiceSequence) {
+        setInvoiceSeq({
+          prefix: data.invoiceSequence.prefix || 'INV',
+          separator: data.invoiceSequence.separator !== undefined ? data.invoiceSequence.separator : '-',
+          includeYear: data.invoiceSequence.includeYear !== false,
+          paddingDigits: data.invoiceSequence.paddingDigits || 5,
+          startingNumber: data.invoiceSequence.startingNumber || 1,
+        });
+      }
       // Convert relative logo URL to absolute URL for preview
       if (data.logoUrl) {
         const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
@@ -123,7 +164,7 @@ const CompanySettings = () => {
 
     try {
       const blob = await exportAllData();
-      const filename = `viper-export-${new Date().toISOString().split('T')[0]}.zip`;
+      const filename = `forjait-export-${new Date().toISOString().split('T')[0]}.zip`;
       downloadFile(blob, filename);
 
       showToast({
@@ -151,6 +192,52 @@ const CompanySettings = () => {
       });
     } finally {
       setIsExportingAllData(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentInvoiceSequence) {
+      setInvoiceSeq({
+        prefix: currentInvoiceSequence.prefix || 'INV',
+        separator: currentInvoiceSequence.separator !== undefined ? currentInvoiceSequence.separator : '-',
+        includeYear: currentInvoiceSequence.includeYear !== false,
+        paddingDigits: currentInvoiceSequence.paddingDigits || 5,
+        startingNumber: currentInvoiceSequence.startingNumber || 1,
+      });
+    }
+  }, [currentInvoiceSequence]);
+
+  const getInvoicePreview = (seq, sampleNum = 1) => {
+    const prefix = (seq.prefix || 'INV').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'INV';
+    const sep = seq.separator !== undefined ? seq.separator : '-';
+    const pad = Math.max(3, Math.min(10, Number(seq.paddingDigits) || 5));
+    const year = new Date().getFullYear();
+    const num = String(Number(seq.startingNumber) || 1).padStart(pad, '0');
+    if (seq.includeYear !== false) {
+      return sep ? `${prefix}${sep}${year}${sep}${num}` : `${prefix}${year}${num}`;
+    }
+    return sep ? `${prefix}${sep}${num}` : `${prefix}${num}`;
+  };
+
+  const saveInvoiceSeq = async () => {
+    setSavingInvoiceSeq(true);
+    try {
+      await API.patch('/organizations/me/settings/invoiceSequence', {
+        prefix: invoiceSeq.prefix,
+        separator: invoiceSeq.separator,
+        includeYear: invoiceSeq.includeYear,
+        paddingDigits: Number(invoiceSeq.paddingDigits),
+        startingNumber: Number(invoiceSeq.startingNumber),
+      });
+      showToast({ title: 'Numerotare facturi salvata', type: 'success' });
+    } catch (err) {
+      showToast({
+        title: 'Eroare',
+        description: err.response?.data?.message || 'Nu s-a putut salva configuratia',
+        type: 'error',
+      });
+    } finally {
+      setSavingInvoiceSeq(false);
     }
   };
 
@@ -196,7 +283,8 @@ const CompanySettings = () => {
         website: formState.website,
         logoUrl: logoUrl,
         vatNumber: formState.vatNumber,
-        registrationNumber: formState.registrationNumber,
+        cnp: formState.entityType === 'PFA' ? (formState.cnp || '') : '',
+        registrationNumber: formState.entityType === 'PFA' ? '' : (formState.registrationNumber || ''),
         bankName: formState.bankName,
         iban: formState.iban,
         swift: formState.swift,
@@ -301,14 +389,103 @@ const CompanySettings = () => {
           <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Detalii companie</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+              {/* Entity Type (read-only, set during onboarding) */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tip entitate juridica</label>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-800">
+                    {formState.entityType || 'SRL'}
+                  </span>
+                  <span className="text-xs text-gray-400">Setat la inregistrare</span>
+                </div>
+              </div>
+
+              {/* Conditional fiscal fields */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {(formState.entityType || 'SRL') === 'PFA' ? 'NIF / CIF (optional)' : 'CUI'}
+                </label>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={formState.vatNumber ?? ''}
+                    onChange={(e) => {
+                      handleChange('vatNumber', e.target.value);
+                      setVatValidation({ status: 'idle', message: '', data: null });
+                    }}
+                    placeholder={(formState.entityType || 'SRL') === 'PFA' ? 'Numar de identificare fiscala' : 'Cod unic de identificare'}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyVat}
+                    disabled={!formState.vatNumber?.trim() || vatValidation.status === 'loading'}
+                    className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {vatValidation.status === 'loading' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : 'Verifica'}
+                  </button>
+                </div>
+                {vatValidation.status === 'valid' && (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-1.5 text-green-600 text-sm">
+                      <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{vatValidation.message}</span>
+                    </div>
+                    {vatValidation.data?.name && (
+                      <button
+                        type="button"
+                        onClick={handleApplyViesData}
+                        className="mt-1 text-xs text-primary hover:underline"
+                      >
+                        Completeaza automat denumirea legala si adresa
+                      </button>
+                    )}
+                  </div>
+                )}
+                {vatValidation.status === 'invalid' && (
+                  <div className="flex items-center gap-1.5 mt-2 text-red-600 text-sm">
+                    <XCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{vatValidation.message}</span>
+                  </div>
+                )}
+              </div>
+
+              {(formState.entityType || 'SRL') === 'SRL' ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Nr. registru comert</label>
+                  <input
+                    type="text"
+                    value={formState.registrationNumber ?? ''}
+                    onChange={(e) => handleChange('registrationNumber', e.target.value)}
+                    placeholder="J40/..."
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">CNP</label>
+                  <input
+                    type="text"
+                    value={formState.cnp ?? ''}
+                    onChange={(e) => handleChange('cnp', e.target.value)}
+                    placeholder="Cod numeric personal (13 cifre)"
+                    maxLength={13}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              )}
+
               {fields.map((field) => {
                 const commonProps = {
                   id: field.name,
                   name: field.name,
                   className:
                     field.type === 'checkbox'
-                      ? 'h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary'
-                      : 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary',
+                      ? 'h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary'
+                      : 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
                 };
 
                 if (field.type === 'checkbox') {
@@ -372,6 +549,104 @@ const CompanySettings = () => {
             </div>
           </div>
 
+          {/* Invoice Numbering Section */}
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <h2 className="text-base font-semibold text-gray-900 mb-1">Numerotare facturi</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Configureaza formatul numerelor de factura. Util daca ai emis deja facturi si vrei sa continui de unde ai ramas.
+            </p>
+
+            {/* Preview */}
+            <div className="mb-5 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3">
+              <span className="text-xs text-gray-500">Urmatoarea factura va fi:</span>
+              <span className="font-mono font-semibold text-primary text-sm">{getInvoicePreview(invoiceSeq)}</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Prefix */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prefix</label>
+                <input
+                  type="text"
+                  value={invoiceSeq.prefix}
+                  onChange={e => setInvoiceSeq(prev => ({ ...prev, prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }))}
+                  maxLength={10}
+                  placeholder="INV"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Separator */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Separator</label>
+                <select
+                  value={invoiceSeq.separator}
+                  onChange={e => setInvoiceSeq(prev => ({ ...prev, separator: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="-">Linie ( - )</option>
+                  <option value="/">Slash ( / )</option>
+                  <option value="_">Underscore ( _ )</option>
+                  <option value="">Niciun separator</option>
+                </select>
+              </div>
+
+              {/* Padding */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cifre numar secventa</label>
+                <select
+                  value={invoiceSeq.paddingDigits}
+                  onChange={e => setInvoiceSeq(prev => ({ ...prev, paddingDigits: Number(e.target.value) }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {[3, 4, 5, 6, 7, 8].map(n => (
+                    <option key={n} value={n}>{n} cifre (ex: {'0'.repeat(n - 1)}1)</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Include year */}
+              <div className="flex items-center gap-3 pt-6">
+                <input
+                  type="checkbox"
+                  id="includeYear"
+                  checked={invoiceSeq.includeYear !== false}
+                  onChange={e => setInvoiceSeq(prev => ({ ...prev, includeYear: e.target.checked }))}
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                />
+                <label htmlFor="includeYear" className="text-sm font-medium text-gray-700">Include anul in numar</label>
+              </div>
+
+              {/* Starting number */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Numarul de start pentru {new Date().getFullYear()}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={invoiceSeq.startingNumber}
+                  onChange={e => setInvoiceSeq(prev => ({ ...prev, startingNumber: Math.max(1, Number(e.target.value)) }))}
+                  className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Daca ai deja 50 de facturi emise in alt sistem, seteaza 51 pentru a continua de acolo. Se aplica pentru anul {new Date().getFullYear()}.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={saveInvoiceSeq}
+                disabled={savingInvoiceSeq}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
+              >
+                {savingInvoiceSeq ? 'Se salveaza...' : 'Salveaza numerotarea'}
+              </button>
+            </div>
+          </div>
+
           {/* Export All Data Section */}
           <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <div className="flex items-start justify-between mb-4">
@@ -389,7 +664,7 @@ const CompanySettings = () => {
               type="button"
               onClick={handleExportAllData}
               disabled={isExportingAllData}
-              className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isExportingAllData ? (
                 <>
@@ -439,7 +714,7 @@ const CompanySettings = () => {
               <button
                 type="submit"
                 disabled={updateMutation.isPending || isUploadingLogo || !isDirty}
-                className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUploadingLogo ? 'Se incarca logo-ul...' : updateMutation.isPending ? 'Se salveaza...' : 'Salveaza setarile'}
               </button>

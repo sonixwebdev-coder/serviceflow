@@ -4,11 +4,10 @@ const { AppError } = require('../utils/errors');
 const { signAccessToken, generateRefreshToken } = require('../utils/token');
 const { ensureRole } = require('./roleService');
 const { ACTIVITY_SECTORS, isValidSector } = require('../constants/activitySectors');
+const { sendCrmWelcomeEmail } = require('./email/emailService');
+const { getAllPlanLimits } = require('../utils/planLimits');
+const logger = require('../utils/logger');
 
-/**
- * Create a new organization with an admin user
- * This is the signup flow for new organizations
- */
 const createOrganization = async ({
   organizationName,
   slug,
@@ -18,6 +17,7 @@ const createOrganization = async ({
   lastName,
   phoneNumber,
   activitySector,
+  plan,
 }) => {
   // Validate required fields
   if (!organizationName || !slug || !email || !password || !firstName || !lastName) {
@@ -87,16 +87,23 @@ const createOrganization = async ({
 
   await prisma.$transaction(async (tx) => {
     // Create organization
+    const selectedPlan = plan || 'PROFESSIONAL';
+    const limits = getAllPlanLimits(selectedPlan);
+
     organization = await tx.organization.create({
       data: {
         name: organizationName,
         slug,
         status: 'TRIAL',
-        plan: 'FREE',
+        plan: selectedPlan,
         trialEndsAt,
         trialStartedAt: new Date(),
+        trialUsed: true,
         activitySector,
         settings,
+        maxUsers: limits.maxUsers === Infinity ? 999999 : limits.maxUsers,
+        maxClients: limits.maxClients === Infinity ? 999999 : limits.maxClients,
+        maxAppointments: limits.maxAppointments === Infinity ? 999999 : limits.maxAppointments,
       },
     });
 
@@ -168,6 +175,20 @@ const createOrganization = async ({
     });
   });
 
+  // Send welcome email (fire-and-forget)
+  sendCrmWelcomeEmail({
+    email: user.email,
+    userName: `${user.firstName} ${user.lastName}`,
+    organizationName: organization.name,
+    loginUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  }).catch((err) => logger.error('[EMAIL] CRM welcome email failed:', err.message));
+
+  // Set lastLoginAt for the admin user (first login is right after signup)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+
   return {
     organization,
     user: {
@@ -176,6 +197,9 @@ const createOrganization = async ({
       firstName: user.firstName,
       lastName: user.lastName,
       organizationId: organization.id,
+      orgStatus: organization.status,
+      role: 'admin',
+      roles: [{ role: { key: 'admin' } }],
     },
     accessToken,
     refreshToken,
@@ -231,6 +255,9 @@ const updateOrganization = async (organizationId, data) => {
 
 /**
  * Check if organization has reached usage limits
+ * Appointments are monthly quotas (reset on 1st of each month)
+ * Clients are lifetime accumulative (no reset)
+ * Users are concurrent seats (no reset)
  */
 const checkOrganizationLimits = async (organizationId, resource) => {
   const organization = await prisma.organization.findUnique({
@@ -238,29 +265,118 @@ const checkOrganizationLimits = async (organizationId, resource) => {
   });
 
   if (!organization) {
-    throw new AppError('Organization not found', 404);
+    throw new AppError('Organizatia nu a fost gasita', 404);
   }
 
-  const counts = {
-    users: await prisma.user.count({ where: { organizationId } }),
-    clients: await prisma.client.count({ where: { organizationId } }),
-    appointments: await prisma.appointment.count({ where: { organizationId } }),
-  };
-
-  const limits = {
+  const baseLimit = {
     users: organization.maxUsers,
     clients: organization.maxClients,
     appointments: organization.maxAppointments,
-  };
+  }[resource];
 
-  if (counts[resource] >= limits[resource]) {
+  // Skip for unlimited (ENTERPRISE stores 999999)
+  if (baseLimit >= 999999) return true;
+
+  // Get active add-on boosts for this resource
+  const now = new Date();
+  const addons = await prisma.quotaAddon.findMany({
+    where: {
+      organizationId,
+      resource,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+  });
+  const addonBoost = addons.reduce((sum, a) => sum + a.amount, 0);
+  const effectiveLimit = baseLimit + addonBoost;
+
+  // Count current usage
+  let count;
+  if (resource === 'appointments') {
+    // Monthly: count only appointments created this month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    count = await prisma.appointment.count({
+      where: { organizationId, createdAt: { gte: startOfMonth } },
+    });
+  } else if (resource === 'clients') {
+    count = await prisma.client.count({ where: { organizationId } });
+  } else {
+    count = await prisma.user.count({ where: { organizationId } });
+  }
+
+  if (count >= effectiveLimit) {
+    const labels = { users: 'utilizatori', clients: 'clienti', appointments: 'programari' };
     throw new AppError(
-      `Organization has reached the limit for ${resource}. Please upgrade your plan.`,
+      `Ati atins limita de ${labels[resource]} (${effectiveLimit}). Upgradati planul sau achizitionati un pachet suplimentar.`,
       403
     );
   }
-
   return true;
+};
+
+/**
+ * Get remaining quota for a resource (useful for bulk operations)
+ */
+const getRemainingQuota = async (organizationId, resource) => {
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+  });
+
+  if (!organization) {
+    throw new AppError('Organizatia nu a fost gasita', 404);
+  }
+
+  const baseLimit = {
+    users: organization.maxUsers,
+    clients: organization.maxClients,
+    appointments: organization.maxAppointments,
+  }[resource];
+
+  // Unlimited
+  if (baseLimit >= 999999) {
+    return { limit: Infinity, used: 0, remaining: Infinity, addonBoost: 0 };
+  }
+
+  const now = new Date();
+  const addons = await prisma.quotaAddon.findMany({
+    where: {
+      organizationId,
+      resource,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+  });
+  const addonBoost = addons.reduce((sum, a) => sum + a.amount, 0);
+  const effectiveLimit = baseLimit + addonBoost;
+
+  let used;
+  if (resource === 'appointments') {
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    used = await prisma.appointment.count({
+      where: { organizationId, createdAt: { gte: startOfMonth } },
+    });
+  } else if (resource === 'clients') {
+    used = await prisma.client.count({ where: { organizationId } });
+  } else {
+    used = await prisma.user.count({ where: { organizationId } });
+  }
+
+  return {
+    limit: effectiveLimit,
+    used,
+    remaining: Math.max(0, effectiveLimit - used),
+    addonBoost,
+  };
+};
+
+/**
+ * Get full quota usage for all resources (for billing page)
+ */
+const getQuotaUsage = async (organizationId) => {
+  const [users, clients, appointments] = await Promise.all([
+    getRemainingQuota(organizationId, 'users'),
+    getRemainingQuota(organizationId, 'clients'),
+    getRemainingQuota(organizationId, 'appointments'),
+  ]);
+  return { users, clients, appointments };
 };
 
 /**
@@ -316,5 +432,7 @@ module.exports = {
   getOrganizationById,
   updateOrganization,
   checkOrganizationLimits,
+  getRemainingQuota,
+  getQuotaUsage,
   getOrganizationStats,
 };

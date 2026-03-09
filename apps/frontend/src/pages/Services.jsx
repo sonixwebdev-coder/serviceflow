@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import confirm from '../utils/confirm';
 import {
   Briefcase,
   Plus,
@@ -7,15 +8,13 @@ import {
   Search,
   X,
   Clock,
-  DollarSign,
+  Banknote,
   Image,
 } from 'lucide-react';
 import { useServices, useServicesMutation } from '../hooks/useServices';
 import useToast from '../context/useToast';
 
-const ServiceCard = ({ service, onEdit, onDelete }) => {
-  const [deleting, setDeleting] = useState(false);
-
+const ServiceCard = ({ service, onEdit, onDelete, isDeleting }) => {
   return (
     <div className="rounded-lg border border-gray-200 bg-white shadow-sm transition hover:shadow-md overflow-hidden">
       {service.image && (
@@ -32,7 +31,7 @@ const ServiceCard = ({ service, onEdit, onDelete }) => {
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100">
-              <Briefcase className="h-5 w-5 text-viperx-primary" />
+              <Briefcase className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">{service.name}</h3>
@@ -53,12 +52,9 @@ const ServiceCard = ({ service, onEdit, onDelete }) => {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setDeleting(true);
-                onDelete(service.id).finally(() => setDeleting(false));
-              }}
-              disabled={deleting}
-              className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+              onClick={() => onDelete(service.id)}
+              disabled={isDeleting}
+              className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Sterge"
             >
               <Trash2 size={18} />
@@ -69,7 +65,7 @@ const ServiceCard = ({ service, onEdit, onDelete }) => {
         <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
           {service.price && (
             <div className="flex items-center gap-1.5">
-              <DollarSign size={14} />
+              <Banknote size={14} />
               <span>{service.price}</span>
             </div>
           )}
@@ -100,7 +96,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 margin-top-zero">
       <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
         <button
           type="button"
@@ -123,7 +119,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="ex: Consultanta IT"
               required
             />
@@ -136,7 +132,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="Descriere scurta a serviciului"
               rows={3}
               maxLength={500}
@@ -152,7 +148,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
                 type="text"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="ex: 150 RON"
               />
             </div>
@@ -165,7 +161,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
                 type="text"
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="ex: 60 min"
               />
             </div>
@@ -182,7 +178,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
               type="text"
               value={formData.image}
               onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="https://exemplu.com/imagine.jpg"
             />
           </div>
@@ -198,7 +194,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
             <button
               type="submit"
               disabled={isSaving || !formData.name.trim()}
-              className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Se salveaza...' : service ? 'Salveaza' : 'Adauga'}
             </button>
@@ -259,7 +255,7 @@ const Services = () => {
   };
 
   const handleDelete = async (serviceId) => {
-    if (!window.confirm('Esti sigur ca vrei sa stergi acest serviciu?')) {
+    if (!await confirm({ title: 'Sterge serviciu', text: 'Esti sigur ca vrei sa stergi acest serviciu?', confirmText: 'Sterge', danger: true })) {
       return;
     }
 
@@ -283,7 +279,7 @@ const Services = () => {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
@@ -303,7 +299,7 @@ const Services = () => {
             setModalService(null);
             setShowModal(true);
           }}
-          className="flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
         >
           <Plus size={18} />
           Adauga serviciu
@@ -321,7 +317,7 @@ const Services = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cauta servicii..."
-          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
       </div>
 
@@ -341,7 +337,7 @@ const Services = () => {
                 setModalService(null);
                 setShowModal(true);
               }}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
             >
               <Plus size={18} />
               Adauga serviciu
@@ -359,6 +355,7 @@ const Services = () => {
                 setShowModal(true);
               }}
               onDelete={handleDelete}
+              isDeleting={isSaving}
             />
           ))}
         </div>

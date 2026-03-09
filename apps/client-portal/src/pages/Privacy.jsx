@@ -4,7 +4,7 @@ export default function Privacy() {
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Politica de Confidentialitate</h1>
 
       <div className="prose prose-gray max-w-none space-y-6 text-gray-600 text-sm leading-relaxed">
-        <p>Ultima actualizare: 1 Ianuarie 2026</p>
+        <p>Ultima actualizare: 8 Martie 2026</p>
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">1. Date Colectate</h2>
@@ -13,7 +13,9 @@ export default function Privacy() {
             <li>Date de identificare: nume, prenume, adresa de email, numar de telefon</li>
             <li>Date de cont: adresa de email, parola (stocata criptat)</li>
             <li>Date de utilizare: programari, mesaje, interactiuni cu platforma</li>
+            <li>Date de fidelitate: puncte acumulate, tranzactii in programul de loialitate</li>
             <li>Date tehnice: adresa IP, tipul dispozitivului, browser-ul utilizat</li>
+            <li>Date de notificari: token-uri push, preferinte de notificari</li>
           </ul>
         </section>
 
@@ -25,6 +27,7 @@ export default function Privacy() {
             <li>Facilitarea programarilor si comunicarii cu furnizorii de servicii</li>
             <li>Generarea si gestionarea facturilor</li>
             <li>Trimiterea de notificari relevante (programari, mesaje, facturi)</li>
+            <li>Administrarea programului de fidelitate si a punctelor de loialitate</li>
             <li>Imbunatatirea platformei si a experientei utilizatorului</li>
           </ul>
         </section>
@@ -61,7 +64,7 @@ export default function Privacy() {
             <li><strong>Dreptul la restrictionarea prelucrarii</strong> — puteti solicita limitarea prelucrarii</li>
           </ul>
           <p className="mt-3">
-            Pentru exercitarea acestor drepturi, va rugam sa ne contactati la adresa: privacy@forja.ro
+            Pentru exercitarea acestor drepturi, va rugam sa ne contactati la adresa: contact@forja.it.com
           </p>
         </section>
 
@@ -90,7 +93,7 @@ export default function Privacy() {
             dumneavoastra, ne puteti contacta la:
           </p>
           <p className="mt-2">
-            Email: privacy@forja.ro
+            Email: contact@forja.it.com
           </p>
           <p>
             De asemenea, aveti dreptul de a depune o plangere la Autoritatea Nationala de Supraveghere

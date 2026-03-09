@@ -210,7 +210,7 @@ export default function VoiceRecordButton({ channelId }) {
             {isUploading && (
               <div className="mb-4">
                 <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-                  <div className="h-full animate-pulse bg-viperx-primary" style={{ width: '100%' }}></div>
+                  <div className="h-full animate-pulse bg-primary" style={{ width: '100%' }}></div>
                 </div>
                 <p className="mt-1 text-center text-xs text-gray-500">Se trimite...</p>
               </div>
@@ -229,7 +229,7 @@ export default function VoiceRecordButton({ channelId }) {
               <button
                 onClick={sendVoiceMessage}
                 disabled={isUploading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
                 {isUploading ? 'Se trimite...' : 'Trimite'}

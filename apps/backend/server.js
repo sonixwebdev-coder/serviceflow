@@ -1,27 +1,49 @@
 require('dotenv').config();
+const validateEnv = require('./src/utils/validateEnv');
+validateEnv();
+
+const { initSentry } = require('./src/utils/sentry');
+initSentry();
+
 const http = require('http');
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const prisma = require('./lib/prisma');
-const { initRedis, closeRedis } = require('./src/lib/redis');
+const { initRedis, getRedisClient, closeRedis } = require('./src/lib/redis');
 const apiRouter = require('./src/api');
 const errorHandler = require('./src/middleware/errorHandler');
 const createSocketServer = require('./src/realtime');
 const logger = require('./src/utils/logger');
 
-// Handle uncaught exceptions to prevent server crashes
-process.on('uncaughtException', (err) => {
+// Initialize Redis early so the rate limiter Redis store can use it
+initRedis();
+
+// Helper: create a Redis-backed rate limit store, falling back to in-memory when Redis is unavailable
+const makeRateLimitStore = (prefix) => {
+  const client = getRedisClient();
+  if (!client) return undefined; // express-rate-limit defaults to in-memory
+  return new RedisStore({
+    sendCommand: (...args) => client.call(...args),
+    prefix: `rl:${prefix}:`,
+  });
+};
+
+// Handle uncaught exceptions — log then exit so the process manager can restart cleanly
+process.on('uncaughtException', async (err) => {
   logger.system('Uncaught Exception', { stack: err.stack, name: err.name, message: err.message });
-  logger.flush();
+  await logger.flush();
+  process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', async (reason) => {
   logger.system('Unhandled Rejection', { reason: String(reason) });
-  logger.flush();
+  await logger.flush();
+  process.exit(1);
 });
 
 const app = express();
@@ -31,13 +53,15 @@ const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname,
 // CORS configuration (defined early for use in multiple places)
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://viperx.online', 'https://portal.viperx.online']
+    ? (process.env.CORS_ORIGINS || 'https://forja.it.com,https://portal.forja.it.com').split(',').map(s => s.trim())
     : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
   credentials: true
 };
 
 // Static file serving MUST come BEFORE helmet to avoid CSP blocking PDF iframes
 // This route is exempt from CSP headers to allow PDF embedding
+const { verifyAccessToken } = require('./src/utils/token');
+
 const staticCorsMiddleware = (req, res, next) => {
   // Set CORS headers for cross-origin access
   const origin = req.headers.origin;
@@ -52,38 +76,63 @@ const staticCorsMiddleware = (req, res, next) => {
   next();
 };
 
-app.use('/files', staticCorsMiddleware, express.static(fileStorageRoot));
-
-// Serve uploaded files (messages, attachments)
-const uploadsRoot = path.resolve(__dirname, 'uploads');
-app.use('/uploads', staticCorsMiddleware, express.static(uploadsRoot));
-
-// Security headers with helmet (applied after /files route)
-app.use((req, res, next) => {
-  // Skip helmet CSP for /files routes
-  if (res.locals.skipCSP) {
+// Lightweight auth for private static files (chat attachments, invoices, uploads)
+// Allows public access to logos and website assets only
+// Accepts token from: Authorization header, ?token= query param (for <img>, <a>, <audio>)
+const staticAuthMiddleware = (req, res, next) => {
+  // Public paths — logos and website assets don't require auth
+  if (req.path.startsWith('/logos/') || req.path.startsWith('/websites/')) {
     return next();
   }
 
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        frameSrc: ["'self'"], // Allow iframes from same origin for PDF preview
-        frameAncestors: ["'self'"], // Allow being framed by same origin
-      },
+  // Check token from Authorization header or query param
+  const header = req.headers.authorization;
+  const token = header?.startsWith('Bearer ') ? header.slice(7)
+    : (typeof req.query.token === 'string' ? req.query.token : null);
+
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    verifyAccessToken(token);
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+app.use('/files', staticCorsMiddleware, staticAuthMiddleware, express.static(fileStorageRoot));
+
+// Serve uploaded files (messages, attachments)
+const uploadsRoot = path.resolve(__dirname, 'uploads');
+app.use('/uploads', staticCorsMiddleware, staticAuthMiddleware, express.static(uploadsRoot));
+
+// Security headers with helmet (applied after /files route)
+// Instantiate once at startup — not per-request — to avoid unnecessary object allocation
+const helmetMiddleware = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      frameSrc: ["'self'"], // Allow iframes from same origin for PDF preview
+      frameAncestors: ["'self'"], // Allow being framed by same origin
     },
-    frameguard: false, // Disable X-Frame-Options to allow PDF embedding
-    hsts: {
-      maxAge: 31536000, // 1 year
-      includeSubDomains: true,
-      preload: true,
-    },
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  })(req, res, next);
+  },
+  frameguard: false, // Disable X-Frame-Options to allow PDF embedding
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+});
+
+app.use((req, res, next) => {
+  if (res.locals.skipCSP) return next();
+  helmetMiddleware(req, res, next);
 });
 
 // Permissions-Policy header
@@ -122,93 +171,116 @@ app.get('/api/csrf-token', generateToken);
 // Apply CSRF protection to all routes
 app.use(csrfProtection);
 
-// Rate limiting for auth endpoints
+// Global baseline rate limiter — covers all /api routes not already limited
+// Keyed by authenticated user ID when available, otherwise by IP
+const globalApiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 300, // 300 requests/min per user — well above normal usage, blocks abusive clients
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  store: makeRateLimitStore('global'),
+  skip: (req) => req.path.startsWith('/api/auth'), // auth routes have their own tighter limits
+});
+
+// Auth routes — strict limits to prevent brute force
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // 50 requests per window (increased for socket reconnection scenarios)
+  windowMs: 15 * 60 * 1000,
+  max: 50,
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeRateLimitStore('auth'),
 });
 
-// Separate, higher-limit rate limiter for token refresh (allows seamless session continuation)
+// Token refresh — higher limit for seamless session continuation
 const refreshLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 120,
   message: 'Too many refresh attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeRateLimitStore('refresh'),
 });
 
-// Rate limiting for profile update endpoints (CRITICAL SECURITY)
+// Profile updates
 const profileUpdateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: 'Too many profile update attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeRateLimitStore('profile'),
 });
 
-// Rate limiting for password change endpoint (CRITICAL SECURITY)
+// Password change — very strict
 const passwordChangeLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 5 requests per hour
+  windowMs: 60 * 60 * 1000,
+  max: 5,
   message: 'Too many password change attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeRateLimitStore('pwd-change'),
 });
 
-// Rate limiting for forgot-password endpoints (CRITICAL SECURITY - enumeration prevention)
+// Forgot password — enumeration prevention
 const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: 'Too many password reset attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeRateLimitStore('forgot-pwd'),
 });
 
-// Rate limiting for export endpoints (CRITICAL SECURITY - DoS prevention)
+// Exports — CPU/DB intensive, limit tightly
 const exportLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 export requests per window per user
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: 'Too many export requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  // Use user ID if authenticated, otherwise IP address
-  keyGenerator: (req) => {
-    return req.user?.id || req.ip;
-  },
+  keyGenerator: (req) => req.user?.id || req.ip,
+  store: makeRateLimitStore('exports'),
 });
 
-// Apply rate limit to auth routes
+// Analytics — expensive queries, limit to prevent runaway load
+const analyticsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: 'Too many analytics requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  store: makeRateLimitStore('analytics'),
+});
+
+// Apply rate limits — most specific routes first, then broader catch-alls
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
+app.use('/api/portal/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/auth/refresh', refreshLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/portal/auth', authLimiter);
 
-// Apply rate limit to forgot-password routes
-app.use('/api/auth/forgot-password', forgotPasswordLimiter);
-app.use('/api/portal/auth/forgot-password', forgotPasswordLimiter);
-
-// Apply rate limiting to profile endpoints (CRITICAL SECURITY)
 app.use('/api/users/profile', (req, res, next) => {
-  // More restrictive rate limit for password changes
-  if (req.path === '/password' && req.method === 'PUT') {
-    return passwordChangeLimiter(req, res, next);
-  }
-  // Standard profile update rate limit
-  if (req.method === 'PUT') {
-    return profileUpdateLimiter(req, res, next);
-  }
+  if (req.path === '/password' && req.method === 'PUT') return passwordChangeLimiter(req, res, next);
+  if (req.method === 'PUT') return profileUpdateLimiter(req, res, next);
   next();
 });
 
-// Rate limiting for super admin API
+app.use('/api/analytics', analyticsLimiter);
+
+// Global baseline limiter applied to all remaining /api routes
+app.use('/api', globalApiLimiter);
+
+// Super admin API
 const superAdminLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 200,
   message: 'Too many requests to admin API, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeRateLimitStore('super-admin'),
 });
 
 // Super Admin API (mounted before main API to bypass tenant/location scoping)
@@ -268,8 +340,11 @@ async function startServer() {
     process.exit(1);
   }
 
-  // Initialize Redis (optional - app works without it)
-  initRedis();
+  // Redis is already initialized at module load (before rate limiters)
+
+  // Initialize background jobs (cleanup crons, etc.)
+  const { initializeJobs, stopAllJobs: stopJobs } = require('./src/jobs');
+  initializeJobs();
 
   const httpServer = http.createServer(app);
   createSocketServer(httpServer);
@@ -282,6 +357,7 @@ async function startServer() {
 
   const gracefulShutdown = async (signal) => {
     logger.system(`${signal} received, shutting down gracefully`);
+    stopJobs();
     await logger.flush();
     await Promise.all([
       prisma.$disconnect(),

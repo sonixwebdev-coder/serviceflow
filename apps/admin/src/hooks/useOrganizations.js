@@ -48,3 +48,25 @@ export function useActivateOrganization() {
     },
   });
 }
+
+export function useGrantPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: orgService.grantPlan,
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['organization', variables.id] });
+      qc.invalidateQueries({ queryKey: ['organizations'] });
+    },
+  });
+}
+
+export function useRevokeOverride() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: orgService.revokeOverride,
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['organization', variables.id] });
+      qc.invalidateQueries({ queryKey: ['organizations'] });
+    },
+  });
+}

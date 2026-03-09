@@ -3,6 +3,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const validate = require('../middleware/validate');
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
+const cache = require('../utils/cache');
 const {
   listUsersQuerySchema,
   updateUserStatusSchema,
@@ -116,6 +117,7 @@ router.put(
   validate(updateUserSchema),
   asyncHandler(async (req, res) => {
     const user = await updateUser(req.tenantPrisma, req.params.userId, req.body, req.user.organizationId);
+    await cache.del(`auth:${req.params.userId}`);
 
     await logFromRequest(req, {
       action: 'UPDATE',
@@ -136,6 +138,7 @@ router.patch(
   validate(updateUserStatusSchema),
   asyncHandler(async (req, res) => {
     const user = await updateUserStatus(req.tenantPrisma, { userId: req.params.userId, isActive: req.body.isActive });
+    await cache.del(`auth:${req.params.userId}`);
 
     await logFromRequest(req, {
       action: 'UPDATE',
@@ -158,6 +161,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     const user = await getUserById(req.tenantPrisma, req.params.userId);
     await deactivateUser(req.tenantPrisma, req.params.userId);
+    await cache.del(`auth:${req.params.userId}`);
 
     await logFromRequest(req, {
       action: 'DELETE',

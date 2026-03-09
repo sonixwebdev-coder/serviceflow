@@ -33,7 +33,7 @@ const exportToJSON = (data, options = {}) => {
         exportDate: formatDateTime(new Date()),
         entityType,
         totalRecords: data.length,
-        generatedBy: 'ViperX CRM',
+        generatedBy: 'ForjaIt CRM',
       },
       data,
     };

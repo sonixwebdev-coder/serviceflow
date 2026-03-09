@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Gift } from 'lucide-react';
 import { useLogin } from '@/hooks/useAuth';
 import { useAuthStore } from '@/state/useAuthStore';
 import Button from '@/components/ui/Button';
@@ -18,11 +18,15 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const loginMutation = useLogin();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const loading = useAuthStore((state) => state.loading);
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  const referralCode = searchParams.get('code');
+  const from = referralCode
+    ? `/loyalty?code=${encodeURIComponent(referralCode)}`
+    : (location.state?.from?.pathname || '/dashboard');
 
   // Redirect if already authenticated (after loading)
   useEffect(() => {
@@ -55,6 +59,15 @@ export default function Login() {
             Accesati contul pentru a vedea programarile si facturile
           </p>
         </div>
+
+        {referralCode && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+            <Gift className="h-5 w-5 text-indigo-600 shrink-0" />
+            <p className="text-sm text-indigo-700">
+              Autentifica-te pentru a primi punctele de referral bonus.
+            </p>
+          </div>
+        )}
 
         <div className="card p-8">
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
@@ -131,6 +144,12 @@ export default function Login() {
             Autentificare
           </Button>
         </form>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link to="/" className="text-sm text-gray-500 hover:text-primary-600">
+            Inapoi la pagina principala
+          </Link>
         </div>
       </div>
     </div>

@@ -11,9 +11,11 @@ const {
   createReview,
   getCrmDataForBlocks,
   generateSitemapData,
+  getApprovedReviews,
 } = require('../../services/websiteService');
 const { createLeadSchema, createReviewSchema } = require('../../schemas/websiteSchema');
 const { ok, created } = require('../../utils/http');
+const cache = require('../../utils/cache');
 const prisma = require('../../../lib/prisma');
 
 // Rate limiter for lead submissions: max 5 per IP per 15 minutes
@@ -80,11 +82,17 @@ router.get(
   asyncHandler(async (req, res) => {
     const { subdomain, dataType } = req.params;
 
-    // First get the website
-    const website = await getWebsiteBySubdomain(prisma, subdomain);
+    // Endpoint-level cache: short-circuits both the subdomain lookup and CRM data fetch
+    const cacheKey = `portal:crm:${subdomain}:${dataType}`;
+    const cached = await cache.get(cacheKey);
+    if (cached !== null) {
+      return ok(res, cached);
+    }
 
-    // Get CRM data
+    const website = await getWebsiteBySubdomain(prisma, subdomain);
     const data = await getCrmDataForBlocks(prisma, website.organization.id, dataType);
+
+    cache.set(cacheKey, data, cache.TTL.MEDIUM).catch(() => {});
 
     return ok(res, data);
   })
@@ -148,6 +156,20 @@ router.post(
       message: 'Multumim! Recenzia va fi publicata dupa aprobare.',
       data: { id: review.id },
     });
+  })
+);
+
+/**
+ * GET /api/portal/website/:subdomain/reviews
+ * Get approved reviews for public display
+ */
+router.get(
+  '/:subdomain/reviews',
+  asyncHandler(async (req, res) => {
+    const { subdomain } = req.params;
+    const website = await getWebsiteBySubdomain(prisma, subdomain);
+    const reviews = await getApprovedReviews(prisma, website.id);
+    return ok(res, reviews);
   })
 );
 

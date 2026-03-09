@@ -1,5 +1,8 @@
 const { AppError } = require('../utils/errors');
 const { broadcastClientUpdate } = require('../realtime/events');
+const { sendWelcomeEmail } = require('./email/emailService');
+const { getCompanySettings } = require('./companySettingService');
+const logger = require('../utils/logger');
 
 const listClients = async (prisma, { search, page = 1, limit = 20, isOnline, locationFilter = {} }) => {
   const take = Math.min(limit, 100);
@@ -42,7 +45,7 @@ const listClients = async (prisma, { search, page = 1, limit = 20, isOnline, loc
     prisma.client.findMany({
       where,
       include: {
-        assets: true,
+        _count: { select: { assets: true } },
       },
       orderBy: {
         updatedAt: 'desc',
@@ -65,7 +68,14 @@ const listClients = async (prisma, { search, page = 1, limit = 20, isOnline, loc
 };
 
 const createClient = async (prisma, data, options = {}) => {
-  const { locationId } = options;
+  const { locationId, organizationId } = options;
+
+  // Quota check: clients
+  if (organizationId) {
+    const { checkOrganizationLimits } = require('./organizationService');
+    await checkOrganizationLimits(organizationId, 'clients');
+  }
+
   const type = (data.type || 'PF').toUpperCase();
   if (!['PF', 'SRL'].includes(type)) {
     throw new AppError('Invalid client type', 400);
@@ -101,6 +111,17 @@ const createClient = async (prisma, data, options = {}) => {
         assets: true,
       },
     });
+
+    // Send welcome email to client (fire-and-forget)
+    if (client.email) {
+      getCompanySettings(client.organizationId).then((companySettings) => {
+        sendWelcomeEmail(prisma, {
+          client,
+          companySettings,
+          organizationId: client.organizationId,
+        }).catch((err) => logger.error('[EMAIL] Client welcome email failed:', err.message));
+      }).catch(() => {});
+    }
 
     return client;
   } catch (error) {

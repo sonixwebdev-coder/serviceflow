@@ -1,7 +1,221 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { X, ChevronDown, Plus, Trash2, ChevronUp, Star } from 'lucide-react';
+import { X, ChevronDown, Plus, Trash2, ChevronUp, Star, Info, Copy, Check, Upload, Loader2 } from 'lucide-react';
 import { blockTypes } from './blocks';
+import { uploadWebsiteImage } from '@/services/websiteService';
+
+function ImageUploadField({ value, onChange, label, placeholder = 'https://...' }) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  const handleFile = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Imaginea nu poate depasi 5MB');
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadWebsiteImage(file);
+      onChange(url);
+    } catch {
+      alert('Eroare la incarcarea imaginii');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }, [onChange]);
+
+  return (
+    <div>
+      {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="shrink-0 flex items-center gap-1 px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
+          title="Incarca imagine"
+        >
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        </button>
+      </div>
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleFile} className="hidden" />
+      {value && (
+        <img src={value} alt="" className="mt-2 h-16 w-auto rounded border object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+      )}
+    </div>
+  );
+}
+
+// User-friendly tips for each block type
+const BLOCK_HELPERS = {
+  hero: {
+    tips: [
+      'Foloseste o imagine de fundal de calitate inalta (min 1920x800px) pentru un impact vizual puternic.',
+      'Pastreaza titlul scurt si clar — max 8-10 cuvinte.',
+      'Adauga un buton de actiune (CTA) vizibil, de ex. "Programeaza acum" sau "Afla mai multe".',
+      'Ajusteaza opacitatea overlay-ului pentru a asigura lizibilitatea textului pe imagine.',
+    ],
+  },
+  text: {
+    tips: [
+      'Scrie paragrafe scurte — max 3-4 randuri per paragraf pentru o citire usoara.',
+      'Foloseste formatul "Titlu" pentru sectiuni importante si "Citat" pentru evidentierea unor idei.',
+      'Evita blocurile mari de text — alterna cu imagini sau spatii libere.',
+    ],
+  },
+  image: {
+    tips: [
+      'Foloseste imagini optimizate pentru web (JPEG/WebP, sub 500KB).',
+      'Completeaza intotdeauna textul alternativ (ALT) — ajuta la SEO si accesibilitate.',
+      'Alege un aspect ratio consistent pe tot site-ul pentru un aspect profesional.',
+    ],
+  },
+  button: {
+    tips: [
+      'Foloseste un text clar si orientat spre actiune: "Programeaza", "Contacteaza-ne", "Vezi oferta".',
+      'Limiteaza numarul de butoane pe pagina — prea multe optiuni pot deruta vizitatorii.',
+      'Stilul "Principal" atrage cel mai mult atentia — foloseste-l pentru actiunea principala.',
+    ],
+  },
+  'services-grid': {
+    tips: [
+      'Activeaza sincronizarea automata pentru a prelua serviciile direct din CRM.',
+      'Afiseaza preturile si durata pentru transparenta — clientii prefera sa stie de la inceput.',
+      'Foloseste 2-3 coloane pentru o vizualizare optima pe toate dispozitivele.',
+      'Butonul de programare directa creste rata de conversie.',
+    ],
+  },
+  'team-grid': {
+    tips: [
+      'Activeaza sincronizarea automata pentru a prelua echipa direct din CRM.',
+      'Adauga poze profesionale ale echipei — creeaza incredere.',
+      'Include un scurt subtitlu care prezinta valorile echipei.',
+    ],
+  },
+  'locations-map': {
+    tips: [
+      'Activeaza sincronizarea automata pentru locatii actualizate in timp real.',
+      'Verifica ca adresele din CRM sunt complete pentru afisarea corecta pe harta.',
+      'Adauga un titlu descriptiv, de ex. "Unde ne gasesti" sau "Locatiile noastre".',
+    ],
+  },
+  'contact-form': {
+    tips: [
+      'Mesajele trimise prin formular apar automat in sectiunea Leads din CRM.',
+      'Personalizeaza mesajul de succes pentru a confirma vizitatorului ca a fost primit.',
+      'Pastreaza formularul simplu — doar campurile esentiale (nume, email, mesaj).',
+      'Adauga un subtitlu prietenos, de ex. "Raspundem in max 24 de ore".',
+    ],
+    advanced: {
+      endpoints: [
+        { label: 'Trimitere formular', method: 'POST', path: '/api/portal/website/{subdomain}/lead' },
+      ],
+    },
+  },
+  'booking-widget': {
+    tips: [
+      'Widget-ul se sincronizeaza automat cu calendarul si disponibilitatea din CRM.',
+      'Activeaza selectia de servicii pentru ca vizitatorii sa aleaga ce doresc.',
+      'Modul compact este ideal cand widget-ul nu este blocul principal al paginii.',
+      'Vizitatorii primesc confirmare automata prin email dupa programare.',
+    ],
+    advanced: {
+      endpoints: [
+        { label: 'Info organizatie', method: 'GET', path: '/api/portal/public/{slug}' },
+        { label: 'Date disponibile', method: 'GET', path: '/api/portal/public/{slug}/dates' },
+        { label: 'Sloturi disponibile', method: 'GET', path: '/api/portal/public/{slug}/slots?date={date}' },
+        { label: 'Creare programare', method: 'POST', path: '/api/portal/public/{slug}/book' },
+      ],
+    },
+  },
+  testimonials: {
+    tips: [
+      'Adauga minim 3 testimoniale pentru credibilitate.',
+      'Include numele complet si rolul persoanei (ex: "Client fidel din 2020").',
+      'Layout-ul carusel functioneaza cel mai bine pentru 4+ testimoniale.',
+      'Avatarele personalizate cresc increderea — solicita poze de la clienti.',
+    ],
+  },
+  faq: {
+    tips: [
+      'Raspunde la cele mai frecvente 5-8 intrebari ale clientilor tai.',
+      'Foloseste intrebari din perspectiva clientului: "Cat dureaza o sedinta?" nu "Durata sedintei".',
+      'Ordoneaza de la cele mai importante la cele mai putin frecvente.',
+    ],
+  },
+  gallery: {
+    tips: [
+      'Foloseste imagini de aceeasi dimensiune pentru un grid uniform.',
+      'Activeaza lightbox-ul pentru ca vizitatorii sa poata vedea imaginile la dimensiune completa.',
+      'Layout-ul masonry este ideal pentru imagini cu dimensiuni diferite.',
+    ],
+  },
+  stats: {
+    tips: [
+      'Foloseste numere rotunde si impresionante: "500+" clienti, "10+" ani experienta.',
+      'Limiteaza la 3-4 statistici pentru a nu supraincarca vizitatorii.',
+      'Adauga descrieri scurte sub fiecare numar pentru context.',
+    ],
+  },
+  video: {
+    tips: [
+      'Foloseste link-uri YouTube sau Vimeo — sunt suportate nativ.',
+      'Un thumbnail personalizat atrage mai multe click-uri decat cel implicit.',
+      'Evita autoplay-ul — poate deranja vizitatorii, mai ales pe mobil.',
+    ],
+  },
+  'pricing-table': {
+    tips: [
+      'Evidentiaza (featured) pachetul cel mai popular pentru a ghida alegerea.',
+      'Listeaza 3-4 pachete maxim — prea multe optiuni ingreuneaza decizia.',
+      'Include un buton de actiune clar pe fiecare pachet.',
+      'Foloseste RON ca moneda si "luna" ca perioada pentru clienti romani.',
+    ],
+  },
+  spacer: {
+    tips: [
+      'Foloseste spacer-e pentru a separa vizual sectiunile importante.',
+      'O inaltime de 40-80px este suficienta pentru majoritatea cazurilor.',
+    ],
+  },
+  divider: {
+    tips: [
+      'Stilul "Linie" este cel mai comun — foloseste "Puncte" pentru un aspect mai creativ.',
+      'Stilul "Spatiu" adauga doar spatiu gol, fara element vizibil.',
+    ],
+  },
+};
+
+// Readonly endpoint display component
+const EndpointField = ({ endpoint }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(endpoint.path);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{endpoint.method}</span>
+      <code className="flex-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded truncate" title={endpoint.path}>
+        {endpoint.path}
+      </code>
+      <button type="button" onClick={handleCopy} className="shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded" title="Copiaza">
+        {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  );
+};
 
 // Custom Accordion Component
 const Accordion = ({ children, defaultOpen = [] }) => {
@@ -186,16 +400,11 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Imagine de fundal (URL)</label>
-                    <input
-                      type="text"
-                      value={block.data?.backgroundImage || ''}
-                      onChange={(e) => updateData('backgroundImage', e.target.value)}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                  <ImageUploadField
+                    label="Imagine de fundal"
+                    value={block.data?.backgroundImage || ''}
+                    onChange={(url) => updateData('backgroundImage', url)}
+                  />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Opacitate overlay ({Math.round((block.data?.backgroundOverlay || 0.4) * 100)}%)
@@ -305,16 +514,11 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
 
               {block.type === 'image' && (
                 <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">URL imagine</label>
-                    <input
-                      type="text"
-                      value={block.data?.src || ''}
-                      onChange={(e) => updateData('src', e.target.value)}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                  <ImageUploadField
+                    label="Imagine"
+                    value={block.data?.src || ''}
+                    onChange={(url) => updateData('src', url)}
+                  />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Text alternativ (ALT)</label>
                     <input
@@ -541,6 +745,51 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     <Switch
                       checked={block.data?.showAddress !== false}
                       onCheckedChange={(v) => updateData('showAddress', v)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {block.type === 'booking-widget' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Titlu</label>
+                    <input
+                      type="text"
+                      value={block.data?.title || ''}
+                      onChange={(e) => updateData('title', e.target.value)}
+                      placeholder="Programeaza o intalnire"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtitlu</label>
+                    <textarea
+                      value={block.data?.subtitle || ''}
+                      onChange={(e) => updateData('subtitle', e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Afiseaza selectie servicii</label>
+                    <Switch
+                      checked={block.data?.showServices !== false}
+                      onCheckedChange={(v) => updateData('showServices', v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Afiseaza selectie specialist</label>
+                    <Switch
+                      checked={block.data?.showEmployee || false}
+                      onCheckedChange={(v) => updateData('showEmployee', v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Mod compact</label>
+                    <Switch
+                      checked={block.data?.compactMode || false}
+                      onCheckedChange={(v) => updateData('compactMode', v)}
                     />
                   </div>
                 </>
@@ -861,16 +1110,14 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               </button>
                             </div>
                           </div>
-                          <input
-                            type="text"
+                          <ImageUploadField
                             value={image.src || ''}
-                            onChange={(e) => {
+                            onChange={(url) => {
                               const images = [...(block.data?.images || [])];
-                              images[idx] = { ...images[idx], src: e.target.value };
+                              images[idx] = { ...images[idx], src: url };
                               updateData('images', images);
                             }}
                             placeholder="URL imagine"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                           />
                           <input
                             type="text"
@@ -1475,6 +1722,45 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
               </div>
             </AccordionContent>
           </AccordionItem>
+
+          {/* Tips - shown for all block types that have helper data */}
+          {BLOCK_HELPERS[block.type] && (
+            <AccordionItem value="info">
+              <AccordionTrigger>
+                <span className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-blue-500" />
+                  Sfaturi
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3 pt-2">
+                {BLOCK_HELPERS[block.type].tips && (
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    {BLOCK_HELPERS[block.type].tips.map((tip, i) => (
+                      <li key={i} className="flex gap-2 leading-relaxed">
+                        <span className="text-blue-400 mt-1 shrink-0">&#8226;</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {BLOCK_HELPERS[block.type].advanced?.endpoints && (
+                  <details className="mt-3">
+                    <summary className="text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700">
+                      Avansat - Endpoint-uri API
+                    </summary>
+                    <div className="space-y-2 mt-2">
+                      {BLOCK_HELPERS[block.type].advanced.endpoints.map((ep, i) => (
+                        <div key={i}>
+                          <span className="text-xs text-gray-500 mb-0.5 block">{ep.label}</span>
+                          <EndpointField endpoint={ep} />
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          )}
         </Accordion>
       </div>
     </div>

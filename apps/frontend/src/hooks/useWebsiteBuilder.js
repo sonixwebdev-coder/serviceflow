@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchWebsite,
@@ -19,6 +19,8 @@ import {
   updateLead,
   deleteLead,
   convertLeadToClient,
+  approveReview,
+  rejectReview,
 } from '../services/websiteService';
 
 /**
@@ -121,13 +123,13 @@ export const useSubdomainCheck = () => {
     staleTime: 30 * 1000, // 30 seconds
   });
 
+  const timerRef = useRef(null);
   const checkSubdomain = useCallback((value) => {
     setSubdomain(value);
-    // Debounce the API call
-    const timer = setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
       setDebouncedSubdomain(value);
     }, 500);
-    return () => clearTimeout(timer);
   }, []);
 
   return {
@@ -241,9 +243,8 @@ export const usePageMutations = (websiteId) => {
 /**
  * Hook to manage website leads
  */
-export const useWebsiteLeads = (websiteId, initialFilters = {}, options = {}) => {
+export const useWebsiteLeads = (websiteId, filters = {}, options = {}) => {
   const { enabled = true } = options;
-  const [filters, setFilters] = useState(initialFilters);
   const queryKey = useMemo(() => ['website-leads', websiteId, filters], [websiteId, filters]);
 
   const query = useQuery({
@@ -257,8 +258,6 @@ export const useWebsiteLeads = (websiteId, initialFilters = {}, options = {}) =>
     pagination: query.data?.pagination || null,
     loading: query.isLoading,
     error: query.error?.message || null,
-    filters,
-    setFilters,
     refresh: query.refetch,
   };
 };
@@ -291,6 +290,20 @@ export const useLeadMutations = (websiteId) => {
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: (leadId) => approveReview(websiteId, leadId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['website-leads', websiteId] });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (leadId) => rejectReview(websiteId, leadId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['website-leads', websiteId] });
+    },
+  });
+
   return {
     updateLead: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
@@ -303,6 +316,12 @@ export const useLeadMutations = (websiteId) => {
     convertToClient: convertMutation.mutateAsync,
     isConverting: convertMutation.isPending,
     convertError: convertMutation.error?.response?.data?.message || convertMutation.error?.message || null,
+
+    approveReview: approveMutation.mutateAsync,
+    isApproving: approveMutation.isPending,
+
+    rejectReview: rejectMutation.mutateAsync,
+    isRejecting: rejectMutation.isPending,
   };
 };
 

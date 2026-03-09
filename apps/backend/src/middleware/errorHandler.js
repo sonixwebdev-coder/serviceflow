@@ -1,5 +1,6 @@
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
+const { captureException } = require('../utils/sentry');
 
 /**
  * Sanitize error messages for user display
@@ -16,8 +17,13 @@ const sanitizeErrorMessage = (err) => {
   if (err.name === 'PrismaClientKnownRequestError') {
     // Handle specific Prisma error codes
     switch (err.code) {
-      case 'P2002':
+      case 'P2002': {
+        const fields = err.meta?.target;
+        if (fields && (fields.includes('email') || (Array.isArray(fields) && fields.some(f => f.includes('email'))))) {
+          return 'Această adresă de email este deja înregistrată. Te rugăm să folosești o altă adresă de email.';
+        }
         return 'Această înregistrare există deja. Te rugăm să verifici datele introduse.';
+      }
       case 'P2025':
         return 'Înregistrarea nu a fost găsită. Este posibil să fi fost ștearsă.';
       case 'P2003':
@@ -80,23 +86,32 @@ const errorHandler = (err, req, res, next) => {
     return next(err);
   }
 
+  const status = err instanceof AppError ? err.status : err.status || err.statusCode || 500;
+
+  // Report to Sentry (no-op if DSN not configured)
+  captureException(err, {
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id,
+  });
+
   // Log the full error for debugging (with request context)
   logger.error(err.message, {
     name: err.name,
     code: err.code,
+    statusCode: status,
     stack: err.stack,
     path: req.path,
     method: req.method,
     ip: req.ip,
     userId: req.user?.id,
   });
-
-  const status = err instanceof AppError ? err.status : err.status || err.statusCode || 500;
   const userFriendlyMessage = sanitizeErrorMessage(err);
 
   res.status(status).json({
     success: false,
     message: userFriendlyMessage,
+    ...(err instanceof AppError && err.code ? { code: err.code } : {}),
     ...(err.details ? { errors: err.details } : {}),
     // Only include technical details in development
     ...(process.env.NODE_ENV === 'development' ? {

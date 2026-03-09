@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { createNotification } = require('./notificationService');
+const { sendEmail } = require('./email/emailService');
 
 /**
  * Generate a unique referral code (REF-XXXXXX)
@@ -39,67 +40,77 @@ const upsertProgram = async (prisma, orgId, config) => {
  * Get or create a loyalty account for a client
  */
 const getOrCreateAccount = async (prisma, clientId, programId) => {
-  let account = await prisma.loyaltyAccount.findUnique({
+  // Check if account already exists
+  const existingAccount = await prisma.loyaltyAccount.findUnique({
     where: { clientId },
   });
+  if (existingAccount) return existingAccount;
 
-  if (account) return account;
+  // Use sufficient entropy to avoid collisions without a DB lookup loop
+  const referralCode = generateReferralCode();
 
-  // Generate a unique referral code
-  let referralCode;
-  let attempts = 0;
-  while (attempts < 10) {
-    referralCode = generateReferralCode();
-    const existing = await prisma.loyaltyAccount.findUnique({
-      where: { referralCode },
+  // Handle concurrent creation race condition: if another request created
+  // the account between our findUnique and create, catch P2002 and re-fetch
+  let account;
+  let wasCreated = false;
+  try {
+    account = await prisma.loyaltyAccount.create({
+      data: {
+        clientId,
+        programId,
+        referralCode,
+      },
     });
-    if (!existing) break;
-    attempts++;
+    wasCreated = true;
+  } catch (err) {
+    if (err.code === 'P2002') {
+      // Another concurrent request created the account first — fetch it
+      account = await prisma.loyaltyAccount.findUnique({ where: { clientId } });
+      if (!account) throw err; // unexpected — re-throw
+      return account;
+    }
+    throw err;
   }
 
-  account = await prisma.loyaltyAccount.create({
-    data: {
-      clientId,
-      programId,
-      referralCode,
-    },
-  });
+  // Post-creation side-effects only run when the account was actually just created
+  if (wasCreated) {
+    const clientData = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { fidelityCardSerie: true, firstName: true, lastName: true, organizationId: true },
+    });
 
-  // Auto-generate fidelityCardSerie if client doesn't have one
-  const clientData = await prisma.client.findUnique({
-    where: { id: clientId },
-    select: { fidelityCardSerie: true, firstName: true, lastName: true, organizationId: true },
-  });
-  if (clientData && !clientData.fidelityCardSerie) {
-    const cardNumber = `FC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    await prisma.client.update({ where: { id: clientId }, data: { fidelityCardSerie: cardNumber } });
-  }
+    // Auto-generate fidelityCardSerie if client doesn't have one
+    if (clientData && !clientData.fidelityCardSerie) {
+      const cardNumber = `FC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      await prisma.client.update({ where: { id: clientId }, data: { fidelityCardSerie: cardNumber } });
+    }
 
-  // Notify admins/managers about new loyalty account
-  if (clientData?.organizationId) {
-    try {
-      const clientName = `${clientData.firstName || ''} ${clientData.lastName || ''}`.trim() || 'Client';
-      const admins = await prisma.user.findMany({
-        where: {
-          organizationId: clientData.organizationId,
-          isActive: true,
-          roles: { some: { role: { key: { in: ['admin', 'manager'] } } } },
-        },
-        select: { id: true },
-      });
-      for (const admin of admins) {
-        await createNotification({
-          recipientId: admin.id,
-          title: 'Cont fidelitate nou',
-          message: `Clientul ${clientName} a primit un cont de fidelitate.`,
-          type: 'SYSTEM',
-          entityType: 'loyaltyAccount',
-          entityId: account.id,
-          organizationId: clientData.organizationId,
+    // Notify admins/managers about the new loyalty account
+    if (clientData?.organizationId) {
+      try {
+        const clientName = `${clientData.firstName || ''} ${clientData.lastName || ''}`.trim() || 'Client';
+        const admins = await prisma.user.findMany({
+          where: {
+            organizationId: clientData.organizationId,
+            isActive: true,
+            roles: { some: { role: { key: { in: ['admin', 'manager'] } } } },
+          },
+          select: { id: true },
         });
+        for (const admin of admins) {
+          await createNotification({
+            recipientId: admin.id,
+            title: 'Cont fidelitate nou',
+            message: `Clientul ${clientName} a primit un cont de fidelitate.`,
+            type: 'SYSTEM',
+            entityType: 'loyaltyAccount',
+            entityId: account.id,
+            organizationId: clientData.organizationId,
+          });
+        }
+      } catch (err) {
+        logger.error('[LOYALTY] Failed to send new account notifications:', err.message);
       }
-    } catch (err) {
-      logger.error('[LOYALTY] Failed to send new account notifications:', err.message);
     }
   }
 
@@ -162,7 +173,6 @@ const recalculateTier = async (prisma, accountId) => {
 
     // Fire-and-forget tier upgrade email
     try {
-      const { sendEmail } = require('./email/emailService');
       if (account.client?.email && account.client?.organizationId) {
         const clientName = `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
         const tierNames = { BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum' };
@@ -205,35 +215,34 @@ const awardPointsForPayment = async (prisma, { paymentId, clientId, amount, orga
 
     if (points <= 0) return null;
 
-    const newBalance = account.currentPoints + points;
-    const newLifetime = account.lifetimePoints + points;
-
-    const [updatedAccount, transaction] = await prisma.$transaction([
-      prisma.loyaltyAccount.update({
+    // Use atomic increment inside an interactive transaction to prevent
+    // the read-modify-write race condition under concurrent payments
+    const [updatedAccount, transaction] = await prisma.$transaction(async (tx) => {
+      const updated = await tx.loyaltyAccount.update({
         where: { id: account.id },
         data: {
-          currentPoints: newBalance,
-          lifetimePoints: newLifetime,
+          currentPoints: { increment: points },
+          lifetimePoints: { increment: points },
         },
-      }),
-      prisma.loyaltyTransaction.create({
+      });
+      const txRecord = await tx.loyaltyTransaction.create({
         data: {
           accountId: account.id,
           type: 'EARN_PAYMENT',
           points,
-          balanceAfter: newBalance,
+          balanceAfter: updated.currentPoints, // reflects the atomically updated value
           description: `Puncte castigate pentru plata de ${Number(amount).toFixed(2)} RON`,
           paymentId,
         },
-      }),
-    ]);
+      });
+      return [updated, txRecord];
+    });
 
     // Recalculate tier
     await recalculateTier(prisma, account.id);
 
     // Fire-and-forget points earned email
     try {
-      const { sendEmail } = require('./email/emailService');
       const client = await prisma.client.findUnique({
         where: { id: clientId },
         select: { email: true, firstName: true, lastName: true },
@@ -246,7 +255,7 @@ const awardPointsForPayment = async (prisma, { paymentId, clientId, amount, orga
           templateData: {
             clientName,
             points,
-            totalPoints: newBalance,
+            totalPoints: updatedAccount.currentPoints,
             amount: Number(amount).toFixed(2),
           },
           recipientType: 'CLIENT',
@@ -365,7 +374,6 @@ const recordCompletedVisit = async (prisma, { clientId, appointmentId }) => {
 
       // Fire-and-forget reward notification email
       try {
-        const { sendEmail } = require('./email/emailService');
         if (client.email) {
           const clientName = `${client.firstName || ''} ${client.lastName || ''}`.trim() || 'Client';
           await sendEmail(prisma, {

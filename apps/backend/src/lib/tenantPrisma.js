@@ -54,11 +54,10 @@ function createTenantPrisma(organizationId) {
 
       async findUnique({ args, query }) {
         // For findUnique, we need to convert to findFirst since we're adding a condition
-        const where = args.where;
+        const { where, ...rest } = args;
         return prisma[model].findFirst({
+          ...rest,
           where: { ...where, organizationId },
-          include: args.include,
-          select: args.select,
         });
       },
 

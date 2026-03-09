@@ -280,14 +280,22 @@ const sanitizeLineItems = (lineItems = []) => {
     return result;
 };
 
-const calculateTotals = (sanitizedLineItems = [], taxInput) => {
+const calculateTotals = (sanitizedLineItems = [], taxInput, companySettings = null) => {
     const subtotal = roundCurrency(
         sanitizedLineItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0)
     );
-    const taxValue = toNumeric(taxInput);
-    const tax = roundCurrency(Math.max(taxValue ?? 0, 0));
-    const total = roundCurrency(subtotal + tax);
 
+    let tax = 0;
+    // Apply TVA from company settings if enabled (same logic as invoice service)
+    if (companySettings && companySettings.tvaEnabled) {
+        const tvaPercentage = Number(companySettings.tvaPercentage) || 0;
+        tax = roundCurrency(subtotal * (tvaPercentage / 100));
+    } else {
+        const taxValue = toNumeric(taxInput);
+        tax = roundCurrency(Math.max(taxValue ?? 0, 0));
+    }
+
+    const total = roundCurrency(subtotal + tax);
     return {subtotal, tax, total};
 };
 
@@ -327,7 +335,7 @@ const mapExistingLineItems = (existingLineItems = []) =>
         unitPrice: Number(item.unitPrice || 0),
     }));
 
-const sanitizePayload = (payload = {}, existing) => {
+const sanitizePayload = (payload = {}, existing, companySettings = null) => {
     const lineItemsProvided = Object.prototype.hasOwnProperty.call(payload, 'lineItems');
     const sourceLineItems = lineItemsProvided
         ? Array.isArray(payload.lineItems)
@@ -339,7 +347,7 @@ const sanitizePayload = (payload = {}, existing) => {
     if (sanitizedItems.length === 0) {
         throw new AppError('Comanda de service trebuie sa contina cel putin un articol. Va rugam adaugati piese sau manopera.', 400);
     }
-    const totals = calculateTotals(sanitizedItems, payload.tax);
+    const totals = calculateTotals(sanitizedItems, payload.tax, companySettings);
     let status;
     try {
         status = resolveStatus(payload.status, existing?.status);
@@ -393,7 +401,7 @@ const generateServiceOrderPdf = async (prisma, appointmentId, {refresh = false} 
 
     const mapped = mapServiceOrder(order);
     const relativePath = order.pdfUrl || buildRelativePdfPath(order.appointmentId, order.orderNumber, order.id);
-    const companySettings = await getCompanySettings();
+    const companySettings = await getCompanySettings(order.organizationId);
     const {buffer, relativePath: storedPath} = await persistPdfForOrder({
         mappedOrder: mapped,
         relativePath,
@@ -441,7 +449,8 @@ const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) 
 
     const orderNumber = existing?.orderNumber || (await generateOrderNumber(client, appointment.organizationId));
     const relativePdfPath = buildRelativePdfPath(appointmentId, orderNumber, existing?.id);
-    const {status, notes, metadata, totals, sanitizedItems} = sanitizePayload(payload, existing);
+    const companySettings = await getCompanySettings(organizationId);
+    const {status, notes, metadata, totals, sanitizedItems} = sanitizePayload(payload, existing, companySettings);
 
     const order = await client.serviceOrder.upsert({
         where: {appointmentId},
@@ -541,7 +550,6 @@ const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) 
     }
 
     const mapped = mapServiceOrder(orderWithLatestAppointment);
-    const companySettings = await getCompanySettings();
     const action = existing ? 'updated' : 'created';
 
     await persistPdfForOrder({

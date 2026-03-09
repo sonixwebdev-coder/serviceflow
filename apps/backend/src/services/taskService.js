@@ -2,9 +2,12 @@ const { AppError } = require('../utils/errors');
 const { mapTask } = require('../utils/transform');
 const { createNotification } = require('./notificationService');
 const { sendTaskNotification } = require('./pushNotificationService');
+const { sendTaskAssignedEmail } = require('./email/emailService');
+const { getCompanySettings } = require('./companySettingService');
 const { broadcastTask } = require('../realtime/events');
 const { optimizedTaskIncludes, minimalTaskIncludes } = require('../utils/optimizedIncludes');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
+const logger = require('../utils/logger');
 
 const normalize = (value) => (value ? value.toUpperCase().replace(/-/g, '_') : undefined);
 
@@ -184,8 +187,30 @@ const createTask = async (prisma, payload, currentUser, options = {}) => {
   try {
     await sendTaskNotification(task, 'created');
   } catch (pushError) {
-    console.error('Failed to send push notifications for task creation:', pushError);
-    // Don't fail if push notifications fail
+    logger.error('Failed to send push notifications for task creation:', pushError.message);
+  }
+
+  // Send email notifications to assigned users (fire-and-forget)
+  if (assignments.length > 0) {
+    const assignerName = currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Un coleg';
+    getCompanySettings(currentUser.organizationId).then((companySettings) => {
+      prisma.user.findMany({
+        where: { id: { in: assignments } },
+        select: { id: true, email: true, firstName: true, lastName: true, organizationId: true },
+      }).then((users) => {
+        for (const user of users) {
+          if (user.email && user.id !== currentUser.id) {
+            sendTaskAssignedEmail(prisma, {
+              user,
+              task,
+              assignedBy: assignerName,
+              companySettings,
+              organizationId: user.organizationId,
+            }).catch((err) => logger.error(`[EMAIL] Task assigned email failed for ${user.email}:`, err.message));
+          }
+        }
+      }).catch(() => {});
+    }).catch(() => {});
   }
 
   const mapped = mapTask(task);
@@ -292,7 +317,7 @@ const updateTask = async (prisma, taskId, payload, currentUser) => {
     try {
       await sendTaskNotification(updated, 'updated');
     } catch (pushError) {
-      console.error('Failed to send push notifications for task update:', pushError);
+      logger.error('Failed to send push notifications for task update', { error: pushError.message });
       // Don't fail if push notifications fail
     }
   }
@@ -353,7 +378,7 @@ const addTaskComment = async (prisma, taskId, { text }, currentUser) => {
   try {
     await sendTaskNotification(refreshed, 'comment');
   } catch (pushError) {
-    console.error('Failed to send push notifications for task comment:', pushError);
+    logger.error('Failed to send push notifications for task comment', { error: pushError.message });
     // Don't fail if push notifications fail
   }
 

@@ -45,6 +45,11 @@ const initRedis = () => {
       logger.warn('Redis connection closed - running without cache');
     });
 
+    client.on('ready', () => {
+      isRedisAvailable = true;
+      logger.info('Redis ready — caching re-enabled');
+    });
+
     // Attempt to connect
     client.connect().catch((err) => {
       logger.warn('Redis connection failed - running without cache:', err.message);

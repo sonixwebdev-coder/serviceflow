@@ -11,7 +11,17 @@ const ensureDirectory = async (dirPath) => {
   }
 };
 
-const resolvePath = (relativePath = '') => path.resolve(STORAGE_ROOT, relativePath);
+/**
+ * Resolve a relative path within STORAGE_ROOT.
+ * Validates that the resolved path stays inside STORAGE_ROOT to prevent path traversal.
+ */
+const resolvePath = (relativePath = '') => {
+  const fullPath = path.resolve(STORAGE_ROOT, relativePath);
+  if (!fullPath.startsWith(STORAGE_ROOT + path.sep) && fullPath !== STORAGE_ROOT) {
+    throw new Error(`Path traversal attempt blocked: ${relativePath}`);
+  }
+  return fullPath;
+};
 
 const writeFile = async (relativePath, buffer) => {
   const fullPath = resolvePath(relativePath);

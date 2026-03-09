@@ -53,6 +53,9 @@ const getOrganizationSettings = async (prisma, organizationId) => {
       requireAssetForAppointment: false,
     },
     publicBooking: settings.publicBooking || DEFAULT_PUBLIC_BOOKING,
+    description: settings.description || '',
+    publicListing: settings.publicListing !== false,
+    invoiceSequence: settings.invoiceSequence || null,
   };
 };
 
@@ -151,28 +154,40 @@ const getServices = async (prisma, organizationId) => {
  * @returns {Array} Updated services array
  */
 const updateServices = async (prisma, organizationId, services) => {
-  const org = await prisma.organization.findUnique({
-    where: { id: organizationId },
-    select: { settings: true },
-  });
+  // Atomic JSON key update — avoids read-modify-write race condition
+  const affected = await prisma.$executeRaw`
+    UPDATE "Organization"
+    SET settings = jsonb_set(COALESCE(settings, '{}'), ARRAY['services'], ${JSON.stringify(services)}::jsonb)
+    WHERE id = ${organizationId}
+  `;
 
-  if (!org) {
+  if (affected === 0) {
     throw new AppError('Organization not found', 404);
   }
 
-  const currentSettings = org.settings || {};
-
-  const updatedSettings = {
-    ...currentSettings,
-    services,
-  };
-
-  await prisma.organization.update({
-    where: { id: organizationId },
-    data: { settings: updatedSettings },
-  });
-
   return services;
+};
+
+/**
+ * Update organization description in settings
+ * @param {Object} prisma - Prisma client
+ * @param {String} organizationId - Organization ID
+ * @param {String} description - Organization description
+ * @returns {Object} Updated settings
+ */
+const updateDescription = async (prisma, organizationId, description) => {
+  // Atomic JSON key update — avoids read-modify-write race condition
+  const affected = await prisma.$executeRaw`
+    UPDATE "Organization"
+    SET settings = jsonb_set(COALESCE(settings, '{}'), ARRAY['description'], ${JSON.stringify(description)}::jsonb)
+    WHERE id = ${organizationId}
+  `;
+
+  if (affected === 0) {
+    throw new AppError('Organization not found', 404);
+  }
+
+  return { description };
 };
 
 module.exports = {
@@ -181,5 +196,6 @@ module.exports = {
   updatePublicBooking,
   getServices,
   updateServices,
+  updateDescription,
   DEFAULT_PUBLIC_BOOKING,
 };

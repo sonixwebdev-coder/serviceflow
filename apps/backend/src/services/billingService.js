@@ -5,6 +5,9 @@ const { getStripePriceId, getPlanFromPriceId } = require('../utils/stripePrices'
 const { getSettings } = require('./platformSettingsService');
 const { getAllPlanLimits } = require('../utils/planLimits');
 const logger = require('../utils/logger');
+const { sendOrgSuspendedEmail, sendPaymentRequiredEmail } = require('./email/emailService');
+const { getRedisClient, isAvailable: isRedisAvailable } = require('../lib/redis');
+const cache = require('../utils/cache');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -44,7 +47,9 @@ const getOrCreateStripeCustomer = async (org) => {
 };
 
 /**
- * Create a Stripe Checkout session for subscribing to a plan
+ * Create a Stripe Checkout session for subscribing to a plan.
+ * If the org already has an active subscription, it will be cancelled
+ * immediately once the new subscription is created (via webhook/verify-checkout).
  */
 const createCheckoutSession = async (org, plan, interval = 'monthly') => {
   const stripe = await getStripe();
@@ -57,37 +62,54 @@ const createCheckoutSession = async (org, plan, interval = 'monthly') => {
 
   const customerId = await getOrCreateStripeCustomer(org);
 
-  const hadSubscription = Boolean(org.subscriptionId);
-
-  const settings = await getSettings();
-  const trialDays = settings?.trialDays || 14;
-
+  // Platform-managed trial — never use Stripe trial_period_days
   const sessionParams = {
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${FRONTEND_URL}/settings/billing?billing=success`,
-    cancel_url: `${FRONTEND_URL}/pricing`,
+    success_url: `${FRONTEND_URL}/settings/billing?session_id={CHECKOUT_SESSION_ID}&status=success`,
+    cancel_url: `${FRONTEND_URL}/settings/billing?status=cancelled`,
     metadata: {
       organizationId: org.id,
       plan,
       interval,
+      previousSubscriptionId: org.subscriptionId || '',
+    },
+    subscription_data: {
+      metadata: { organizationId: org.id },
     },
   };
 
-  if (!hadSubscription) {
-    sessionParams.subscription_data = {
-      trial_period_days: trialDays,
-      metadata: { organizationId: org.id },
-    };
-  } else {
-    sessionParams.subscription_data = {
-      metadata: { organizationId: org.id },
-    };
-  }
-
   const session = await stripe.checkout.sessions.create(sessionParams);
   return session.url;
+};
+
+/**
+ * Cancel the previous subscription when upgrading/downgrading.
+ * Called after a new subscription is successfully synced.
+ */
+const cancelPreviousSubscription = async (previousSubId, newSubId) => {
+  if (!previousSubId || previousSubId === newSubId) return;
+
+  const stripe = await getStripe();
+  if (!stripe) return;
+
+  try {
+    const sub = await stripe.subscriptions.retrieve(previousSubId);
+    if (sub.status !== 'canceled') {
+      await stripe.subscriptions.cancel(previousSubId);
+      logger.info('cancelPreviousSubscription: cancelled old subscription', {
+        previousSubId,
+        newSubId,
+      });
+    }
+  } catch (err) {
+    // Log but don't throw — the new subscription is already active
+    logger.warn('cancelPreviousSubscription: failed to cancel old subscription', {
+      previousSubId,
+      error: err.message,
+    });
+  }
 };
 
 /**
@@ -122,6 +144,9 @@ const getBillingStatus = async (org) => {
     subscriptionId: org.subscriptionId,
     subscriptionEndsAt: org.subscriptionEndsAt,
     hasStripeCustomer: Boolean(org.stripeCustomerId),
+    planOverride: org.planOverride || false,
+    planOverrideReason: org.planOverrideReason || null,
+    planOverrideAt: org.planOverrideAt || null,
     nextInvoice: null,
   };
 
@@ -178,6 +203,26 @@ const getBillingStatus = async (org) => {
     maxWebsitePages: toMax(limits.maxWebsitePages),
   };
 
+  // Dynamic display prices from admin settings (convert Decimal to plain numbers)
+  const settings = await getSettings();
+  if (settings) {
+    const toNum = (v) => (v != null ? Number(v) : null);
+    result.displayPrices = {
+      STARTER: {
+        monthly: toNum(settings.displayPriceStarterMonthly),
+        annual: toNum(settings.displayPriceStarterAnnual),
+      },
+      PROFESSIONAL: {
+        monthly: toNum(settings.displayPriceProfessionalMonthly),
+        annual: toNum(settings.displayPriceProfessionalAnnual),
+      },
+      ENTERPRISE: {
+        monthly: toNum(settings.displayPriceEnterpriseMonthly),
+        annual: toNum(settings.displayPriceEnterpriseAnnual),
+      },
+    };
+  }
+
   return result;
 };
 
@@ -189,6 +234,34 @@ const syncSubscription = async (stripeSubscription) => {
   if (!orgId) {
     logger.warn('syncSubscription: no organizationId in subscription metadata', {
       subscriptionId: stripeSubscription.id,
+    });
+    return;
+  }
+
+  // Guard: do not overwrite manually granted plans
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { planOverride: true, subscriptionId: true },
+  });
+  if (org?.planOverride) {
+    logger.info('syncSubscription: skipping — plan override active', { orgId });
+    return;
+  }
+
+  const previousSubscriptionId = org?.subscriptionId;
+
+  // Guard: if the org already has a different subscription and this one is being
+  // cancelled/unpaid, skip — it's an old subscription being cleaned up after upgrade/downgrade.
+  if (
+    org?.subscriptionId &&
+    org.subscriptionId !== stripeSubscription.id &&
+    ['canceled', 'unpaid'].includes(stripeSubscription.status)
+  ) {
+    logger.info('syncSubscription: skipping stale subscription event', {
+      orgId,
+      staleSubId: stripeSubscription.id,
+      currentSubId: org.subscriptionId,
+      status: stripeSubscription.status,
     });
     return;
   }
@@ -238,10 +311,28 @@ const syncSubscription = async (stripeSubscription) => {
     updateData.trialEndsAt = new Date(stripeSubscription.trial_end * 1000);
   }
 
+  // Store billing interval and subscription start date
+  const interval = stripeSubscription.items?.data?.[0]?.price?.recurring?.interval;
+  if (interval) {
+    updateData.billingInterval = interval; // "month" or "year"
+  }
+
   await prisma.organization.update({
     where: { id: orgId },
     data: updateData,
   });
+
+  // Invalidate auth cache for all users in the org so they pick up the new status immediately
+  const orgUsers = await prisma.user.findMany({
+    where: { organizationId: orgId },
+    select: { id: true },
+  });
+  await Promise.all(orgUsers.map((u) => cache.del(`auth:${u.id}`)));
+
+  // Cancel the previous subscription if this is an upgrade/downgrade
+  if (previousSubscriptionId && previousSubscriptionId !== stripeSubscription.id) {
+    await cancelPreviousSubscription(previousSubscriptionId, stripeSubscription.id);
+  }
 
   logger.info('syncSubscription: updated organization', {
     orgId,
@@ -258,22 +349,46 @@ const handleSubscriptionDeleted = async (stripeSubscription) => {
   const orgId = stripeSubscription.metadata?.organizationId;
   if (!orgId) return;
 
-  const freeLimits = getAllPlanLimits('FREE');
+  // Guard: do not downgrade manually granted plans
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { planOverride: true, subscriptionId: true },
+  });
+  if (org?.planOverride) {
+    logger.info('handleSubscriptionDeleted: skipping — plan override active', { orgId });
+    return;
+  }
+
+  // Guard: if the org already has a different (newer) subscription,
+  // this deletion is for an old subscription that was replaced during upgrade/downgrade.
+  // Do NOT overwrite the new subscription data.
+  if (org?.subscriptionId && org.subscriptionId !== stripeSubscription.id) {
+    logger.info('handleSubscriptionDeleted: skipping — org has a newer subscription', {
+      orgId,
+      deletedSubId: stripeSubscription.id,
+      currentSubId: org.subscriptionId,
+    });
+    return;
+  }
 
   await prisma.organization.update({
     where: { id: orgId },
     data: {
-      plan: 'FREE',
-      status: 'ACTIVE',
+      status: 'PAYMENT_REQUIRED',
       subscriptionId: null,
-      subscriptionEndsAt: null,
-      maxUsers: freeLimits.maxUsers,
-      maxClients: freeLimits.maxClients,
-      maxAppointments: freeLimits.maxAppointments,
+      subscriptionEndsAt: new Date(),
+      // Keep current plan/limits frozen — org retains data but cannot access it
     },
   });
 
-  logger.info('handleSubscriptionDeleted: downgraded to FREE', { orgId });
+  // Invalidate auth cache for all users in the org
+  const orgUsers = await prisma.user.findMany({
+    where: { organizationId: orgId },
+    select: { id: true },
+  });
+  await Promise.all(orgUsers.map((u) => cache.del(`auth:${u.id}`)));
+
+  logger.info('handleSubscriptionDeleted: set PAYMENT_REQUIRED', { orgId });
 };
 
 /**
@@ -284,23 +399,114 @@ const handlePaymentFailed = async (invoice) => {
 
   const customerId = invoice.customer;
 
-  const org = await prisma.organization.findFirst({
+  const org = await prisma.organization.findUnique({
     where: { stripeCustomerId: customerId },
   });
 
   if (!org) return;
+
+  // Guard: do not suspend manually granted plans
+  if (org.planOverride) {
+    logger.info('handlePaymentFailed: skipping — plan override active', { orgId: org.id });
+    return;
+  }
+
+  // Notify org admin via email (fire-and-forget)
+  const admin = await prisma.user.findFirst({
+    where: { organizationId: org.id, roles: { some: { role: { key: 'admin' } } } },
+    select: { email: true, firstName: true, lastName: true },
+  });
+
+  // Helper to invalidate auth cache for all org users after status change
+  const invalidateOrgAuthCache = async () => {
+    const orgUsers = await prisma.user.findMany({
+      where: { organizationId: org.id },
+      select: { id: true },
+    });
+    await Promise.all(orgUsers.map((u) => cache.del(`auth:${u.id}`)));
+  };
 
   if (invoice.attempt_count >= 3) {
     await prisma.organization.update({
       where: { id: org.id },
       data: { status: 'SUSPENDED' },
     });
+    await invalidateOrgAuthCache();
 
     logger.warn('handlePaymentFailed: organization suspended after failed payments', {
       orgId: org.id,
       attemptCount: invoice.attempt_count,
     });
+
+    if (admin?.email) {
+      sendOrgSuspendedEmail({
+        email: admin.email,
+        userName: `${admin.firstName} ${admin.lastName}`,
+        organizationName: org.name || 'Organizatia ta',
+        reason: 'Plata nu a putut fi procesata dupa mai multe incercari.',
+      }).catch((err) => logger.error('[EMAIL] Org suspended email failed:', err.message));
+    }
+  } else {
+    // Set PAYMENT_REQUIRED on first/second failure as warning
+    await prisma.organization.update({
+      where: { id: org.id },
+      data: { status: 'PAYMENT_REQUIRED' },
+    });
+    await invalidateOrgAuthCache();
+
+    logger.warn('handlePaymentFailed: set PAYMENT_REQUIRED', {
+      orgId: org.id,
+      attemptCount: invoice.attempt_count,
+    });
+
+    if (admin?.email) {
+      sendPaymentRequiredEmail({
+        email: admin.email,
+        userName: `${admin.firstName} ${admin.lastName}`,
+        organizationName: org.name || 'Organizatia ta',
+      }).catch((err) => logger.error('[EMAIL] Payment required email failed:', err.message));
+    }
   }
+};
+
+/**
+ * Process refund for annual plans within the 3-day refund window
+ */
+const processRefund = async (organizationId) => {
+  const stripe = await getStripe();
+  if (!stripe) throw new AppError('Facturarea nu este configurata', 503);
+
+  const org = await prisma.organization.findUnique({ where: { id: organizationId } });
+  if (!org) throw new AppError('Organizatia nu a fost gasita', 404);
+
+  if (!org.subscriptionStartedAt || org.billingInterval !== 'year') {
+    throw new AppError('Rambursarea este disponibila doar pentru planurile anuale', 400);
+  }
+
+  const daysSinceStart = (Date.now() - new Date(org.subscriptionStartedAt).getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSinceStart > 3) {
+    throw new AppError('Perioada de rambursare (3 zile) a expirat', 400);
+  }
+
+  // Get latest invoice and refund via Stripe
+  const invoices = await stripe.invoices.list({ subscription: org.subscriptionId, limit: 1 });
+  if (!invoices.data.length || !invoices.data[0].payment_intent) {
+    throw new AppError('Nu s-a gasit o factura pentru rambursare', 400);
+  }
+
+  const refund = await stripe.refunds.create({
+    payment_intent: invoices.data[0].payment_intent,
+  });
+
+  // Cancel subscription after refund
+  await stripe.subscriptions.cancel(org.subscriptionId);
+
+  logger.info('processRefund: refund processed and subscription cancelled', {
+    orgId: organizationId,
+    refundId: refund.id,
+  });
+
+  return refund;
 };
 
 module.exports = {
@@ -309,6 +515,8 @@ module.exports = {
   createPortalSession,
   getBillingStatus,
   syncSubscription,
+  cancelPreviousSubscription,
   handleSubscriptionDeleted,
   handlePaymentFailed,
+  processRefund,
 };

@@ -40,6 +40,14 @@ export const websiteService = {
   },
 
   /**
+   * Get approved reviews for public display
+   */
+  async getApprovedReviews(subdomain) {
+    const response = await api.get(`/sites/${subdomain}/reviews`);
+    return response.data.data;
+  },
+
+  /**
    * Get CRM data for dynamic blocks
    */
   async getCrmData(subdomain, dataType) {

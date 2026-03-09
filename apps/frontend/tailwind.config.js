@@ -7,9 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        'viperx-primary': '#2563EB',
-        'viperx-secondary': '#1e293b',
-        'viperx-accent': '#059669',
+        primary: {
+          DEFAULT: '#2563EB',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563EB',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        },
+        secondary: '#1e293b',
+        accent: '#059669',
       },
     },
   },

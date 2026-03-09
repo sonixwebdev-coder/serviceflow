@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { queryClient } from '../lib/queryClient';
 
+// Query keys that depend on the current location and must be refetched on switch
+const LOCATION_DEPENDENT_KEYS = [
+  'appointments', 'invoices', 'clients', 'services', 'users',
+  'analytics', 'tasks', 'resources', 'time-tracking', 'loyalty',
+  'service-orders', 'online-clients',
+];
+
 const useLocationStore = create(
   persist(
     (set, get) => ({
@@ -11,6 +18,8 @@ const useLocationStore = create(
       isLoading: false,
       isSwitching: false, // True when actively switching locations
       error: null,
+      // Map of userId -> locationId for cross-session persistence
+      userLocationMap: {},
 
       // Actions
       setLocations: (locations, options = {}) => {
@@ -31,6 +40,16 @@ const useLocationStore = create(
         }
       },
 
+      // Silently initialize location on first load without showing the switching overlay.
+      // Invalidates queries so data is refetched with the correct X-Location-Id header.
+      initLocation: (locationId) => {
+        if (get().currentLocationId || !locationId) return;
+        set({ currentLocationId: locationId });
+        LOCATION_DEPENDENT_KEYS.forEach((key) => {
+          queryClient.invalidateQueries({ queryKey: [key] }).catch(() => {});
+        });
+      },
+
       setCurrentLocation: async (locationId) => {
         const previousId = get().currentLocationId;
         if (previousId === locationId) return;
@@ -38,17 +57,41 @@ const useLocationStore = create(
         // Set switching state
         set({ currentLocationId: locationId, isSwitching: true });
 
-        console.log('[LocationStore] Location changed from', previousId, 'to', locationId, '- invalidating queries');
+        // Persist to user-location map
+        const userId = get()._activeUserId;
+        if (userId) {
+          set((s) => ({ userLocationMap: { ...s.userLocationMap, [userId]: locationId } }));
+        }
+
         try {
-          // Invalidate and refetch all queries
-          await queryClient.invalidateQueries({ refetchType: 'all' });
+          // Invalidate only location-dependent queries
+          await Promise.all(
+            LOCATION_DEPENDENT_KEYS.map((key) =>
+              queryClient.invalidateQueries({ queryKey: [key] })
+            )
+          );
           // Wait a brief moment for queries to start refetching
           await new Promise((resolve) => setTimeout(resolve, 300));
-          console.log('[LocationStore] Queries invalidated successfully');
         } catch (error) {
-          console.error('[LocationStore] Error invalidating queries:', error);
+          // Silently handle invalidation errors
         } finally {
           set({ isSwitching: false });
+        }
+      },
+
+      /**
+       * Called on login to restore the user's previously selected location.
+       * If a stored preference exists and matches available locations, use it.
+       * Otherwise falls back to primary or first location.
+       */
+      restoreForUser: (userId, locations) => {
+        set({ _activeUserId: userId, locations });
+        const stored = get().userLocationMap[userId];
+        if (stored && locations.find((l) => l.id === stored)) {
+          set({ currentLocationId: stored });
+        } else {
+          const primary = locations.find((l) => l.isPrimaryForUser) || locations[0];
+          set({ currentLocationId: primary?.id || null });
         }
       },
 
@@ -67,14 +110,22 @@ const useLocationStore = create(
         return locations.length > 1;
       },
 
-      // Reset store
+      // Reset transient state on logout — preserves userLocationMap
       reset: () => {
+        // Save current location to map before clearing
+        const { _activeUserId, currentLocationId, userLocationMap } = get();
+        const updatedMap = _activeUserId && currentLocationId
+          ? { ...userLocationMap, [_activeUserId]: currentLocationId }
+          : userLocationMap;
+
         set({
           locations: [],
           currentLocationId: null,
           isLoading: false,
           isSwitching: false,
           error: null,
+          _activeUserId: null,
+          userLocationMap: updatedMap,
         });
       },
     }),
@@ -82,6 +133,7 @@ const useLocationStore = create(
       name: 'location-storage',
       partialize: (state) => ({
         currentLocationId: state.currentLocationId,
+        userLocationMap: state.userLocationMap,
       }),
     }
   )

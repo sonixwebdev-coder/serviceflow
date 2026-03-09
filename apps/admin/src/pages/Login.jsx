@@ -4,12 +4,20 @@ import { LogIn } from 'lucide-react';
 import useAuthStore from '@/state/useAuthStore';
 import { useLogin } from '@/hooks/useAuth';
 
-export default function Login() {
+export default function Login({ loading }) {
   const { isAuthenticated, user } = useAuthStore();
   const loginMutation = useLogin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-900">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-600 border-t-primary-500" />
+      </div>
+    );
+  }
 
   if (isAuthenticated && user?.isSuperAdmin) {
     return <Navigate to="/" replace />;

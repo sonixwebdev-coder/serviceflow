@@ -78,15 +78,26 @@ const delPattern = async (pattern) => {
 
   try {
     const redis = getRedisClient();
-    const keys = await redis.keys(pattern);
-    if (keys.length === 0) return 0;
-    await redis.del(...keys);
-    return keys.length;
+    // Use cursor-based SCAN instead of KEYS to avoid blocking Redis during keyspace scan
+    let cursor = '0';
+    const keysToDelete = [];
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      keysToDelete.push(...keys);
+    } while (cursor !== '0');
+
+    if (keysToDelete.length === 0) return 0;
+    await redis.del(...keysToDelete);
+    return keysToDelete.length;
   } catch (error) {
     logger.warn(`Cache delete pattern error for ${pattern}:`, error.message);
     return 0;
   }
 };
+
+// In-flight request deduplication — prevents thundering herd on simultaneous cache misses
+const inFlight = new Map();
 
 /**
  * Wrap a function with caching
@@ -102,15 +113,24 @@ const wrap = async (key, fn, ttl = TTL.MEDIUM) => {
     return cached;
   }
 
-  // Execute function
-  const result = await fn();
+  // Deduplicate concurrent cache misses: reuse the in-flight promise instead of launching another DB fetch
+  if (inFlight.has(key)) {
+    return inFlight.get(key);
+  }
 
-  // Cache result (fire and forget)
-  set(key, result, ttl).catch(() => {
-    // Ignore cache errors
-  });
+  const promise = fn()
+    .then(async (result) => {
+      inFlight.delete(key);
+      set(key, result, ttl).catch(() => {});
+      return result;
+    })
+    .catch((err) => {
+      inFlight.delete(key);
+      throw err;
+    });
 
-  return result;
+  inFlight.set(key, promise);
+  return promise;
 };
 
 /**
@@ -129,6 +149,29 @@ const clearAll = async () => {
     logger.error('Cache clear error:', error.message);
     return false;
   }
+};
+
+/**
+ * Blacklist an access token (used on logout to prevent reuse until expiry).
+ * @param {string} token - The raw JWT access token
+ * @param {number} remainingTtl - Seconds until the token would naturally expire
+ * @returns {Promise<boolean>} Success status
+ */
+const blacklistToken = async (token, remainingTtl) => {
+  if (remainingTtl <= 0) return true; // already expired
+  const hash = require('crypto').createHash('sha256').update(token).digest('hex');
+  return set(`token:bl:${hash}`, 1, remainingTtl);
+};
+
+/**
+ * Check if a token has been blacklisted.
+ * @param {string} token - The raw JWT access token
+ * @returns {Promise<boolean>} True if blacklisted
+ */
+const isTokenBlacklisted = async (token) => {
+  const hash = require('crypto').createHash('sha256').update(token).digest('hex');
+  const val = await get(`token:bl:${hash}`);
+  return val !== null;
 };
 
 /**
@@ -215,6 +258,9 @@ module.exports = {
   delPattern,
   wrap,
   clearAll,
+  // Token blacklist
+  blacklistToken,
+  isTokenBlacklisted,
   // Key generators
   userKey,
   userWithRolesKey,

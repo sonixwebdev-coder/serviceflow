@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import confirm from '../utils/confirm';
 import { format, differenceInMinutes } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import {
@@ -33,6 +34,7 @@ const TimeTracking = () => {
   const { records, meta, loading, error, page, setPage, refresh, setFilters: setHookFilters } = useTimeTracking(filters, { enablePagination: true });
   const { users: employees = [] } = useUsers({ isActive: true }, { enabled: isManagerial });
   const [clocking, setClocking] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [clockOutPayload, setClockOutPayload] = useState({ breakDuration: 0, clockOutLocation: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -140,9 +142,10 @@ const TimeTracking = () => {
   };
 
   const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm('Stergi aceasta inregistrare?')) {
+    if (!await confirm({ title: 'Sterge inregistrare', text: 'Esti sigur ca vrei sa stergi aceasta inregistrare?', confirmText: 'Sterge', danger: true })) {
       return;
     }
+    setDeletingId(recordId);
     try {
       await deleteTimeTrackingRecord(recordId);
       await refresh();
@@ -157,6 +160,8 @@ const TimeTracking = () => {
         description: deleteError.message || 'Te rugam sa incerci din nou.',
         type: 'error',
       });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -240,7 +245,7 @@ const TimeTracking = () => {
       {/* Employee Clock In/Out Widget */}
       {!isManagerial && (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-viperx-primary to-orange-600 px-6 py-4">
+          <div className="bg-gradient-to-r from-primary to-orange-600 px-6 py-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Clock size={20} />
               Schimbul meu
@@ -286,7 +291,7 @@ const TimeTracking = () => {
                           breakDuration: Number(event.target.value)
                         }))
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   <div>
@@ -303,8 +308,8 @@ const TimeTracking = () => {
                           clockOutLocation: event.target.value
                         }))
                       }
-                      placeholder="ex. ViperX Shop"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      placeholder="ex. Locatie Centru"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -312,7 +317,7 @@ const TimeTracking = () => {
                   type="button"
                   onClick={handleClockOut}
                   disabled={clocking}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-viperx-primary px-6 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition"
                 >
                   <LogOut size={18} />
                   {clocking ? 'Se inregistreaza...' : 'Pontare iesire'}
@@ -328,7 +333,7 @@ const TimeTracking = () => {
                   type="button"
                   onClick={handleClockIn}
                   disabled={clocking}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-viperx-primary px-6 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition"
                 >
                   <LogIn size={18} />
                   {clocking ? 'Se inregistreaza...' : 'Pontare intrare'}
@@ -350,7 +355,7 @@ const TimeTracking = () => {
                 name="employee"
                 value={filters.employee || ''}
                 onChange={handleFilterChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="">Toti angajatii</option>
                 {employees.map((employee) => (
@@ -391,7 +396,7 @@ const TimeTracking = () => {
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         ) : error ? (
           <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
@@ -467,7 +472,8 @@ const TimeTracking = () => {
                           <button
                             type="button"
                             onClick={() => handleDeleteRecord(record._id)}
-                            className="inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition"
+                            disabled={deletingId === record._id}
+                            className="inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Sterge"
                           >
                             <Trash2 size={14} />
@@ -561,7 +567,8 @@ const TimeTracking = () => {
                         <button
                           type="button"
                           onClick={() => handleDeleteRecord(record._id)}
-                          className="inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition"
+                          disabled={deletingId === record._id}
+                          className="inline-flex items-center gap-1 text-sm text-red-600 hover:text-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 size={14} />
                         </button>

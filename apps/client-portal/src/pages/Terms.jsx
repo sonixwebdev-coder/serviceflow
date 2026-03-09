@@ -4,7 +4,7 @@ export default function Terms() {
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Termeni si Conditii</h1>
 
       <div className="prose prose-gray max-w-none space-y-6 text-gray-600 text-sm leading-relaxed">
-        <p>Ultima actualizare: 1 Ianuarie 2026</p>
+        <p>Ultima actualizare: 8 Martie 2026</p>
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">1. Utilizarea Platformei</h2>
@@ -44,7 +44,29 @@ export default function Terms() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">4. Plati si Facturare</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">4. Program de Fidelitate</h2>
+          <p>
+            Furnizorii de servicii pot oferi programe de fidelitate prin platforma. Punctele de loialitate
+            sunt acordate conform regulilor stabilite de fiecare furnizor si pot fi folosite pentru
+            reduceri sau beneficii suplimentare.
+          </p>
+          <p>
+            Punctele de loialitate nu au valoare monetara si nu pot fi transferate catre alti utilizatori.
+            Furnizorul de servicii isi rezerva dreptul de a modifica regulile programului de fidelitate.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Notificari</h2>
+          <p>
+            Platforma poate trimite notificari push, notificari in aplicatie si emailuri legate de
+            programari, mesaje, facturi si alte activitati relevante. Puteti gestiona preferintele
+            de notificari din setarile contului.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">6. Plati si Facturare</h2>
           <p>
             Platile pentru servicii se efectueaza direct catre furnizorul de servicii. ForjaIt poate facilita
             procesul de facturare, insa nu proceseaza plati in numele furnizorilor, cu exceptia cazului
@@ -53,7 +75,7 @@ export default function Terms() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Proprietate Intelectuala</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">7. Proprietate Intelectuala</h2>
           <p>
             Toate drepturile de proprietate intelectuala asupra platformei ForjaIt, inclusiv dar fara
             a se limita la design, cod sursa, texte si grafice, apartin ForjaIt sau licentiatorilor sai.
@@ -61,7 +83,7 @@ export default function Terms() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">6. Limitarea Raspunderii</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">8. Limitarea Raspunderii</h2>
           <p>
             ForjaIt nu garanteaza disponibilitatea neintrerupta a platformei si nu este responsabil
             pentru pierderi directe sau indirecte cauzate de utilizarea sau imposibilitatea utilizarii platformei.
@@ -73,7 +95,7 @@ export default function Terms() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">7. Modificari ale Termenilor</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">9. Modificari ale Termenilor</h2>
           <p>
             Ne rezervam dreptul de a modifica acesti termeni in orice moment. Modificarile vor fi
             publicate pe aceasta pagina, iar continuarea utilizarii platformei dupa publicare
@@ -82,7 +104,7 @@ export default function Terms() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">8. Contact</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">10. Contact</h2>
           <p>
             Pentru intrebari legate de acesti termeni, ne puteti contacta la adresa de email:
             contact@forja.it.com

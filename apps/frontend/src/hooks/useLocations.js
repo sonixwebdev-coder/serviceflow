@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchLocations,
@@ -11,6 +11,7 @@ import {
   removeUsersFromLocation,
 } from '../services/locationService';
 import useLocationStore from '../state/useLocationStore';
+import { useAuthStore } from '../state/useAuthStore';
 
 /**
  * Hook to manage user's accessible locations
@@ -18,7 +19,9 @@ import useLocationStore from '../state/useLocationStore';
  */
 export const useMyLocations = (options = {}) => {
   const { enabled = true } = options;
-  const { setLocations, setLoading, setError } = useLocationStore();
+  const { setLocations, setLoading, setError, restoreForUser } = useLocationStore();
+  const user = useAuthStore((s) => s.user);
+  const restoredRef = useRef(null); // track which userId we already restored for
 
   const query = useQuery({
     queryKey: ['my-locations'],
@@ -27,12 +30,17 @@ export const useMyLocations = (options = {}) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Sync with store
+  // Sync with store — on first load per user, restore persisted location
   useEffect(() => {
     if (query.data) {
-      setLocations(query.data);
+      if (user?.id && restoredRef.current !== user.id) {
+        restoredRef.current = user.id;
+        restoreForUser(user.id, query.data);
+      } else {
+        setLocations(query.data);
+      }
     }
-  }, [query.data, setLocations]);
+  }, [query.data, setLocations, restoreForUser, user?.id]);
 
   useEffect(() => {
     setLoading(query.isLoading);

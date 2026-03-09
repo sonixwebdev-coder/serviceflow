@@ -64,7 +64,7 @@ const TYPE_COLORS = {
   invoice: 'bg-purple-100 text-purple-600',
   task: 'bg-orange-100 text-orange-600',
   user: 'bg-gray-100 text-gray-600',
-  action: 'bg-viperx-primary/10 text-viperx-primary',
+  action: 'bg-primary/10 text-primary',
   navigation: 'bg-gray-100 text-gray-600',
 };
 
@@ -304,7 +304,7 @@ export default function CommandPalette() {
                       onClick={() => handleSelect(item)}
                       onMouseEnter={() => setSelectedIndex(item.flatIndex)}
                       className={`w-full flex items-center gap-3 px-4 py-3 text-left transition ${
-                        isSelected ? 'bg-viperx-primary/5' : 'hover:bg-gray-50'
+                        isSelected ? 'bg-primary/5' : 'hover:bg-gray-50'
                       }`}
                     >
                       <div className={`p-2 rounded-lg ${TYPE_COLORS[item.type] || 'bg-gray-100'}`}>

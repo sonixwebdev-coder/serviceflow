@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MessageSquare, X, Send, Plus, Trash2, FileText, CheckCircle2, Clock, AlertCircle, Edit2, Save, Cloud, CloudOff, Paperclip, Mic, Square, Play, Pause, Download, Image as ImageIcon, User } from 'lucide-react';
+import confirm from '../utils/confirm';
+import { MessageSquare, X, Send, Plus, Trash2, FileText, CheckCircle2, Clock, AlertCircle, Edit2, Save, Cloud, CloudOff, Paperclip, Play, Pause, Download, Image as ImageIcon, User } from 'lucide-react';
 import { format, isBefore, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parse, getDay } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,10 +15,21 @@ import useUsers from '../hooks/useUsers.js';
 import { useCompanySettings } from '../hooks/useCompanySettings.js';
 import DatePicker from '../components/ui/DatePicker.jsx';
 import ClientAutocomplete from '../components/ui/ClientAutocomplete.jsx';
+import TimePicker from '../components/ui/TimePicker.jsx';
 
 import ExportButton from '../components/ExportButton.jsx';
 import DynamicAssetFields from '../components/DynamicAssetFields';
 import LocationBadge from '../components/LocationBadge';
+import MonthEvent from '../components/appointments/MonthEvent';
+import VoiceRecorder from '../components/appointments/VoiceRecorder';
+import {
+  STATUS_FILTERS, STATUS_META, STATUS_LABELS, STATUS_SEQUENCE,
+  PAYMENT_STATUS_META, STATUS_DOT_COLORS,
+  HARDWARE_UNITS, LABOR_UNITS, TIME_OPTIONS,
+  defaultForm, defaultClientForm, defaultAssetForm, createDefaultOrderDraft,
+  getStatusMeta, getPaymentStatusMeta, normalizeRoleKey, extractRoleKeys,
+  combineDateAndTime, currencyFormatter, numberFormatter,
+} from '../components/appointments/constants';
 import useToast from '../context/useToast';
 import useAuth from '../context/useAuth';
 import { useTerminology } from '../context/TerminologyContext';
@@ -28,12 +40,10 @@ import { getPaymentStatus, getAppointmentPayments, createPayment, deletePayment 
 import { getSyncStatus as getGoogleSyncStatus } from '../services/googleCalendarService';
 import API, { getFileUrl } from '../utils/api.js';
 import { getSocket } from '../lib/socket.js';
+import { useClientLoyalty, useLoyaltyProgram } from '../hooks/useLoyalty';
 
 const formatDateTime = (value, pattern = 'Pp') =>
   value ? format(new Date(value), pattern, { locale: roDateLocale }) : '';
-
-const currencyFormatter = new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' });
-const numberFormatter = new Intl.NumberFormat('ro-RO');
 
 // Configure React Big Calendar localizer
 const localizer = dateFnsLocalizer({
@@ -45,301 +55,6 @@ const localizer = dateFnsLocalizer({
     'ro': roDateLocale,
   },
 });
-
-const STATUS_FILTERS = [
-  { label: 'Toate', value: undefined },
-  { label: 'In asteptare', value: 'pending' },
-  { label: 'Prezentat', value: 'prezentat' },
-  { label: 'In desfasurare', value: 'in_progress' },
-  { label: 'Finalizate', value: 'completed' },
-  { label: 'Anulate', value: 'cancelled' },
-];
-
-const STATUS_META = {
-  PENDING: { label: 'In asteptare', badgeClass: 'border border-yellow-400 bg-yellow-50 text-yellow-800', calendarClass: 'status-pending' },
-  PREZENTAT: { label: 'Prezentat', badgeClass: 'border border-blue-400 bg-blue-50 text-blue-900', calendarClass: 'status-prezentat' },
-  IN_PROGRESS: { label: 'In desfasurare', badgeClass: 'border border-amber-400 bg-amber-50 text-amber-900', calendarClass: 'status-in-progress' },
-  COMPLETED: { label: 'Finalizata', badgeClass: 'border border-emerald-400 bg-emerald-50 text-emerald-900', calendarClass: 'status-completed' },
-  CANCELLED: { label: 'Anulata', badgeClass: 'border border-red-400 bg-red-50 text-red-800', calendarClass: 'status-cancelled' },
-};
-
-const STATUS_LABELS = {
-  pending: STATUS_META.PENDING.label,
-  prezentat: STATUS_META.PREZENTAT.label,
-  'in-progress': STATUS_META.IN_PROGRESS.label,
-  'in_progress': STATUS_META.IN_PROGRESS.label,
-  completed: STATUS_META.COMPLETED.label,
-  cancelled: STATUS_META.CANCELLED.label,
-};
-
-const STATUS_SEQUENCE = ['PENDING', 'PREZENTAT', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-
-const PAYMENT_STATUS_META = {
-  UNPAID: { label: 'Neplatit', badgeClass: 'bg-gray-100 text-gray-800 border border-gray-300', icon: Clock },
-  PARTIAL: { label: 'Partial platit', badgeClass: 'bg-yellow-100 text-yellow-800 border border-yellow-300', icon: AlertCircle },
-  PAID: { label: 'Platit complet', badgeClass: 'bg-green-100 text-green-800 border border-green-300', icon: CheckCircle2 },
-};
-
-const getPaymentStatusMeta = (status) => {
-  return PAYMENT_STATUS_META[status] || PAYMENT_STATUS_META.UNPAID;
-};
-
-const STATUS_DOT_COLORS = {
-  PENDING: 'rgb(250, 204, 21)',
-  PREZENTAT: 'rgb(96, 165, 250)',
-  IN_PROGRESS: 'rgb(251, 191, 36)',
-  COMPLETED: 'rgb(52, 211, 153)',
-  CANCELLED: 'rgb(248, 113, 113)',
-};
-
-function MonthEvent({ event }) {
-  const status = event.resource?.status;
-  const dotColor = STATUS_DOT_COLORS[status] || 'rgb(229, 231, 235)';
-  const timeStr = event.start ? format(event.start, 'HH:mm') : '';
-  const endStr = event.end ? format(event.end, 'HH:mm') : '';
-
-  return (
-    <div
-      className="flex items-center gap-1 truncate"
-      title={`${event.title} — ${timeStr} - ${endStr}`}
-    >
-      <span
-        className="h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ backgroundColor: dotColor }}
-      />
-      <span className="truncate text-[11px]">{event.title}</span>
-    </div>
-  );
-}
-
-// Inline VoiceRecorder component for appointment messages
-const VoiceRecorder = ({ onUpload, disabled, isUploading }) => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [audioUrl, setAudioUrl] = useState(null);
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-    };
-  }, [audioUrl]);
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4',
-      });
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
-        setAudioBlob(blob);
-        setAudioUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-      timerRef.current = setInterval(() => setRecordingTime((prev) => prev + 1), 1000);
-    } catch (err) {
-      console.error('Failed to start recording:', err);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-  };
-
-  const handleSend = async () => {
-    if (audioBlob && onUpload) {
-      await onUpload(audioBlob, recordingTime);
-      clearRecording();
-    }
-  };
-
-  const clearRecording = () => {
-    setAudioBlob(null);
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-      setAudioUrl(null);
-    }
-    setRecordingTime(0);
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  if (isRecording) {
-    return (
-      <div className="flex items-center gap-2 px-2 py-1 bg-red-50 rounded-lg">
-        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-        <span className="text-xs text-red-600 font-medium">{formatTime(recordingTime)}</span>
-        <button
-          type="button"
-          onClick={stopRecording}
-          className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-        >
-          <Square size={12} />
-        </button>
-      </div>
-    );
-  }
-
-  if (audioBlob && audioUrl) {
-    return (
-      <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 rounded-lg">
-        <audio src={audioUrl} controls className="h-8" style={{ maxWidth: '120px' }} />
-        <button
-          type="button"
-          onClick={clearRecording}
-          className="p-1 text-gray-500 hover:text-gray-700"
-        >
-          <X size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={isUploading}
-          className="p-1 bg-viperx-primary text-white rounded-full hover:bg-viperx-primary/90 disabled:opacity-50"
-        >
-          {isUploading ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send size={12} />}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={startRecording}
-      disabled={disabled || isUploading}
-      className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      <Mic size={20} />
-    </button>
-  );
-};
-
-const getStatusMeta = (value) => {
-  if (!value) {
-    return { label: 'Necunoscut', badgeClass: 'border border-gray-200 bg-gray-100 text-gray-600', calendarClass: 'status-unknown' };
-  }
-  const normalized = value.toString().toUpperCase().replace(/-/g, '_');
-  return STATUS_META[normalized] || {
-    label: value,
-    badgeClass: 'border border-gray-200 bg-gray-100 text-gray-600',
-    calendarClass: 'status-unknown',
-  };
-};
-
-const defaultForm = {
-  title: '',
-  description: '',
-  scheduledDate: null,
-  startTime: '09:00',
-  endTime: '10:00',
-  assigneeIds: [],
-  clientId: '',
-  assetId: '',
-  advancePayment: '',
-};
-
-const defaultClientForm = {
-  type: 'PF',
-  firstName: '',
-  lastName: '',
-  companyName: '',
-  contactName: '',
-  phone: '',
-  email: '',
-  vatNumber: '',
-  registrationNumber: '',
-  notes: '',
-  fidelityCardSerie: '',
-};
-
-const defaultAssetForm = {
-  metadata: {}, // Dynamic fields will be stored here
-  notes: '',
-};
-
-const TIME_OPTIONS = Array.from({ length: 24 * 4 }, (_, index) => {
-  const totalMinutes = index * 15;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-});
-
-const normalizeRoleKey = (value) => (typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '');
-
-const extractRoleKeys = (person) => {
-  const keys = new Set();
-  if (!person) return keys;
-  const primary = normalizeRoleKey(person.role);
-  if (primary) {
-    keys.add(primary);
-  }
-  person.roles?.forEach((assignment) => {
-    const key = normalizeRoleKey(assignment?.role?.key || assignment?.key || assignment?.role);
-    if (key) {
-      keys.add(key);
-    }
-  });
-  return keys;
-};
-
-const createDefaultOrderDraft = () => ({
-  notes: '',
-  lineItems: [{ name: '', description: '', hardwareQuantity: 1, laborQuantity: 1, hardwarePrice: 0, laborPrice: 0, hardwareUnit: '', laborUnit: '' }],
-});
-
-const HARDWARE_UNITS = [
-  { value: 'buc', label: 'buc (bucati)' },
-  { value: 'set', label: 'set' },
-  { value: 'pereche', label: 'pereche' },
-  { value: 'm', label: 'm (metri)' },
-  { value: 'm²', label: 'm² (metri patrati)' },
-  { value: 'l', label: 'l (litri)' },
-  { value: 'kg', label: 'kg (kilograme)' },
-  { value: 'pachet', label: 'pachet' },
-];
-
-const LABOR_UNITS = [
-  { value: 'ore', label: 'ore' },
-  { value: 'ore/om', label: 'ore/om (om-ore)' },
-  { value: 'zile', label: 'zile' },
-  { value: 'interventie', label: 'interventie' },
-];
-
-const combineDateAndTime = (date, time) => {
-  if (!date || !time) return null;
-  const [hours, minutes] = time.split(':').map((value) => Number(value));
-  const result = new Date(date);
-  result.setHours(Number.isFinite(hours) ? hours : 0, Number.isFinite(minutes) ? minutes : 0, 0, 0);
-  return result;
-};
 
 const Appointments = () => {
   const [status, setStatus] = useState();
@@ -401,6 +116,7 @@ const Appointments = () => {
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [applyLoyaltyDiscount, setApplyLoyaltyDiscount] = useState(true);
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
     paymentMethod: 'CASH',
@@ -703,6 +419,22 @@ const Appointments = () => {
   const cancelMutation = useCancelAppointment();
   const updateMutation = useUpdateAppointment();
   const createInvoiceMutation = useCreateInvoice();
+
+  // Loyalty discount info — fetch whenever an appointment is selected (used for invoice creation and payment modal)
+  const { data: loyaltyAccount } = useClientLoyalty(selectedAppointment?.clientId ?? null);
+  const { data: loyaltyProgram } = useLoyaltyProgram();
+
+  const getLoyaltyDiscountPercent = () => {
+    if (!loyaltyAccount || !loyaltyProgram || !loyaltyProgram.isEnabled) return 0;
+    const discountMap = {
+      BRONZE: Number(loyaltyProgram.bronzeDiscount || 0),
+      SILVER: Number(loyaltyProgram.silverDiscount || 0),
+      GOLD: Number(loyaltyProgram.goldDiscount || 0),
+      PLATINUM: Number(loyaltyProgram.platinumDiscount || 0),
+    };
+    return discountMap[loyaltyAccount.currentTier] || 0;
+  };
+
   const handleStatusChange = useCallback(
     (nextStatus) => {
       if (!selectedAppointmentId || !nextStatus) return;
@@ -896,12 +628,12 @@ const createMutation = useMutation({
   const isSaving = createMutation.isPending;
 
   const closeCreateModal = useCallback(
-    (requireConfirm = false) => {
+    async (requireConfirm = false) => {
       if (isSaving) {
         return;
       }
       if (requireConfirm) {
-        const confirmed = window.confirm('Datele completate vor fi pierdute. Sigur vrei sa inchizi?');
+        const confirmed = await confirm({ title: 'Inchide formular', text: 'Datele completate vor fi pierdute. Sigur vrei sa inchizi?', confirmText: 'Inchide', danger: false });
         if (!confirmed) {
           return;
         }
@@ -1179,7 +911,7 @@ useEffect(() => {
   };
 
   const handleDeletePayment = async (paymentId) => {
-    if (!confirm('Esti sigur ca vrei sa stergi aceasta plata?')) return;
+    if (!await confirm({ title: 'Sterge plata', text: 'Esti sigur ca vrei sa stergi aceasta plata?', confirmText: 'Sterge', danger: true })) return;
 
     try {
       await deletePayment(paymentId);
@@ -1459,7 +1191,7 @@ useEffect(() => {
           <button
             type="button"
             onClick={() => openCreateModal(new Date())}
-            className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
           >
             <Plus size={16} />
             Programare noua
@@ -1491,7 +1223,7 @@ useEffect(() => {
             <select
               value={selectedClientId || ''}
               onChange={(e) => setSelectedClientId(e.target.value || undefined)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             >
               <option value="">Toti clientii</option>
               {uniqueClients.map((client) => (
@@ -1507,7 +1239,7 @@ useEffect(() => {
             <select
               value={selectedAssigneeId || ''}
               onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             >
               <option value="">Toti responsabilii</option>
               {assigneeOptions.map((employee) => (
@@ -1526,7 +1258,7 @@ useEffect(() => {
                 setSelectedClientId(undefined);
                 setSelectedAssigneeId(undefined);
               }}
-              className="text-sm text-gray-500 hover:text-viperx-primary transition-colors flex items-center gap-1"
+              className="text-sm text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
             >
               <X size={14} />
               Reseteaza
@@ -1657,7 +1389,7 @@ useEffect(() => {
                         type="text"
                         value={formState.title}
                         onChange={(event) => setFormState((prev) => ({ ...prev, title: event.target.value }))}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         placeholder="Ex. Revizie auto"
                       />
                     </div>
@@ -1672,34 +1404,18 @@ useEffect(() => {
                       />
                     </div>
                     <div className="flex flex-col lg:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">Ora inceput *</label>
-                      <select
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Ora inceput *</label>
+                      <TimePicker
                         value={formState.startTime}
-                        onChange={(event) => setFormState((prev) => ({ ...prev, startTime: event.target.value }))}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                        required
-                      >
-                        {TIME_OPTIONS.map((time) => (
-                          <option key={time} value={time}>
-                            {time}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => setFormState((prev) => ({ ...prev, startTime: v }))}
+                      />
                     </div>
                     <div className="flex flex-col lg:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">Ora final *</label>
-                      <select
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Ora final *</label>
+                      <TimePicker
                         value={formState.endTime}
-                        onChange={(event) => setFormState((prev) => ({ ...prev, endTime: event.target.value }))}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                        required
-                      >
-                        {TIME_OPTIONS.map((time) => (
-                          <option key={time} value={time}>
-                            {time}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => setFormState((prev) => ({ ...prev, endTime: v }))}
+                      />
                     </div>
                   </div>
                 <div>
@@ -1708,7 +1424,7 @@ useEffect(() => {
                     value={formState.description}
                     onChange={(event) => setFormState((prev) => ({ ...prev, description: event.target.value }))}
                     rows={3}
-                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div>
@@ -1731,8 +1447,8 @@ useEffect(() => {
                           }}
                           className={`rounded-full border px-3 py-1 text-xs transition ${
                             selected
-                              ? 'border-viperx-primary bg-viperx-primary/10 text-viperx-primary'
-                              : 'border-gray-200 text-gray-600 hover:border-viperx-primary/40 hover:text-viperx-primary'
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-gray-200 text-gray-600 hover:border-primary/40 hover:text-primary'
                           }`}
                         >
                           {employee.firstName} {employee.lastName}
@@ -1842,8 +1558,8 @@ useEffect(() => {
                             onClick={() => setClientForm((prev) => ({ ...prev, type: option.value }))}
                             className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                               clientForm.type === option.value
-                                ? 'border-viperx-primary bg-viperx-primary/10 text-viperx-primary'
-                                : 'border-gray-200 text-gray-600 hover:border-viperx-primary/40 hover:text-viperx-primary'
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-gray-200 text-gray-600 hover:border-primary/40 hover:text-primary'
                             }`}
                           >
                             {option.label}
@@ -1864,7 +1580,7 @@ useEffect(() => {
                             type="text"
                             value={clientForm.companyName}
                             onChange={(event) => setClientForm((prev) => ({ ...prev, companyName: event.target.value }))}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1873,7 +1589,7 @@ useEffect(() => {
                             type="text"
                             value={clientForm.contactName}
                             onChange={(event) => setClientForm((prev) => ({ ...prev, contactName: event.target.value }))}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1882,7 +1598,7 @@ useEffect(() => {
                             type="text"
                             value={clientForm.vatNumber}
                             onChange={(event) => setClientForm((prev) => ({ ...prev, vatNumber: event.target.value }))}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1891,7 +1607,7 @@ useEffect(() => {
                             type="text"
                             value={clientForm.registrationNumber}
                             onChange={(event) => setClientForm((prev) => ({ ...prev, registrationName: event.target.value }))}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                       </>
@@ -1903,7 +1619,7 @@ useEffect(() => {
                             type="text"
                             value={clientForm.firstName}
                             onChange={(event) => setClientForm((prev) => ({ ...prev, firstName: event.target.value }))}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1912,7 +1628,7 @@ useEffect(() => {
                             type="text"
                             value={clientForm.lastName}
                             onChange={(event) => setClientForm((prev) => ({ ...prev, lastName: event.target.value }))}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                       </>
@@ -1923,7 +1639,7 @@ useEffect(() => {
                         type="email"
                         value={clientForm.email}
                         onChange={(event) => setClientForm((prev) => ({ ...prev, email: event.target.value }))}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -1932,7 +1648,7 @@ useEffect(() => {
                         type="tel"
                         value={clientForm.phone}
                         onChange={(event) => setClientForm((prev) => ({ ...prev, phone: event.target.value }))}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -1942,7 +1658,7 @@ useEffect(() => {
                         value={clientForm.fidelityCardSerie}
                         onChange={(event) => setClientForm((prev) => ({ ...prev, fidelityCardSerie: event.target.value }))}
                         placeholder="FL123456"
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -1951,7 +1667,7 @@ useEffect(() => {
                         value={clientForm.notes}
                         onChange={(event) => setClientForm((prev) => ({ ...prev, notes: event.target.value }))}
                         rows={2}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
@@ -1983,7 +1699,7 @@ useEffect(() => {
                       value={assetForm.notes}
                       onChange={(event) => setAssetForm((prev) => ({ ...prev, notes: event.target.value }))}
                       rows={2}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder={`Observatii sau detalii suplimentare despre ${assetSingular.toLowerCase()}`}
                     />
                   </div>
@@ -1991,10 +1707,9 @@ useEffect(() => {
               </div>
               )}
 
-              {hasAssets && (
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <div className="mb-4">
-                  <h3 className="text-base font-semibold text-gray-900">Articole comanda service</h3>
+                  <h3 className="text-base font-semibold text-gray-900">Articole comanda</h3>
                   <p className="text-xs text-gray-500 mt-1">Adauga operatiunile care vor aparea in comanda de service.</p>
                 </div>
 
@@ -2017,7 +1732,7 @@ useEffect(() => {
                               type="text"
                               value={item.name}
                               onChange={(event) => handleLineItemChange(index, 'name', event.target.value)}
-                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               placeholder="ex: Schimb ulei, Becuri, etc."
                             />
                           </div>
@@ -2038,7 +1753,7 @@ useEffect(() => {
                             type="text"
                             value={item.description}
                             onChange={(event) => handleLineItemChange(index, 'description', event.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             placeholder="Detalii suplimentare"
                           />
                         </div>
@@ -2064,7 +1779,7 @@ useEffect(() => {
                                       step="1"
                                       value={item.hardwareQuantity}
                                       onChange={(event) => handleLineItemChange(index, 'hardwareQuantity', event.target.value)}
-                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-viperx-primary focus:outline-none"
+                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
                                     />
                                   </div>
                                   <div className="flex-1">
@@ -2072,7 +1787,7 @@ useEffect(() => {
                                     <select
                                       value={item.hardwareUnit || ''}
                                       onChange={(event) => handleLineItemChange(index, 'hardwareUnit', event.target.value)}
-                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-viperx-primary focus:outline-none"
+                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-primary focus:outline-none"
                                     >
                                       <option value="">-</option>
                                       {HARDWARE_UNITS.map((unit) => (
@@ -2091,7 +1806,7 @@ useEffect(() => {
                                     step="0.01"
                                     value={item.hardwarePrice}
                                     onChange={(event) => handleLineItemChange(index, 'hardwarePrice', event.target.value)}
-                                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-viperx-primary focus:outline-none"
+                                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-none"
                                     placeholder="0.00"
                                   />
                                 </div>
@@ -2117,7 +1832,7 @@ useEffect(() => {
                                     step="0.5"
                                     value={item.laborQuantity}
                                     onChange={(event) => handleLineItemChange(index, 'laborQuantity', event.target.value)}
-                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-viperx-primary focus:outline-none"
+                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
                                   />
                                 </div>
                                 <div className="flex-1">
@@ -2125,7 +1840,7 @@ useEffect(() => {
                                   <select
                                     value={item.laborUnit || ''}
                                     onChange={(event) => handleLineItemChange(index, 'laborUnit', event.target.value)}
-                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-viperx-primary focus:outline-none"
+                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-primary focus:outline-none"
                                   >
                                     <option value="">-</option>
                                     {LABOR_UNITS.map((unit) => (
@@ -2144,7 +1859,7 @@ useEffect(() => {
                                   step="0.01"
                                   value={item.laborPrice}
                                   onChange={(event) => handleLineItemChange(index, 'laborPrice', event.target.value)}
-                                  className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-viperx-primary focus:outline-none"
+                                  className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-none"
                                   placeholder="0.00"
                                 />
                               </div>
@@ -2164,22 +1879,13 @@ useEffect(() => {
                   <button
                     type="button"
                     onClick={handleAddLineItem}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-viperx-primary hover:bg-viperx-primary/5 hover:text-viperx-primary"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-primary hover:bg-primary/5 hover:text-primary"
                   >
                     <Plus size={16} /> Adauga articol/serviciu
                   </button>
                 </div>
 
-                <div className="mt-4 flex flex-col gap-3 text-sm text-gray-700 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="text-sm text-gray-700">
-                    <label className="block text-sm font-medium text-gray-700">Note comanda</label>
-                    <textarea
-                      value={orderDraft.notes}
-                      onChange={(event) => setOrderDraft((prev) => ({ ...prev, notes: event.target.value }))}
-                      rows={2}
-                      className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none"
-                    />
-                  </div>
+                <div className="mt-4 flex justify-end">
                   <div className="flex flex-col gap-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
                     <div className="flex items-center justify-between gap-6">
                       <span>Subtotal</span>
@@ -2205,7 +1911,7 @@ useEffect(() => {
                       value={formState.advancePayment}
                       onChange={(event) => setFormState((prev) => ({ ...prev, advancePayment: event.target.value }))}
                       placeholder="0.00"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">RON</span>
                   </div>
@@ -2223,7 +1929,6 @@ useEffect(() => {
                   )}
                 </div>
               </div>
-              )}
 
               <div className="flex justify-end gap-3 border-t pt-4">
                 <button
@@ -2239,7 +1944,7 @@ useEffect(() => {
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50"
                 >
                   {createMutation.isPending ? 'Se creeaza...' : 'Salveaza programarea'}
                 </button>
@@ -2273,7 +1978,7 @@ useEffect(() => {
                     type="button"
                     onClick={handleSaveAppointment}
                     disabled={updateMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-viperx-primary bg-viperx-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-viperx-primary/90 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     <Save size={14} />
                     {updateMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
@@ -2306,17 +2011,17 @@ useEffect(() => {
               type="button"
               onClick={() => setActiveTab('details')}
               className={`relative px-4 py-3 text-sm font-medium transition ${
-                activeTab === 'details' ? 'text-viperx-primary' : 'text-gray-500 hover:text-gray-700'
+                activeTab === 'details' ? 'text-primary' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               Detalii
-              {activeTab === 'details' && <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-viperx-primary" />}
+              {activeTab === 'details' && <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-primary" />}
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('messages')}
               className={`relative px-4 py-3 text-sm font-medium transition ${
-                activeTab === 'messages' ? 'text-viperx-primary' : 'text-gray-500 hover:text-gray-700'
+                activeTab === 'messages' ? 'text-primary' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <span className="flex items-center gap-2">
@@ -2327,7 +2032,7 @@ useEffect(() => {
                   </span>
                 )}
               </span>
-              {activeTab === 'messages' && <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-viperx-primary" />}
+              {activeTab === 'messages' && <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-primary" />}
             </button>
           </div>
 
@@ -2347,7 +2052,7 @@ useEffect(() => {
                             type="text"
                             value={editForm.title || ''}
                             onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             placeholder="Ex. Revizie auto"
                           />
                         </div>
@@ -2364,33 +2069,17 @@ useEffect(() => {
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ora inceput *</label>
-                            <select
-                              value={editForm.startTime || ''}
-                              onChange={(e) => setEditForm(prev => ({ ...prev, startTime: e.target.value }))}
-                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                              required
-                            >
-                              {TIME_OPTIONS.map((time) => (
-                                <option key={time} value={time}>
-                                  {time}
-                                </option>
-                              ))}
-                            </select>
+                            <TimePicker
+                              value={editForm.startTime || '09:00'}
+                              onChange={(v) => setEditForm(prev => ({ ...prev, startTime: v }))}
+                            />
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Ora final *</label>
-                            <select
-                              value={editForm.endTime || ''}
-                              onChange={(e) => setEditForm(prev => ({ ...prev, endTime: e.target.value }))}
-                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
-                              required
-                            >
-                              {TIME_OPTIONS.map((time) => (
-                                <option key={time} value={time}>
-                                  {time}
-                                </option>
-                              ))}
-                            </select>
+                            <TimePicker
+                              value={editForm.endTime || '10:00'}
+                              onChange={(v) => setEditForm(prev => ({ ...prev, endTime: v }))}
+                            />
                           </div>
                         </div>
                         <div>
@@ -2399,7 +2088,7 @@ useEffect(() => {
                             value={editForm.description || ''}
                             onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             placeholder="Descriere programare..."
                           />
                         </div>
@@ -2453,7 +2142,7 @@ useEffect(() => {
                                     value={selectedAppointment.status || 'PENDING'}
                                     disabled={updateMutation.isPending}
                                     onChange={(event) => handleStatusChange(event.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-8 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-8 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
                                   >
                                     {STATUS_SEQUENCE.filter(s => s !== 'CANCELLED' || selectedAppointment.status !== 'COMPLETED').map((value) => (
                                       <option key={value} value={value}>
@@ -2463,7 +2152,7 @@ useEffect(() => {
                                   </select>
                                   {updateMutation.isPending && (
                                     <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-viperx-primary"></div>
+                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-primary"></div>
                                     </div>
                                   )}
                                 </div>
@@ -2630,8 +2319,8 @@ useEffect(() => {
                               }}
                               className={`rounded-full border px-3 py-1 text-xs transition ${
                                 selected
-                                  ? 'border-viperx-primary bg-viperx-primary/10 text-viperx-primary'
-                                  : 'border-gray-200 text-gray-600 hover:border-viperx-primary/40 hover:text-viperx-primary'
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'border-gray-200 text-gray-600 hover:border-primary/40 hover:text-primary'
                               }`}
                             >
                               {employee.firstName} {employee.lastName}
@@ -2654,7 +2343,6 @@ useEffect(() => {
                     )}
                   </div>
 
-                  {hasAssets && (
                   <div className="rounded-xl border border-gray-100 bg-white p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -2662,6 +2350,7 @@ useEffect(() => {
                         <p className="text-xs text-gray-500">Administreaza articolele facturabile pentru aceasta lucrare.</p>
                       </div>
                       <div className="flex gap-2">
+                        {hasAssets && (<>
                         <button
                           type="button"
                           disabled={!selectedAppointmentId || previewPdfMutation.isPending || isPdfLoading}
@@ -2700,7 +2389,7 @@ useEffect(() => {
                         >
                           {isPdfLoading ? (
                             <>
-                              <div className="mr-1 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-viperx-primary"></div>
+                              <div className="mr-1 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-primary"></div>
                               Se incarca...
                             </>
                           ) : (
@@ -2753,11 +2442,12 @@ useEffect(() => {
                             </>
                           )}
                         </button>
+                        </>)}
                         {selectedAppointment.status !== 'COMPLETED' && (
                           <button
                             type="button"
                             onClick={() => setIsEditingOrder((prev) => !prev)}
-                            className="rounded-lg bg-viperx-primary px-3 py-1 text-xs font-medium text-white transition hover:bg-viperx-primary/90"
+                            className="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white transition hover:bg-primary/90"
                           >
                             {isEditingOrder ? 'Inchide editorul' : 'Editeaza'}
                           </button>
@@ -2788,7 +2478,7 @@ useEffect(() => {
                                       type="text"
                                       value={item.name}
                                       onChange={(event) => handleLineItemChange(index, 'name', event.target.value)}
-                                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                       placeholder="ex: Schimb ulei motor, Becuri far, etc."
                                     />
                                   </div>
@@ -2809,7 +2499,7 @@ useEffect(() => {
                                     type="text"
                                     value={item.description}
                                     onChange={(event) => handleLineItemChange(index, 'description', event.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                     placeholder="Detalii suplimentare despre serviciu"
                                   />
                                 </div>
@@ -2835,7 +2525,7 @@ useEffect(() => {
                                               step="1"
                                               value={item.hardwareQuantity}
                                               onChange={(event) => handleLineItemChange(index, 'hardwareQuantity', event.target.value)}
-                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                             />
                                           </div>
                                           <div className="flex-1">
@@ -2843,7 +2533,7 @@ useEffect(() => {
                                             <select
                                               value={item.hardwareUnit || ''}
                                               onChange={(event) => handleLineItemChange(index, 'hardwareUnit', event.target.value)}
-                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                             >
                                               <option value="">Alege...</option>
                                               {HARDWARE_UNITS.map((unit) => (
@@ -2862,7 +2552,7 @@ useEffect(() => {
                                             step="0.01"
                                             value={item.hardwarePrice}
                                             onChange={(event) => handleLineItemChange(index, 'hardwarePrice', event.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                             placeholder="0.00"
                                           />
                                         </div>
@@ -2893,7 +2583,7 @@ useEffect(() => {
                                             step="0.5"
                                             value={item.laborQuantity}
                                             onChange={(event) => handleLineItemChange(index, 'laborQuantity', event.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                           />
                                         </div>
                                         <div className="flex-1">
@@ -2901,7 +2591,7 @@ useEffect(() => {
                                           <select
                                             value={item.laborUnit || ''}
                                             onChange={(event) => handleLineItemChange(index, 'laborUnit', event.target.value)}
-                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                           >
                                             <option value="">Alege...</option>
                                             {LABOR_UNITS.map((unit) => (
@@ -2920,7 +2610,7 @@ useEffect(() => {
                                           step="0.01"
                                           value={item.laborPrice}
                                           onChange={(event) => handleLineItemChange(index, 'laborPrice', event.target.value)}
-                                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                           placeholder="0.00"
                                         />
                                       </div>
@@ -2947,7 +2637,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={handleAddLineItem}
-                            className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-viperx-primary hover:bg-viperx-primary/5 hover:text-viperx-primary"
+                            className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary hover:bg-primary/5 hover:text-primary"
                           >
                             <Plus size={16} /> Adauga articol/serviciu
                           </button>
@@ -2969,7 +2659,7 @@ useEffect(() => {
                             value={orderDraft.notes}
                             onChange={(event) => setOrderDraft((prev) => ({ ...prev, notes: event.target.value }))}
                             rows={3}
-                            className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none"
+                            className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                           />
                         </div>
 
@@ -3038,7 +2728,7 @@ useEffect(() => {
                                 });
                               }
                             }}
-                            className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50"
+                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50"
                           >
                             {saveOrderMutation.isPending ? 'Se salveaza…' : 'Salveaza comanda'}
                           </button>
@@ -3109,7 +2799,7 @@ useEffect(() => {
                             );
                           })}
                         </div>
-                        {serviceOrder.pdfUrl ? (
+                        {hasAssets && serviceOrder.pdfUrl ? (
                           <div className="overflow-hidden rounded-xl border border-gray-200">
                             <div className="border-b bg-gray-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                               <span>Vizualizare comanda de service</span>
@@ -3117,7 +2807,7 @@ useEffect(() => {
                             <iframe
                               key={`pdf-${serviceOrder.id}-${serviceOrder.updatedAt || Date.now()}-${Math.random()}`}
                               title="Comanda de service"
-                              src={serviceOrder.pdfUrl ? `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${serviceOrder.pdfUrl}?t=${new Date(serviceOrder.updatedAt || Date.now()).getTime()}&r=${Math.random()}#toolbar=0` : ''}
+                              src={serviceOrder.pdfUrl ? `${getFileUrl(serviceOrder.pdfUrl)}&t=${new Date(serviceOrder.updatedAt || Date.now()).getTime()}&r=${Math.random()}#toolbar=0` : ''}
                               className="h-80 w-full rounded border border-gray-200 bg-white"
                             />
                           </div>
@@ -3126,6 +2816,12 @@ useEffect(() => {
                           <span>Subtotal</span>
                           <span className="font-semibold text-gray-900">{currencyFormatter.format(Number(serviceOrder.subtotal || 0))}</span>
                         </div>
+                        {Number(serviceOrder.tax || 0) > 0 && (
+                          <div className="flex items-center justify-between text-sm text-gray-500">
+                            <span>TVA</span>
+                            <span>{currencyFormatter.format(Number(serviceOrder.tax))}</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between border-t pt-2 text-sm font-semibold text-gray-900">
                           <span>Total</span>
                           <span>{currencyFormatter.format(Number(serviceOrder.total || 0))}</span>
@@ -3137,7 +2833,6 @@ useEffect(() => {
                       </div>
                     )}
                   </div>
-                  )}
 
                   {/* Payment Section */}
                   {serviceOrder && (
@@ -3148,7 +2843,7 @@ useEffect(() => {
                           <button
                             type="button"
                             onClick={() => setIsPaymentModalOpen(true)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-viperx-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-primary/90"
                           >
                             <Plus size={14} />
                             Adauga plata
@@ -3158,7 +2853,7 @@ useEffect(() => {
 
                       {isLoadingPaymentStatus || isLoadingPayments ? (
                         <div className="mt-3 flex items-center justify-center py-4">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-viperx-primary"></div>
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-primary"></div>
                         </div>
                       ) : paymentStatus ? (
                         <div className="mt-3 space-y-4">
@@ -3269,7 +2964,7 @@ useEffect(() => {
                   )}
 
                   {selectedAppointment.status === 'COMPLETED' && serviceOrder && (
-                    <div className="rounded-xl border border-gray-100 bg-white p-4">
+                    <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-base font-semibold text-gray-900">Factură</h3>
@@ -3279,15 +2974,13 @@ useEffect(() => {
                           type="button"
                           disabled={createInvoiceMutation.isPending}
                           onClick={() => {
-                            // Use the service order ID - backend will fetch all data from DB
-                            createInvoiceMutation.mutate({ serviceOrderId: serviceOrder.id }, {
+                            createInvoiceMutation.mutate({ serviceOrderId: serviceOrder.id, applyLoyaltyDiscount }, {
                               onSuccess: (data) => {
                                 showToast({
                                   title: 'Factură creată',
                                   description: `Factura ${data.invoiceNumber} a fost creată cu succes.`,
                                   type: 'success',
                                 });
-                                // Redirect to invoices page
                                 window.location.href = '/crm/invoices';
                               },
                               onError: (error) => {
@@ -3307,6 +3000,23 @@ useEffect(() => {
                           {createInvoiceMutation.isPending ? 'Se creează...' : 'Creează Factură'}
                         </button>
                       </div>
+                      {/* Loyalty discount toggle — only shown when client has an active tier discount */}
+                      {getLoyaltyDiscountPercent() > 0 && (
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={applyLoyaltyDiscount}
+                            onChange={(e) => setApplyLoyaltyDiscount(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                          />
+                          <span className="text-xs text-gray-700">
+                            Aplică reducere fidelitate{' '}
+                            <span className="font-semibold text-green-700">
+                              {loyaltyAccount?.currentTier} (-{getLoyaltyDiscountPercent()}%)
+                            </span>
+                          </span>
+                        </label>
+                      )}
                     </div>
                   )}
 
@@ -3343,7 +3053,7 @@ useEffect(() => {
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 {messagesLoading ? (
                   <div className="flex justify-center py-8">
-                    <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+                    <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">
@@ -3366,8 +3076,8 @@ useEffect(() => {
                           className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}
                         >
                           {/* Avatar */}
-                          <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isClientMessage ? 'bg-blue-100' : 'bg-viperx-primary/10'}`}>
-                            <User size={14} className={isClientMessage ? 'text-blue-600' : 'text-viperx-primary'} />
+                          <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isClientMessage ? 'bg-blue-100' : 'bg-primary/10'}`}>
+                            <User size={14} className={isClientMessage ? 'text-blue-600' : 'text-primary'} />
                           </div>
 
                           {/* Message content */}
@@ -3381,7 +3091,7 @@ useEffect(() => {
                             </div>
 
                             {/* Message bubble */}
-                            <div className={`rounded-2xl px-4 py-2 ${isOwnMessage ? 'bg-viperx-primary text-white rounded-tr-sm' : 'bg-gray-100 text-gray-900 rounded-tl-sm'}`}>
+                            <div className={`rounded-2xl px-4 py-2 ${isOwnMessage ? 'bg-primary text-white rounded-tr-sm' : 'bg-gray-100 text-gray-900 rounded-tl-sm'}`}>
                               {/* Text content */}
                               {message.body && !isVoice && (
                                 <p className="text-sm whitespace-pre-wrap break-words">{message.body}</p>
@@ -3555,7 +3265,7 @@ useEffect(() => {
                               showToast({ title: 'Eroare', description: 'Nu am putut incarca fisierul', type: 'error' });
                             }
                           }}
-                          className="p-1.5 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 disabled:opacity-50"
+                          className="p-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
                         >
                           {uploadingFile ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -3589,7 +3299,7 @@ useEffect(() => {
                       }}
                     />
                     {uploadingFile ? (
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-viperx-primary border-t-transparent" />
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                     ) : (
                       <Paperclip size={20} />
                     )}
@@ -3624,13 +3334,13 @@ useEffect(() => {
                     placeholder="Scrie un mesaj..."
                     rows={1}
                     disabled={isSendingMessage}
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
                     style={{ minHeight: '40px', maxHeight: '100px' }}
                   />
                   <button
                     type="submit"
                     disabled={isSendingMessage || !messageDraft.trim()}
-                    className="p-2.5 rounded-lg bg-viperx-primary text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2.5 rounded-lg bg-primary text-white transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSendingMessage ? (
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -3661,6 +3371,19 @@ useEffect(() => {
                   <span className="text-gray-600">Total comenzi:</span>
                   <span className="font-semibold text-gray-900">{currencyFormatter.format(Number(paymentStatus.total || 0))}</span>
                 </div>
+                {/* Loyalty discount from invoice */}
+                {paymentStatus.loyaltyDiscount > 0 && (
+                  <div className="flex items-center justify-between text-green-700">
+                    <span>Reducere fidelitate{paymentStatus.loyaltyTierAtTime ? ` (${paymentStatus.loyaltyTierAtTime})` : ''}:</span>
+                    <span>-{currencyFormatter.format(Number(paymentStatus.loyaltyDiscount))}</span>
+                  </div>
+                )}
+                {/* Potential loyalty discount (no invoice yet but client has tier) */}
+                {!paymentStatus.loyaltyDiscount && getLoyaltyDiscountPercent() > 0 && (
+                  <p className="text-xs text-amber-600">
+                    Reducere fidelitate {loyaltyAccount?.currentTier} (-{getLoyaltyDiscountPercent()}%) se va aplica la crearea facturii.
+                  </p>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Total platit:</span>
                   <span className="font-medium text-green-700">{currencyFormatter.format(Number(paymentStatus.totalPaid || 0))}</span>
@@ -3685,7 +3408,7 @@ useEffect(() => {
                     value={paymentForm.amount}
                     onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: e.target.value }))}
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     autoFocus
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">RON</span>
@@ -3706,7 +3429,7 @@ useEffect(() => {
                   id="paymentMethod"
                   value={paymentForm.paymentMethod}
                   onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="CASH">Numerar</option>
                   <option value="CARD">Card</option>
@@ -3726,7 +3449,7 @@ useEffect(() => {
                   value={paymentForm.reference}
                   onChange={(e) => setPaymentForm(prev => ({ ...prev, reference: e.target.value }))}
                   placeholder="Nr. chitanta, ID tranzactie, etc."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -3741,7 +3464,7 @@ useEffect(() => {
                   onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Detalii suplimentare despre plata..."
                   rows={2}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -3766,7 +3489,7 @@ useEffect(() => {
                 type="button"
                 onClick={handleAddPayment}
                 disabled={!paymentForm.amount || parseFloat(paymentForm.amount) <= 0 || isRecordingPayment}
-                className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isRecordingPayment && (
                   <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -3834,7 +3557,7 @@ useEffect(() => {
                   <a
                     href={previewFile.url}
                     download={previewFile.name}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     <Download size={18} />
                     Descarca fisierul

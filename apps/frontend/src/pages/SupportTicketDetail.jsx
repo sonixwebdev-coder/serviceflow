@@ -52,7 +52,7 @@ export default function SupportTicketDetail() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-viperx-primary" />
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
@@ -140,12 +140,12 @@ export default function SupportTicketDetail() {
                 onChange={(e) => setReply(e.target.value)}
                 placeholder="Scrie un mesaj..."
                 rows={2}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:border-viperx-primary focus:ring-1 focus:ring-viperx-primary"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               <button
                 type="submit"
                 disabled={!reply.trim() || sending}
-                className="self-end rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                className="self-end rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
               >
                 {sending ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

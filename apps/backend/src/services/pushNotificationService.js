@@ -1,12 +1,13 @@
 const webpush = require('web-push');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 
 // VAPID keys should be generated once and stored in environment variables
 // For now, we'll generate them if not set (you should generate permanent keys)
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@viperx.ro';
+const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@forja.it.com';
 
 if (vapidPublicKey && vapidPrivateKey) {
   webpush.setVapidDetails(
@@ -459,7 +460,7 @@ const sendChatMessageNotification = async (message, channel, recipientIds) => {
         },
       });
     } catch (error) {
-      console.error(`Failed to send chat notification to user ${userId}:`, error);
+      logger.error('Failed to send chat notification', { userId, error: error.message });
     }
   }
 };
@@ -547,7 +548,7 @@ const sendAppointmentMessageNotification = async ({
         },
       });
     } catch (error) {
-      console.error(`Failed to send appointment message notification to user ${userId}:`, error);
+      logger.error('Failed to send appointment message notification', { userId, error: error.message });
     }
   }
 };

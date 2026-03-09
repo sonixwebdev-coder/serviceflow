@@ -100,7 +100,7 @@ export default function FileUploadButton({ channelId, onUploadComplete }) {
     if (!selectedFile) return <File className="h-8 w-8 text-gray-400" />;
 
     if (selectedFile.type.startsWith('image/')) {
-      return <ImageIcon className="h-8 w-8 text-viperx-primary" />;
+      return <ImageIcon className="h-8 w-8 text-primary" />;
     }
     if (selectedFile.type === 'application/pdf') {
       return <FileText className="h-8 w-8 text-red-500" />;
@@ -185,7 +185,7 @@ export default function FileUploadButton({ channelId, onUploadComplete }) {
             {isUploading && (
               <div className="mb-4">
                 <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-                  <div className="h-full animate-pulse bg-viperx-primary" style={{ width: '100%' }}></div>
+                  <div className="h-full animate-pulse bg-primary" style={{ width: '100%' }}></div>
                 </div>
                 <p className="mt-1 text-center text-xs text-gray-500">Se încarcă...</p>
               </div>
@@ -203,7 +203,7 @@ export default function FileUploadButton({ channelId, onUploadComplete }) {
               <button
                 onClick={handleUpload}
                 disabled={isUploading}
-                className="flex-1 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUploading ? 'Se încarcă...' : 'Încarcă'}
               </button>

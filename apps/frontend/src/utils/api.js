@@ -56,7 +56,7 @@ const clearSession = () => {
 const performTokenRefresh = async () => {
   const { setSession } = useAuthStore.getState();
 
-  const { data } = await refreshClient.post('/auth/refresh');
+  const { data } = await refreshClient.post('/auth/refresh', { context: 'crm' });
   const payload = data.data || data;
   const { user, accessToken: nextAccessToken } = payload;
 
@@ -152,6 +152,15 @@ API.interceptors.response.use(
       }
     }
 
+    // Handle 402 Payment Required — update orgStatus so ProtectedRoute handles the redirect
+    if (response.status === 402) {
+      const { user, setSession, accessToken } = useAuthStore.getState();
+      if (user && user.orgStatus !== 'PAYMENT_REQUIRED') {
+        setSession({ user: { ...user, orgStatus: 'PAYMENT_REQUIRED' }, accessToken });
+      }
+      return Promise.reject(response.data || { message: 'Plata necesara', code: 'PAYMENT_REQUIRED' });
+    }
+
     if (response.status !== 401 || config._retry) {
       return Promise.reject(response.data || { message: 'Request failed' });
     }
@@ -194,7 +203,20 @@ export const getFileUrl = (filePath) => {
   const baseUrl = getFileBaseUrl();
   // Ensure single slash between base URL and path
   const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
-  return `${baseUrl}${normalizedPath}`;
+  const url = `${baseUrl}${normalizedPath}`;
+
+  // Public paths don't need auth token
+  if (normalizedPath.startsWith('/files/logos/') || normalizedPath.startsWith('/files/websites/')) {
+    return url;
+  }
+
+  // Append access token for authenticated static file access
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}token=${encodeURIComponent(token)}`;
+  }
+  return url;
 };
 
 export default API;

@@ -11,7 +11,19 @@ const { getStripe } = require('../utils/stripe');
 const {
   orgListQuery, orgUpdate,
   changePlan, paginationSchema, logQuery, platformSettingsUpdate,
+  grantPlan: grantPlanSchema, revokePlanOverride: revokePlanOverrideSchema,
+  manualCleanup: manualCleanupSchema,
+  extendTrial: extendTrialSchema, overridePlan: overridePlanSchema,
+  billingSubscriptionsQuery,
 } = require('../schemas/superAdminSchema');
+const billingService = require('../services/billingService');
+const { getAllPlanLimits } = require('../utils/planLimits');
+const { getPlanFromPriceId } = require('../utils/stripePrices');
+const cleanupService = require('../services/cleanupService');
+const { getJobsStatus } = require('../jobs');
+const { sendOrgSuspendedEmail } = require('../services/email/emailService');
+const { changePasswordSchema } = require('../schemas/userSchema');
+const { changePassword } = require('../services/userService');
 const { getSettings, updateSettings, maskSecrets, invalidateCache: invalidateSettingsCache } = require('../services/platformSettingsService');
 const { invalidateStripe } = require('../utils/stripe');
 const supportTicketService = require('../services/supportTicketService');
@@ -89,6 +101,7 @@ router.get(
         id: true, name: true, slug: true, plan: true, status: true,
         activitySector: true, maxUsers: true, maxClients: true, maxAppointments: true,
         stripeCustomerId: true, subscriptionId: true, subscriptionEndsAt: true,
+        planOverride: true, planOverrideBy: true, planOverrideAt: true, planOverrideReason: true,
         createdAt: true, updatedAt: true,
         _count: {
           select: { users: true, clients: true, appointments: true, invoices: true },
@@ -140,6 +153,20 @@ router.post(
       targetId: req.params.id,
     });
 
+    // Notify org admin via email (fire-and-forget)
+    const admin = await prisma.user.findFirst({
+      where: { organizationId: req.params.id, roles: { some: { role: { key: 'admin' } } } },
+      select: { email: true, firstName: true, lastName: true },
+    });
+    if (admin?.email) {
+      sendOrgSuspendedEmail({
+        email: admin.email,
+        userName: `${admin.firstName} ${admin.lastName}`,
+        organizationName: org.name,
+        reason: 'Contul a fost suspendat de administratorul platformei.',
+      }).catch((err) => logger.error('[EMAIL] Org suspended email failed:', err.message));
+    }
+
     return ok(res, org, 'Organization suspended');
   })
 );
@@ -161,6 +188,101 @@ router.post(
     });
 
     return ok(res, org, 'Organization activated');
+  })
+);
+
+// POST /organizations/:id/grant-plan — Grant plan override
+router.post(
+  '/organizations/:id/grant-plan',
+  validate(grantPlanSchema, 'body'),
+  asyncHandler(async (req, res) => {
+    const { plan, reason } = req.body;
+    const limits = getAllPlanLimits(plan);
+
+    const org = await prisma.organization.update({
+      where: { id: req.params.id },
+      data: {
+        plan,
+        status: 'ACTIVE',
+        planOverride: true,
+        planOverrideBy: `${req.user.firstName} ${req.user.lastName}`,
+        planOverrideAt: new Date(),
+        planOverrideReason: reason || null,
+        maxUsers: limits.maxUsers === Infinity ? 999999 : limits.maxUsers,
+        maxClients: limits.maxClients === Infinity ? 999999 : limits.maxClients,
+        maxAppointments: limits.maxAppointments === Infinity ? 999999 : limits.maxAppointments,
+      },
+    });
+
+    logger.auth('Super admin granted plan override', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'PLAN_OVERRIDE_GRANT',
+      targetId: req.params.id,
+      plan,
+      reason,
+    });
+
+    return ok(res, org, `Plan ${plan} acordat cu override`);
+  })
+);
+
+// POST /organizations/:id/revoke-override — Revoke plan override
+router.post(
+  '/organizations/:id/revoke-override',
+  validate(revokePlanOverrideSchema, 'body'),
+  asyncHandler(async (req, res) => {
+    const orgData = await prisma.organization.findUnique({
+      where: { id: req.params.id },
+      select: { subscriptionId: true, planOverride: true },
+    });
+
+    if (!orgData) throw new AppError('Organization not found', 404);
+    if (!orgData.planOverride) throw new AppError('No active plan override', 400);
+
+    let targetPlan = 'FREE';
+
+    // If org has active Stripe subscription, sync to that plan
+    if (orgData.subscriptionId) {
+      const stripe = await getStripe();
+      if (stripe) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(orgData.subscriptionId);
+          const priceId = sub.items?.data?.[0]?.price?.id;
+          const stripePlan = await getPlanFromPriceId(priceId);
+          if (stripePlan) targetPlan = stripePlan;
+        } catch {
+          // Subscription not found, fall to FREE
+        }
+      }
+    }
+
+    const limits = getAllPlanLimits(targetPlan);
+
+    const org = await prisma.organization.update({
+      where: { id: req.params.id },
+      data: {
+        plan: targetPlan,
+        planOverride: false,
+        planOverrideBy: null,
+        planOverrideAt: null,
+        planOverrideReason: null,
+        maxUsers: limits.maxUsers === Infinity ? 999999 : limits.maxUsers,
+        maxClients: limits.maxClients === Infinity ? 999999 : limits.maxClients,
+        maxAppointments: limits.maxAppointments === Infinity ? 999999 : limits.maxAppointments,
+      },
+    });
+
+    logger.auth('Super admin revoked plan override', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'PLAN_OVERRIDE_REVOKE',
+      targetId: req.params.id,
+      newPlan: targetPlan,
+      reason: req.body.reason,
+    });
+
+    return ok(res, org, `Override revocat, plan setat la ${targetPlan}`);
   })
 );
 
@@ -188,7 +310,20 @@ router.get(
       prisma.website.count(),
       prisma.website.count({ where: { isPublished: true } }),
       prisma.organization.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-      prisma.systemLog.count({ where: { level: 'ERROR', createdAt: { gte: twentyFourHoursAgo } } }),
+      prisma.systemLog.count({
+        where: {
+          level: 'ERROR',
+          createdAt: { gte: twentyFourHoursAgo },
+          NOT: [
+            { data: { path: ['statusCode'], equals: 400 } },
+            { data: { path: ['statusCode'], equals: 401 } },
+            { data: { path: ['statusCode'], equals: 403 } },
+            { data: { path: ['statusCode'], equals: 404 } },
+            { data: { path: ['statusCode'], equals: 409 } },
+            { data: { path: ['statusCode'], equals: 422 } },
+          ],
+        },
+      }),
     ]);
 
     // Build status breakdown
@@ -314,10 +449,11 @@ router.get(
 router.get(
   '/billing/overview',
   asyncHandler(async (req, res) => {
-    const [activeOrgs, trialOrgs, cancelledOrgs] = await Promise.all([
+    const [activeOrgs, trialOrgs, cancelledOrgs, paymentRequiredOrgs] = await Promise.all([
       prisma.organization.count({ where: { status: 'ACTIVE', subscriptionId: { not: null } } }),
       prisma.organization.count({ where: { status: 'TRIAL' } }),
       prisma.organization.count({ where: { status: 'CANCELLED' } }),
+      prisma.organization.count({ where: { status: 'PAYMENT_REQUIRED' } }),
     ]);
 
     let mrr = 0;
@@ -347,6 +483,7 @@ router.get(
       activeSubscriptions: activeOrgs,
       trials: trialOrgs,
       churned: cancelledOrgs,
+      paymentRequired: paymentRequiredOrgs,
     });
   })
 );
@@ -354,12 +491,21 @@ router.get(
 // GET /billing/subscriptions - List all orgs with billing details
 router.get(
   '/billing/subscriptions',
-  validate(paginationSchema, 'query'),
+  validate(billingSubscriptionsQuery, 'query'),
   asyncHandler(async (req, res) => {
-    const { page, limit } = req.query;
+    const { page, limit, status: filterStatus, plan: filterPlan, interval: filterInterval } = req.query;
     const skip = (page - 1) * limit;
 
-    const where = { subscriptionId: { not: null } };
+    const where = {};
+    if (filterStatus) {
+      where.status = filterStatus;
+    }
+    if (filterPlan) {
+      where.plan = filterPlan;
+    }
+    if (filterInterval) {
+      where.billingInterval = filterInterval;
+    }
 
     const [orgs, total] = await Promise.all([
       prisma.organization.findMany({
@@ -376,6 +522,11 @@ router.get(
           stripeCustomerId: true,
           subscriptionId: true,
           subscriptionEndsAt: true,
+          subscriptionStartedAt: true,
+          billingInterval: true,
+          trialEndsAt: true,
+          trialUsed: true,
+          planOverride: true,
           createdAt: true,
         },
       }),
@@ -435,6 +586,185 @@ router.post(
     });
 
     return ok(res, org, `Plan changed to ${plan}`);
+  })
+);
+
+// GET /billing/stats - Aggregate billing stats for dashboard
+router.get(
+  '/billing/stats',
+  asyncHandler(async (req, res) => {
+    const [statusCounts, planCounts] = await Promise.all([
+      prisma.organization.groupBy({ by: ['status'], _count: { status: true } }),
+      prisma.organization.groupBy({ by: ['plan'], _count: { plan: true } }),
+    ]);
+
+    const statusMap = {};
+    for (const row of statusCounts) statusMap[row.status] = row._count.status;
+
+    const planMap = {};
+    for (const row of planCounts) planMap[row.plan] = row._count.plan;
+
+    // Count expiring trials (within 7 days)
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const expiringTrials = await prisma.organization.count({
+      where: {
+        status: 'TRIAL',
+        trialEndsAt: { gt: new Date(), lte: sevenDaysFromNow },
+      },
+    });
+
+    return ok(res, {
+      statusBreakdown: statusMap,
+      planBreakdown: planMap,
+      expiringTrials,
+      paymentRequired: statusMap.PAYMENT_REQUIRED || 0,
+    });
+  })
+);
+
+// PUT /billing/organizations/:id/extend-trial
+router.put(
+  '/billing/organizations/:id/extend-trial',
+  validate(extendTrialSchema, 'body'),
+  asyncHandler(async (req, res) => {
+    const { days } = req.body;
+    const org = await prisma.organization.findUnique({ where: { id: req.params.id } });
+    if (!org) throw new AppError('Organization not found', 404);
+
+    const baseDate = org.trialEndsAt && new Date(org.trialEndsAt) > new Date()
+      ? new Date(org.trialEndsAt)
+      : new Date();
+    baseDate.setDate(baseDate.getDate() + days);
+
+    const updated = await prisma.organization.update({
+      where: { id: req.params.id },
+      data: {
+        trialEndsAt: baseDate,
+        status: 'TRIAL',
+      },
+    });
+
+    logger.auth('Super admin extended trial', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'TRIAL_EXTEND',
+      targetId: req.params.id,
+      days,
+      newTrialEndsAt: baseDate,
+    });
+
+    return ok(res, updated, `Perioada de proba extinsa cu ${days} zile`);
+  })
+);
+
+// PUT /billing/organizations/:id/override-plan
+router.put(
+  '/billing/organizations/:id/override-plan',
+  validate(overridePlanSchema, 'body'),
+  asyncHandler(async (req, res) => {
+    const { plan, reason } = req.body;
+    const limits = getAllPlanLimits(plan);
+
+    const updated = await prisma.organization.update({
+      where: { id: req.params.id },
+      data: {
+        plan,
+        status: 'ACTIVE',
+        planOverride: true,
+        planOverrideBy: `${req.user.firstName} ${req.user.lastName}`,
+        planOverrideAt: new Date(),
+        planOverrideReason: reason || null,
+        maxUsers: limits.maxUsers === Infinity ? 999999 : limits.maxUsers,
+        maxClients: limits.maxClients === Infinity ? 999999 : limits.maxClients,
+        maxAppointments: limits.maxAppointments === Infinity ? 999999 : limits.maxAppointments,
+      },
+    });
+
+    logger.auth('Super admin overrode plan', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'PLAN_OVERRIDE',
+      targetId: req.params.id,
+      plan,
+      reason,
+    });
+
+    return ok(res, updated, `Plan setat la ${plan} cu override`);
+  })
+);
+
+// POST /billing/organizations/:id/refund
+router.post(
+  '/billing/organizations/:id/refund',
+  asyncHandler(async (req, res) => {
+    const refund = await billingService.processRefund(req.params.id);
+
+    logger.auth('Super admin processed refund', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'REFUND',
+      targetId: req.params.id,
+      refundId: refund.id,
+    });
+
+    return ok(res, { refundId: refund.id, status: refund.status }, 'Rambursare procesata');
+  })
+);
+
+// POST /billing/organizations/:id/cancel-subscription
+router.post(
+  '/billing/organizations/:id/cancel-subscription',
+  asyncHandler(async (req, res) => {
+    const org = await prisma.organization.findUnique({ where: { id: req.params.id } });
+    if (!org) throw new AppError('Organization not found', 404);
+    if (!org.subscriptionId) throw new AppError('Nu exista un abonament activ', 400);
+
+    const stripe = await getStripe();
+    if (!stripe) throw new AppError('Stripe nu este configurat', 503);
+
+    await stripe.subscriptions.cancel(org.subscriptionId);
+
+    logger.auth('Super admin cancelled subscription', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'SUBSCRIPTION_CANCEL',
+      targetId: req.params.id,
+    });
+
+    return ok(res, null, 'Abonament anulat');
+  })
+);
+
+// POST /billing/organizations/:id/reactivate - Move from PAYMENT_REQUIRED → TRIAL
+router.post(
+  '/billing/organizations/:id/reactivate',
+  validate(extendTrialSchema, 'body'),
+  asyncHandler(async (req, res) => {
+    const { days } = req.body;
+    const org = await prisma.organization.findUnique({ where: { id: req.params.id } });
+    if (!org) throw new AppError('Organization not found', 404);
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + days);
+
+    const updated = await prisma.organization.update({
+      where: { id: req.params.id },
+      data: {
+        status: 'TRIAL',
+        trialEndsAt,
+      },
+    });
+
+    logger.auth('Super admin reactivated organization', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'ORG_REACTIVATE',
+      targetId: req.params.id,
+      days,
+    });
+
+    return ok(res, updated, `Organizatie reactivata cu ${days} zile de proba`);
   })
 );
 
@@ -616,6 +946,94 @@ router.post(
     });
 
     return ok(res, message, 'Message sent');
+  })
+);
+
+// ─── Maintenance ─────────────────────────────────────────────────────────────
+
+// POST /maintenance/cleanup — Run manual cleanup
+router.post(
+  '/maintenance/cleanup',
+  validate(manualCleanupSchema, 'body'),
+  asyncHandler(async (req, res) => {
+    const { type, organizationId } = req.body;
+    const results = {};
+
+    if (type === 'sessions' || type === 'all') {
+      results.sessions = await cleanupService.cleanupExpiredSessions();
+    }
+
+    if (type === 'retention' || type === 'all') {
+      if (organizationId) {
+        results.retention = await cleanupService.cleanupOrganization(organizationId);
+      } else {
+        const orgs = await prisma.organization.findMany({
+          where: { plan: { not: 'ENTERPRISE' } },
+          select: { id: true },
+        });
+        let totalStats = {};
+        for (const org of orgs) {
+          const stats = await cleanupService.cleanupOrganization(org.id);
+          if (stats) {
+            for (const [key, val] of Object.entries(stats)) {
+              totalStats[key] = (totalStats[key] || 0) + val;
+            }
+          }
+        }
+        results.retention = { orgsProcessed: orgs.length, ...totalStats };
+      }
+    }
+
+    if (type === 'orphans' || type === 'all') {
+      results.orphans = await cleanupService.cleanupOrphanFiles();
+    }
+
+    logger.auth('Super admin ran manual cleanup', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'MANUAL_CLEANUP',
+      type,
+      organizationId,
+    });
+
+    return ok(res, results, 'Cleanup complet');
+  })
+);
+
+// GET /maintenance/stats — Storage and record stats
+router.get(
+  '/maintenance/stats',
+  asyncHandler(async (req, res) => {
+    const [storageStats, idleAccounts, jobsStatus] = await Promise.all([
+      cleanupService.getStorageStats(),
+      cleanupService.getIdleAccounts(180),
+      Promise.resolve(getJobsStatus()),
+    ]);
+
+    return ok(res, {
+      ...storageStats,
+      idleAccounts,
+      jobs: jobsStatus,
+    });
+  })
+);
+
+// ─── Account ─────────────────────────────────────────────────────────────────
+
+// PUT /password - Change super admin password
+router.put(
+  '/password',
+  validate(changePasswordSchema, 'body'),
+  asyncHandler(async (req, res) => {
+    await changePassword(prisma, req.user.id, req.body);
+
+    logger.auth('Super admin changed password', {
+      userId: req.user.id,
+      ip: req.ip,
+      action: 'PASSWORD_CHANGE',
+    });
+
+    return ok(res, null, 'Parola a fost schimbata cu succes');
   })
 );
 

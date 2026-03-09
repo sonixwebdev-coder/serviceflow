@@ -30,7 +30,7 @@ const exportToExcel = async (data, options = {}) => {
 
   // Create workbook and worksheet
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'ViperX CRM';
+  workbook.creator = 'ForjaIt CRM';
   workbook.created = new Date();
   workbook.modified = new Date();
 
@@ -252,7 +252,7 @@ const exportMultipleEntitiesToExcel = async (entities) => {
   }
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'ViperX CRM';
+  workbook.creator = 'ForjaIt CRM';
   workbook.created = new Date();
   workbook.modified = new Date();
 

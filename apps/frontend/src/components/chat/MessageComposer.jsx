@@ -150,7 +150,7 @@ export default function MessageComposer({ channelId }) {
         <VoiceRecordButton channelId={channelId} />
 
         {/* Text Input */}
-        <div className="flex-1 rounded-lg border border-gray-300 bg-white focus-within:border-viperx-primary focus-within:ring-1 focus-within:ring-viperx-primary">
+        <div className="flex-1 rounded-lg border border-gray-300 bg-white focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
           <textarea
             ref={textareaRef}
             value={body}
@@ -170,7 +170,7 @@ export default function MessageComposer({ channelId }) {
             type="button"
             onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
             className={`flex-shrink-0 rounded-lg p-2 hover:bg-gray-100 ${
-              isEmojiPickerOpen ? 'text-viperx-primary' : 'text-gray-500 hover:text-gray-700'
+              isEmojiPickerOpen ? 'text-primary' : 'text-gray-500 hover:text-gray-700'
             }`}
             title="Adaugă emoji"
           >
@@ -189,7 +189,7 @@ export default function MessageComposer({ channelId }) {
           type="button"
           onClick={handleSend}
           disabled={!body.trim() || isSending}
-          className="flex-shrink-0 rounded-lg bg-viperx-primary p-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-shrink-0 rounded-lg bg-primary p-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
           title="Trimite mesajul"
         >
           <Send className="h-5 w-5" />

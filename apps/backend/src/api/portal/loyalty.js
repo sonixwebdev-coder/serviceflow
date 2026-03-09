@@ -89,20 +89,30 @@ router.post(
     const { referralCode } = req.body;
 
     if (!referralCode) {
-      return res.status(400).json({ valid: false, error: 'Referral code is required' });
+      return res.status(400).json({ valid: false, error: 'Codul de referral este obligatoriu' });
     }
 
     const account = await prisma.loyaltyAccount.findUnique({
       where: { referralCode },
       include: {
         client: {
-          select: { firstName: true, lastName: true },
+          select: { id: true, firstName: true, lastName: true, organizationId: true },
         },
       },
     });
 
     if (!account) {
-      return res.json({ valid: false });
+      return res.json({ valid: false, error: 'Cod de referral invalid' });
+    }
+
+    // Reject self-referral during validation so the user gets immediate feedback
+    if (account.clientId === req.client.id) {
+      return res.json({ valid: false, error: 'Nu poti folosi propriul cod de referral' });
+    }
+
+    // Reject cross-organization codes — don't reveal they exist
+    if (account.client.organizationId !== req.client.organizationId) {
+      return res.json({ valid: false, error: 'Cod de referral invalid' });
     }
 
     const referrerName = `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim();
@@ -110,6 +120,70 @@ router.post(
     res.json({
       valid: true,
       referrerName: referrerName || 'Client',
+    });
+  })
+);
+
+/**
+ * POST /api/portal/loyalty/referral/apply
+ * Apply a referral code to current client
+ */
+router.post(
+  '/referral/apply',
+  authenticateClient,
+  asyncHandler(async (req, res) => {
+    const { referralCode } = req.body;
+
+    if (!referralCode) {
+      return res.status(400).json({ error: 'Codul de referral este obligatoriu' });
+    }
+
+    const clientId = req.client.id;
+    const organizationId = req.client.organizationId;
+
+    // Guard: client not already referred
+    const existingAccount = await prisma.loyaltyAccount.findUnique({
+      where: { clientId },
+    });
+    if (existingAccount?.referredById) {
+      return res.status(400).json({ error: 'Ai folosit deja un cod de referral' });
+    }
+
+    // Validate the referral code exists
+    const referrerAccount = await prisma.loyaltyAccount.findUnique({
+      where: { referralCode },
+      include: { client: { select: { id: true, organizationId: true } } },
+    });
+
+    if (!referrerAccount) {
+      return res.status(400).json({ error: 'Cod de referral invalid' });
+    }
+
+    // Guard: not self-referral
+    if (referrerAccount.clientId === clientId) {
+      return res.status(400).json({ error: 'Nu poti folosi propriul cod de referral' });
+    }
+
+    // Guard: same organization
+    if (referrerAccount.client.organizationId !== organizationId) {
+      return res.status(400).json({ error: 'Cod de referral invalid' });
+    }
+
+    // Process the referral (creates account if needed, links, awards points)
+    await loyaltyService.processReferral(prisma, {
+      newClientId: clientId,
+      referralCode,
+      organizationId,
+    });
+
+    // Get the program to return points earned
+    const program = await prisma.loyaltyProgram.findUnique({
+      where: { organizationId },
+    });
+
+    res.json({
+      success: true,
+      pointsEarned: program?.referralNewClientPts || 0,
     });
   })
 );

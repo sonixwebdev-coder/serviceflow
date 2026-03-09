@@ -55,6 +55,9 @@ export function useCreateChannel() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat', 'channels'] });
     },
+    onError: (err) => {
+      console.error('[Chat] Channel creation failed:', err.response?.data?.message || err.message);
+    },
   });
 }
 
@@ -178,7 +181,7 @@ export function useMessages(channelId, options = {}) {
       return res.data.data;
     },
     enabled: !!channelId,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 30000, // 30s — real-time socket updates keep data fresh
   });
 }
 

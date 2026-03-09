@@ -161,6 +161,19 @@ export const exportTimeTracking = async (format, filters = {}) => {
 };
 
 /**
+ * Export selected invoices as ANAF UBL XML ZIP
+ * @param {string[]} invoiceIds - Array of invoice IDs to export
+ * @returns {Promise<Blob>}
+ */
+export const exportInvoicesAnafXML = async (invoiceIds) => {
+  const response = await API.post('/exports/invoices/anaf-xml', { invoiceIds }, {
+    responseType: 'blob',
+    timeout: 60000,
+  });
+  return response.data;
+};
+
+/**
  * Export all company data as a ZIP file
  * @returns {Promise<Blob>}
  */
@@ -181,5 +194,6 @@ export default {
   exportLeaveRequests,
   exportTimeTracking,
   exportAllData,
+  exportInvoicesAnafXML,
   downloadFile,
 };

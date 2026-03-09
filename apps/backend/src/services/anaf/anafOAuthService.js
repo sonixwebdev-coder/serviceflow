@@ -2,6 +2,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { AppError } = require('../../utils/errors');
 const prisma = require('../../../lib/prisma');
+const logger = require('../../utils/logger');
 
 /**
  * ANAF OAuth2 Service
@@ -77,7 +78,7 @@ function decrypt(encryptedText) {
 
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error.message);
+    logger.error('Decryption error', { error: error.message });
     throw new AppError('Failed to decrypt client secret. Data may be corrupted or encryption key may have changed.', 500);
   }
 }

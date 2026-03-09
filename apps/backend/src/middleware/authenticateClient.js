@@ -1,6 +1,7 @@
 const { getAccountByToken } = require('../services/portalAuthService');
 const { verifyAccessToken } = require('../utils/token');
 const { AppError } = require('../utils/errors');
+const cache = require('../utils/cache');
 const prisma = require('../../lib/prisma');
 
 /**
@@ -27,6 +28,11 @@ const authenticateClient = async (req, res, next) => {
         throw new AppError('Token expired', 401, 'AUTH_TOKEN_EXPIRED');
       }
       throw new AppError('Invalid token', 401, 'AUTH_INVALID_TOKEN');
+    }
+
+    // Check if token was revoked (logout)
+    if (await cache.isTokenBlacklisted(token)) {
+      throw new AppError('Token revoked', 401, 'AUTH_TOKEN_EXPIRED');
     }
 
     // Now get full account data

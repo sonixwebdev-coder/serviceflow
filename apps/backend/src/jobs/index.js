@@ -1,5 +1,8 @@
 // ANAF functionality temporarily disabled
 // const anafJobs = require('./anafSyncJob');
+const cleanupJobs = require('./cleanupJob');
+const notificationJobs = require('./notificationJob');
+const subscriptionJobs = require('./subscriptionJob');
 
 /**
  * Initialize all background jobs
@@ -16,6 +19,15 @@ function initializeJobs() {
   // };
 
   // anafJobs.startAllJobs(anafConfig);
+
+  // Start cleanup jobs
+  cleanupJobs.startAllJobs();
+
+  // Start notification jobs (invoice overdue, appointment reminders)
+  notificationJobs.startAllJobs();
+
+  // Start subscription jobs (trial expiry, warnings)
+  subscriptionJobs.startAllJobs();
 }
 
 /**
@@ -24,6 +36,9 @@ function initializeJobs() {
 function stopAllJobs() {
   // ANAF functionality temporarily disabled
   // anafJobs.stopAllJobs();
+  cleanupJobs.stopAllJobs();
+  notificationJobs.stopAllJobs();
+  subscriptionJobs.stopAllJobs();
 }
 
 /**
@@ -33,6 +48,9 @@ function getJobsStatus() {
   return {
     // ANAF functionality temporarily disabled
     // anaf: anafJobs.getJobsStatus(),
+    cleanup: cleanupJobs.getJobsStatus(),
+    notifications: notificationJobs.getJobsStatus(),
+    subscriptions: subscriptionJobs.getJobsStatus(),
   };
 }
 
@@ -42,4 +60,7 @@ module.exports = {
   getJobsStatus,
   // ANAF functionality temporarily disabled
   // anafJobs,
+  cleanupJobs,
+  notificationJobs,
+  subscriptionJobs,
 };

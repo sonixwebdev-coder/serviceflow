@@ -83,7 +83,7 @@ router.get(
     const { q, limit } = req.query;
     const locationFilter = await req.getLocationFilter({ includeNull: true });
     const results = await searchClients(req.tenantPrisma, q, {
-      limit: limit ? parseInt(limit) : 20,
+      limit: Math.min(limit ? parseInt(limit) : 20, 100),
       locationFilter,
     });
     return ok(res, results);
@@ -110,6 +110,7 @@ router.post(
     const locationContext = await req.getLocationContext();
     const client = await createClient(req.tenantPrisma, req.body, {
       locationId: req.body.locationId || locationContext.currentLocationId,
+      organizationId: req.user.organizationId,
     });
 
     // Log audit action

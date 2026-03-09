@@ -109,6 +109,19 @@ const enqueue = (entry) => {
 // --- Core log function ---
 
 const log = (level, category, message, extra = {}) => {
+  // Normalize extra to a plain object to prevent spread issues
+  // (e.g. spreading a string produces {"0":"c","1":"h",...})
+  if (extra instanceof Error) {
+    extra = {
+      error: extra.message,
+      stack: extra.stack,
+      ...(extra.code && { code: extra.code }),
+      ...(extra.statusCode && { statusCode: extra.statusCode }),
+    };
+  } else if (typeof extra !== 'object' || extra === null || Array.isArray(extra)) {
+    extra = extra != null ? { value: extra } : {};
+  }
+
   const { stack, path: reqPath, method, userId, ip, duration, ...rest } = extra;
 
   // Always write to date-based file

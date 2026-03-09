@@ -46,7 +46,7 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(createInvoiceSchema),
   asyncHandler(async (req, res) => {
-    const invoice = await createInvoice(req.tenantPrisma, req.body);
+    const invoice = await createInvoice(req.tenantPrisma, req.body, { organizationId: req.user.organizationId });
 
     await logFromRequest(req, {
       action: 'CREATE',
@@ -66,7 +66,8 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const invoice = await createInvoiceFromServiceOrder(req.tenantPrisma, req.params.serviceOrderId);
+    const applyLoyaltyDiscount = req.body?.applyLoyaltyDiscount !== false;
+    const invoice = await createInvoiceFromServiceOrder(req.tenantPrisma, req.params.serviceOrderId, { organizationId: req.user.organizationId, applyLoyaltyDiscount });
 
     await logFromRequest(req, {
       action: 'CREATE',

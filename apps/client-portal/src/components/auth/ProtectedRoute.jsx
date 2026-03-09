@@ -19,7 +19,9 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const code = new URLSearchParams(location.search).get('code');
+    const loginPath = code ? `/login?code=${encodeURIComponent(code)}` : '/login';
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   return children;

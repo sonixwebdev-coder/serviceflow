@@ -75,7 +75,7 @@ const CreateFirstAdmin = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-viperx-secondary via-gray-900 to-viperx-secondary flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-secondary via-gray-900 to-secondary flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -101,7 +101,7 @@ const CreateFirstAdmin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-viperx-secondary via-gray-900 to-viperx-secondary flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-secondary via-gray-900 to-secondary flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Warning Banner */}
@@ -123,7 +123,7 @@ const CreateFirstAdmin = () => {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-viperx-primary mb-2">Creaza primul administrator</h1>
+            <h1 className="text-4xl font-bold text-primary mb-2">Creaza primul administrator</h1>
             <p className="text-gray-600">Configurare initiala sistem</p>
           </div>
 
@@ -147,7 +147,7 @@ const CreateFirstAdmin = () => {
                   required
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={loading}
                 />
               </div>
@@ -162,7 +162,7 @@ const CreateFirstAdmin = () => {
                   required
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={loading}
                 />
               </div>
@@ -178,7 +178,7 @@ const CreateFirstAdmin = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 disabled={loading}
               />
             </div>
@@ -193,7 +193,7 @@ const CreateFirstAdmin = () => {
                 required
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 disabled={loading}
               />
             </div>
@@ -221,7 +221,7 @@ const CreateFirstAdmin = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={loading}
                 />
               </div>
@@ -236,7 +236,7 @@ const CreateFirstAdmin = () => {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={loading}
                 />
               </div>
@@ -245,7 +245,7 @@ const CreateFirstAdmin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-viperx-primary hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-primary hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Se creaza contul de admin...' : 'Creaza cont administrator'}
             </button>
@@ -254,7 +254,7 @@ const CreateFirstAdmin = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Ai deja cont?{' '}
-              <a href="/login" className="text-viperx-primary hover:text-orange-600 font-medium">
+              <a href="/login" className="text-primary hover:text-orange-600 font-medium">
                 Autentificare
               </a>
             </p>

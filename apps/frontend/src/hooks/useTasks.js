@@ -8,17 +8,17 @@ const EMPTY_ARRAY = [];
 const useTasks = (initialFilters = {}, options = {}) => {
   const { enablePagination = false } = options;
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState(initialFilters);
+  const [overrides, setFilters] = useState({});
   const currentLocationId = useLocationStore((s) => s.currentLocationId);
 
   const queryParams = useMemo(() => {
-    const params = { ...filters };
+    const params = { ...initialFilters, ...overrides };
     if (enablePagination) {
       params.page = page;
-      params.limit = filters.limit || 20;
+      params.limit = params.limit || 20;
     }
     return params;
-  }, [filters, page, enablePagination]);
+  }, [initialFilters, overrides, page, enablePagination]);
 
   const queryKey = useMemo(() => ['tasks', queryParams, { locationId: currentLocationId }], [queryParams, currentLocationId]);
 
@@ -40,7 +40,7 @@ const useTasks = (initialFilters = {}, options = {}) => {
     meta: data?.meta || null,
     loading: isLoading,
     error: errorMessage,
-    filters,
+    filters: queryParams,
     setFilters,
     page,
     setPage,

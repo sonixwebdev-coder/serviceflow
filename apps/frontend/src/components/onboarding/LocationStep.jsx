@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MapPin, Clock } from 'lucide-react';
+import TimePicker from '../ui/TimePicker';
 
 const DAYS_OF_WEEK = [
   { key: 'monday', label: 'Luni' },
@@ -21,7 +22,20 @@ const DEFAULT_OPERATING_HOURS = {
   sunday: { isOpen: false, openTime: '10:00', closeTime: '14:00' },
 };
 
-const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition';
+const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition';
+
+/** Transform frontend shape to the shape the backend schema expects */
+const toBackendHours = (operatingHours) => {
+  const result = {};
+  for (const [day, hours] of Object.entries(operatingHours)) {
+    result[day] = {
+      open: hours.openTime,
+      close: hours.closeTime,
+      closed: !hours.isOpen,
+    };
+  }
+  return result;
+};
 
 const LocationStep = ({ onNext, onBack, isSaving }) => {
   const [formData, setFormData] = useState({
@@ -51,6 +65,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
     }
     onNext({
       ...formData,
+      operatingHours: toBackendHours(formData.operatingHours),
       isPrimary: true,
       isActive: true,
     });
@@ -162,24 +177,20 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
                     type="checkbox"
                     checked={dayHours.isOpen}
                     onChange={e => handleHoursChange(key, 'isOpen', e.target.checked)}
-                    className="rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <span className="text-sm text-gray-700">{label}</span>
                 </label>
                 {dayHours.isOpen && (
                   <div className="flex items-center gap-2">
-                    <input
-                      type="time"
+                    <TimePicker
                       value={dayHours.openTime}
-                      onChange={e => handleHoursChange(key, 'openTime', e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                      onChange={v => handleHoursChange(key, 'openTime', v)}
                     />
                     <span className="text-gray-400">-</span>
-                    <input
-                      type="time"
+                    <TimePicker
                       value={dayHours.closeTime}
-                      onChange={e => handleHoursChange(key, 'closeTime', e.target.value)}
-                      className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+                      onChange={v => handleHoursChange(key, 'closeTime', v)}
                     />
                   </div>
                 )}
@@ -203,7 +214,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           type="button"
           onClick={handleSubmit}
           disabled={isSaving}
-          className="px-8 py-2.5 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 font-medium transition disabled:opacity-50"
+          className="px-8 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition disabled:opacity-50"
         >
           {isSaving ? 'Se salveaza...' : 'Continua'}
         </button>

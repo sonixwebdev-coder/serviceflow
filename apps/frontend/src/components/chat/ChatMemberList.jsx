@@ -96,14 +96,14 @@ export default function ChatMemberList() {
                 <div
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer ${
                     isCurrentUser
-                      ? 'bg-viperx-primary/5 border border-viperx-primary/20'
+                      ? 'bg-primary/5 border border-primary/20'
                       : 'hover:bg-gray-50'
                   }`}
                 >
                   {/* Avatar with online status */}
                   <div className="relative flex-shrink-0">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm text-white ${
-                      isCurrentUser ? 'bg-viperx-primary ring-2 ring-viperx-primary/30' : 'bg-viperx-primary'
+                      isCurrentUser ? 'bg-primary ring-2 ring-primary/30' : 'bg-primary'
                     }`}>
                       {member.user.firstName[0]}
                       {member.user.lastName[0]}
@@ -117,7 +117,7 @@ export default function ChatMemberList() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
                       <p className={`truncate text-sm font-medium ${
-                        isCurrentUser ? 'text-viperx-primary' : 'text-gray-900'
+                        isCurrentUser ? 'text-primary' : 'text-gray-900'
                       }`}>
                         {member.user.firstName} {member.user.lastName}
                         {isCurrentUser && <span className="ml-1 text-xs font-normal text-gray-500">(tu)</span>}

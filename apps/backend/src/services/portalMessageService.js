@@ -392,6 +392,21 @@ const createFileMessage = async (prisma, clientId, appointmentId, { fileName, fi
 
       const appointmentTitle = appointment.title || 'Programare';
 
+      const recipientList = Array.from(recipientIds);
+      const clientName = client?.companyName || `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || 'Client';
+
+      // Create in-app notifications
+      await Promise.all(recipientList.map((recipientId) =>
+        createNotification({
+          recipientId,
+          title: 'Fisier de la client',
+          message: `${clientName} a trimis un fisier in "${appointmentTitle}"`,
+          type: 'MESSAGE',
+          entityType: 'appointment',
+          entityId: appointmentId,
+        }).catch(() => {})
+      ));
+
       // Send push notifications
       await sendAppointmentMessageNotification({
         appointmentId,
@@ -399,7 +414,7 @@ const createFileMessage = async (prisma, clientId, appointmentId, { fileName, fi
         author: client,
         messageBody: fileName,
         messageType: 'FILE',
-        recipientIds: Array.from(recipientIds),
+        recipientIds: recipientList,
         isFromClient: true,
       });
     }

@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus, DollarSign, FileText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Banknote, FileText } from 'lucide-react';
 import { RevenueCardSkeleton } from './Skeleton';
 
 const formatCurrency = (value) => {
@@ -42,7 +42,7 @@ export default function RevenueCard({ data, dateRange, isLoading }) {
     : totalRevenue > 0 ? 100 : 0;
 
   return (
-    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-5 relative overflow-hidden h-full">
+    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4 sm:p-5 relative overflow-hidden h-full">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-green-100/50 rounded-full -mr-16 -mt-16"></div>
 
@@ -51,12 +51,12 @@ export default function RevenueCard({ data, dateRange, isLoading }) {
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <p className="text-sm font-medium text-green-800">Venituri din facturi</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
               {formatCurrency(totalRevenue)}
             </p>
           </div>
           <div className="p-3 bg-green-100 rounded-xl">
-            <DollarSign className="h-6 w-6 text-green-600" />
+            <Banknote className="h-6 w-6 text-green-600" />
           </div>
         </div>
 

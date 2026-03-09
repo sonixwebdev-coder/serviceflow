@@ -3,16 +3,27 @@ import useAuth from '../../context/useAuth';
 import useOnboardingStatus from '../../hooks/useOnboardingStatus';
 import { USER_ROLES } from '../../utils/constants';
 
+const PAYMENT_REQUIRED_ALLOWED = ['/settings/billing', '/settings/company'];
+
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { loading, isAuthenticated, hasRole } = useAuth();
+  const { loading, isAuthenticated, hasRole, user } = useAuth();
   const location = useLocation();
   const isAdmin = hasRole(USER_ROLES.ADMIN);
-  const { isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboardingStatus();
+  const isPaymentRequired = user?.orgStatus === 'PAYMENT_REQUIRED';
 
-  if (loading) {
+  // Skip onboarding check entirely when payment is required — avoids unnecessary API calls
+  const { isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboardingStatus();
+  const needsOnboardingCheck = isAdmin && !isPaymentRequired;
+
+  // Single unified loading state — covers both auth hydration and onboarding check
+  const isInitializing =
+    loading ||
+    (isAuthenticated && needsOnboardingCheck && location.pathname !== '/onboarding' && isOnboardingLoading);
+
+  if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-viperx-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -33,18 +44,17 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     );
   }
 
-  // Onboarding redirect for admin users
-  if (isAdmin && location.pathname !== '/onboarding') {
-    if (isOnboardingLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-viperx-primary"></div>
-        </div>
-      );
+  // PAYMENT_REQUIRED: only allow billing and company settings (checked BEFORE onboarding)
+  if (isPaymentRequired) {
+    const isAllowed = PAYMENT_REQUIRED_ALLOWED.some(p => location.pathname.startsWith(p));
+    if (!isAllowed) {
+      return <Navigate to="/settings/billing" replace />;
     }
-    if (!isOnboardingCompleted) {
-      return <Navigate to="/onboarding" replace />;
-    }
+  }
+
+  // Onboarding redirect for admin users (only when payment is not required)
+  if (needsOnboardingCheck && location.pathname !== '/onboarding' && !isOnboardingCompleted) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return children;

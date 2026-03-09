@@ -305,7 +305,7 @@ export default function FloatingChatWidget() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          className="group fixed z-50 flex h-14 w-14 cursor-grab items-center justify-center rounded-full bg-viperx-primary text-white shadow-lg transition-colors duration-200 hover:bg-orange-600 hover:shadow-xl focus:outline-none active:cursor-grabbing"
+          className="group fixed z-50 flex h-14 w-14 cursor-grab items-center justify-center rounded-full bg-primary text-white shadow-lg transition-colors duration-200 hover:bg-orange-600 hover:shadow-xl focus:outline-none active:cursor-grabbing"
           style={{ bottom: btnPos.bottom, right: btnPos.right, touchAction: 'none' }}
           title="Deschide chat rapid"
         >
@@ -332,7 +332,7 @@ export default function FloatingChatWidget() {
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between bg-viperx-primary px-4 py-4">
+          <div className="flex items-center justify-between bg-primary px-4 py-4">
             <div className="flex items-center gap-3">
               {selectedChannelId ? (
                 <button
@@ -398,7 +398,7 @@ export default function FloatingChatWidget() {
                   </p>
                   <button
                     onClick={handleOpenFullChat}
-                    className="mt-4 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
+                    className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
                   >
                     Deschide Chat
                   </button>
@@ -423,7 +423,7 @@ export default function FloatingChatWidget() {
                           <div className="relative">
                             <div className={`flex h-11 w-11 items-center justify-center rounded-full font-semibold text-sm transition-transform group-hover:scale-105 ${
                               unread > 0
-                                ? 'bg-viperx-primary text-white'
+                                ? 'bg-primary text-white'
                                 : 'bg-gray-100 text-gray-600'
                             }`}>
                               {ChannelIcon ? (
@@ -452,7 +452,7 @@ export default function FloatingChatWidget() {
                                   </span>
                                 )}
                                 {unread > 0 && (
-                                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-viperx-primary px-1.5 text-[10px] font-bold text-white">
+                                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
                                     {unread}
                                   </span>
                                 )}
@@ -488,7 +488,7 @@ export default function FloatingChatWidget() {
                 ) : currentMessages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center text-center">
                     <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
-                      <MessageCircle className="h-7 w-7 text-viperx-primary" />
+                      <MessageCircle className="h-7 w-7 text-primary" />
                     </div>
                     <p className="font-medium text-gray-900">Începe conversația</p>
                     <p className="mt-1 text-sm text-gray-500">
@@ -519,7 +519,7 @@ export default function FloatingChatWidget() {
                             <div
                               className={`relative rounded-2xl px-4 py-2.5 text-sm ${
                                 isOwn
-                                  ? 'bg-viperx-primary text-white rounded-br-md shadow-sm'
+                                  ? 'bg-primary text-white rounded-br-md shadow-sm'
                                   : 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5 rounded-bl-md'
                               } ${isPending ? 'opacity-70' : ''}`}
                             >
@@ -562,7 +562,7 @@ export default function FloatingChatWidget() {
                       onChange={(e) => setBody(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Scrie un mesaj..."
-                      className="max-h-24 min-h-[44px] w-full resize-none rounded-xl border-0 bg-gray-100 px-4 py-3 pr-12 text-sm placeholder-gray-500 transition-colors focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-viperx-primary/20"
+                      className="max-h-24 min-h-[44px] w-full resize-none rounded-xl border-0 bg-gray-100 px-4 py-3 pr-12 text-sm placeholder-gray-500 transition-colors focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       rows={1}
                       disabled={isSending}
                     />
@@ -570,7 +570,7 @@ export default function FloatingChatWidget() {
                   <button
                     onClick={handleSend}
                     disabled={!body.trim() || isSending}
-                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-viperx-primary text-white shadow-sm transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                     title="Trimite"
                   >
                     <Send className={`h-4 w-4 ${isSending ? 'animate-pulse' : ''}`} />

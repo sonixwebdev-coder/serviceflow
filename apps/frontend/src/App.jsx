@@ -1,58 +1,69 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { TerminologyProvider } from './context/TerminologyContext.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import DashboardLayout from './components/layout/DashboardLayout';
+import ErrorBoundary from './components/ErrorBoundary';
+import { USER_ROLES } from './utils/constants';
+import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
+import GlobalSearch from './components/search/GlobalSearch.jsx';
+import DataPreferences from './components/ui/DataPreferences.jsx';
+import NotFound from './pages/NotFound';
+
+// Public pages (static imports - needed immediately)
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import CreateFirstAdmin from './pages/CreateFirstAdmin';
-import Dashboard from './pages/Dashboard';
-import Tasks from './pages/Tasks';
-import PersonalTodos from './pages/PersonalTodos.jsx';
-import LeaveRequests from './pages/LeaveRequests';
-import TimeTracking from './pages/TimeTracking';
-import Employees from './pages/Employees';
-import Clients from './pages/Clients.jsx';
-import OnlineClients from './pages/OnlineClients.jsx';
-import Assets from './pages/Assets.jsx';
-import Resources from './pages/Resources.jsx';
-import Appointments from './pages/Appointments.jsx';
-import Invoices from './pages/Invoices.jsx';
-import Profile from './pages/Profile.jsx';
-import Chat from './pages/Chat.jsx';
-import ActivityTimeline from './pages/ActivityTimeline.jsx';
-import Analytics from './pages/Analytics.jsx';
-// ANAF functionality temporarily disabled
-// import AnafManagement from './pages/AnafManagement.jsx';
-// import AnafCallback from './pages/AnafCallback.jsx';
-import DashboardLayout from './components/layout/DashboardLayout';
-import { USER_ROLES } from './utils/constants';
-import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
-import CompanySettings from './pages/CompanySettings.jsx';
-import OrganizationSettings from './pages/OrganizationSettings.jsx';
-import EmailTemplates from './pages/EmailTemplates.jsx';
-import Locations from './pages/Locations.jsx';
-import WebsiteBuilder from './pages/WebsiteBuilder.jsx';
-import WebsiteLeads from './pages/WebsiteLeads.jsx';
-import Services from './pages/Services.jsx';
-import GlobalSearch from './components/search/GlobalSearch.jsx';
 import BusinessLanding from './pages/BusinessLanding.jsx';
-import Onboarding from './pages/Onboarding.jsx';
 import TermeniConditii from './pages/TermeniConditii.jsx';
 import Confidentialitate from './pages/Confidentialitate.jsx';
-import DataPreferences from './components/ui/DataPreferences.jsx';
 import Preturi from './pages/Preturi.jsx';
-import BillingSettings from './pages/BillingSettings.jsx';
-import LoyaltySettings from './pages/LoyaltySettings.jsx';
-import LoyaltyDashboard from './pages/LoyaltyDashboard.jsx';
-import SupportTickets from './pages/SupportTickets.jsx';
-import SupportTicketDetail from './pages/SupportTicketDetail.jsx';
 
+// Protected pages (lazy-loaded - only fetched when navigated to)
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Tasks = lazy(() => import('./pages/Tasks'));
+const PersonalTodos = lazy(() => import('./pages/PersonalTodos.jsx'));
+const LeaveRequests = lazy(() => import('./pages/LeaveRequests'));
+const TimeTracking = lazy(() => import('./pages/TimeTracking'));
+const Employees = lazy(() => import('./pages/Employees'));
+const Clients = lazy(() => import('./pages/Clients.jsx'));
+const OnlineClients = lazy(() => import('./pages/OnlineClients.jsx'));
+const Assets = lazy(() => import('./pages/Assets.jsx'));
+const Resources = lazy(() => import('./pages/Resources.jsx'));
+const Appointments = lazy(() => import('./pages/Appointments.jsx'));
+const Invoices = lazy(() => import('./pages/Invoices.jsx'));
+const Profile = lazy(() => import('./pages/Profile.jsx'));
+const Chat = lazy(() => import('./pages/Chat.jsx'));
+const ActivityTimeline = lazy(() => import('./pages/ActivityTimeline.jsx'));
+const Analytics = lazy(() => import('./pages/Analytics.jsx'));
+const Onboarding = lazy(() => import('./pages/Onboarding.jsx'));
+const CompanySettings = lazy(() => import('./pages/CompanySettings.jsx'));
+const OrganizationSettings = lazy(() => import('./pages/OrganizationSettings.jsx'));
+const EmailTemplates = lazy(() => import('./pages/EmailTemplates.jsx'));
+const Locations = lazy(() => import('./pages/Locations.jsx'));
+const WebsiteBuilder = lazy(() => import('./pages/WebsiteBuilder.jsx'));
+const WebsiteLeads = lazy(() => import('./pages/WebsiteLeads.jsx'));
+const Services = lazy(() => import('./pages/Services.jsx'));
+const BillingSettings = lazy(() => import('./pages/BillingSettings.jsx'));
+const LoyaltySettings = lazy(() => import('./pages/LoyaltySettings.jsx'));
+const LoyaltyDashboard = lazy(() => import('./pages/LoyaltyDashboard.jsx'));
+const SupportTickets = lazy(() => import('./pages/SupportTickets.jsx'));
+const SupportTicketDetail = lazy(() => import('./pages/SupportTicketDetail.jsx'));
+
+// Minimal loading fallback
+const PageLoader = () => (
+  <div className="flex h-screen items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-gray-600" />
+  </div>
+);
 
 function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
@@ -60,6 +71,7 @@ function App() {
             <RealtimeBridge />
             <GlobalSearch />
             <DataPreferences />
+            <Suspense fallback={<PageLoader />}>
             <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -71,8 +83,6 @@ function App() {
           <Route path="/terms" element={<TermeniConditii />} />
           <Route path="/privacy" element={<Confidentialitate />} />
           <Route path="/pricing" element={<Preturi />} />
-          {/* ANAF functionality temporarily disabled */}
-          {/* <Route path="/anaf/callback" element={<AnafCallback />} /> */}
 
           {/* Onboarding (protected, no DashboardLayout) */}
           <Route
@@ -261,7 +271,6 @@ function App() {
             }
           />
 
-
           <Route
             path="/employees"
             element={
@@ -373,18 +382,6 @@ function App() {
             }
           />
 
-          {/* ANAF functionality temporarily disabled */}
-          {/* <Route
-            path="/anaf"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <AnafManagement />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          /> */}
-
           <Route
             path="/support"
             element={
@@ -411,12 +408,14 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* 404 */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </TerminologyProvider>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

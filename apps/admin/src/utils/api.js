@@ -1,38 +1,64 @@
 import axios from 'axios';
+import useAuthStore from '@/state/useAuthStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: API_BASE,
+  timeout: 60000,
   withCredentials: true,
 });
 
-// Attach access token
+const refreshClient = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true,
+});
+
+let csrfToken = null;
+
+// Attach access token + CSRF from memory (not localStorage)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('sf_admin_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const { accessToken } = useAuthStore.getState();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  // Attach CSRF token for state-changing requests
-  const csrfToken = localStorage.getItem('sf_admin_csrf');
-  if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method)) {
+  if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
     config.headers['x-csrf-token'] = csrfToken;
   }
 
   return config;
 });
 
-// Handle 401 → try refresh
-let isRefreshing = false;
-let failedQueue = [];
+// Handle 401 → try refresh via httpOnly cookie
+let refreshPromise = null;
 
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
-  failedQueue = [];
+const performTokenRefresh = async () => {
+  const { data } = await refreshClient.post(
+    `${API_BASE}/api/auth/refresh`,
+    { context: 'admin' },
+  );
+
+  const { accessToken: newToken, user } = data.data || data;
+
+  const store = useAuthStore.getState();
+  store.login({ user, accessToken: newToken });
+
+  return newToken;
+};
+
+const queueTokenRefresh = () => {
+  if (!refreshPromise) {
+    refreshPromise = performTokenRefresh()
+      .catch((error) => {
+        useAuthStore.getState().logout();
+        throw error;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
 };
 
 api.interceptors.response.use(
@@ -40,45 +66,25 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // 401 → refresh token
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return api(originalRequest);
-        });
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const { data } = await axios.post(
-          `${API_BASE}/api/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-
-        const newToken = data.data.accessToken;
-        localStorage.setItem('sf_admin_token', newToken);
-
-        if (data.data.user) {
-          localStorage.setItem('sf_admin_user', JSON.stringify(data.data.user));
-        }
-
-        processQueue(null, newToken);
+        const newToken = await queueTokenRefresh();
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        localStorage.removeItem('sf_admin_token');
-        localStorage.removeItem('sf_admin_user');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+      } catch {
+        return Promise.reject(error);
       }
+    }
+
+    // 403 CSRF → refresh CSRF token and retry once
+    if (error.response?.status === 403 && error.response?.data?.code === 'CSRF_VALIDATION_FAILED' && !originalRequest._csrfRetry) {
+      originalRequest._csrfRetry = true;
+      await fetchCsrfToken();
+      originalRequest.headers['x-csrf-token'] = csrfToken;
+      return api(originalRequest);
     }
 
     return Promise.reject(error);
@@ -90,10 +96,23 @@ export const fetchCsrfToken = async () => {
   try {
     const { data } = await api.get('/api/csrf-token');
     if (data.csrfToken) {
-      localStorage.setItem('sf_admin_csrf', data.csrfToken);
+      csrfToken = data.csrfToken;
     }
   } catch {
     // Non-critical
+  }
+};
+
+/**
+ * Bootstrap auth on app load — attempt refresh via httpOnly cookie.
+ * If successful, the admin is still logged in. Otherwise, redirect to login.
+ */
+export const bootstrapAuth = async () => {
+  try {
+    await queueTokenRefresh();
+    return true;
+  } catch {
+    return false;
   }
 };
 

@@ -79,7 +79,7 @@ export default function TodayScheduleWidget() {
             className={`flex gap-3 cursor-pointer group ${isPastItem && !isCurrent ? 'opacity-50' : ''}`}
           >
             <div className="w-14 text-right flex-shrink-0 pt-3">
-              <p className={`text-sm font-semibold ${isCurrent ? 'text-viperx-primary' : 'text-gray-700'}`}>
+              <p className={`text-sm font-semibold ${isCurrent ? 'text-primary' : 'text-gray-700'}`}>
                 {format(startTime, 'HH:mm')}
               </p>
             </div>
@@ -87,22 +87,22 @@ export default function TodayScheduleWidget() {
             <div className="flex-shrink-0 pt-4">
               {isCurrent ? (
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-viperx-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-viperx-primary"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
                 </span>
               ) : (
-                <Circle className={`h-2.5 w-2.5 ${isPastItem ? 'text-gray-300 fill-gray-300' : 'text-viperx-primary fill-viperx-primary'}`} />
+                <Circle className={`h-2.5 w-2.5 ${isPastItem ? 'text-gray-300 fill-gray-300' : 'text-primary fill-primary'}`} />
               )}
             </div>
 
             <div className={`flex-1 p-3 rounded-lg transition ${
               isCurrent
-                ? 'bg-viperx-primary/10 border border-viperx-primary'
+                ? 'bg-primary/10 border border-primary'
                 : 'bg-gray-50 group-hover:bg-gray-100'
             }`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={`font-medium text-sm ${isCurrent ? 'text-viperx-primary' : 'text-gray-900'}`}>
+                  <p className={`font-medium text-sm ${isCurrent ? 'text-primary' : 'text-gray-900'}`}>
                     {item.title}
                   </p>
                   {item.client && (
@@ -112,7 +112,7 @@ export default function TodayScheduleWidget() {
                   )}
                 </div>
                 {isCurrent && (
-                  <span className="text-[10px] bg-viperx-primary text-white px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-medium">
                     ACUM
                   </span>
                 )}
@@ -124,7 +124,7 @@ export default function TodayScheduleWidget() {
 
       <button
         onClick={() => navigate('/crm/appointments')}
-        className="w-full text-center text-sm text-viperx-primary hover:text-orange-600 font-medium py-2 flex items-center justify-center gap-1"
+        className="w-full text-center text-sm text-primary hover:text-orange-600 font-medium py-2 flex items-center justify-center gap-1"
       >
         Vezi calendarul <ChevronRight className="h-4 w-4" />
       </button>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { MapPin, TrendingUp, Users, Calendar, CheckSquare, DollarSign } from 'lucide-react';
+import { MapPin, TrendingUp, Users, Calendar, CheckSquare, Banknote } from 'lucide-react';
 import { useLocationComparison } from '../../hooks/useAnalytics';
 import useLocationStore from '../../state/useLocationStore';
 
@@ -106,7 +106,7 @@ const LocationComparisonChart = ({ startDate, endDate }) => {
         {/* Revenue Comparison */}
         <div>
           <h4 className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
-            <DollarSign className="h-4 w-4 text-green-500" />
+            <Banknote className="h-4 w-4 text-green-500" />
             Venituri
           </h4>
           <div className="space-y-2">

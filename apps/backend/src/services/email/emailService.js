@@ -2,6 +2,11 @@ const nodemailer = require('nodemailer');
 const Handlebars = require('handlebars');
 const Brevo = require('@getbrevo/brevo');
 const logger = require('../../utils/logger');
+const { getRedisClient, isAvailable: isRedisAvailable } = require('../../lib/redis');
+
+// Per-org email rate limit: 100 emails per hour
+const EMAIL_RATE_LIMIT = 100;
+const EMAIL_RATE_WINDOW = 3600; // 1 hour in seconds
 
 // Create reusable transporter for SMTP
 let transporter = null;
@@ -47,7 +52,7 @@ const initTransporter = () => {
     secure: process.env.SMTP_SECURE === 'true',
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      pass: process.env.SMTP_PASSWORD,
     },
   };
 
@@ -180,6 +185,342 @@ const SYSTEM_TEMPLATES = {
 </html>
 `,
   },
+  'org-suspended': {
+    subject: 'Contul organizatiei tale a fost dezactivat',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #ef4444; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Cont Dezactivat</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Contul organizatiei <strong>{{organizationName}}</strong> a fost dezactivat.</p>
+      <div class="info">
+        <p><strong>Motiv:</strong> {{reason}}</p>
+      </div>
+      <p>Pentru reactivare, te rugam sa ne contactezi sau sa actualizezi metoda de plata:</p>
+      <div style="text-align: center;">
+        <a href="{{billingUrl}}" class="button">Gestioneaza Abonamentul</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+      <p>Acest email a fost trimis automat. Te rugam sa nu raspunzi la acest mesaj.</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
+  'org-idle-warning': {
+    subject: 'Contul tau ForjaIt este inactiv',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Cont Inactiv</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Am observat ca nu ai mai folosit contul organizatiei <strong>{{organizationName}}</strong> de peste {{idleDays}} de zile.</p>
+      <div class="info">
+        <p>Contul tau este in continuare activ, dar datele acumulate pot fi curatate conform politicii de retentie a planului tau (<strong>{{plan}}</strong>).</p>
+      </div>
+      <p>Autentifica-te pentru a-ti mentine contul activ:</p>
+      <div style="text-align: center;">
+        <a href="{{loginUrl}}" class="button">Acceseaza ForjaIt</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+      <p>Acest email a fost trimis automat. Te rugam sa nu raspunzi la acest mesaj.</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
+  'trial-ending': {
+    subject: 'Perioada de proba expira in {{daysLeft}} zile',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+    .days { font-size: 32px; font-weight: bold; color: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Perioada de Proba Expira</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Perioada de proba pentru organizatia <strong>{{organizationName}}</strong> expira in curand.</p>
+      <div class="info">
+        <p class="days">{{daysLeft}} zile ramase</p>
+        <p>Plan curent: <strong>{{plan}}</strong></p>
+        <p>Data expirare: <strong>{{trialEndDate}}</strong></p>
+      </div>
+      <p>Pentru a continua sa folosesti toate functiile, alege un plan de abonament:</p>
+      <div style="text-align: center;">
+        <a href="{{billingUrl}}" class="button">Alege un Plan</a>
+      </div>
+      <p style="margin-top: 15px; font-size: 13px; color: #6b7280;">Dupa expirare, contul va fi trecut pe planul gratuit cu functionalitati limitate.</p>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
+  'subscription-activated': {
+    subject: 'Abonamentul tau ForjaIt a fost activat!',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #22c55e; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+    .plan { font-size: 24px; font-weight: bold; color: #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Abonament Activat!</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Abonamentul pentru organizatia <strong>{{organizationName}}</strong> a fost activat cu succes.</p>
+      <div class="info">
+        <p class="plan">{{plan}}</p>
+        <p>Suma: <strong>{{amount}}</strong></p>
+        <p>Urmatoarea factura: <strong>{{nextBillingDate}}</strong></p>
+      </div>
+      <p>Acum ai acces la toate functiile incluse in planul tau. Poti gestiona abonamentul oricand:</p>
+      <div style="text-align: center;">
+        <a href="{{billingUrl}}" class="button">Gestioneaza Abonamentul</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
+  'subscription-cancelled': {
+    subject: 'Abonamentul tau ForjaIt a fost anulat',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #ef4444; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Abonament Anulat</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Abonamentul pentru organizatia <strong>{{organizationName}}</strong> a fost anulat.</p>
+      <div class="info">
+        <p>Contul tau a fost trecut pe planul <strong>FREE</strong> cu functionalitati limitate.</p>
+        <p>Datele tale sunt in siguranta, dar unele functii avansate nu vor mai fi disponibile.</p>
+      </div>
+      <p>Daca doresti sa reactivezi abonamentul, poti face asta oricand:</p>
+      <div style="text-align: center;">
+        <a href="{{billingUrl}}" class="button">Reaboneaza-te</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
+  'subscription-renewed': {
+    subject: 'Plata abonamentului ForjaIt procesata cu succes',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #22c55e; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .amount { font-size: 24px; font-weight: bold; color: #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Plata Procesata</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Plata pentru abonamentul organizatiei <strong>{{organizationName}}</strong> a fost procesata cu succes.</p>
+      <div class="info">
+        <p class="amount">{{amount}}</p>
+        <p>Plan: <strong>{{plan}}</strong></p>
+        <p>Urmatoarea plata: <strong>{{nextBillingDate}}</strong></p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
+  'trial-expired': {
+    subject: 'Perioada de proba a expirat',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #ef4444; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Perioada de Proba a Expirat</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Perioada de proba pentru organizatia <strong>{{organizationName}}</strong> a expirat.</p>
+      <div class="info">
+        <p>Pentru a continua sa folosesti platforma, te rugam sa alegi un plan de abonament.</p>
+        <p style="font-size: 13px; color: #6b7280;">Datele tale sunt in siguranta si vor fi disponibile dupa activarea abonamentului.</p>
+      </div>
+      <div style="text-align: center;">
+        <a href="{{billingUrl}}" class="button">Alege un Plan</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
+  'payment-required': {
+    subject: 'Plata abonamentului nu a putut fi procesata',
+    bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Plata Necesara</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Plata pentru abonamentul organizatiei <strong>{{organizationName}}</strong> nu a putut fi procesata.</p>
+      <div class="info">
+        <p>Te rugam sa actualizezi metoda de plata pentru a evita intreruperea serviciului.</p>
+        <p style="font-size: 13px; color: #6b7280;">Daca plata nu este procesata in termen de 3 incercari, contul va fi suspendat.</p>
+      </div>
+      <div style="text-align: center;">
+        <a href="{{billingUrl}}" class="button">Actualizeaza Plata</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>ForjaIt - Platforma de management</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+  },
   'crm-welcome': {
     subject: 'Bine ai venit in ForjaIt!',
     bodyHtml: `
@@ -248,7 +589,7 @@ const sendSystemEmail = async (templateName, templateData, to) => {
 
   // Check if any email provider is configured
   const brevoConfigured = isBrevoConfigured();
-  const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+  const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 
   if (!brevoConfigured && !smtpConfigured) {
     logger.info(`System email: Would send to ${to} with subject "${subject}" (No email provider configured)`);
@@ -301,6 +642,121 @@ const sendCrmWelcomeEmail = async ({ email, userName, organizationName, loginUrl
   };
 
   return sendSystemEmail('crm-welcome', templateData, email);
+};
+
+/**
+ * Send org suspended email to admin
+ */
+const sendOrgSuspendedEmail = async ({ email, userName, organizationName, reason, billingUrl }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('org-suspended', {
+    userName: userName || 'Administrator',
+    organizationName,
+    reason: reason || 'Plata nu a putut fi procesata dupa mai multe incercari.',
+    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+  }, email);
+};
+
+/**
+ * Send idle account warning email to admin
+ */
+const sendIdleWarningEmail = async ({ email, userName, organizationName, idleDays, plan, loginUrl }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('org-idle-warning', {
+    userName: userName || 'Administrator',
+    organizationName,
+    idleDays: idleDays || 180,
+    plan: plan || 'FREE',
+    loginUrl: loginUrl || process.env.FRONTEND_URL || 'http://localhost:5173',
+  }, email);
+};
+
+/**
+ * Send trial ending warning email to org admin
+ */
+const sendTrialEndingEmail = async ({ email, userName, organizationName, plan, daysLeft, trialEndDate, billingUrl }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('trial-ending', {
+    userName: userName || 'Administrator',
+    organizationName,
+    plan: plan || 'PROFESSIONAL',
+    daysLeft: daysLeft || 3,
+    trialEndDate: trialEndDate || 'N/A',
+    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+  }, email);
+};
+
+/**
+ * Send subscription activated email to org admin
+ */
+const sendSubscriptionActivatedEmail = async ({ email, userName, organizationName, plan, amount, nextBillingDate, billingUrl }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('subscription-activated', {
+    userName: userName || 'Administrator',
+    organizationName,
+    plan: plan || 'PROFESSIONAL',
+    amount: amount || 'N/A',
+    nextBillingDate: nextBillingDate || 'N/A',
+    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+  }, email);
+};
+
+/**
+ * Send subscription cancelled email to org admin
+ */
+const sendSubscriptionCancelledEmail = async ({ email, userName, organizationName, billingUrl }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('subscription-cancelled', {
+    userName: userName || 'Administrator',
+    organizationName,
+    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing`,
+  }, email);
+};
+
+/**
+ * Send subscription renewed (payment succeeded) email to org admin
+ */
+const sendSubscriptionRenewedEmail = async ({ email, userName, organizationName, plan, amount, nextBillingDate }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('subscription-renewed', {
+    userName: userName || 'Administrator',
+    organizationName,
+    plan: plan || 'PROFESSIONAL',
+    amount: amount || 'N/A',
+    nextBillingDate: nextBillingDate || 'N/A',
+  }, email);
+};
+
+/**
+ * Send trial expired email to org admin
+ */
+const sendTrialExpiredEmail = async ({ email, userName, organizationName, billingUrl }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('trial-expired', {
+    userName: userName || 'Administrator',
+    organizationName,
+    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+  }, email);
+};
+
+/**
+ * Send payment required email to org admin (payment failure warning)
+ */
+const sendPaymentRequiredEmail = async ({ email, userName, organizationName, billingUrl }) => {
+  if (!email) return null;
+
+  return sendSystemEmail('payment-required', {
+    userName: userName || 'Administrator',
+    organizationName,
+    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+  }, email);
 };
 
 /**
@@ -711,6 +1167,96 @@ const getDefaultTemplate = (templateName) => {
 </html>
 `,
     },
+    'invoice-overdue': {
+      subject: 'Factura #{{invoiceNumber}} este restanta - {{companyName}}',
+      bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #ef4444; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .amount { font-size: 24px; color: #ef4444; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Factura Restanta</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{clientName}}!</p>
+      <p>Factura urmatoare a depasit termenul de plata:</p>
+      <div class="info">
+        <p><strong>Numar factura:</strong> #{{invoiceNumber}}</p>
+        <p><strong>Data scadenta:</strong> {{dueDate}}</p>
+        <p><strong>Zile intarziere:</strong> {{daysOverdue}}</p>
+        <p class="amount">Total: {{total}} RON</p>
+      </div>
+      <p>Te rugam sa efectuezi plata cat mai curand posibil.</p>
+    </div>
+    <div class="footer">
+      <p>{{companyName}}</p>
+      {{#if companyPhone}}<p>{{companyPhone}}</p>{{/if}}
+    </div>
+  </div>
+</body>
+</html>
+`,
+    },
+    'task-assigned': {
+      subject: 'Task nou asignat: {{taskTitle}}',
+      bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #4f46e5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .info { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+    .priority { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .priority-high { background: #fee2e2; color: #dc2626; }
+    .priority-medium { background: #fef3c7; color: #d97706; }
+    .priority-low { background: #dcfce7; color: #16a34a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Task Nou Asignat</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{userName}}!</p>
+      <p>Ti-a fost asignat un task nou:</p>
+      <div class="info">
+        <p><strong>{{taskTitle}}</strong></p>
+        {{#if taskDescription}}<p>{{taskDescription}}</p>{{/if}}
+        {{#if priority}}<p>Prioritate: <span class="priority priority-{{priorityClass}}">{{priority}}</span></p>{{/if}}
+        {{#if dueDate}}<p><strong>Termen:</strong> {{dueDate}}</p>{{/if}}
+        {{#if assignedBy}}<p><strong>Asignat de:</strong> {{assignedBy}}</p>{{/if}}
+      </div>
+      <div style="text-align: center;">
+        <a href="{{taskUrl}}" class="button">Vezi Task-ul</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>{{companyName}}</p>
+    </div>
+  </div>
+</body>
+</html>
+`,
+    },
     'payment-received': {
       subject: 'Confirmare plata - {{companyName}}',
       bodyHtml: `
@@ -764,6 +1310,8 @@ const getDefaultTemplate = (templateName) => {
  * @param {Object} options - Email options
  * @returns {Promise<Object>} Email log entry
  */
+const EMAIL_REGEX = /^[^\s@<>()[\]\\,;:]+@[^\s@<>()[\]\\,;:]+\.[^\s@<>()[\]\\,;:]+$/;
+
 const sendEmail = async (prisma, {
   to,
   subject,
@@ -775,6 +1323,31 @@ const sendEmail = async (prisma, {
   recipientId = null,
   organizationId,
 }) => {
+  // Validate email to prevent header injection and bad addresses
+  if (!to || typeof to !== 'string' || !EMAIL_REGEX.test(to) || to.includes('\n') || to.includes('\r')) {
+    logger.warn('Email rejected: invalid recipient address', { to, template });
+    return null;
+  }
+
+  // Per-org email rate limiting (Redis-based, best-effort)
+  if (organizationId && isRedisAvailable()) {
+    try {
+      const redis = getRedisClient();
+      const rateKey = `email:rate:${organizationId}`;
+      const count = await redis.incr(rateKey);
+      if (count === 1) {
+        await redis.expire(rateKey, EMAIL_RATE_WINDOW);
+      }
+      if (count > EMAIL_RATE_LIMIT) {
+        logger.warn('Email rate limit exceeded', { organizationId, count, limit: EMAIL_RATE_LIMIT });
+        return null;
+      }
+    } catch (err) {
+      // Don't block emails if rate limiting fails
+      logger.warn('Email rate limit check failed', { error: err.message });
+    }
+  }
+
   let finalSubject = subject;
   let finalHtml = html;
   let finalText = text;
@@ -832,7 +1405,7 @@ const sendEmail = async (prisma, {
 
   // Check if any email provider is configured
   const brevoConfigured = isBrevoConfigured();
-  const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+  const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 
   if (!brevoConfigured && !smtpConfigured) {
     logger.info(`Email service: Would send email to ${to} with subject "${finalSubject}" (No email provider configured)`);
@@ -1072,6 +1645,73 @@ const sendAppointmentRescheduledEmail = async (prisma, { appointment, client, ol
 };
 
 /**
+ * Send invoice overdue email to client
+ */
+const sendInvoiceOverdueEmail = async (prisma, { invoice, client, daysOverdue, companySettings, organizationId }) => {
+  if (!client?.email) {
+    logger.warn('Cannot send invoice overdue email: client has no email');
+    return null;
+  }
+
+  const clientName = client.type === 'SRL'
+    ? client.companyName
+    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+
+  const templateData = {
+    clientName: clientName || 'Client',
+    invoiceNumber: invoice.invoiceNumber,
+    dueDate: new Date(invoice.dueDate).toLocaleDateString('ro-RO'),
+    daysOverdue: daysOverdue || 1,
+    total: Number(invoice.total).toFixed(2),
+    companyName: companySettings?.name || 'Forja',
+    companyPhone: companySettings?.phone,
+  };
+
+  return sendEmail(prisma, {
+    to: client.email,
+    template: 'invoice-overdue',
+    templateData,
+    recipientType: 'CLIENT',
+    recipientId: client.id,
+    organizationId,
+  });
+};
+
+/**
+ * Send task assigned email to CRM user
+ */
+const sendTaskAssignedEmail = async (prisma, { user, task, assignedBy, companySettings, organizationId }) => {
+  if (!user?.email) {
+    logger.warn('Cannot send task assigned email: user has no email');
+    return null;
+  }
+
+  const priorityLabels = { HIGH: 'Ridicata', MEDIUM: 'Medie', LOW: 'Scazuta', URGENT: 'Urgenta' };
+  const priorityClasses = { HIGH: 'high', MEDIUM: 'medium', LOW: 'low', URGENT: 'high' };
+
+  const templateData = {
+    userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Coleg',
+    taskTitle: task.title,
+    taskDescription: task.description || null,
+    priority: priorityLabels[task.priority] || task.priority,
+    priorityClass: priorityClasses[task.priority] || 'medium',
+    dueDate: task.dueDate ? new Date(task.dueDate).toLocaleDateString('ro-RO') : null,
+    assignedBy: assignedBy || null,
+    taskUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/tasks`,
+    companyName: companySettings?.name || 'ForjaIt',
+  };
+
+  return sendEmail(prisma, {
+    to: user.email,
+    template: 'task-assigned',
+    templateData,
+    recipientType: 'USER',
+    recipientId: user.id,
+    organizationId,
+  });
+};
+
+/**
  * Send payment received email
  */
 const sendPaymentReceivedEmail = async (prisma, { client, amount, paymentDate, paymentMethod, invoiceNumber, companySettings, organizationId }) => {
@@ -1216,9 +1856,11 @@ const listTemplates = async (prisma) => {
     'appointment-cancelled',
     'appointment-rescheduled',
     'invoice-created',
+    'invoice-overdue',
     'welcome',
     'password-reset',
     'payment-received',
+    'task-assigned',
     'loyalty-points-earned',
     'loyalty-tier-upgrade',
     'loyalty-reward-available',
@@ -1252,15 +1894,25 @@ module.exports = {
   sendEmail,
   sendAppointmentReminder,
   sendInvoiceCreatedEmail,
+  sendInvoiceOverdueEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendAppointmentCancelledEmail,
   sendAppointmentRescheduledEmail,
   sendPaymentReceivedEmail,
+  sendTaskAssignedEmail,
   // CRM system emails (hardcoded templates, not customizable)
   sendSystemEmail,
   sendCrmPasswordResetEmail,
   sendCrmWelcomeEmail,
+  sendOrgSuspendedEmail,
+  sendIdleWarningEmail,
+  sendTrialEndingEmail,
+  sendSubscriptionActivatedEmail,
+  sendSubscriptionCancelledEmail,
+  sendSubscriptionRenewedEmail,
+  sendTrialExpiredEmail,
+  sendPaymentRequiredEmail,
   // Template management
   getEmailLogs,
   getOrCreateTemplate,

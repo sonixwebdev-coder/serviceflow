@@ -49,15 +49,13 @@ router.get(
   })
 );
 
-// GET /support/tickets/:id - Ticket detail (verify org ownership)
+// GET /support/tickets/:id - Ticket detail (scoped to org)
 router.get(
   '/tickets/:id',
   asyncHandler(async (req, res) => {
-    const ticket = await supportTicketService.getTicket(req.params.id);
-
-    if (ticket.organizationId !== req.user.organizationId) {
-      throw new AppError('Ticket not found', 404);
-    }
+    const ticket = await supportTicketService.getTicket(req.params.id, {
+      organizationId: req.user.organizationId,
+    });
 
     return ok(res, ticket);
   })
@@ -68,11 +66,9 @@ router.post(
   '/tickets/:id/messages',
   validate(createMessage, 'body'),
   asyncHandler(async (req, res) => {
-    const ticket = await supportTicketService.getTicket(req.params.id);
-
-    if (ticket.organizationId !== req.user.organizationId) {
-      throw new AppError('Ticket not found', 404);
-    }
+    const ticket = await supportTicketService.getTicket(req.params.id, {
+      organizationId: req.user.organizationId,
+    });
 
     const message = await supportTicketService.addMessage({
       ticketId: req.params.id,

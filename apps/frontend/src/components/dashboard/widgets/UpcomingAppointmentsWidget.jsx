@@ -77,11 +77,11 @@ export default function UpcomingAppointmentsWidget() {
             key={apt.id}
             onClick={() => navigate('/crm/appointments')}
             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
-              isTodayApt ? 'bg-viperx-primary/5 hover:bg-viperx-primary/10' : 'bg-gray-50 hover:bg-gray-100'
+              isTodayApt ? 'bg-primary/5 hover:bg-primary/10' : 'bg-gray-50 hover:bg-gray-100'
             } ${isPast ? 'opacity-50' : ''}`}
           >
             <div className="w-12 text-center flex-shrink-0">
-              <p className={`text-sm font-semibold ${isTodayApt ? 'text-viperx-primary' : 'text-gray-900'}`}>
+              <p className={`text-sm font-semibold ${isTodayApt ? 'text-primary' : 'text-gray-900'}`}>
                 {format(aptDate, 'HH:mm')}
               </p>
               <p className="text-[10px] text-gray-500 uppercase">
@@ -89,7 +89,7 @@ export default function UpcomingAppointmentsWidget() {
               </p>
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${isTodayApt ? 'text-viperx-primary' : 'text-gray-900'}`}>
+              <p className={`text-sm font-medium truncate ${isTodayApt ? 'text-primary' : 'text-gray-900'}`}>
                 {apt.title}
               </p>
               {apt.client && (
@@ -99,7 +99,7 @@ export default function UpcomingAppointmentsWidget() {
               )}
             </div>
             {isTodayApt && (
-              <span className="text-[10px] bg-viperx-primary text-white px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+              <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-medium flex-shrink-0">
                 AZI
               </span>
             )}
@@ -109,7 +109,7 @@ export default function UpcomingAppointmentsWidget() {
 
       <button
         onClick={() => navigate('/crm/appointments')}
-        className="w-full text-center text-sm text-viperx-primary hover:text-orange-600 font-medium py-2 flex items-center justify-center gap-1"
+        className="w-full text-center text-sm text-primary hover:text-orange-600 font-medium py-2 flex items-center justify-center gap-1"
       >
         Vezi calendarul <ChevronRight className="h-4 w-4" />
       </button>

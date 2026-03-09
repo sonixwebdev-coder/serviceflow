@@ -144,7 +144,7 @@ export default function ActivityTimeline() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Activity className="h-6 w-6 text-viperx-primary" />
+            <Activity className="h-6 w-6 text-primary" />
             Activitate
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -166,7 +166,7 @@ export default function ActivityTimeline() {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition ${
               showFilters || activeFilterCount > 0
-                ? 'bg-viperx-primary text-white border-viperx-primary'
+                ? 'bg-primary text-white border-primary'
                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -206,7 +206,7 @@ export default function ActivityTimeline() {
               <select
                 value={filters.entityType}
                 onChange={(e) => handleFilterChange('entityType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 focus:border-viperx-primary"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="">Toate</option>
                 {ENTITY_TYPES.map((type) => (
@@ -225,7 +225,7 @@ export default function ActivityTimeline() {
               <select
                 value={filters.action}
                 onChange={(e) => handleFilterChange('action', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 focus:border-viperx-primary"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="">Toate</option>
                 {ACTIONS.map((action) => (
@@ -244,7 +244,7 @@ export default function ActivityTimeline() {
               <select
                 value={filters.actorId}
                 onChange={(e) => handleFilterChange('actorId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 focus:border-viperx-primary"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="">Toti</option>
                 {users.map((user) => (

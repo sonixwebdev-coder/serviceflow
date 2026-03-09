@@ -1,4 +1,7 @@
 const { AppError } = require('../utils/errors');
+const { sendPaymentReceivedEmail } = require('./email/emailService');
+const { getCompanySettings } = require('./companySettingService');
+const logger = require('../utils/logger');
 
 /**
  * Create a new payment
@@ -107,6 +110,24 @@ const createPayment = async (prisma, data, options = {}) => {
     await updateInvoicePaymentStatus(prisma, invoiceId, { tx: client });
   }
 
+  // Send payment confirmation email to client (fire-and-forget)
+  if (payment.appointment?.clientId) {
+    const paymentClient = await prisma.client.findUnique({ where: { id: payment.appointment.clientId } });
+    if (paymentClient?.email) {
+      getCompanySettings(payment.appointment?.organizationId).then((companySettings) => {
+        sendPaymentReceivedEmail(prisma, {
+          client: paymentClient,
+          amount: roundedAmount,
+          paymentDate,
+          paymentMethod,
+          invoiceNumber: payment.invoice?.invoiceNumber,
+          companySettings,
+          organizationId: payment.appointment?.organizationId,
+        }).catch((err) => logger.error('[EMAIL] Payment received email failed:', err.message));
+      }).catch(() => {});
+    }
+  }
+
   return payment;
 };
 
@@ -194,7 +215,7 @@ const updateAppointmentPaymentStatus = async (prisma, appointmentId, options = {
   const { tx } = options;
   const client = tx || prisma;
 
-  // Get appointment with service order to calculate total
+  // Get appointment with service order and active invoice to calculate total
   const appointment = await client.appointment.findUnique({
     where: { id: appointmentId },
     include: {
@@ -203,6 +224,11 @@ const updateAppointmentPaymentStatus = async (prisma, appointmentId, options = {
           lineItems: true,
         },
       },
+      invoices: {
+        where: { status: { not: 'CANCELLED' } },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
     },
   });
 
@@ -210,9 +236,12 @@ const updateAppointmentPaymentStatus = async (prisma, appointmentId, options = {
     throw new AppError('Appointment not found', 404);
   }
 
-  // Calculate total from service order
+  // Use invoice total if available (accounts for loyalty discount), otherwise fall back to service order
   let total = 0;
-  if (appointment.serviceOrder?.lineItems) {
+  const activeInvoice = appointment.invoices?.[0];
+  if (activeInvoice) {
+    total = Number(activeInvoice.total);
+  } else if (appointment.serviceOrder?.lineItems) {
     total = appointment.serviceOrder.lineItems.reduce((sum, item) => {
       const hardwareTotal = Number(item.hardwareQuantity || 0) * Number(item.hardwarePrice || 0);
       const laborTotal = Number(item.laborQuantity || 0) * Number(item.laborPrice || 0);

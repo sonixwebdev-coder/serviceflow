@@ -1,8 +1,12 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
+const { AppError } = require('../utils/errors');
 const {
   getWebsite,
   createWebsite,
@@ -12,6 +16,7 @@ const {
   listPages,
   getPageById,
   createPage,
+  bulkUpsertPages,
   updatePage,
   deletePage,
   reorderPages,
@@ -20,6 +25,7 @@ const {
   updateLead,
   deleteLead,
   convertLeadToClient,
+  approveReview,
   verifyDomain,
   getCrmDataForBlocks,
 } = require('../services/websiteService');
@@ -38,6 +44,35 @@ const { ok, created } = require('../utils/http');
 const { z } = require('zod');
 
 const router = express.Router();
+
+// ─── Multer for website image uploads ──────────────────────────────────
+const imageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const orgId = req.user?.organizationId || 'unknown';
+    const uploadDir = path.join(__dirname, '../../storage/website-images', orgId);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const ext = path.extname(file.originalname);
+    cb(null, `img-${uniqueSuffix}${ext}`);
+  },
+});
+
+const imageUpload = multer({
+  storage: imageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extOk = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimeOk = allowedTypes.test(file.mimetype);
+    if (extOk && mimeOk) return cb(null, true);
+    cb(new AppError('Doar fisiere imagine sunt permise (JPEG, PNG, GIF, WEBP)', 400));
+  },
+});
 
 // ============== Website Routes ==============
 
@@ -259,6 +294,34 @@ router.post(
 );
 
 /**
+ * POST /api/website/:websiteId/pages/bulk
+ * Bulk upsert pages — validates plan limits upfront (used by template application)
+ */
+router.post(
+  '/:websiteId/pages/bulk',
+  authenticate,
+  authorize({ roles: ['admin', 'manager'] }),
+  validate(z.object({ pages: z.array(createPageSchema).min(1) })),
+  asyncHandler(async (req, res) => {
+    const pages = await bulkUpsertPages(
+      req.tenantPrisma,
+      req.params.websiteId,
+      req.body.pages,
+      req.user.organizationId
+    );
+
+    await logFromRequest(req, {
+      action: 'CREATE',
+      entityType: 'WebsitePage',
+      description: `Bulk upsert: ${pages.length} pagini`,
+      metadata: { count: pages.length },
+    });
+
+    return ok(res, pages, `${pages.length} pagini create/actualizate`);
+  })
+);
+
+/**
  * POST /api/website/:websiteId/pages/reorder
  * Reorder pages (admin/manager only)
  */
@@ -431,6 +494,58 @@ router.delete(
 );
 
 /**
+ * PATCH /api/website/:websiteId/leads/:leadId/approve
+ * Approve a review
+ */
+router.patch(
+  '/:websiteId/leads/:leadId/approve',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const lead = await approveReview(
+      req.tenantPrisma,
+      req.params.leadId,
+      true,
+      req.user.organizationId
+    );
+
+    await logFromRequest(req, {
+      action: 'APPROVE',
+      entityType: 'WebsiteLead',
+      entityId: lead.id,
+      description: `Recenzie aprobata: ${lead.firstName}`,
+    });
+
+    return ok(res, lead, 'Recenzia a fost aprobata');
+  })
+);
+
+/**
+ * PATCH /api/website/:websiteId/leads/:leadId/reject
+ * Reject a review
+ */
+router.patch(
+  '/:websiteId/leads/:leadId/reject',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const lead = await approveReview(
+      req.tenantPrisma,
+      req.params.leadId,
+      false,
+      req.user.organizationId
+    );
+
+    await logFromRequest(req, {
+      action: 'REJECT',
+      entityType: 'WebsiteLead',
+      entityId: lead.id,
+      description: `Recenzie respinsa: ${lead.firstName}`,
+    });
+
+    return ok(res, lead, 'Recenzia a fost respinsa');
+  })
+);
+
+/**
  * POST /api/website/:websiteId/leads/:leadId/convert
  * Convert lead to client
  */
@@ -455,6 +570,29 @@ router.post(
     });
 
     return ok(res, result, 'Lead-ul a fost convertit in client');
+  })
+);
+
+// ============== Image Upload ==============
+
+/**
+ * POST /api/website/images
+ * Upload an image for website builder blocks (tenant-scoped storage)
+ */
+router.post(
+  '/images',
+  authenticate,
+  authorize({ roles: ['admin'] }),
+  imageUpload.single('image'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      throw new AppError('Nu a fost furnizat niciun fisier', 400);
+    }
+
+    const orgId = req.user.organizationId;
+    const relativePath = `/files/website-images/${orgId}/${req.file.filename}`;
+
+    return ok(res, { url: relativePath }, 'Imaginea a fost incarcata');
   })
 );
 

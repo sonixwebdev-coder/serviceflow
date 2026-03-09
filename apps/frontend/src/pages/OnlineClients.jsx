@@ -15,6 +15,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import confirm from '../utils/confirm';
 import { Search, X, Eye, Car, Calendar, FileText, Phone, Mail, Building2, User, Hash, MapPin, Globe, TrendingUp, Users as UsersIcon, CreditCard, Edit2, Save, Plus, Trash2, Upload, Download, CheckCircle, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, subDays, isAfter } from 'date-fns';
@@ -348,8 +349,8 @@ const OnlineClients = () => {
     }
   };
 
-  const handleDeleteVehicle = (vehicleId) => {
-    if (window.confirm('Sigur doresti sa stergi acest vehicul?')) {
+  const handleDeleteVehicle = async (vehicleId) => {
+    if (await confirm({ title: 'Sterge vehicul', text: 'Sigur doresti sa stergi acest vehicul?', confirmText: 'Sterge', danger: true })) {
       deleteVehicleMutation.mutate({
         clientId: selectedClientId,
         vehicleId,
@@ -363,8 +364,8 @@ const OnlineClients = () => {
     setVehicleForm({});
   };
 
-  const handleDeleteClient = (clientId, clientName) => {
-    if (window.confirm(`Sigur doresti sa stergi clientul "${clientName}"? Aceasta actiune nu poate fi anulata.`)) {
+  const handleDeleteClient = async (clientId, clientName) => {
+    if (await confirm({ title: 'Sterge client', text: `Sigur doresti sa stergi clientul "${clientName}"? Aceasta actiune nu poate fi anulata.`, confirmText: 'Sterge', danger: true })) {
       deleteClientMutation.mutate(clientId);
     }
   };
@@ -514,7 +515,7 @@ const OnlineClients = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="page-header">
           <h1 className="page-title flex items-center gap-2">
-            <Globe className="text-viperx-primary" size={28} />
+            <Globe className="text-primary" size={28} />
             Clienti Online
           </h1>
           <p className="page-subtitle">
@@ -525,7 +526,7 @@ const OnlineClients = () => {
           <button
             type="button"
             onClick={openAddClientModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
           >
             <Plus size={16} />
             Adauga Client Online
@@ -568,8 +569,8 @@ const OnlineClients = () => {
               <p className="text-sm font-medium text-gray-500">Procent din Total</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{stats.percentage}%</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-viperx-primary/10">
-              <TrendingUp className="text-viperx-primary" size={24} />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <TrendingUp className="text-primary" size={24} />
             </div>
           </div>
         </div>
@@ -596,14 +597,14 @@ const OnlineClients = () => {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Cauta dupa nume, companie, email, telefon, adresa sau card fidelitate..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-2 focus:ring-viperx-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
         {search && (
           <button
             type="button"
             onClick={() => setSearch('')}
-            className="text-sm text-gray-500 hover:text-viperx-primary transition-colors flex items-center gap-1"
+            className="text-sm text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
           >
             <X size={14} />
             Sterge cautarea
@@ -628,7 +629,7 @@ const OnlineClients = () => {
 
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : clients.length === 0 ? (
             <div className="p-8 text-center">
@@ -682,7 +683,7 @@ const OnlineClients = () => {
                       type="button"
                       onClick={() => handleToggleOnline(client.id, client.isOnline)}
                       disabled={updateClientMutation.isLoading}
-                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-viperx-primary focus:ring-offset-2 bg-viperx-primary"
+                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
                       title={client.isOnline ? 'Marcheaza ca offline' : 'Marcheaza ca online'}
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${client.isOnline ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -723,7 +724,7 @@ const OnlineClients = () => {
         <div className="lg:hidden">
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : clients.length === 0 ? (
             <div className="p-6 text-center">
@@ -757,7 +758,7 @@ const OnlineClients = () => {
                         type="button"
                         onClick={() => handleToggleOnline(client.id, client.isOnline)}
                         disabled={updateClientMutation.isLoading}
-                        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-viperx-primary focus:ring-offset-2 bg-viperx-primary ml-2 flex-shrink-0"
+                        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary ml-2 flex-shrink-0"
                         title={client.isOnline ? 'Marcheaza ca offline' : 'Marcheaza ca online'}
                       >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${client.isOnline ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -868,7 +869,7 @@ const OnlineClients = () => {
                       type="button"
                       onClick={handleSave}
                       disabled={updateClientMutation.isPending}
-                      className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-viperx-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save size={16} />
                       {updateClientMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
@@ -897,7 +898,7 @@ const OnlineClients = () => {
             <div className="flex-1 overflow-y-auto">
               {clientLoading ? (
                 <div className="flex justify-center py-12">
-                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
                 </div>
               ) : selectedClient ? (
                 <div className="space-y-6 p-6">
@@ -905,7 +906,7 @@ const OnlineClients = () => {
                     /* Edit Form */
                     <div className="rounded-xl border border-gray-200 bg-white p-6">
                       <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
-                        <User size={18} className="text-viperx-primary" />
+                        <User size={18} className="text-primary" />
                         Editeaza Informatii Client
                       </h3>
 
@@ -945,7 +946,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.companyName}
                                 onChange={(e) => handleInputChange('companyName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -955,7 +956,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.contactName}
                                 onChange={(e) => handleInputChange('contactName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div>
@@ -964,7 +965,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.vatNumber}
                                 onChange={(e) => handleInputChange('vatNumber', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div>
@@ -973,7 +974,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.registrationNumber}
                                 onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                           </>
@@ -985,7 +986,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.firstName}
                                 onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -995,7 +996,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.lastName}
                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -1007,7 +1008,7 @@ const OnlineClients = () => {
                             type="email"
                             value={editForm.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             required
                           />
                         </div>
@@ -1017,7 +1018,7 @@ const OnlineClients = () => {
                             type="tel"
                             value={editForm.phone}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             required
                           />
                         </div>
@@ -1027,7 +1028,7 @@ const OnlineClients = () => {
                             type="text"
                             value={editForm.address}
                             onChange={(e) => handleInputChange('address', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div className="col-span-2">
@@ -1036,7 +1037,7 @@ const OnlineClients = () => {
                             type="text"
                             value={editForm.fidelityCardSerie}
                             onChange={(e) => handleInputChange('fidelityCardSerie', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             placeholder="Serie card fidelitate"
                           />
                         </div>
@@ -1046,7 +1047,7 @@ const OnlineClients = () => {
                               type="checkbox"
                               checked={editForm.isOnline || false}
                               onChange={(e) => handleInputChange('isOnline', e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
                             <span className="text-sm font-medium text-gray-700">Client online (disponibil si in magazin fizic)</span>
                           </label>
@@ -1060,7 +1061,7 @@ const OnlineClients = () => {
                             value={editForm.notes}
                             onChange={(e) => handleInputChange('notes', e.target.value)}
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             placeholder="Notite despre client..."
                           />
                         </div>
@@ -1072,7 +1073,7 @@ const OnlineClients = () => {
                       {/* Client Information */}
                       <div className="rounded-xl border border-gray-200 bg-white p-6">
                         <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
-                          <User size={18} className="text-viperx-primary" />
+                          <User size={18} className="text-primary" />
                           Informatii Client
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
@@ -1142,7 +1143,7 @@ const OnlineClients = () => {
                             type="button"
                             onClick={() => handleToggleOnline(selectedClient.id, selectedClient.isOnline)}
                             disabled={updateClientMutation.isLoading}
-                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-viperx-primary focus:ring-offset-2 bg-viperx-primary"
+                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
                           >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${selectedClient.isOnline ? 'translate-x-6' : 'translate-x-1'}`} />
                           </button>
@@ -1165,7 +1166,7 @@ const OnlineClients = () => {
                   {/* Vehicles */}
                   <div className="rounded-xl border border-gray-200 bg-white p-6">
                     <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
-                      <Car size={18} className="text-viperx-primary" />
+                      <Car size={18} className="text-primary" />
                       Vehicule ({selectedClient.vehicles?.length || 0})
                     </h3>
                     {!selectedClient.vehicles?.length ? (
@@ -1206,7 +1207,7 @@ const OnlineClients = () => {
                   {/* Appointments */}
                   <div className="rounded-xl border border-gray-200 bg-white p-6">
                     <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
-                      <Calendar size={18} className="text-viperx-primary" />
+                      <Calendar size={18} className="text-primary" />
                       Programari recente ({selectedClient.appointments?.length || 0})
                     </h3>
                     {!selectedClient.appointments?.length ? (
@@ -1244,7 +1245,7 @@ const OnlineClients = () => {
                                   </p>
                                 )}
                                 {appointment.serviceOrder && (
-                                  <p className="flex items-center gap-2 text-viperx-primary">
+                                  <p className="flex items-center gap-2 text-primary">
                                     <FileText size={14} />
                                     Comanda service: {new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(appointment.serviceOrder.total || 0)}
                                   </p>
@@ -1317,7 +1318,7 @@ const OnlineClients = () => {
                     accept=".csv"
                     onChange={handleFileSelect}
                     disabled={isImporting}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-viperx-primary file:text-white hover:file:bg-viperx-primary/90 disabled:opacity-50"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90 disabled:opacity-50"
                   />
                 </div>
                 {selectedFile && (
@@ -1402,7 +1403,7 @@ const OnlineClients = () => {
                   type="button"
                   onClick={handleImport}
                   disabled={!selectedFile || isImporting}
-                  className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-viperx-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isImporting ? (
                     <>
@@ -1481,7 +1482,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.companyName}
                           onChange={(e) => handleAddClientInputChange('companyName', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           required
                           placeholder="SC Exemplu SRL"
                         />
@@ -1492,7 +1493,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.contactName}
                           onChange={(e) => handleAddClientInputChange('contactName', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           placeholder="Ion Popescu"
                         />
                       </div>
@@ -1502,7 +1503,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.vatNumber}
                           onChange={(e) => handleAddClientInputChange('vatNumber', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           placeholder="RO12345678"
                         />
                       </div>
@@ -1512,7 +1513,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.registrationNumber}
                           onChange={(e) => handleAddClientInputChange('registrationNumber', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           placeholder="J40/1234/2020"
                         />
                       </div>
@@ -1525,7 +1526,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.firstName}
                           onChange={(e) => handleAddClientInputChange('firstName', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           required
                           placeholder="Ion"
                         />
@@ -1536,7 +1537,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.lastName}
                           onChange={(e) => handleAddClientInputChange('lastName', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           required
                           placeholder="Popescu"
                         />
@@ -1549,7 +1550,7 @@ const OnlineClients = () => {
                       type="email"
                       value={addClientForm.email}
                       onChange={(e) => handleAddClientInputChange('email', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       required
                       placeholder="client@example.com"
                     />
@@ -1560,7 +1561,7 @@ const OnlineClients = () => {
                       type="tel"
                       value={addClientForm.phone}
                       onChange={(e) => handleAddClientInputChange('phone', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       required
                       placeholder="0712345678"
                     />
@@ -1571,7 +1572,7 @@ const OnlineClients = () => {
                       type="text"
                       value={addClientForm.address}
                       onChange={(e) => handleAddClientInputChange('address', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Str. Exemplu nr. 1, Bucuresti, Sector 1"
                     />
                     <p className="text-xs text-gray-500 mt-1">Adresa de livrare pentru clientii online</p>
@@ -1582,7 +1583,7 @@ const OnlineClients = () => {
                       type="text"
                       value={addClientForm.fidelityCardSerie}
                       onChange={(e) => handleAddClientInputChange('fidelityCardSerie', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Serie card fidelitate"
                     />
                   </div>
@@ -1592,7 +1593,7 @@ const OnlineClients = () => {
                       value={addClientForm.notes}
                       onChange={(e) => handleAddClientInputChange('notes', e.target.value)}
                       rows={3}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Notite despre client..."
                     />
                   </div>
@@ -1626,7 +1627,7 @@ const OnlineClients = () => {
                 type="button"
                 onClick={handleCreateClient}
                 disabled={createClientMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-viperx-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {createClientMutation.isPending ? (
                   <>

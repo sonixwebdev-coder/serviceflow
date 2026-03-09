@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const cache = require('../utils/cache');
+const { validateCuiChecksum } = require('./vatValidationService');
 
 const COMPANY_SETTING_KEYS = [
   'companyName',
@@ -22,6 +23,8 @@ const COMPANY_SETTING_KEYS = [
   'rampCount',
   'tvaEnabled',
   'tvaPercentage',
+  'entityType',
+  'cnp',
 ];
 
 const DEFAULT_SETTINGS = {
@@ -47,6 +50,8 @@ const DEFAULT_SETTINGS = {
   rampCount: Number(process.env.COMPANY_RAMP_COUNT || 4),
   tvaEnabled: process.env.COMPANY_TVA_ENABLED === 'true' || false,
   tvaPercentage: Number(process.env.COMPANY_TVA_PERCENTAGE || 19),
+  entityType: 'SRL',
+  cnp: '',
 };
 
 const mapRowsToSettings = (rows) => {
@@ -100,22 +105,54 @@ const mapRowsToSettings = (rows) => {
   return settings;
 };
 
-const getCompanySettings = async (options = {}) => {
-  const { skipCache = false } = options;
+/**
+ * Get company settings scoped to an organization.
+ * Falls back to global (null organizationId) settings, then defaults.
+ * @param {string|object} orgIdOrOptions - organizationId string or options object
+ */
+const getCompanySettings = async (orgIdOrOptions = {}) => {
+  // Support both getCompanySettings('orgId') and getCompanySettings({ skipCache, organizationId })
+  let organizationId = null;
+  let skipCache = false;
+
+  if (typeof orgIdOrOptions === 'string') {
+    organizationId = orgIdOrOptions;
+  } else if (orgIdOrOptions && typeof orgIdOrOptions === 'object') {
+    organizationId = orgIdOrOptions.organizationId || null;
+    skipCache = orgIdOrOptions.skipCache || false;
+  }
+
+  const cacheKey = organizationId
+    ? `company:settings:${organizationId}`
+    : cache.companySettingsKey();
 
   // Try cache first (unless explicitly skipped)
   if (!skipCache) {
-    const cached = await cache.get(cache.companySettingsKey());
+    const cached = await cache.get(cacheKey);
     if (cached) {
       return cached;
     }
   }
 
-  const rows = await prisma.companySetting.findMany();
+  // First try org-scoped settings
+  let rows = [];
+  if (organizationId) {
+    rows = await prisma.companySetting.findMany({
+      where: { organizationId },
+    });
+  }
+
+  // Fall back to global settings if no org-scoped rows found
+  if (rows.length === 0) {
+    rows = await prisma.companySetting.findMany({
+      where: { organizationId: null },
+    });
+  }
+
   const settings = mapRowsToSettings(rows);
 
   // Cache settings for 30 minutes (they rarely change)
-  await cache.set(cache.companySettingsKey(), settings, cache.TTL.LONG);
+  await cache.set(cacheKey, settings, cache.TTL.LONG);
 
   return settings;
 };
@@ -124,6 +161,8 @@ const updateCompanySettings = async (payload, currentUser) => {
   if (!currentUser) {
     throw new AppError('Authentication required', 401);
   }
+
+  const organizationId = currentUser.organizationId || null;
 
   const updates = COMPANY_SETTING_KEYS.reduce((acc, key) => {
     if (Object.prototype.hasOwnProperty.call(payload, key)) {
@@ -134,7 +173,7 @@ const updateCompanySettings = async (payload, currentUser) => {
 
   const keysToUpdate = Object.keys(updates);
   if (!keysToUpdate.length) {
-    return getCompanySettings();
+    return getCompanySettings(organizationId);
   }
 
   if (Object.prototype.hasOwnProperty.call(updates, 'rampCount')) {
@@ -158,23 +197,40 @@ const updateCompanySettings = async (payload, currentUser) => {
     updates.tvaPercentage = parsed;
   }
 
+  // Validate CUI checksum when vatNumber is provided and non-empty
+  if (Object.prototype.hasOwnProperty.call(updates, 'vatNumber') && updates.vatNumber) {
+    const cuiResult = validateCuiChecksum(updates.vatNumber);
+    if (!cuiResult.valid) {
+      throw new AppError(cuiResult.error, 400);
+    }
+  }
+
   await prisma.$transaction(
     keysToUpdate.map((key) =>
       prisma.companySetting.upsert({
-        where: { name: key },
+        where: {
+          organizationId_name: {
+            organizationId: organizationId,
+            name: key,
+          },
+        },
         update: { value: { value: updates[key] } },
         create: {
           name: key,
           value: { value: updates[key] },
+          organizationId,
         },
       })
     )
   );
 
-  // Invalidate settings cache after update
-  await cache.del(cache.companySettingsKey());
+  // Invalidate org-specific cache and global cache
+  const cacheKey = organizationId
+    ? `company:settings:${organizationId}`
+    : cache.companySettingsKey();
+  await cache.del(cacheKey);
 
-  return getCompanySettings();
+  return getCompanySettings(organizationId);
 };
 
 module.exports = {

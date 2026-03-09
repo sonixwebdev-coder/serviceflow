@@ -1,5 +1,4 @@
 const path = require('path');
-const fs = require('fs');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const { broadcastInvoice } = require('../realtime/events');
@@ -8,38 +7,9 @@ const { writeFile, readFile, removeFile, exists } = require('../utils/storage');
 const { getCompanySettings } = require('./companySettingService');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
 const { calculateTotalPaid, updateInvoicePaymentStatus } = require('./paymentService');
-
-// Debug logging to file
-const LOG_FILE = path.join(__dirname, '../../logs/invoice-debug.log');
-const debugLog = (message, data = null) => {
-  const timestamp = new Date().toISOString();
-  let dataString = '';
-
-  if (data) {
-    try {
-      // Handle circular references by using a custom replacer
-      const seen = new WeakSet();
-      dataString = '\n' + JSON.stringify(data, (key, value) => {
-        // Skip circular references and Prisma client objects
-        if (key === '_originalClient' || key === 'client' || key === 'tx') {
-          return '[Prisma Client]';
-        }
-        if (typeof value === 'object' && value !== null) {
-          if (seen.has(value)) {
-            return '[Circular]';
-          }
-          seen.add(value);
-        }
-        return value;
-      }, 2);
-    } catch (error) {
-      dataString = '\n[Error stringifying data: ' + error.message + ']';
-    }
-  }
-
-  const logEntry = `${timestamp} - ${message}${dataString}\n\n`;
-  fs.appendFileSync(LOG_FILE, logEntry, 'utf8');
-};
+const loyaltyService = require('./loyaltyService');
+const { sendInvoiceCreatedEmail } = require('./email/emailService');
+const logger = require('../utils/logger');
 
 const VALID_STATUSES = ['DRAFT', 'GENERATED', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
 const IMMUTABLE_STATUSES = new Set(['PAID', 'CANCELLED']);
@@ -74,6 +44,8 @@ const mapInvoice = (invoice) => {
     subtotal: Number(invoice.subtotal || 0),
     tax: Number(invoice.tax || 0),
     total: Number(invoice.total || 0),
+    loyaltyDiscount: invoice.loyaltyDiscount != null ? Number(invoice.loyaltyDiscount) : 0,
+    loyaltyTierAtTime: invoice.loyaltyTierAtTime || null,
     notes: invoice.notes,
     sentAt: invoice.sentAt,
     paidAt: invoice.paidAt,
@@ -246,11 +218,35 @@ const getIncludeConfig = () => {
   };
 };
 
-const generateInvoiceNumber = async (client = prisma) => {
+const generateInvoiceNumber = async (client = prisma, organizationId = null) => {
   const now = new Date();
   const year = now.getFullYear();
 
-  // Count invoices from this year
+  // Load per-org invoice sequence settings (using global prisma since organization is not a tenant model)
+  let seq = {};
+  if (organizationId) {
+    try {
+      const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { settings: true },
+      });
+      seq = org?.settings?.invoiceSequence || {};
+    } catch {
+      // Fall back to defaults on error
+    }
+  }
+
+  const prefix = (seq.prefix || 'INV').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) || 'INV';
+  const separator = ['-', '/', '_', ''].includes(seq.separator) ? seq.separator : '-';
+  const includeYear = seq.includeYear !== false;
+  const paddingDigits = Math.max(3, Math.min(10, Number(seq.paddingDigits) || 5));
+  const startingNumber = Math.max(1, Number(seq.startingNumber) || 1);
+  const baseYear = Number(seq.baseYear) || year;
+
+  // startingNumber applies only for the configured base year; other years start from 1
+  const effectiveStart = year === baseYear ? startingNumber : 1;
+
+  // Count invoices from this year (tenantPrisma already filters by organizationId)
   const count = await client.invoice.count({
     where: {
       issueDate: {
@@ -260,8 +256,18 @@ const generateInvoiceNumber = async (client = prisma) => {
     },
   });
 
-  const sequence = String(count + 1).padStart(5, '0');
-  return `INV-${year}-${sequence}`;
+  // baseCount = invoice count when startingNumber was set (stored alongside it)
+  const baseCount = Math.max(0, Number(seq.baseCount) || 0);
+  // Compute next number: startingNumber + invoices created since the change
+  const invoicesSinceChange = Math.max(0, count - baseCount);
+  const sequence = String(effectiveStart + invoicesSinceChange).padStart(paddingDigits, '0');
+
+  if (includeYear) {
+    return separator
+      ? `${prefix}${separator}${year}${separator}${sequence}`
+      : `${prefix}${year}${sequence}`;
+  }
+  return separator ? `${prefix}${separator}${sequence}` : `${prefix}${sequence}`;
 };
 
 const sanitizeFilename = (value, fallback) => {
@@ -284,34 +290,24 @@ const persistPdfForInvoice = async ({
   companySettings,
   client = prisma,
 }) => {
-  debugLog('persistPdfForInvoice starting', { invoiceId: mappedInvoice?.id, relativePath });
-
   try {
-    debugLog('Building invoice PDF...');
     const buffer = await buildInvoicePdf(mappedInvoice, companySettings);
-    debugLog('PDF buffer created', { bufferSize: buffer?.length });
 
-    debugLog('Writing PDF file...');
     await writeFile(relativePath, buffer);
-    debugLog('PDF file written');
 
     if (previousPath && previousPath !== relativePath) {
-      debugLog('Removing old PDF file', { previousPath });
       await removeFile(previousPath);
     }
 
     if (updateRecord) {
-      debugLog('Updating invoice record with PDF path');
       await client.invoice.update({
         where: { id: mappedInvoice.id },
         data: { pdfUrl: relativePath },
       });
     }
 
-    debugLog('persistPdfForInvoice completed');
     return { buffer, relativePath };
   } catch (error) {
-    debugLog('ERROR in persistPdfForInvoice', { error: error.message, stack: error.stack });
     throw error;
   }
 };
@@ -426,14 +422,20 @@ const sanitizePayload = (payload = {}, existing, companySettings = null) => {
   const lineItemsProvided = Object.prototype.hasOwnProperty.call(payload, 'lineItems');
   const sanitizedItems = lineItemsProvided
     ? sanitizeLineItems(Array.isArray(payload.lineItems) ? payload.lineItems : [])
-    : existing?.lineItems?.map((item, index) => ({
-        name: item.name,
-        description: item.description,
-        quantity: Number(item.quantity || 1),
-        // Backward compatibility: combine hardwarePrice + laborPrice for unitPrice
-        unitPrice: Number(item.hardwarePrice || 0) + Number(item.laborPrice || 0),
-        order: item.order ?? index,
-      })) || [];
+    : sanitizeLineItems(
+        (existing?.lineItems || []).map((item) => ({
+          name: item.name,
+          description: item.description,
+          hardwareQuantity: item.hardwareQuantity,
+          laborQuantity: item.laborQuantity,
+          hardwarePrice: item.hardwarePrice,
+          laborPrice: item.laborPrice,
+          hardwareUnit: item.hardwareUnit,
+          laborUnit: item.laborUnit,
+          quantity: item.quantity,
+          order: item.order,
+        }))
+      );
 
   if (sanitizedItems.length === 0) {
     throw new AppError('Invoice must include at least one line item', 400);
@@ -533,10 +535,12 @@ const listInvoices = async (prisma, filters = {}, options = {}) => {
     : { createdAt: 'desc' };
 
   if (!paginate) {
+    // Cap at 1000 to prevent unbounded memory usage; use export endpoints for full datasets
     const invoices = await prisma.invoice.findMany({
       where,
       include: includeConfig,
       orderBy,
+      take: 1000,
     });
 
     return invoices.map(mapInvoice);
@@ -559,11 +563,9 @@ const listInvoices = async (prisma, filters = {}, options = {}) => {
 };
 
 const createInvoice = async (prisma, payload, options = {}) => {
-  debugLog('Starting createInvoice...', { payload });
-  const { tx, skipBroadcast = false } = options;
+  const { tx, skipBroadcast = false, organizationId = null } = options;
   const client = tx || prisma;
 
-  debugLog('Validating appointment...', { appointmentId: payload.appointmentId });
   // Validate appointment exists and is completed
   const appointment = await client.appointment.findUnique({
     where: { id: payload.appointmentId },
@@ -604,8 +606,6 @@ const createInvoice = async (prisma, payload, options = {}) => {
     },
   });
 
-  debugLog('Appointment fetched', { hasAppointment: !!appointment });
-
   if (!appointment) {
     throw new AppError('Appointment not found', 404);
   }
@@ -614,40 +614,32 @@ const createInvoice = async (prisma, payload, options = {}) => {
     throw new AppError('Cannot create invoice for appointment that is not completed', 400);
   }
 
-  debugLog('Getting client ID...', { appointmentClientId: appointment.clientId });
   // Use appointment's client if not provided
   const clientId = payload.clientId || appointment.clientId;
   if (!clientId) {
     throw new AppError('Client is required for invoice', 400);
   }
 
-  debugLog('Fetching company settings...');
   // Fetch company settings for TVA calculation
-  const companySettings = await getCompanySettings();
+  const companySettings = await getCompanySettings(organizationId);
 
-  debugLog('Generating invoice number...');
-  const invoiceNumber = await generateInvoiceNumber(client);
-
-  debugLog('Sanitizing payload...');
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, null, companySettings);
 
-  // Apply loyalty tier discount if applicable
+  // Apply loyalty tier discount if applicable (opt-in; default true)
   let loyaltyDiscount = null;
   let loyaltyTierAtTime = null;
-  try {
-    const loyaltyService = require('./loyaltyService');
-    const tierInfo = await loyaltyService.getTierDiscount(prisma, clientId);
-    if (tierInfo && tierInfo.discountPercent > 0) {
-      loyaltyTierAtTime = tierInfo.tier;
-      loyaltyDiscount = roundCurrency(totals.subtotal * (tierInfo.discountPercent / 100));
-      totals.total = roundCurrency(totals.total - loyaltyDiscount);
+  if (payload.applyLoyaltyDiscount !== false) {
+    try {
+      const tierInfo = await loyaltyService.getTierDiscount(prisma, clientId);
+      if (tierInfo && tierInfo.discountPercent > 0) {
+        loyaltyTierAtTime = tierInfo.tier;
+        loyaltyDiscount = roundCurrency(totals.subtotal * (tierInfo.discountPercent / 100));
+        totals.total = roundCurrency(totals.total - loyaltyDiscount);
+      }
+    } catch (err) {
+      // Loyalty failures never block invoice creation
     }
-  } catch (err) {
-    // Loyalty failures never block invoice creation
   }
-
-  debugLog('Building PDF path...');
-  const relativePdfPath = buildRelativePdfPath(payload.appointmentId, invoiceNumber);
 
   // Payment tracking from Payment records (not just advance payment)
   const totalPaid = await calculateTotalPaid(prisma, payload.appointmentId, { tx: client });
@@ -664,58 +656,65 @@ const createInvoice = async (prisma, payload, options = {}) => {
     ? payments[payments.length - 1].paymentDate
     : null;
 
-  debugLog('Creating invoice in database...', { invoiceNumber, clientId });
-
+  // Retry loop handles the rare case of concurrent invoice creation for the same org
+  // producing duplicate invoice numbers (@@unique([organizationId, invoiceNumber]))
   let invoice;
-  try {
-    invoice = await client.invoice.create({
-      data: {
-        invoiceNumber,
-        appointmentId: payload.appointmentId,
-        serviceOrderId: payload.serviceOrderId || null,
-        clientId,
-        status,
-        issueDate,
-        dueDate,
-        subtotal: totals.subtotal,
-        tax: totals.tax,
-        total: totals.total,
-        notes,
-        pdfUrl: relativePdfPath,
-        loyaltyDiscount,
-        loyaltyTierAtTime,
-        // Payment tracking (from Payment records, not appointment fields)
-        advancePayment: totalPaid,
-        remainingBalance,
-        paymentStatus,
-        advancePaidAt,
-        finalPaidAt,
-        lineItems: {
-          create: sanitizedItems.map((item) => ({
-            name: item.name,
-            description: item.description,
-            // Enhanced quantity and price tracking
-            hardwareQuantity: item.hardwareQuantity,
-            laborQuantity: item.laborQuantity,
-            hardwarePrice: item.hardwarePrice,
-            laborPrice: item.laborPrice,
-            hardwareUnit: item.hardwareUnit,
-            laborUnit: item.laborUnit,
-            totalPrice: item.totalPrice,
-            // Legacy fields
-            quantity: item.quantity,
-            order: item.order,
-          })),
+  let invoiceNumber;
+  const MAX_INVOICE_RETRIES = 3;
+  for (let attempt = 0; attempt < MAX_INVOICE_RETRIES; attempt++) {
+    invoiceNumber = await generateInvoiceNumber(client, organizationId);
+    try {
+      invoice = await client.invoice.create({
+        data: {
+          invoiceNumber,
+          appointmentId: payload.appointmentId,
+          serviceOrderId: payload.serviceOrderId || null,
+          clientId,
+          status,
+          issueDate,
+          dueDate,
+          subtotal: totals.subtotal,
+          tax: totals.tax,
+          total: totals.total,
+          notes,
+          pdfUrl: buildRelativePdfPath(payload.appointmentId, invoiceNumber),
+          loyaltyDiscount,
+          loyaltyTierAtTime,
+          // Payment tracking (from Payment records, not appointment fields)
+          advancePayment: totalPaid,
+          remainingBalance,
+          paymentStatus,
+          advancePaidAt,
+          finalPaidAt,
+          lineItems: {
+            create: sanitizedItems.map((item) => ({
+              name: item.name,
+              description: item.description,
+              // Enhanced quantity and price tracking
+              hardwareQuantity: item.hardwareQuantity,
+              laborQuantity: item.laborQuantity,
+              hardwarePrice: item.hardwarePrice,
+              laborPrice: item.laborPrice,
+              hardwareUnit: item.hardwareUnit,
+              laborUnit: item.laborUnit,
+              totalPrice: item.totalPrice,
+              // Legacy fields
+              quantity: item.quantity,
+              order: item.order,
+            })),
+          },
         },
-      },
-    });
-    debugLog('Invoice created in DB successfully', { invoiceId: invoice.id });
-  } catch (error) {
-    debugLog('ERROR creating invoice in DB', { error: error.message, stack: error.stack });
-    throw error;
+      });
+      break; // success
+    } catch (err) {
+      const isDuplicate = err.code === 'P2002' &&
+        (err.meta?.target ?? []).some(t => String(t).includes('invoiceNumber'));
+      if (isDuplicate && attempt < MAX_INVOICE_RETRIES - 1) continue;
+      throw err;
+    }
   }
 
-  debugLog('Mapping invoice...');
+  const relativePdfPath = buildRelativePdfPath(payload.appointmentId, invoiceNumber);
 
   // Manually construct the mapped invoice from data we already have
   // to avoid circular reference issues
@@ -754,32 +753,32 @@ const createInvoice = async (prisma, payload, options = {}) => {
     pdfUrl: invoice.pdfUrl ? `/files/${invoice.pdfUrl.replace(/\\/g, '/')}` : null,
   };
 
-  debugLog('Invoice mapped successfully');
-  debugLog('Persisting PDF...');
-
-  try {
-    await persistPdfForInvoice({
-      mappedInvoice: mapped,
-      relativePath: relativePdfPath,
-      previousPath: null,
-      updateRecord: false,
-      companySettings,
-      client,
-    });
-    debugLog('PDF persisted successfully');
-  } catch (error) {
-    debugLog('ERROR persisting PDF', { error: error.message, stack: error.stack });
-    throw error;
-  }
+  await persistPdfForInvoice({
+    mappedInvoice: mapped,
+    relativePath: relativePdfPath,
+    previousPath: null,
+    updateRecord: false,
+    companySettings,
+    client,
+  });
 
   mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
   if (!skipBroadcast) {
-    debugLog('Broadcasting invoice creation...');
     broadcastInvoice('created', mapped);
   }
 
-  debugLog('createInvoice completed successfully');
+  // Send invoice email to client (fire-and-forget)
+  const invoiceClient = mapped.client || appointment?.client;
+  if (invoiceClient?.email) {
+    sendInvoiceCreatedEmail(prisma, {
+      invoice: mapped,
+      client: invoiceClient,
+      companySettings,
+      organizationId: appointment?.organizationId,
+    }).catch((err) => logger.error('[EMAIL] Invoice created email failed:', err.message));
+  }
+
   return mapped;
 };
 
@@ -797,10 +796,40 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
   }
 
   // Fetch company settings for TVA calculation
-  const companySettings = await getCompanySettings();
+  const companySettings = await getCompanySettings(existing.organizationId);
 
   const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, existing, companySettings);
   const relativePdfPath = existing.pdfUrl || buildRelativePdfPath(existing.appointmentId, existing.invoiceNumber, id);
+
+  // Handle loyalty discount for this update
+  let updatedLoyaltyDiscount = Number(existing.loyaltyDiscount || 0);
+  let updatedLoyaltyTierAtTime = existing.loyaltyTierAtTime || null;
+
+  if (payload.applyLoyaltyDiscount === false) {
+    // Remove loyalty discount
+    updatedLoyaltyDiscount = 0;
+    updatedLoyaltyTierAtTime = null;
+  } else if (payload.applyLoyaltyDiscount === true) {
+    // Recalculate loyalty discount from client's current tier
+    try {
+      const tierInfo = await loyaltyService.getTierDiscount(prisma, existing.clientId);
+      if (tierInfo && tierInfo.discountPercent > 0) {
+        updatedLoyaltyTierAtTime = tierInfo.tier;
+        updatedLoyaltyDiscount = roundCurrency(totals.subtotal * (tierInfo.discountPercent / 100));
+      } else {
+        updatedLoyaltyDiscount = 0;
+        updatedLoyaltyTierAtTime = null;
+      }
+    } catch (err) {
+      updatedLoyaltyDiscount = 0;
+    }
+  }
+  // else: preserve existing (updatedLoyaltyDiscount already set above)
+
+  // Apply loyalty discount to the recalculated total
+  if (updatedLoyaltyDiscount > 0) {
+    totals.total = roundCurrency(totals.total - updatedLoyaltyDiscount);
+  }
 
   // Track if we're changing to PAID status for PDF regeneration
   const changingToPaid = status === 'PAID' && existing.status !== 'PAID';
@@ -872,6 +901,8 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
       subtotal: totals.subtotal,
       tax: totals.tax,
       total: totals.total,
+      loyaltyDiscount: updatedLoyaltyDiscount > 0 ? updatedLoyaltyDiscount : null,
+      loyaltyTierAtTime: updatedLoyaltyTierAtTime,
       pdfUrl: relativePdfPath,
       // Set paidAt when changing status to PAID
       ...(changingToPaid && { paidAt: new Date() }),
@@ -955,8 +986,9 @@ const deleteInvoice = async (prisma, id, options = {}) => {
   return { success: true };
 };
 
-const generateInvoicePdf = async (id, { refresh = false } = {}) => {
-  const invoice = await prisma.invoice.findUnique({
+const generateInvoicePdf = async (tenantPrisma, id, { refresh = false } = {}) => {
+  const client = tenantPrisma || prisma;
+  const invoice = await client.invoice.findUnique({
     where: { id },
     include: includeConfig,
   });
@@ -973,14 +1005,14 @@ const generateInvoicePdf = async (id, { refresh = false } = {}) => {
 
   const mapped = mapInvoice(invoice);
   const relativePath = invoice.pdfUrl || buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, invoice.id);
-  const companySettings = await getCompanySettings();
+  const companySettings = await getCompanySettings(invoice.organizationId);
   const { buffer, relativePath: storedPath } = await persistPdfForInvoice({
     mappedInvoice: mapped,
     relativePath,
     previousPath: invoice.pdfUrl,
     updateRecord: !invoice.pdfUrl || invoice.pdfUrl !== relativePath,
     companySettings,
-    client: prisma,
+    client,
   });
   mapped.pdfUrl = `/files/${storedPath.replace(/\\/g, '/')}`;
   const filename = path.basename(relativePath);
@@ -988,9 +1020,9 @@ const generateInvoicePdf = async (id, { refresh = false } = {}) => {
   return { buffer, filename };
 };
 
-const markInvoiceAsSent = async (id, options = {}) => {
+const markInvoiceAsSent = async (prismaClient, id, options = {}) => {
   const { tx, skipBroadcast = false } = options;
-  const client = tx || prisma;
+  const client = tx || prismaClient;
 
   const invoice = await client.invoice.findUnique({
     where: { id },
@@ -1022,9 +1054,9 @@ const markInvoiceAsSent = async (id, options = {}) => {
   return mapped;
 };
 
-const markInvoiceAsPaid = async (id, options = {}) => {
+const markInvoiceAsPaid = async (prismaClient, id, options = {}) => {
   const { tx, skipBroadcast = false, userId } = options;
-  const client = tx || prisma;
+  const client = tx || prismaClient;
 
   const invoice = await client.invoice.findUnique({
     where: { id },
@@ -1108,7 +1140,7 @@ const markInvoiceAsPaid = async (id, options = {}) => {
   const mapped = mapInvoice(updated);
 
   // Regenerate PDF to reflect PAID status and updated payment info
-  const companySettings = await getCompanySettings();
+  const companySettings = await getCompanySettings(invoice.organizationId);
   await persistPdfForInvoice({
     mappedInvoice: mapped,
     relativePath: invoice.pdfUrl || buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, id),
@@ -1125,8 +1157,8 @@ const markInvoiceAsPaid = async (id, options = {}) => {
   return mapped;
 };
 
-const getInvoicesByAppointment = async (appointmentId) => {
-  const invoices = await prisma.invoice.findMany({
+const getInvoicesByAppointment = async (prismaClient, appointmentId) => {
+  const invoices = await prismaClient.invoice.findMany({
     where: { appointmentId },
     include: includeConfig,
     orderBy: { createdAt: 'desc' },
@@ -1140,11 +1172,9 @@ const getInvoicesByAppointment = async (appointmentId) => {
  * This automatically copies all line items from the service order to the invoice
  */
 const createInvoiceFromServiceOrder = async (prisma, serviceOrderId, options = {}) => {
-  debugLog('Starting createInvoiceFromServiceOrder', { serviceOrderId });
-  const { tx, skipBroadcast = false } = options;
+  const { tx, skipBroadcast = false, organizationId = null, applyLoyaltyDiscount = true } = options;
   const client = tx || prisma;
 
-  debugLog('Fetching service order...');
   // Get service order with all related data
   const serviceOrder = await client.serviceOrder.findUnique({
     where: { id: serviceOrderId },
@@ -1185,8 +1215,6 @@ const createInvoiceFromServiceOrder = async (prisma, serviceOrderId, options = {
     },
   });
 
-  debugLog('Service order fetched', { hasServiceOrder: !!serviceOrder });
-
   if (!serviceOrder) {
     throw new AppError('Service order not found', 404);
   }
@@ -1195,7 +1223,6 @@ const createInvoiceFromServiceOrder = async (prisma, serviceOrderId, options = {
     throw new AppError('Service order must have an associated appointment', 400);
   }
 
-  debugLog('Mapping line items...', { lineItemsCount: serviceOrder.lineItems.length });
   // Map service order line items to invoice line items
   const lineItems = serviceOrder.lineItems.map((item, index) => ({
     name: item.name,
@@ -1210,7 +1237,6 @@ const createInvoiceFromServiceOrder = async (prisma, serviceOrderId, options = {
   }));
 
   // Create invoice with service order data
-  debugLog('Creating invoice payload...');
   const payload = {
     appointmentId: serviceOrder.appointmentId,
     serviceOrderId: serviceOrder.id,
@@ -1221,8 +1247,7 @@ const createInvoiceFromServiceOrder = async (prisma, serviceOrderId, options = {
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default: 30 days from now
   };
 
-  debugLog('Calling createInvoice with payload...', { payload });
-  return createInvoice(prisma, payload, { tx: client, skipBroadcast });
+  return createInvoice(prisma, { ...payload, applyLoyaltyDiscount }, { tx: client, skipBroadcast, organizationId });
 };
 
 module.exports = {

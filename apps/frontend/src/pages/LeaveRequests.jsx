@@ -443,7 +443,7 @@ const LeaveRequests = () => {
             type="button"
             onClick={openRequestModal}
             disabled={!selectedDates.start || !selectedDates.end}
-            className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-viperx-primary/90 transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CalendarIcon size={16} />
             Trimite cerere
@@ -526,13 +526,13 @@ const LeaveRequests = () => {
                   relative min-h-[80px] p-2 rounded-lg border-2 transition-all
                   ${!currentMonthDay ? 'bg-gray-50 text-gray-300 cursor-default border-gray-100' : ''}
                   ${isPast && currentMonthDay ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : ''}
-                  ${selected && !isPast && currentMonthDay ? 'bg-viperx-primary/15 border-viperx-primary shadow-md ring-2 ring-viperx-primary/20' : 'border-gray-200'}
-                  ${today && !selected && currentMonthDay ? 'border-viperx-primary ring-2 ring-viperx-primary/30' : ''}
+                  ${selected && !isPast && currentMonthDay ? 'bg-primary/15 border-primary shadow-md ring-2 ring-primary/20' : 'border-gray-200'}
+                  ${today && !selected && currentMonthDay ? 'border-primary ring-2 ring-primary/30' : ''}
                   ${!isPast && !selected && currentMonthDay ? 'hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm' : ''}
                   ${isAtLimit && currentMonthDay ? 'ring-2 ring-red-300' : ''}
                 `}
               >
-                <div className={`text-sm font-semibold mb-1 ${today && currentMonthDay ? 'text-viperx-primary' : ''}`}>
+                <div className={`text-sm font-semibold mb-1 ${today && currentMonthDay ? 'text-primary' : ''}`}>
                   {format(day, 'd')}
                 </div>
                 {requestsOnDay.length > 0 && currentMonthDay && (
@@ -574,13 +574,13 @@ const LeaveRequests = () => {
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Legenda</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg border-2 border-viperx-primary flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-viperx-primary"></div>
+              <div className="w-6 h-6 rounded-lg border-2 border-primary flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-primary"></div>
               </div>
               <span className="text-gray-700 font-medium">Ziua de azi</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-viperx-primary/10 border border-viperx-primary" />
+              <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary" />
               <span className="text-gray-700 font-medium">Selectat</span>
             </div>
             <div className="flex items-center gap-2">
@@ -618,7 +618,7 @@ const LeaveRequests = () => {
         <div className="hidden lg:block overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : error ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
@@ -684,7 +684,7 @@ const LeaveRequests = () => {
                                 }))
                               }
                               placeholder="Notite (obligatorii pentru respingere)"
-                              className="rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                              className="rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               rows={2}
                             />
                             <div className="flex gap-2">
@@ -720,7 +720,7 @@ const LeaveRequests = () => {
         <div className="lg:hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+              <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : error ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
@@ -777,7 +777,7 @@ const LeaveRequests = () => {
                             }))
                           }
                           placeholder="Notite (obligatorii pentru respingere)"
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           rows={2}
                         />
                         <div className="flex gap-2">
@@ -844,7 +844,7 @@ const LeaveRequests = () => {
                   name="leaveType"
                   value={formData.leaveType}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {Object.entries(LEAVE_TYPE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -881,7 +881,7 @@ const LeaveRequests = () => {
                   name="reason"
                   value={formData.reason}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   rows={3}
                   placeholder="Explica motivul cererii tale..."
                   required
@@ -899,7 +899,7 @@ const LeaveRequests = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Se trimite...' : 'Trimite cerere'}
                 </button>
@@ -945,7 +945,7 @@ const LeaveRequests = () => {
                   name="employeeId"
                   value={medicalLeaveForm.employeeId}
                   onChange={handleMedicalLeaveInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   required
                 >
                   <option value="">Selecteaza angajat...</option>
@@ -981,7 +981,7 @@ const LeaveRequests = () => {
                   name="reason"
                   value={medicalLeaveForm.reason}
                   onChange={handleMedicalLeaveInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   rows={3}
                   placeholder="Motivul concediului medical..."
                   required

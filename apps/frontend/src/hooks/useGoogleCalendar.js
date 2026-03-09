@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as googleCalendarService from '../services/googleCalendarService';
 
 /**
- * Hook to get Google Calendar connection status
+ * Hook to get Google Calendar connection status (all configs for the user)
  */
 export const useGoogleCalendarStatus = (options = {}) => {
   return useQuery({
@@ -14,12 +14,13 @@ export const useGoogleCalendarStatus = (options = {}) => {
 };
 
 /**
- * Hook to list available Google Calendars
+ * Hook to list available Google Calendars for a specific location config
+ * @param {string} [locationId] - Location ID to fetch calendars for
  */
-export const useGoogleCalendars = (options = {}) => {
+export const useGoogleCalendars = (locationId, options = {}) => {
   return useQuery({
-    queryKey: ['google-calendars'],
-    queryFn: googleCalendarService.listCalendars,
+    queryKey: ['google-calendars', locationId || null],
+    queryFn: () => googleCalendarService.listCalendars(locationId),
     enabled: false, // Only fetch when explicitly enabled
     retry: false,
     ...options,
@@ -29,10 +30,11 @@ export const useGoogleCalendars = (options = {}) => {
 /**
  * Hook to connect Google Calendar (get OAuth URL)
  * @param {string} returnUrl - URL to redirect to after OAuth
+ * @param {string} [locationId] - Location ID to associate the connection with
  */
-export const useConnectGoogleCalendar = (returnUrl = '/settings') => {
+export const useConnectGoogleCalendar = (returnUrl = '/settings/organization', locationId) => {
   return useMutation({
-    mutationFn: () => googleCalendarService.getConnectUrl(returnUrl),
+    mutationFn: () => googleCalendarService.getConnectUrl(returnUrl, locationId),
     onSuccess: (data) => {
       // Redirect to Google OAuth
       if (data?.authUrl) {
@@ -43,13 +45,14 @@ export const useConnectGoogleCalendar = (returnUrl = '/settings') => {
 };
 
 /**
- * Hook to disconnect Google Calendar
+ * Hook to disconnect Google Calendar for a specific location
+ * @param {string} [locationId] - Location ID to disconnect
  */
-export const useDisconnectGoogleCalendar = () => {
+export const useDisconnectGoogleCalendar = (locationId) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: googleCalendarService.disconnect,
+    mutationFn: () => googleCalendarService.disconnect(locationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-calendar-status'] });
       queryClient.removeQueries({ queryKey: ['google-calendars'] });
@@ -72,11 +75,11 @@ export const useUpdateGoogleCalendarSettings = () => {
 };
 
 /**
- * Hook to sync all appointments to Google Calendar
+ * Hook to sync all appointments to Google Calendar for a location
  */
 export const useSyncAllToGoogleCalendar = () => {
   return useMutation({
-    mutationFn: googleCalendarService.syncAll,
+    mutationFn: (locationId) => googleCalendarService.syncAll(locationId),
   });
 };
 

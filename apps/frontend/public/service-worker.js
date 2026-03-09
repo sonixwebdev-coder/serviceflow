@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 // Service Worker for Push Notifications
 
-const CACHE_NAME = 'viperx-v1';
+const CACHE_NAME = 'forjait-v1';
 
 // Install event - cache essential assets
 self.addEventListener('install', (event) => {
@@ -31,7 +31,7 @@ self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push received:', event);
 
   let data = {
-    title: 'ViperX CRM',
+    title: 'ForjaIt CRM',
     body: 'You have a new notification',
     icon: '/logo192.png',
     badge: '/icons/badge.png',

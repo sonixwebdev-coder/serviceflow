@@ -31,6 +31,7 @@ const updateInvoiceSchema = z.object({
   notes: z.string().optional(),
   tax: z.number().nonnegative().optional(),
   lineItems: z.array(invoiceLineItemSchema).optional(),
+  applyLoyaltyDiscount: z.boolean().optional(),
 });
 
 const listInvoicesQuerySchema = z.object({

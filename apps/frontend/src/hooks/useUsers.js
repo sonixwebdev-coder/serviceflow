@@ -4,8 +4,9 @@ import { fetchUsers } from '../services/userService';
 
 const useUsers = (initialFilters = {}, options = {}) => {
   const { enabled = true } = options;
-  const [filters, setFilters] = useState(initialFilters);
-  const queryKey = useMemo(() => ['users', filters], [filters]);
+  const [overrides, setFilters] = useState({});
+  const queryParams = useMemo(() => ({ ...initialFilters, ...overrides }), [initialFilters, overrides]);
+  const queryKey = useMemo(() => ['users', queryParams], [queryParams]);
 
   const {
     data,
@@ -15,7 +16,7 @@ const useUsers = (initialFilters = {}, options = {}) => {
   } = useQuery({
     queryKey,
     enabled,
-    queryFn: () => fetchUsers(filters),
+    queryFn: () => fetchUsers(queryParams),
   });
 
   const errorMessage = useMemo(() => error?.message || (error ? String(error) : null), [error]);
@@ -24,7 +25,7 @@ const useUsers = (initialFilters = {}, options = {}) => {
     users: data || [],
     loading: isLoading,
     error: errorMessage,
-    filters,
+    filters: queryParams,
     setFilters,
     refresh: refetch,
   };

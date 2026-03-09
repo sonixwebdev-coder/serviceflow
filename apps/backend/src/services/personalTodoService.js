@@ -1,5 +1,6 @@
 const { AppError } = require('../utils/errors');
 const { createNotification } = require('./notificationService');
+const { sendReminderNotification } = require('./pushNotificationService');
 const { mapPersonalTodo } = require('../utils/transform');
 
 const normalize = (value) => (value ? value.toUpperCase().replace(/-/g, '_') : undefined);
@@ -189,17 +190,18 @@ const checkOverdueTodos = async (prisma) => {
     },
   });
 
-  // Send notifications for overdue todos
-  const notifications = overdueTodos.map((todo) =>
-    createNotification({
+  // Send in-app + push notifications for overdue todos
+  const notifications = overdueTodos.map(async (todo) => {
+    await createNotification({
       recipientId: todo.userId,
       title: 'Reminder: Todo depasit termen',
       message: `Task-ul "${todo.title}" a depasit termenul limita.`,
       type: 'SYSTEM',
       entityType: 'personalTodo',
       entityId: todo.id,
-    })
-  );
+    });
+    await sendReminderNotification(todo).catch(() => {});
+  });
 
   await Promise.all(notifications);
 
@@ -237,10 +239,10 @@ const checkUpcomingTodos = async (prisma) => {
     },
   });
 
-  // Send notifications for upcoming todos
-  const notifications = upcomingTodos.map((todo) => {
+  // Send in-app + push notifications for upcoming todos
+  const notifications = upcomingTodos.map(async (todo) => {
     const hoursUntilDue = Math.round((new Date(todo.dueDate) - now) / (1000 * 60 * 60));
-    return createNotification({
+    await createNotification({
       recipientId: todo.userId,
       title: 'Reminder: Todo aproape de termen',
       message: `Task-ul "${todo.title}" expira in ${hoursUntilDue} ore.`,
@@ -248,6 +250,7 @@ const checkUpcomingTodos = async (prisma) => {
       entityType: 'personalTodo',
       entityId: todo.id,
     });
+    await sendReminderNotification(todo).catch(() => {});
   });
 
   await Promise.all(notifications);

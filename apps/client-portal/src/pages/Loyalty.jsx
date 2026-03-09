@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { Gift, Trophy, Star, Copy, Check, ArrowUpRight, ArrowDownRight, Users } from 'lucide-react';
-import { useLoyaltyDashboard, useLoyaltyTransactions, useLoyaltyReferral } from '@/hooks/useLoyalty';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Gift, Trophy, Star, Copy, Check, ArrowUpRight, ArrowDownRight, Users, UserPlus } from 'lucide-react';
+import { useLoyaltyDashboard, useLoyaltyTransactions, useLoyaltyReferral, useApplyReferral } from '@/hooks/useLoyalty';
+import { loyaltyService } from '@/services/loyaltyService';
 import { QRCodeSVG } from 'qrcode.react';
 
 const TIER_CONFIG = {
@@ -73,12 +75,45 @@ function TierProgressRing({ currentTier, lifetimePoints, thresholds }) {
 }
 
 export default function Loyalty() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [txPage, setTxPage] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [referralInput, setReferralInput] = useState('');
+  const [validationResult, setValidationResult] = useState(null);
+  const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const [applySuccess, setApplySuccess] = useState('');
 
   const { data: dashboardData, isLoading: dashLoading } = useLoyaltyDashboard();
   const { data: txData, isLoading: txLoading } = useLoyaltyTransactions({ page: txPage, limit: 10 });
   const { data: referralData } = useLoyaltyReferral();
+  const applyMutation = useApplyReferral();
+
+  // Pre-fill from URL param and auto-validate
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      setReferralInput(code);
+      setSearchParams({}, { replace: true });
+      // Auto-validate after a brief moment so the user sees what's happening
+      const timer = setTimeout(async () => {
+        setValidating(true);
+        try {
+          const result = await loyaltyService.validateReferralCode(code);
+          if (result.valid) {
+            setValidationResult(result);
+          } else {
+            setValidationError(result.error || 'Cod de referral invalid');
+          }
+        } catch {
+          setValidationError('Eroare la validarea codului');
+        } finally {
+          setValidating(false);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const dashboard = dashboardData?.data || dashboardData;
   const account = dashboard?.account;
@@ -96,6 +131,43 @@ export default function Loyalty() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const handleValidateCode = async () => {
+    const code = referralInput.trim();
+    if (!code) return;
+    setValidating(true);
+    setValidationError('');
+    setValidationResult(null);
+    try {
+      const result = await loyaltyService.validateReferralCode(code);
+      if (result.valid) {
+        setValidationResult(result);
+      } else {
+        setValidationError(result.error || 'Cod de referral invalid');
+      }
+    } catch {
+      setValidationError('Eroare la validarea codului');
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const handleApplyCode = () => {
+    const code = referralInput.trim();
+    applyMutation.mutate(code, {
+      onSuccess: (data) => {
+        setApplySuccess(`Cod aplicat! Ai primit ${data.pointsEarned} puncte.`);
+        setReferralInput('');
+        setValidationResult(null);
+      },
+      onError: (err) => {
+        setValidationError(err.response?.data?.error || 'Eroare la aplicarea codului');
+        setValidationResult(null);
+      },
+    });
+  };
+
+  const showReferralInput = account && !account.referredById && !applySuccess;
 
   if (dashLoading) {
     return (
@@ -212,6 +284,75 @@ export default function Loyalty() {
           </div>
         )}
       </div>
+
+      {/* Referral Success Message */}
+      {applySuccess && (
+        <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-center gap-3">
+          <Check className="h-5 w-5 text-green-600 shrink-0" />
+          <p className="text-sm font-medium text-green-700">{applySuccess}</p>
+        </div>
+      )}
+
+      {/* Apply Referral Code */}
+      {showReferralInput && (
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <UserPlus className="h-5 w-5 text-green-600" />
+            <h3 className="text-base font-semibold text-gray-900">Aplica cod referral</h3>
+          </div>
+          <p className="text-sm text-gray-500 mb-3">
+            Ai primit un cod de referral? Introdu-l mai jos pentru a primi puncte bonus.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={referralInput}
+              onChange={(e) => {
+                setReferralInput(e.target.value.toUpperCase());
+                setValidationResult(null);
+                setValidationError('');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (validationResult) {
+                    handleApplyCode();
+                  } else if (referralInput.trim()) {
+                    handleValidateCode();
+                  }
+                }
+              }}
+              placeholder="REF-XXXXXX"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+            />
+            {!validationResult ? (
+              <button
+                onClick={handleValidateCode}
+                disabled={!referralInput.trim() || validating}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors disabled:opacity-50"
+              >
+                {validating ? 'Se verifica...' : 'Verifica'}
+              </button>
+            ) : (
+              <button
+                onClick={handleApplyCode}
+                disabled={applyMutation.isPending}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {applyMutation.isPending ? 'Se aplica...' : 'Aplica'}
+              </button>
+            )}
+          </div>
+          {validationError && (
+            <p className="text-sm text-red-600 mt-2">{validationError}</p>
+          )}
+          {validationResult && (
+            <p className="text-sm text-green-600 mt-2">
+              Cod valid — recomandat de <span className="font-medium">{validationResult.referrerName}</span>
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Transaction History */}
       <div className="rounded-xl border border-gray-200 bg-white">

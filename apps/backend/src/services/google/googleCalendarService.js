@@ -378,9 +378,9 @@ const syncAllAppointments = async (prisma, userId, locationId) => {
 /**
  * List user's calendars
  */
-const listCalendars = async (prisma, userId) => {
+const listCalendars = async (prisma, userId, locationId = null) => {
   try {
-    const calendar = await getAuthenticatedCalendarClient(prisma, userId);
+    const calendar = await getAuthenticatedCalendarClient(prisma, userId, locationId);
 
     const response = await calendar.calendarList.list();
     return response.data.items.map((cal) => ({
@@ -488,11 +488,17 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
       }
     });
 
+    // Pre-check remaining appointment quota before import
+    const { getRemainingQuota } = require('../organizationService');
+    const quotaInfo = await getRemainingQuota(user.organizationId, 'appointments');
+    let remainingQuota = quotaInfo.remaining;
+
     const results = {
       total: 0,
       imported: 0,
       skipped: 0,
       errors: 0,
+      quotaLimited: 0,
       importedAppointments: [],
     };
 
@@ -544,6 +550,13 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
             continue;
           }
 
+          // Skip if quota exhausted
+          if (remainingQuota !== Infinity && remainingQuota <= 0) {
+            logger.warn(`[GCAL] Skipping event "${event.summary}" — appointment quota exhausted`);
+            results.quotaLimited++;
+            continue;
+          }
+
           try {
             // Create appointment from Google event
             const appointment = await prisma.appointment.create({
@@ -579,6 +592,7 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
             });
 
             results.imported++;
+            if (remainingQuota !== Infinity) remainingQuota--;
             results.importedAppointments.push({
               id: appointment.id,
               title: appointment.title,

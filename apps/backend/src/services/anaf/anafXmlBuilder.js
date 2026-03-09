@@ -144,6 +144,10 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
     const subtotal = Number(invoiceData.subtotal);
     const tax = Number(invoiceData.tax);
     const total = Number(invoiceData.total);
+    const loyaltyDiscount = Number(invoiceData.loyaltyDiscount || 0);
+    const loyaltyTierAtTime = invoiceData.loyaltyTierAtTime || null;
+    // Tax base after discount (for correct XML TaxableAmount per EN16931)
+    const taxableBase = Math.max(0, subtotal - loyaltyDiscount);
     const taxRate = subtotal > 0 ? (tax / subtotal) * 100 : 19;
 
     // Build the complete UBL structure
@@ -171,6 +175,25 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
             'cbc:Name': companyData.bankName || '',
           },
         },
+        // Document-level allowance (loyalty discount) — BT-92/BG-20, required before TaxTotal
+        ...(loyaltyDiscount > 0 ? {
+          'cac:AllowanceCharge': {
+            'cbc:ChargeIndicator': 'false', // false = allowance/discount
+            'cbc:AllowanceChargeReasonCode': '95', // Code 95 = discount
+            'cbc:AllowanceChargeReason': loyaltyTierAtTime
+              ? `Reducere fidelitate ${loyaltyTierAtTime}`
+              : 'Reducere fidelitate',
+            'cbc:Amount': {
+              '_': formatDecimal(loyaltyDiscount, 2),
+              '$': { 'currencyID': 'RON' },
+            },
+            'cac:TaxCategory': {
+              'cbc:ID': 'S',
+              'cbc:Percent': formatDecimal(taxRate, 2),
+              'cac:TaxScheme': { 'cbc:ID': 'VAT' },
+            },
+          },
+        } : {}),
         'cac:TaxTotal': {
           'cbc:TaxAmount': {
             '_': formatDecimal(tax, 2),
@@ -179,8 +202,9 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
             },
           },
           'cac:TaxSubtotal': {
+            // TaxableAmount is the base after applying the allowance (BT-116)
             'cbc:TaxableAmount': {
-              '_': formatDecimal(subtotal, 2),
+              '_': formatDecimal(taxableBase, 2),
               '$': {
                 'currencyID': 'RON',
               },
@@ -201,14 +225,23 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
           },
         },
         'cac:LegalMonetaryTotal': {
+          // LineExtensionAmount = sum of line amounts before discounts (BT-106)
           'cbc:LineExtensionAmount': {
             '_': formatDecimal(subtotal, 2),
             '$': {
               'currencyID': 'RON',
             },
           },
+          // AllowanceTotalAmount = total discount amount (BT-107), required when discount > 0
+          ...(loyaltyDiscount > 0 ? {
+            'cbc:AllowanceTotalAmount': {
+              '_': formatDecimal(loyaltyDiscount, 2),
+              '$': { 'currencyID': 'RON' },
+            },
+          } : {}),
+          // TaxExclusiveAmount = taxable base after allowances (BT-109)
           'cbc:TaxExclusiveAmount': {
-            '_': formatDecimal(subtotal, 2),
+            '_': formatDecimal(taxableBase, 2),
             '$': {
               'currencyID': 'RON',
             },

@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   X,
   Star,
+  Check,
+  Ban,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsite, useWebsiteLeads, useLeadMutations } from '@/hooks/useWebsiteBuilder';
@@ -36,6 +38,24 @@ const statusLabels = {
   QUALIFIED: 'Calificat',
   CONVERTED: 'Convertit',
   LOST: 'Pierdut',
+};
+
+const approvalColors = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800',
+};
+
+const approvalLabels = {
+  pending: 'In asteptare',
+  approved: 'Aprobat',
+  rejected: 'Respins',
+};
+
+const getApprovalStatus = (isApproved) => {
+  if (isApproved === true) return 'approved';
+  if (isApproved === false) return 'rejected';
+  return 'pending';
 };
 
 /**
@@ -107,9 +127,13 @@ const WebsiteLeads = () => {
     updateLead,
     deleteLead,
     convertToClient,
+    approveReview,
+    rejectReview,
     isUpdating,
     isDeleting,
     isConverting,
+    isApproving,
+    isRejecting,
   } = useLeadMutations(website?.id);
 
   const handleTabChange = (tab) => {
@@ -149,6 +173,26 @@ const WebsiteLeads = () => {
       showToast({ title: 'Lead convertit in client!', type: 'success' });
     } catch (error) {
       showToast({ title: 'Eroare la conversie', type: 'error' });
+    }
+  };
+
+  const handleApprove = async (lead) => {
+    try {
+      await approveReview(lead.id);
+      refreshLeads();
+      showToast({ title: 'Recenzia a fost aprobata!', type: 'success' });
+    } catch (error) {
+      showToast({ title: 'Eroare la aprobare', type: 'error' });
+    }
+  };
+
+  const handleReject = async (lead) => {
+    try {
+      await rejectReview(lead.id);
+      refreshLeads();
+      showToast({ title: 'Recenzia a fost respinsa!', type: 'success' });
+    } catch (error) {
+      showToast({ title: 'Eroare la respingere', type: 'error' });
     }
   };
 
@@ -211,7 +255,7 @@ const WebsiteLeads = () => {
             </p>
             <Link
               to="/settings/website"
-              className="inline-flex items-center px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               Creeaza website
             </Link>
@@ -357,7 +401,7 @@ const WebsiteLeads = () => {
               placeholder="Cauta dupa nume, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -365,7 +409,7 @@ const WebsiteLeads = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent"
+              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="all">Toate statusurile</option>
               <option value="NEW">Noi</option>
@@ -479,15 +523,24 @@ const WebsiteLeads = () => {
                         </td>
                       )}
                       <td className="px-6 py-4">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => handleStatusChange(lead.id, e.target.value)}
-                          className={`px-2 py-1 rounded-md text-xs font-medium border-0 cursor-pointer ${statusColors[lead.status]}`}
-                        >
-                          {Object.entries(statusLabels).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
-                        </select>
+                        {isReviewTab ? (() => {
+                          const status = getApprovalStatus(lead.isApproved);
+                          return (
+                            <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${approvalColors[status]}`}>
+                              {approvalLabels[status]}
+                            </span>
+                          );
+                        })() : (
+                          <select
+                            value={lead.status}
+                            onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                            className={`px-2 py-1 rounded-md text-xs font-medium border-0 cursor-pointer ${statusColors[lead.status]}`}
+                          >
+                            {Object.entries(statusLabels).map(([value, label]) => (
+                              <option key={value} value={value}>{label}</option>
+                            ))}
+                          </select>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -550,7 +603,42 @@ const WebsiteLeads = () => {
             </button>
             {(() => {
               const lead = leads.find((l) => l.id === openDropdownId);
-              return lead && lead.source !== 'review' && lead.status !== 'CONVERTED' && !lead.clientId ? (
+              if (!lead) return null;
+
+              if (lead.source === 'review') {
+                return (
+                  <>
+                    {lead.isApproved !== true && (
+                      <button
+                        onClick={() => {
+                          handleApprove(lead);
+                          setOpenDropdownId(null);
+                        }}
+                        disabled={isApproving}
+                        className="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50"
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Aproba recenzia
+                      </button>
+                    )}
+                    {lead.isApproved !== false && (
+                      <button
+                        onClick={() => {
+                          handleReject(lead);
+                          setOpenDropdownId(null);
+                        }}
+                        disabled={isRejecting}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                      >
+                        <Ban className="h-4 w-4 mr-2" />
+                        Respinge recenzia
+                      </button>
+                    )}
+                  </>
+                );
+              }
+
+              return lead.status !== 'CONVERTED' && !lead.clientId ? (
                 <button
                   onClick={() => {
                     handleConvert(lead);
@@ -660,7 +748,7 @@ const WebsiteLeads = () => {
                     handleConvert(selectedLead);
                     setShowDetailsDialog(false);
                   }}
-                  className="inline-flex items-center px-4 py-2 bg-viperx-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   Converteste in client

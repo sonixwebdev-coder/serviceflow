@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signupOrganization, checkSlugAvailability } from '../services/organizationService';
 import { getSectorList } from '../constants/activitySectors';
+import { useAuthStore } from '../state/useAuthStore';
 import { Car, Scissors, Wrench, Smartphone, Check, ArrowLeft, ArrowRight } from 'lucide-react';
 
 const STEPS = [
@@ -36,6 +37,7 @@ const Signup = () => {
     password: '',
     confirmPassword: '',
     activitySector: '',
+    plan: 'PROFESSIONAL',
     acceptedTerms: false,
   });
 
@@ -173,15 +175,25 @@ const Signup = () => {
       const { confirmPassword, acceptedTerms, ...payload } = formData;
       const result = await signupOrganization(payload);
 
+      // Set auth session (accessToken + user) in the store so API calls work immediately
+      useAuthStore.getState().setSession({
+        user: result.user,
+        accessToken: result.accessToken,
+      });
+
+      // Cache user data for display hydration on reload (include role for hasRole checks)
       localStorage.setItem('user', JSON.stringify({
         id: result.user.id,
         firstName: result.user.firstName,
         lastName: result.user.lastName,
         avatarUrl: result.user.avatarUrl,
         role: result.user.role,
+        roles: result.user.roles,
+        orgStatus: result.user.orgStatus,
       }));
 
-      window.location.href = '/dashboard';
+      // Use React Router navigate (no full reload) so auth state persists
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Inregistrarea a esuat. Va rugam incercati din nou.');
     } finally {
@@ -418,54 +430,101 @@ const Signup = () => {
     </div>
   );
 
+  const SIGNUP_PLANS = [
+    { key: 'STARTER', name: 'Starter', price: 99, desc: '5 utilizatori, 500 clienti' },
+    { key: 'PROFESSIONAL', name: 'Professional', price: 249, desc: '15 utilizatori, 2.000 clienti', recommended: true },
+    { key: 'ENTERPRISE', name: 'Enterprise', price: 499, desc: 'Nelimitat' },
+  ];
+
   const renderSectorStep = () => (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-500">
-        Selectati domeniul principal. Aceasta optiune configureaza automat tipul de active si terminologia.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm text-gray-500 mb-3">
+          Selectati domeniul principal. Aceasta optiune configureaza automat tipul de active si terminologia.
+        </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {sectors.map((sector) => {
-          const IconComponent = SECTOR_ICONS[sector.icon] || Car;
-          const isSelected = formData.activitySector === sector.key;
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {sectors.map((sector) => {
+            const IconComponent = SECTOR_ICONS[sector.icon] || Car;
+            const isSelected = formData.activitySector === sector.key;
 
-          return (
-            <button
-              key={sector.key}
-              type="button"
-              onClick={() => handleSectorSelect(sector.key)}
-              className={`rounded-xl border-2 p-4 text-left transition-all ${
-                isSelected
-                  ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`rounded-lg p-2 ${
-                    isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
-                  }`}
-                >
-                  <IconComponent className="h-5 w-5" />
+            return (
+              <button
+                key={sector.key}
+                type="button"
+                onClick={() => handleSectorSelect(sector.key)}
+                className={`rounded-xl border-2 p-4 text-left transition-all ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`rounded-lg p-2 ${
+                      isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
+                    }`}
+                  >
+                    <IconComponent className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`text-sm font-semibold ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
+                      {sector.labelRo}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">{sector.description}</p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      {sector.hasAssets ? `Tip activ: ${sector.terminology.asset.singular}` : 'Fara gestiune active'}
+                    </p>
+                  </div>
+                  {isSelected && (
+                    <div className="rounded-full bg-blue-600 p-0.5 text-white">
+                      <Check className="h-3.5 w-3.5" />
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className={`text-sm font-semibold ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
-                    {sector.labelRo}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">{sector.description}</p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    {sector.hasAssets ? `Tip activ: ${sector.terminology.asset.singular}` : 'Fara gestiune active'}
-                  </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Plan selection */}
+      <div>
+        <p className="text-sm font-medium text-gray-700 mb-3">Alege planul (14 zile gratuit pe orice plan)</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {SIGNUP_PLANS.map((plan) => {
+            const isSelected = formData.plan === plan.key;
+            return (
+              <button
+                key={plan.key}
+                type="button"
+                onClick={() => setFormData((prev) => ({ ...prev, plan: plan.key }))}
+                className={`relative rounded-xl border-2 p-4 text-left transition-all ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {plan.recommended && (
+                  <span className="absolute -top-2.5 right-3 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                    Recomandat
+                  </span>
+                )}
+                <h4 className={`text-sm font-bold ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>{plan.name}</h4>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="text-lg font-extrabold text-gray-900">{plan.price}</span>
+                  <span className="text-xs text-gray-500">RON/luna</span>
                 </div>
+                <p className="mt-1 text-xs text-gray-500">{plan.desc}</p>
                 {isSelected && (
-                  <div className="rounded-full bg-blue-600 p-0.5 text-white">
-                    <Check className="h-3.5 w-3.5" />
+                  <div className="absolute top-3 right-3">
+                    <Check className="h-4 w-4 text-blue-600" />
                   </div>
                 )}
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

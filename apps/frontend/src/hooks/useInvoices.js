@@ -17,16 +17,16 @@ const EMPTY_ARRAY = [];
 export const useInvoices = (initialFilters = {}, options = {}) => {
   const { enablePagination = false } = options;
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState(initialFilters);
+  const [overrides, setFilters] = useState({});
 
   const queryParams = useMemo(() => {
-    const params = { ...filters };
+    const params = { ...initialFilters, ...overrides };
     if (enablePagination) {
       params.page = page;
-      params.limit = filters.limit || 20;
+      params.limit = params.limit || 20;
     }
     return params;
-  }, [filters, page, enablePagination]);
+  }, [initialFilters, overrides, page, enablePagination]);
 
   const queryKey = useMemo(() => ['invoices', queryParams], [queryParams]);
 
@@ -47,7 +47,7 @@ export const useInvoices = (initialFilters = {}, options = {}) => {
     meta: data?.meta || null,
     loading: isLoading,
     error,
-    filters,
+    filters: queryParams,
     setFilters,
     page,
     setPage,
@@ -75,19 +75,14 @@ export const useCreateInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload) => {
-      // If only serviceOrderId is provided, use the dedicated endpoint
-      if (payload.serviceOrderId && Object.keys(payload).length === 1) {
-        return createInvoiceFromServiceOrder(payload.serviceOrderId);
+    mutationFn: ({ serviceOrderId, applyLoyaltyDiscount, ...rest } = {}) => {
+      if (serviceOrderId && Object.keys(rest).length === 0) {
+        return createInvoiceFromServiceOrder(serviceOrderId, { applyLoyaltyDiscount });
       }
-      // Otherwise use the regular creation endpoint
-      return createInvoice(payload);
+      return createInvoice({ serviceOrderId, applyLoyaltyDiscount, ...rest });
     },
     onSuccess: (data) => {
-      // Invalidate invoices list
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-
-      // Update appointment invoices if appointmentId exists
       if (data?.appointmentId) {
         queryClient.invalidateQueries({
           queryKey: ['invoices', 'appointment', data.appointmentId]
@@ -96,6 +91,9 @@ export const useCreateInvoice = () => {
           queryKey: ['appointment', data.appointmentId]
         });
       }
+    },
+    onError: (err) => {
+      console.error('[Invoice] Create failed:', err.response?.data?.message || err.message);
     },
   });
 };
@@ -106,21 +104,19 @@ export const useUpdateInvoice = () => {
   return useMutation({
     mutationFn: ({ id, ...payload }) => updateInvoice(id, payload),
     onSuccess: (data) => {
-      // Update single invoice cache
       if (data?.id) {
         queryClient.setQueryData(['invoice', data.id], data);
         queryClient.invalidateQueries({ queryKey: ['invoice', data.id] });
       }
-
-      // Invalidate invoices list
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-
-      // Update appointment invoices if appointmentId exists
       if (data?.appointmentId) {
         queryClient.invalidateQueries({
           queryKey: ['invoices', 'appointment', data.appointmentId]
         });
       }
+    },
+    onError: (err) => {
+      console.error('[Invoice] Update failed:', err.response?.data?.message || err.message);
     },
   });
 };
@@ -131,12 +127,12 @@ export const useDeleteInvoice = () => {
   return useMutation({
     mutationFn: deleteInvoice,
     onSuccess: (_, invoiceId) => {
-      // Remove from cache
       queryClient.removeQueries({ queryKey: ['invoice', invoiceId] });
-
-      // Invalidate invoices list
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['invoices', 'appointment'] });
+    },
+    onError: (err) => {
+      console.error('[Invoice] Delete failed:', err.response?.data?.message || err.message);
     },
   });
 };

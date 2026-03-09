@@ -1,10 +1,28 @@
 const express = require('express');
+const { z } = require('zod');
 const router = express.Router();
 const asyncHandler = require('../../middleware/asyncHandler');
 const authenticateClient = require('../../middleware/authenticateClient');
 const portalAuthService = require('../../services/portalAuthService');
 const prisma = require('../../../lib/prisma');
 const { setRefreshCookie, clearRefreshCookie } = require('../../utils/cookies');
+const { verifyAccessToken } = require('../../utils/token');
+const cache = require('../../utils/cache');
+
+const emailSchema = z.string().email('Invalid email format').max(254);
+const passwordSchema = z.string().min(8, 'Password must be at least 8 characters').max(128);
+
+const portalLoginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, 'Password is required').max(128),
+});
+
+const portalRegisterSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  clientId: z.string().uuid('Invalid clientId'),
+  referralCode: z.string().max(20).optional(),
+});
 
 const PORTAL_COOKIE = 'sf_portal_refresh';
 
@@ -15,11 +33,11 @@ const PORTAL_COOKIE = 'sf_portal_refresh';
 router.post(
   '/login',
   asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    const parsed = portalLoginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
+    const { email, password } = parsed.data;
 
     const result = await portalAuthService.loginClient(prisma, {
       email,
@@ -41,11 +59,11 @@ router.post(
 router.post(
   '/register',
   asyncHandler(async (req, res) => {
-    const { email, password, clientId, referralCode } = req.body;
-
-    if (!email || !password || !clientId) {
-      return res.status(400).json({ error: 'Email, password, and clientId are required' });
+    const parsed = portalRegisterSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
+    const { email, password, clientId, referralCode } = parsed.data;
 
     const result = await portalAuthService.registerClient(prisma, {
       email,
@@ -69,6 +87,19 @@ router.post(
 
     if (refreshToken) {
       await portalAuthService.logoutClient(prisma, refreshToken);
+    }
+
+    // Blacklist the access token so it can't be reused until expiry
+    const authHeader = req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const accessToken = authHeader.replace('Bearer ', '');
+      try {
+        const payload = verifyAccessToken(accessToken);
+        const remainingTtl = Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
+        await cache.blacklistToken(accessToken, remainingTtl);
+      } catch {
+        // Token already expired or invalid — no need to blacklist
+      }
     }
 
     clearRefreshCookie(res, PORTAL_COOKIE);

@@ -277,6 +277,18 @@ const drawLineItemsTable = (context, lineItems, fonts, pdfDoc, totals = null, pa
   if (totals) {
     totalsRows.push({ label: 'SUBTOTAL', value: formatCurrency(totals.subtotal || 0), bold: false });
 
+    // Loyalty discount row
+    const loyaltyDiscountAmount = Number(totals.loyaltyDiscount || 0);
+    if (loyaltyDiscountAmount > 0) {
+      const tierLabel = totals.loyaltyTierAtTime ? ` (${sanitizeForPdf(totals.loyaltyTierAtTime)})` : '';
+      totalsRows.push({
+        label: `REDUCERE FIDELITATE${tierLabel}`,
+        value: `-${formatCurrency(loyaltyDiscountAmount)}`,
+        bold: false,
+        isDiscount: true,
+      });
+    }
+
     // Show TVA with percentage if enabled and amount > 0
     let tvaLabel = 'TVA';
     if (companySettings && companySettings.tvaEnabled && totals.tax > 0) {
@@ -411,6 +423,8 @@ const drawLineItemsTable = (context, lineItems, fonts, pdfDoc, totals = null, pa
       // Special colors for payment rows
       if (row.isPaid) {
         color = rgb(0.0, 0.6, 0.0); // Green for paid
+      } else if (row.isDiscount) {
+        color = rgb(0.0, 0.55, 0.0); // Green for loyalty discount
       } else if (row.isRemaining) {
         color = rgb(0.8, 0.4, 0.0); // Orange for remaining balance
       } else if (row.payment) {
@@ -1111,7 +1125,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
     if (paymentInfo.paymentStatus === 'PAID') paymentRowsCount++;
   }
 
-  const totalsRowsCount = 3 + paymentRowsCount; // SUBTOTAL, TVA, TOTAL + payment rows
+  const totalsRowsCount = 3 + paymentRowsCount; // SUBTOTAL, (optional discount), TVA, TOTAL + payment rows
   const tableHeight = headerHeight + (lineItemCount * rowHeight) + (totalsRowsCount * rowHeight);
   const sectionHeadingHeight = 40; // Heading text + underline + spacing
   const totalSpaceNeeded = sectionHeadingHeight + tableHeight + 20;
@@ -1781,6 +1795,8 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
     subtotal: invoice.subtotal,
     tax: invoice.tax,
     total: invoice.total,
+    loyaltyDiscount: Number(invoice.loyaltyDiscount || 0),
+    loyaltyTierAtTime: invoice.loyaltyTierAtTime || null,
   }, paymentInfo, company);
 
   // Payment dates section (if applicable)

@@ -79,7 +79,7 @@ const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAU
     });
     totalCapacity = resources.reduce((sum, r) => sum + r.capacity, 0) || 1;
   } else {
-    const settings = await getCompanySettings();
+    const settings = await getCompanySettings(organizationId);
     totalCapacity = Number(settings?.rampCount) || 1;
   }
 
@@ -165,7 +165,7 @@ const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAU
  * Check availability for a time slot
  */
 const checkAvailability = async (organizationId, scheduledStart, scheduledEnd) => {
-  const settings = await getCompanySettings();
+  const settings = await getCompanySettings(organizationId);
   const rampCount = Number(settings?.rampCount) || 0;
 
   if (!rampCount) {
@@ -331,6 +331,10 @@ router.post(
         availability,
       });
     }
+
+    // Quota check: appointments (monthly)
+    const { checkOrganizationLimits } = require('../../services/organizationService');
+    await checkOrganizationLimits(organizationId, 'appointments');
 
     // Find admin users in the organization for notifications
     const adminUsers = await prisma.user.findMany({

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Eye, EyeOff } from 'lucide-react';
+import { Save, Eye, EyeOff, Lock } from 'lucide-react';
 import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
+import { useChangePassword } from '@/hooks/useAuth';
 import useToast from '@/context/useToast';
 
 const PLANS = ['Starter', 'Professional', 'Enterprise'];
@@ -9,8 +10,11 @@ const INTERVALS = ['Monthly', 'Annual'];
 export default function PlatformSettings() {
   const { data: settings, isLoading } = useSettings();
   const { mutate: save, isPending: saving } = useUpdateSettings();
+  const { mutate: changePassword, isPending: changingPassword } = useChangePassword();
   const [form, setForm] = useState({});
   const [showSecrets, setShowSecrets] = useState({});
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordError, setPasswordError] = useState('');
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -32,6 +36,14 @@ export default function PlatformSettings() {
         displayPriceEnterpriseMonthly: settings.displayPriceEnterpriseMonthly ?? '',
         displayPriceEnterpriseAnnual: settings.displayPriceEnterpriseAnnual ?? '',
         trialDays: settings.trialDays ?? 14,
+        addonPriceIdClients100: settings.addonPriceIdClients100 || '',
+        addonPriceIdClients300: settings.addonPriceIdClients300 || '',
+        addonPriceIdAppointments200: settings.addonPriceIdAppointments200 || '',
+        addonPriceIdAppointments500: settings.addonPriceIdAppointments500 || '',
+        addonPriceClients100: settings.addonPriceClients100 ?? '',
+        addonPriceClients300: settings.addonPriceClients300 ?? '',
+        addonPriceAppointments200: settings.addonPriceAppointments200 ?? '',
+        addonPriceAppointments500: settings.addonPriceAppointments500 ?? '',
       });
     }
   }, [settings]);
@@ -148,7 +160,10 @@ export default function PlatformSettings() {
 
         {/* Display Prices */}
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Preturi afisate (RON)</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Preturi afisate (RON / luna)</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Toate preturile se introduc ca pret pe luna. Pentru abonamentele anuale, pretul afisat va fi inmultit automat cu 12 pentru totalul anual.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {PLANS.map((plan) =>
               INTERVALS.map((interval) => {
@@ -156,7 +171,7 @@ export default function PlatformSettings() {
                 return (
                   <div key={key}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      {plan} - {interval}
+                      {plan} - {interval === 'Annual' ? 'Anual (pret/luna)' : 'Lunar'}
                     </label>
                     <input
                       type="number"
@@ -171,6 +186,67 @@ export default function PlatformSettings() {
                 );
               })
             )}
+          </div>
+        </section>
+
+        {/* Addon Packs */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Pachete suplimentare</h2>
+
+          {/* Price IDs */}
+          <h3 className="text-sm font-medium text-gray-900 mb-2">Price IDs Stripe</h3>
+          <p className="text-sm text-gray-500 mb-3">
+            Daca este configurat un Price ID, acesta va fi folosit in checkout. Altfel se creeaza pretul inline.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {[
+              { key: 'addonPriceIdClients100', label: '+100 Clienti' },
+              { key: 'addonPriceIdClients300', label: '+300 Clienti' },
+              { key: 'addonPriceIdAppointments200', label: '+200 Programari' },
+              { key: 'addonPriceIdAppointments500', label: '+500 Programari' },
+            ].map(({ key, label }) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {label}
+                </label>
+                <input
+                  type="text"
+                  value={form[key] || ''}
+                  onChange={(e) => handleChange(key, e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                  placeholder="price_..."
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Fallback prices */}
+          <h3 className="text-sm font-medium text-gray-900 mb-2">Preturi fallback (bani)</h3>
+          <p className="text-sm text-gray-500 mb-3">
+            Folosite doar cand nu exista un Price ID configurat. 1 RON = 100 bani.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { key: 'addonPriceClients100', label: '+100 Clienti', defaultPrice: 1500 },
+              { key: 'addonPriceClients300', label: '+300 Clienti', defaultPrice: 2900 },
+              { key: 'addonPriceAppointments200', label: '+200 Programari', defaultPrice: 900 },
+              { key: 'addonPriceAppointments500', label: '+500 Programari', defaultPrice: 1900 },
+            ].map(({ key, label, defaultPrice }) => (
+              <div key={key}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {label}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form[key] ?? ''}
+                  onChange={(e) => handleChange(key, e.target.value ? Number(e.target.value) : '')}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                  placeholder={`implicit: ${defaultPrice} (${defaultPrice / 100} RON)`}
+                />
+              </div>
+            ))}
           </div>
         </section>
 
@@ -206,6 +282,86 @@ export default function PlatformSettings() {
           </button>
         </div>
       </form>
+
+      {/* Password Change */}
+      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Schimbare parola</h2>
+        {passwordError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {passwordError}
+          </div>
+        )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPasswordError('');
+            if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+              setPasswordError('Parolele nu coincid');
+              return;
+            }
+            if (passwordForm.newPassword.length < 8) {
+              setPasswordError('Parola noua trebuie sa aiba cel putin 8 caractere');
+              return;
+            }
+            changePassword(
+              { currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword },
+              {
+                onSuccess: () => {
+                  showToast({ title: 'Succes', description: 'Parola a fost schimbata.', type: 'success' });
+                  setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                },
+                onError: (err) => {
+                  setPasswordError(err?.response?.data?.message || 'Eroare la schimbarea parolei');
+                },
+              }
+            );
+          }}
+          className="space-y-4 max-w-md"
+        >
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Parola curenta</label>
+            <input
+              type="password"
+              required
+              value={passwordForm.currentPassword}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Parola noua</label>
+            <input
+              type="password"
+              required
+              value={passwordForm.newPassword}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmare parola noua</label>
+            <input
+              type="password"
+              required
+              value={passwordForm.confirmPassword}
+              onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={changingPassword}
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
+          >
+            {changingPassword ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <Lock className="h-4 w-4" />
+            )}
+            Schimba parola
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

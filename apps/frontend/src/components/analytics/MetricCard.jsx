@@ -8,8 +8,8 @@ export default function MetricCard({
   changeLabel,
   subtitle,
   icon: Icon,
-  iconColor = 'text-viperx-primary',
-  iconBg = 'bg-viperx-primary/10',
+  iconColor = 'text-primary',
+  iconBg = 'bg-primary/10',
   format = 'number',
   prefix = '',
   suffix = '',
@@ -48,11 +48,11 @@ export default function MetricCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{title}</p>
+          <p className="mt-1 sm:mt-2 text-xl sm:text-2xl font-bold text-gray-900 truncate">
             {prefix}
             {formatValue(value)}
             {suffix}
@@ -74,8 +74,8 @@ export default function MetricCard({
           )}
         </div>
         {Icon && (
-          <div className={`p-3 rounded-lg ${iconBg}`}>
-            <Icon className={`h-6 w-6 ${iconColor}`} />
+          <div className={`p-2 sm:p-3 rounded-lg ${iconBg} flex-shrink-0`}>
+            <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${iconColor}`} />
           </div>
         )}
       </div>

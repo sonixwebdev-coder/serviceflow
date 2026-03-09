@@ -36,10 +36,15 @@ export const disconnect = async (locationId) => {
 };
 
 /**
- * List available Google Calendars for the connected account
+ * List available Google Calendars for a specific location config
+ * @param {string} [locationId] - Optional location ID
  */
-export const listCalendars = async () => {
-  const response = await API.get('/integrations/google/calendars');
+export const listCalendars = async (locationId) => {
+  let url = '/integrations/google/calendars';
+  if (locationId) {
+    url += `?locationId=${encodeURIComponent(locationId)}`;
+  }
+  const response = await API.get(url);
   return response.data?.data || response.data;
 };
 
@@ -51,19 +56,16 @@ export const listCalendars = async () => {
  * @param {string} [settings.locationId] - Optional location ID for location-specific settings
  */
 export const updateSettings = async (settings) => {
-  const body = { ...settings };
-  if (settings.locationId) {
-    body.locationId = settings.locationId;
-  }
-  const response = await API.put('/integrations/google/settings', body);
+  const response = await API.put('/integrations/google/settings', settings);
   return response.data?.data || response.data;
 };
 
 /**
- * Manually trigger sync of all appointments
+ * Manually trigger sync of all appointments for a location
+ * @param {string} [locationId] - Optional location ID
  */
-export const syncAll = async () => {
-  const response = await API.post('/integrations/google/sync');
+export const syncAll = async (locationId) => {
+  const response = await API.post('/integrations/google/sync', { locationId: locationId || undefined });
   return response.data?.data || response.data;
 };
 

@@ -166,7 +166,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               }}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${
                 !isGroupDM
-                  ? 'bg-viperx-primary text-white'
+                  ? 'bg-primary text-white'
                   : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -177,7 +177,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               onClick={() => setIsGroupDM(true)}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${
                 isGroupDM
-                  ? 'bg-viperx-primary text-white'
+                  ? 'bg-primary text-white'
                   : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -195,7 +195,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="Nume grup..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         )}
@@ -209,7 +209,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Caută utilizatori..."
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         </div>
@@ -235,7 +235,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
                     </span>
                     <button
                       onClick={() => toggleUserSelection(userId)}
-                      className="text-viperx-primary hover:text-orange-700"
+                      className="text-primary hover:text-orange-700"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -258,7 +258,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               onChange={(e) => setInitialMessage(e.target.value)}
               placeholder="Scrie un mesaj de început..."
               rows={3}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary resize-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
             />
           </div>
         )}
@@ -293,7 +293,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
                     {/* Avatar */}
                     <div
                       className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-white ${
-                        isSelected ? 'bg-viperx-primary' : 'bg-gray-500'
+                        isSelected ? 'bg-primary' : 'bg-gray-500'
                       }`}
                     >
                       {user.firstName[0]}
@@ -313,7 +313,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
                     {/* Checkmark */}
                     {isSelected && (
                       <div className="flex-shrink-0">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-viperx-primary">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                           <svg
                             className="h-3 w-3 text-white"
                             fill="none"
@@ -350,7 +350,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
             <button
               onClick={handleCreate}
               disabled={selectedUsers.length === 0 || isCreating}
-              className="flex-1 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isCreating ? 'Se creează...' : 'Creează'}
             </button>

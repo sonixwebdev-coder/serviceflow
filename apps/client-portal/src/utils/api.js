@@ -181,7 +181,15 @@ export const getFileUrl = (filePath) => {
   const baseUrl = getFileBaseUrl();
   // Ensure single slash between base URL and path
   const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
-  return `${baseUrl}${normalizedPath}`;
+  const url = `${baseUrl}${normalizedPath}`;
+
+  // Append access token for authenticated static file access
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}token=${encodeURIComponent(token)}`;
+  }
+  return url;
 };
 
 export { fetchCsrfToken, refreshAuthSession };

@@ -12,7 +12,7 @@ export const messageService = {
   /**
    * Send a text message
    */
-  async sendMessage(appointmentId, { body, type = 'text', metadata }) {
+  async sendMessage(appointmentId, { body, type = 'TEXT', metadata }) {
     const response = await api.post(`/portal/appointments/${appointmentId}/messages`, {
       body,
       type,

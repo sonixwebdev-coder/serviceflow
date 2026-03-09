@@ -20,4 +20,12 @@ export const invoiceService = {
     const response = await api.get('/portal/invoices/list/summary');
     return response.data;
   },
+
+  async downloadInvoicePdf(invoiceId) {
+    const response = await api.get(`/portal/invoices/${invoiceId}/pdf`, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf' },
+    });
+    return response.data;
+  },
 };

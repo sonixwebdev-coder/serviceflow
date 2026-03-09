@@ -2,7 +2,7 @@ import api from '../utils/api';
 
 export const getLoyaltyProgram = async () => {
   const response = await api.get('/loyalty/program');
-  return response.data;
+  return response.data?.data ?? response.data;
 };
 
 export const updateLoyaltyProgram = async (config) => {
@@ -17,7 +17,7 @@ export const getLoyaltyAccounts = async (params = {}) => {
 
 export const getClientLoyaltyAccount = async (clientId) => {
   const response = await api.get(`/loyalty/accounts/${clientId}`);
-  return response.data;
+  return response.data?.data ?? response.data;
 };
 
 export const adjustPoints = async (clientId, data) => {

@@ -90,26 +90,55 @@ const DashboardLayout = ({ children }) => {
 
   const navigation = useMemo(() => {
     // Build CRM children based on features
+    // Appointments first — most frequently used in daily operations
     const crmChildren = [
+      { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
       { name: 'Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },
       { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
-      { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
       { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
       { name: 'Fidelitate', href: '/crm/loyalty', icon: Gift, roles: [] },
     ];
 
     // Only show Assets nav item for sectors with assets (not BEAUTY)
+    // Placed after Online Clients, before Invoices
     if (hasAssets) {
-      crmChildren.splice(2, 0, { name: 'Active', href: '/crm/assets', icon: Package, roles: [] });
+      crmChildren.splice(3, 0, { name: 'Active', href: '/crm/assets', icon: Package, roles: [] });
     }
 
     return [
+    // 1. Primary entry point
     {
       name: 'Tablou de bord',
       href: '/dashboard',
       icon: LayoutDashboard,
       roles: []
     },
+
+    // 2. Core business operations
+    {
+      name: 'CRM',
+      key: 'crm',
+      icon: Briefcase,
+      roles: [],
+      children: crmChildren
+    },
+
+    // 3. Team & internal operations
+    {
+      name: 'Echipa & Pontaj',
+      key: 'echipa',
+      icon: Users,
+      roles: [],
+      children: [
+        { name: 'Task-uri', href: '/tasks', icon: ClipboardList, roles: [] },
+        { name: 'Todo-uri Personale', href: '/personal-todos', icon: CheckSquare, roles: [] },
+        { name: 'Pontaj', href: '/time-tracking', icon: Clock, roles: [] },
+        { name: 'Cereri concediu', href: '/leaves', icon: Umbrella, roles: [] },
+        { name: 'Angajati', href: '/employees', icon: Users, roles: [USER_ROLES.ADMIN] },
+      ]
+    },
+
+    // 4. Communication & monitoring
     {
       name: 'Chat',
       href: '/chat',
@@ -129,32 +158,7 @@ const DashboardLayout = ({ children }) => {
       roles: []
     },
 
-    {
-      name: 'Suport',
-      href: '/support',
-      icon: LifeBuoy,
-      roles: []
-    },
-    {
-      name: 'CRM',
-      key: 'crm',
-      icon: Briefcase,
-      roles: [],
-      children: crmChildren
-    },
-    {
-      name: 'Echipa & Pontaj',
-      key: 'echipa',
-      icon: Users,
-      roles: [],
-      children: [
-        { name: 'Task-uri', href: '/tasks', icon: ClipboardList, roles: [] },
-        { name: 'Todo-uri Personale', href: '/personal-todos', icon: CheckSquare, roles: [] },
-        { name: 'Pontaj', href: '/time-tracking', icon: Clock, roles: [] },
-        { name: 'Cereri concediu', href: '/leaves', icon: Umbrella, roles: [] },
-        { name: 'Angajati', href: '/employees', icon: Users, roles: [USER_ROLES.ADMIN] },
-      ]
-    },
+    // 5. Configuration (admin only)
     // ANAF functionality temporarily disabled
     // {
     //   name: 'ANAF E-Factura',
@@ -168,15 +172,23 @@ const DashboardLayout = ({ children }) => {
       icon: Settings,
       roles: [USER_ROLES.ADMIN],
       children: [
-        { name: 'Website', href: '/settings/website', icon: Globe, roles: [USER_ROLES.ADMIN] },
-        { name: 'Locatii', href: '/settings/locations', icon: MapPin, roles: [USER_ROLES.ADMIN] },
-        { name: 'Servicii', href: '/settings/services', icon: Briefcase, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari companie', href: '/settings/company', icon: Settings, roles: [USER_ROLES.ADMIN] },
         { name: 'Setari organizatie', href: '/settings/organization', icon: Settings, roles: [USER_ROLES.ADMIN] },
+        { name: 'Locatii', href: '/settings/locations', icon: MapPin, roles: [USER_ROLES.ADMIN] },
+        { name: 'Servicii', href: '/settings/services', icon: Briefcase, roles: [USER_ROLES.ADMIN] },
+        { name: 'Website', href: '/settings/website', icon: Globe, roles: [USER_ROLES.ADMIN] },
         { name: 'Template-uri Email', href: '/settings/email-templates', icon: Mail, roles: [USER_ROLES.ADMIN] },
-        { name: 'Abonament', href: '/settings/billing', icon: CreditCard, roles: [USER_ROLES.ADMIN] },
         { name: 'Fidelitate', href: '/settings/loyalty', icon: Gift, roles: [USER_ROLES.ADMIN] },
+        { name: 'Abonament', href: '/settings/billing', icon: CreditCard, roles: [USER_ROLES.ADMIN] },
       ]
+    },
+
+    // 6. Help & support (always last)
+    {
+      name: 'Suport',
+      href: '/support',
+      icon: LifeBuoy,
+      roles: []
     },
   ];
   }, [hasAssets]);
@@ -283,7 +295,7 @@ const DashboardLayout = ({ children }) => {
   const renderSidebarContent = (onNavigate) => (
     <div className="flex h-full flex-col text-white">
       <div className="flex h-16 items-center justify-between px-6">
-        <span className="text-2xl font-bold text-viperx-primary">ForjaIt</span>
+        <span className="text-2xl font-bold text-primary">ForjaIt</span>
         <button
           type="button"
           className="lg:hidden text-gray-400 hover:text-white"
@@ -333,7 +345,7 @@ const DashboardLayout = ({ children }) => {
                             onClick={() => onNavigate?.()}
                             className={`flex items-center gap-3 rounded-lg px-4 py-2 text-sm transition-colors ${
                               isActive
-                                ? 'bg-viperx-primary text-white'
+                                ? 'bg-primary text-white'
                                 : 'text-gray-400 hover:bg-gray-700 hover:text-white'
                             }`}
                           >
@@ -357,7 +369,7 @@ const DashboardLayout = ({ children }) => {
               onClick={() => onNavigate?.()}
               className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-viperx-primary text-white'
+                  ? 'bg-primary text-white'
                   : 'text-gray-300 hover:bg-gray-700 hover:text-white'
               }`}
             >
@@ -370,7 +382,7 @@ const DashboardLayout = ({ children }) => {
       <div className="border-t border-gray-700 px-4 py-4">
         <div className="relative flex items-center justify-between text-sm text-gray-200">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-viperx-primary font-semibold text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-semibold text-white">
               {user?.firstName?.[0]}
               {user?.lastName?.[0]}
             </div>
@@ -436,14 +448,14 @@ const DashboardLayout = ({ children }) => {
             className="flex-1 bg-gray-900/40"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="relative flex h-full w-64 flex-col bg-viperx-secondary shadow-2xl">
+          <aside className="relative flex h-full w-64 flex-col bg-secondary shadow-2xl">
             {renderSidebarContent(() => setSidebarOpen(false))}
           </aside>
         </div>
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:h-screen lg:w-64 lg:flex-col lg:bg-viperx-secondary lg:shadow-xl lg:sticky lg:top-0">
+      <aside className="hidden lg:flex lg:h-screen lg:w-64 lg:flex-col lg:bg-secondary lg:shadow-xl lg:sticky lg:top-0">
         {renderSidebarContent()}
       </aside>
 
@@ -509,10 +521,10 @@ const DashboardLayout = ({ children }) => {
                 type="button"
                 onClick={handleMarkAllRead}
                 disabled={unreadCount === 0 || markingAllRead}
-                className="flex items-center gap-2 text-sm font-semibold text-viperx-primary transition hover:text-orange-600 disabled:cursor-not-allowed disabled:text-gray-400"
+                className="flex items-center gap-2 text-sm font-semibold text-primary transition hover:text-orange-600 disabled:cursor-not-allowed disabled:text-gray-400"
               >
                 {markingAllRead && (
-                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-viperx-primary border-t-transparent" />
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 )}
                 Marcheaza toate ca citite
               </button>
@@ -521,7 +533,7 @@ const DashboardLayout = ({ children }) => {
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {notificationsLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+                  <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
                 </div>
               ) : notificationsError ? (
                 <p className="text-sm text-red-600">{notificationsError}</p>
@@ -535,7 +547,7 @@ const DashboardLayout = ({ children }) => {
                       className={`rounded-lg border px-4 py-3 ${
                         notification.isRead
                           ? 'border-gray-200 bg-white'
-                          : 'border-viperx-primary/30 bg-orange-50'
+                          : 'border-primary/30 bg-orange-50'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -551,10 +563,10 @@ const DashboardLayout = ({ children }) => {
                             type="button"
                             onClick={() => handleNotificationRead(notification._id)}
                             disabled={markingReadIds.has(notification._id) || markingAllRead}
-                            className="flex items-center gap-1 text-xs font-semibold text-viperx-primary transition hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-1 text-xs font-semibold text-primary transition hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {markingReadIds.has(notification._id) && (
-                              <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-viperx-primary border-t-transparent" />
+                              <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                             )}
                             Marcat citit
                           </button>

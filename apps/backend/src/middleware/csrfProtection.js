@@ -1,4 +1,5 @@
 const { doubleCsrf } = require('csrf-csrf');
+const logger = require('../utils/logger');
 
 /**
  * CSRF Protection Middleware
@@ -23,8 +24,7 @@ const { doubleCsrf } = require('csrf-csrf');
 const csrfSecret = process.env.CSRF_SECRET || require('crypto').randomBytes(32).toString('hex');
 
 if (!process.env.CSRF_SECRET) {
-  console.warn('⚠️  CSRF_SECRET not set in environment. Using random secret (will invalidate on restart)');
-  console.warn('⚠️  Set CSRF_SECRET in your .env file for production use');
+  logger.warn('CSRF_SECRET not set in environment — using random secret (will invalidate on restart)');
 }
 
 // Configure CSRF protection
@@ -67,6 +67,14 @@ const CSRF_EXEMPT_PATHS = [
   '/api/webhooks/stripe', // Stripe webhook (uses signature verification instead)
   '/api/sites/:subdomain/lead', // Public contact form (rate-limited + validated)
   '/api/sites/:subdomain/review', // Public review submission (rate-limited + validated)
+  '/api/portal/public/:slug/book', // Public booking from website (unauthenticated, rate-limited)
+  '/api/portal/public/:slug', // Public org info for booking widget
+  '/api/portal/public/:slug/dates', // Public available dates
+  '/api/portal/public/:slug/slots', // Public available time slots
+  '/api/portal/auth/forgot-password', // Password reset request
+  '/api/portal/auth/reset-password', // Password reset confirmation
+  '/api/auth/forgot-password', // Admin password reset request
+  '/api/auth/reset-password', // Admin password reset confirmation
 ];
 
 /**
@@ -115,7 +123,7 @@ const csrfProtection = (req, res, next) => {
   // Apply CSRF validation
   doubleCsrfProtection(req, res, (err) => {
     if (err) {
-      console.error('CSRF validation failed:', {
+      logger.warn('CSRF validation failed', {
         path: req.path,
         method: req.method,
         ip: req.ip,

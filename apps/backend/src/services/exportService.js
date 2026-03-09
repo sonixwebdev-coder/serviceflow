@@ -7,6 +7,7 @@
  */
 
 const { AppError } = require('../utils/errors');
+const logger = require('../utils/logger');
 const { validateFormat, generateFilename, getEntityNameRO, formatDate, formatDateTime, formatCurrency, getStatusLabelRO, applyFilters } = require('../utils/export/exportUtils');
 const { exportEntityToCSV } = require('../utils/export/csvExporter');
 const { exportEntityToExcel, fieldConfigToColumns } = require('../utils/export/excelExporter');
@@ -17,6 +18,7 @@ const { FIELD_CONFIGS } = require('../utils/export/csvExporter');
 const { exportEntityToXML } = require('../utils/export/xmlExporter');
 const { exportInvoiceToAnafXML } = require('../utils/export/anafExporter');
 const { buildInvoicePdf } = require('../utils/pdf');
+const { getCompanySettings } = require('./companySettingService');
 
 // Maximum number of records to export in a single request (security limit)
 const MAX_EXPORT_RECORDS = 10000;
@@ -86,7 +88,6 @@ const checkExportPermission = (userId, userRoles, entityType, filters = {}) => {
  */
 const transformAppointmentData = (appointments) => {
   return appointments.map(appt => ({
-    id: appt.id,
     title: appt.title || '',
     description: appt.description || '',
     status: getStatusLabelRO(appt.status),
@@ -107,8 +108,6 @@ const transformAppointmentData = (appointments) => {
     'createdBy.name': appt.createdBy
       ? `${appt.createdBy.firstName || ''} ${appt.createdBy.lastName || ''}`.trim()
       : '',
-    createdAt: formatDateTime(appt.createdAt),
-    updatedAt: formatDateTime(appt.updatedAt),
   }));
 };
 
@@ -172,7 +171,7 @@ const exportAppointments = async (prismaClient, format, filters = {}, userId, us
     });
   } catch (error) {
     // Log the real error internally
-    console.error('Export query failed:', {
+    logger.error('Export query failed', {
       entityType: 'appointments',
       userId,
       error: error.message,
@@ -213,11 +212,10 @@ const exportAppointments = async (prismaClient, format, filters = {}, userId, us
       buffer = await exportEntityToExcel('appointments', transformedData);
       break;
     case 'json':
-      buffer = exportEntityToJSON('appointments', appointments);
+      buffer = exportEntityToJSON('appointments', transformedData);
       break;
-    case 'pdf':
-      const columns = fieldConfigToColumns(FIELD_CONFIGS.appointments).slice(0, 8); // Limit columns for PDF
-      buffer = await exportEntityToPDF('appointments', transformedData, columns);
+    case 'xml':
+      buffer = exportEntityToXML('appointments', transformedData);
       break;
     default:
       throw new AppError(`Unsupported format: ${format}`, 400);
@@ -231,7 +229,6 @@ const exportAppointments = async (prismaClient, format, filters = {}, userId, us
  */
 const transformInvoiceData = (invoices) => {
   return invoices.map(inv => ({
-    id: inv.id,
     invoiceNumber: inv.invoiceNumber || '',
     'client.name': inv.client
       ? (inv.client.type === 'SRL'
@@ -307,7 +304,7 @@ const exportInvoices = async (prismaClient, format, filters = {}, userId, userRo
     });
   } catch (error) {
     // Log the real error internally
-    console.error('Export query failed:', {
+    logger.error('Export query failed', {
       entityType: 'invoices',
       userId,
       error: error.message,
@@ -345,11 +342,7 @@ const exportInvoices = async (prismaClient, format, filters = {}, userId, userRo
       buffer = await exportEntityToExcel('invoices', transformedData);
       break;
     case 'json':
-      buffer = exportEntityToJSON('invoices', invoices);
-      break;
-    case 'pdf':
-      const columns = fieldConfigToColumns(FIELD_CONFIGS.invoices);
-      buffer = await exportEntityToPDF('invoices', transformedData, columns);
+      buffer = exportEntityToJSON('invoices', transformedData);
       break;
     case 'xml':
       buffer = exportEntityToXML('invoices', transformedData);
@@ -391,17 +384,21 @@ const exportBulkInvoicePDFs = async (prismaClient, invoiceIds, userId, userRoles
     throw new AppError('No invoices found', 404);
   }
 
+  // Fetch company settings once (all invoices belong to the same org via tenant-scoped prisma)
+  const orgId = invoices[0]?.organizationId;
+  const companySettings = orgId ? await getCompanySettings(orgId) : {};
+
   const files = [];
   for (const invoice of invoices) {
     try {
-      const pdfBuffer = await buildInvoicePdf(invoice);
+      const pdfBuffer = await buildInvoicePdf(invoice, companySettings);
       const safeNumber = (invoice.invoiceNumber || invoice.id).replace(/[^a-zA-Z0-9_-]/g, '_');
       files.push({
         name: `factura_${safeNumber}.pdf`,
         buffer: pdfBuffer,
       });
     } catch (err) {
-      console.error(`Failed to generate PDF for invoice ${invoice.id}:`, err.message);
+      logger.error('Failed to generate PDF for invoice', { invoiceId: invoice.id, error: err.message });
     }
   }
 
@@ -459,7 +456,7 @@ const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles
         buffer: xmlBuffer,
       });
     } catch (err) {
-      console.error(`Failed to generate ANAF XML for invoice ${invoice.id}:`, err.message);
+      logger.error('Failed to generate ANAF XML for invoice', { invoiceId: invoice.id, error: err.message });
     }
   }
 
@@ -478,7 +475,6 @@ const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles
  */
 const transformClientData = (clients) => {
   return clients.map(client => ({
-    id: client.id,
     type: client.type === 'SRL' ? 'Firma' : 'Persoana Fizica',
     firstName: client.firstName || '',
     lastName: client.lastName || '',
@@ -489,7 +485,6 @@ const transformClientData = (clients) => {
     vatNumber: client.vatNumber || '',
     registrationNumber: client.registrationNumber || '',
     notes: client.notes || '',
-    createdAt: formatDateTime(client.createdAt),
   }));
 };
 
@@ -540,7 +535,7 @@ const exportClients = async (prismaClient, format, filters = {}, userId, userRol
     });
   } catch (error) {
     // Log the real error internally
-    console.error('Export query failed:', {
+    logger.error('Export query failed', {
       entityType: 'clients',
       userId,
       error: error.message,
@@ -578,11 +573,10 @@ const exportClients = async (prismaClient, format, filters = {}, userId, userRol
       buffer = await exportEntityToExcel('clients', transformedData);
       break;
     case 'json':
-      buffer = exportEntityToJSON('clients', clients);
+      buffer = exportEntityToJSON('clients', transformedData);
       break;
-    case 'pdf':
-      const columns = fieldConfigToColumns(FIELD_CONFIGS.clients).slice(0, 8);
-      buffer = await exportEntityToPDF('clients', transformedData, columns);
+    case 'xml':
+      buffer = exportEntityToXML('clients', transformedData);
       break;
     default:
       throw new AppError(`Unsupported format: ${format}`, 400);
@@ -596,7 +590,6 @@ const exportClients = async (prismaClient, format, filters = {}, userId, userRol
  */
 const transformUserData = (users) => {
   return users.map(user => ({
-    id: user.id,
     email: user.email || '',
     firstName: user.firstName || '',
     lastName: user.lastName || '',
@@ -663,7 +656,7 @@ const exportUsers = async (prismaClient, format, filters = {}, userId, userRoles
     });
   } catch (error) {
     // Log the real error internally
-    console.error('Export query failed:', {
+    logger.error('Export query failed', {
       entityType: 'users',
       userId,
       error: error.message,
@@ -701,18 +694,10 @@ const exportUsers = async (prismaClient, format, filters = {}, userId, userRoles
       buffer = await exportEntityToExcel('users', transformedData);
       break;
     case 'json':
-      // Remove sensitive data from JSON export
-      const sanitizedUsers = users.map(u => {
-        const { password, ...rest } = u;
-        return rest;
-      });
-      buffer = exportEntityToJSON('users', sanitizedUsers);
+      buffer = exportEntityToJSON('users', transformedData);
       break;
-    case 'pdf':
-      const columns = fieldConfigToColumns(FIELD_CONFIGS.users).filter(c =>
-        !c.key.includes('password')
-      );
-      buffer = await exportEntityToPDF('users', transformedData, columns);
+    case 'xml':
+      buffer = exportEntityToXML('users', transformedData);
       break;
     default:
       throw new AppError(`Unsupported format: ${format}`, 400);
@@ -726,7 +711,6 @@ const exportUsers = async (prismaClient, format, filters = {}, userId, userRoles
  */
 const transformLeaveRequestData = (requests) => {
   return requests.map(req => ({
-    id: req.id,
     'employee.name': req.employee
       ? `${req.employee.firstName || ''} ${req.employee.lastName || ''}`.trim()
       : '',
@@ -741,7 +725,6 @@ const transformLeaveRequestData = (requests) => {
       : '',
     reviewNotes: req.reviewNotes || '',
     reviewedAt: req.reviewedAt ? formatDateTime(req.reviewedAt) : '',
-    createdAt: formatDateTime(req.createdAt),
   }));
 };
 
@@ -813,7 +796,7 @@ const exportLeaveRequests = async (prismaClient, format, filters = {}, userId, u
     });
   } catch (error) {
     // Log the real error internally
-    console.error('Export query failed:', {
+    logger.error('Export query failed', {
       entityType: 'leaveRequests',
       userId,
       error: error.message,
@@ -851,11 +834,10 @@ const exportLeaveRequests = async (prismaClient, format, filters = {}, userId, u
       buffer = await exportEntityToExcel('leaveRequests', transformedData);
       break;
     case 'json':
-      buffer = exportEntityToJSON('leaveRequests', requests);
+      buffer = exportEntityToJSON('leaveRequests', transformedData);
       break;
-    case 'pdf':
-      const columns = fieldConfigToColumns(FIELD_CONFIGS.leaveRequests);
-      buffer = await exportEntityToPDF('leaveRequests', transformedData, columns);
+    case 'xml':
+      buffer = exportEntityToXML('leaveRequests', transformedData);
       break;
     default:
       throw new AppError(`Unsupported format: ${format}`, 400);
@@ -869,7 +851,6 @@ const exportLeaveRequests = async (prismaClient, format, filters = {}, userId, u
  */
 const transformTimeTrackingData = (entries) => {
   return entries.map(entry => ({
-    id: entry.id,
     'employee.name': entry.employee
       ? `${entry.employee.firstName || ''} ${entry.employee.lastName || ''}`.trim()
       : '',
@@ -941,7 +922,7 @@ const exportTimeTracking = async (prismaClient, format, filters = {}, userId, us
     });
   } catch (error) {
     // Log the real error internally
-    console.error('Export query failed:', {
+    logger.error('Export query failed', {
       entityType: 'timeTracking',
       userId,
       error: error.message,
@@ -979,11 +960,10 @@ const exportTimeTracking = async (prismaClient, format, filters = {}, userId, us
       buffer = await exportEntityToExcel('timeTracking', transformedData);
       break;
     case 'json':
-      buffer = exportEntityToJSON('timeTracking', entries);
+      buffer = exportEntityToJSON('timeTracking', transformedData);
       break;
-    case 'pdf':
-      const columns = fieldConfigToColumns(FIELD_CONFIGS.timeTracking);
-      buffer = await exportEntityToPDF('timeTracking', transformedData, columns);
+    case 'xml':
+      buffer = exportEntityToXML('timeTracking', transformedData);
       break;
     default:
       throw new AppError(`Unsupported format: ${format}`, 400);
@@ -1061,7 +1041,7 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
     });
   } catch (error) {
     // Log the real error internally
-    console.error('Export query failed:', {
+    logger.error('Export query failed', {
       entityType: 'tasks',
       userId,
       error: error.message,
@@ -1087,7 +1067,6 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
   }
 
   const transformedData = tasks.map(task => ({
-    id: task.id,
     title: task.title || '',
     description: task.description || '',
     taskType: task.taskType || '',
@@ -1102,7 +1081,6 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
     'createdBy.name': task.createdBy
       ? `${task.createdBy.firstName || ''} ${task.createdBy.lastName || ''}`.trim()
       : '',
-    createdAt: formatDateTime(task.createdAt),
   }));
 
   let buffer;
@@ -1116,11 +1094,10 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
       buffer = await exportEntityToExcel('tasks', transformedData);
       break;
     case 'json':
-      buffer = exportEntityToJSON('tasks', tasks);
+      buffer = exportEntityToJSON('tasks', transformedData);
       break;
-    case 'pdf':
-      const columns = fieldConfigToColumns(FIELD_CONFIGS.tasks).slice(0, 8);
-      buffer = await exportEntityToPDF('tasks', transformedData, columns);
+    case 'xml':
+      buffer = exportEntityToXML('tasks', transformedData);
       break;
     default:
       throw new AppError(`Unsupported format: ${format}`, 400);
@@ -1241,7 +1218,7 @@ const getContentType = (format) => {
     csv: 'text/csv; charset=utf-8',
     excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     json: 'application/json; charset=utf-8',
-    pdf: 'application/pdf',
+    xml: 'application/xml; charset=utf-8',
     zip: 'application/zip',
   };
   return types[format] || 'application/octet-stream';

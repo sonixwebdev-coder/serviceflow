@@ -32,7 +32,7 @@ const SectionSkeleton = () => (
  * Chat Sidebar Component
  * Displays channels list and search
  */
-export default function ChatSidebar() {
+export default function ChatSidebar({ isMobile = false }) {
   const {
     channels,
     activeChannelId,
@@ -107,7 +107,7 @@ export default function ChatSidebar() {
           <span className="truncate text-sm font-medium">{getChannelName(channel)}</span>
         </div>
         {unreadCount > 0 && (
-          <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-viperx-primary text-xs text-white">
+          <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -137,7 +137,7 @@ export default function ChatSidebar() {
   };
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-gray-200 bg-white">
+    <div className={`flex h-full flex-col border-r border-gray-200 bg-white ${isMobile ? 'w-full' : 'w-64'}`}>
       {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-200 p-4">
         <h2 className="text-lg font-semibold text-gray-900">Chat</h2>
@@ -152,7 +152,7 @@ export default function ChatSidebar() {
             placeholder="Caută canale..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
       </div>
@@ -186,14 +186,14 @@ export default function ChatSidebar() {
         <div className="space-y-2">
           <button
             onClick={() => setShowCreateDM(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-viperx-primary bg-white px-4 py-2 text-sm font-medium text-viperx-primary hover:bg-orange-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary bg-white px-4 py-2 text-sm font-medium text-primary hover:bg-orange-50"
           >
             <UserPlus className="h-4 w-4" />
             Mesaj Nou
           </button>
           <button
             onClick={() => setShowCreateChannel(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
           >
             <Plus className="h-4 w-4" />
             Canal Nou

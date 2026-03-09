@@ -18,7 +18,7 @@ const { z } = require('zod');
 
 const portalMessageSchema = z.object({
   body: z.string().min(1).max(5000),
-  type: z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE']).optional().default('TEXT'),
+  type: z.preprocess((v) => (typeof v === 'string' ? v.toUpperCase() : v), z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE'])).optional().default('TEXT'),
   metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
 

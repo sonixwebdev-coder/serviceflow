@@ -10,7 +10,13 @@ export const updateCompanySettings = async (payload) => {
   return response.data?.data || response.data;
 };
 
+export const validateVatNumber = async (vatNumber) => {
+  const response = await API.post('/settings/validate-vat', { vatNumber });
+  return response.data?.data || response.data;
+};
+
 export default {
   fetchCompanySettings,
   updateCompanySettings,
+  validateVatNumber,
 };

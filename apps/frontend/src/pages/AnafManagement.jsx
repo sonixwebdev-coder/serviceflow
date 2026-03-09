@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import confirm from '../utils/confirm';
 import { format } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import {
@@ -548,9 +549,11 @@ const AnafManagement = () => {
   const handleBulkSubmit = async () => {
     if (selectedInvoices.length === 0) return;
 
-    const confirmBulk = window.confirm(
-      `Sigur doriți să trimiteți ${selectedInvoices.length} facturi către ANAF?`
-    );
+    const confirmBulk = await confirm({
+      title: 'Trimite la ANAF',
+      text: `Sigur doriti sa trimiteti ${selectedInvoices.length} facturi catre ANAF?`,
+      confirmText: 'Trimite',
+    });
 
     if (!confirmBulk) return;
 
@@ -607,7 +610,7 @@ const AnafManagement = () => {
             Gestionează integrarea cu sistemul ANAF SPV (E-Factură)
           </p>
         </div>
-        <FileCheck className="h-8 w-8 text-viperx-primary" />
+        <FileCheck className="h-8 w-8 text-primary" />
       </div>
 
       {/* Tabs */}
@@ -622,7 +625,7 @@ const AnafManagement = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition ${
                   isActive
-                    ? 'border-viperx-primary text-viperx-primary'
+                    ? 'border-primary text-primary'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
@@ -642,7 +645,7 @@ const AnafManagement = () => {
           <div className="p-6">
             {configLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+                <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
               </div>
             ) : !config ? (
               <div className="py-8">
@@ -671,7 +674,7 @@ const AnafManagement = () => {
                         onChange={(e) =>
                           setConfigForm({ ...configForm, environment: e.target.value })
                         }
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       >
                         <option value="test">Test (pentru dezvoltare și testare)</option>
                         <option value="production">Producție (pentru facturi reale)</option>
@@ -692,7 +695,7 @@ const AnafManagement = () => {
                           setConfigForm({ ...configForm, cif: e.target.value })
                         }
                         placeholder="RO12345678"
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                       <p className="mt-1 text-xs text-gray-500">
                         Codul de Identificare Fiscală al companiei tale
@@ -711,7 +714,7 @@ const AnafManagement = () => {
                         }
                         placeholder=""
                         disabled={false}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                       <p className="mt-1 text-xs text-gray-500">
                         Primit de la ANAF după înregistrarea aplicației
@@ -731,7 +734,7 @@ const AnafManagement = () => {
                         }
                         placeholder=""
                         disabled={false}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                       <p className="mt-1 text-xs text-gray-500">
                         Primit de la ANAF după înregistrarea aplicației
@@ -751,7 +754,7 @@ const AnafManagement = () => {
                         }
                         placeholder="http://localhost:5173/anaf/callback"
                         disabled={false}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                       <p className="mt-1 text-xs text-gray-500">
                         Trebuie să fie identic cu cel înregistrat la ANAF
@@ -768,7 +771,7 @@ const AnafManagement = () => {
                           setConfigForm({ ...configForm, environment: e.target.value })
                         }
                         disabled={false}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                       >
                         <option value="test">Test</option>
                         <option value="production">Production</option>
@@ -798,7 +801,7 @@ const AnafManagement = () => {
                       <button
                         onClick={handleCreateConfig}
                         disabled={!configForm.cif || !configForm.clientId || !configForm.clientSecret || !configForm.redirectUri}
-                        className="flex-1 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Creează Configurație
                       </button>
@@ -837,7 +840,7 @@ const AnafManagement = () => {
                         </button>
                         <button
                           onClick={handleConnectToAnaf}
-                          className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
                         >
                           <ExternalLink className="mr-2 inline h-4 w-4" />
                           Conectează ANAF
@@ -866,7 +869,7 @@ const AnafManagement = () => {
                     <select
                       value={config.environment || 'test'}
                       onChange={(e) => handleEnvironmentChange(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
                       <option value="test">Test (pentru dezvoltare și testare)</option>
                       <option value="production">Producție (pentru facturi reale)</option>
@@ -902,7 +905,7 @@ const AnafManagement = () => {
                               value={configForm.cif}
                               onChange={(e) => setConfigForm({ ...configForm, cif: e.target.value })}
                               placeholder="Ex: RO12345678"
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           </div>
                           <div>
@@ -912,7 +915,7 @@ const AnafManagement = () => {
                               value={configForm.clientId}
                               onChange={(e) => setConfigForm({ ...configForm, clientId: e.target.value })}
                               placeholder="Ex: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           </div>
                           <div>
@@ -922,12 +925,12 @@ const AnafManagement = () => {
                               value={configForm.clientSecret}
                               onChange={(e) => setConfigForm({ ...configForm, clientSecret: e.target.value })}
                               placeholder="••••••••••••••••"
-                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           </div>
                           <button
                             onClick={handleSaveConfig}
-                            className="w-full rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                            className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
                           >
                             Salvează Credențialele
                           </button>
@@ -960,7 +963,7 @@ const AnafManagement = () => {
                               </button>
                               <button
                                 onClick={handleSaveConfig}
-                                className="rounded-lg bg-viperx-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-primary/90"
                               >
                                 Salvează
                               </button>
@@ -978,7 +981,7 @@ const AnafManagement = () => {
                                 onChange={(e) =>
                                   setConfigForm({ ...configForm, cif: e.target.value })
                                 }
-                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             ) : (
                               <p className="mt-1 text-sm text-gray-900">{config.cif || '—'}</p>
@@ -996,7 +999,7 @@ const AnafManagement = () => {
                                 onChange={(e) =>
                                   setConfigForm({ ...configForm, clientId: e.target.value })
                                 }
-                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             ) : (
                               <p className="mt-1 text-sm text-gray-900">{config.clientId || '—'}</p>
@@ -1015,7 +1018,7 @@ const AnafManagement = () => {
                               setConfigForm({ ...configForm, clientSecret: e.target.value })
                             }
                             placeholder="Introduce secret nou..."
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         </div>
                       )}
@@ -1031,7 +1034,7 @@ const AnafManagement = () => {
                             onChange={(e) =>
                               setConfigForm({ ...configForm, redirectUri: e.target.value })
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           />
                         ) : (
                           <p className="mt-1 text-sm text-gray-900">
@@ -1050,7 +1053,7 @@ const AnafManagement = () => {
                             onChange={(e) =>
                               setConfigForm({ ...configForm, environment: e.target.value })
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           >
                             <option value="test">Test</option>
                             <option value="production">Production</option>
@@ -1139,7 +1142,7 @@ const AnafManagement = () => {
                     setInvoiceFilters({ ...invoiceFilters, status: e.target.value });
                     setPage(1);
                   }}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="">Toate statusurile</option>
                   <option value="DRAFT">Draft</option>
@@ -1154,7 +1157,7 @@ const AnafManagement = () => {
                     setInvoiceFilters({ ...invoiceFilters, anafStatus: e.target.value });
                     setPage(1);
                   }}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="">Status ANAF</option>
                   <option value="NOT_SUBMITTED">Netrimisă</option>
@@ -1169,7 +1172,7 @@ const AnafManagement = () => {
               {selectedInvoices.length > 0 && (
                 <button
                   onClick={handleBulkSubmit}
-                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
                 >
                   <Upload className="mr-2 inline h-4 w-4" />
                   Trimite {selectedInvoices.length} facturi
@@ -1193,7 +1196,7 @@ const AnafManagement = () => {
                                  submittableInvoices.every(inv => selectedInvoices.includes(inv.id));
                         })()}
                         onChange={toggleAllInvoices}
-                        className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                         title="Selectează toate facturile care pot fi trimise"
                       />
                     </th>
@@ -1253,7 +1256,7 @@ const AnafManagement = () => {
                               checked={selectedInvoices.includes(invoice.id)}
                               onChange={() => toggleInvoiceSelection(invoice.id)}
                               disabled={!canSubmit}
-                              className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary disabled:opacity-50"
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
                             />
                           </td>
                           <td className="whitespace-nowrap px-6 py-4">
@@ -1318,7 +1321,7 @@ const AnafManagement = () => {
                               <button
                                 onClick={() => handleSubmitInvoice(invoice.id, invoice.invoiceNumber)}
                                 disabled={submittingInvoices[invoice.id]}
-                                className="text-viperx-primary hover:text-viperx-primary/80 disabled:opacity-50"
+                                className="text-primary hover:text-primary/80 disabled:opacity-50"
                               >
                                 {submittingInvoices[invoice.id] ? (
                                   <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1346,7 +1349,7 @@ const AnafManagement = () => {
                 <select
                   value={syncFilters.status}
                   onChange={(e) => setSyncFilters({ ...syncFilters, status: e.target.value })}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="">Toate statusurile</option>
                   <option value="PENDING">Pending</option>
@@ -1359,7 +1362,7 @@ const AnafManagement = () => {
               <button
                 onClick={handleBatchSync}
                 disabled={batchSyncing}
-                className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50"
               >
                 {batchSyncing ? (
                   <>
@@ -1471,7 +1474,7 @@ const AnafManagement = () => {
                             <button
                               onClick={() => handleSyncInvoice(record.invoiceId)}
                               disabled={syncingInvoices[record.invoiceId]}
-                              className="text-viperx-primary hover:text-viperx-primary/80 disabled:opacity-50"
+                              className="text-primary hover:text-primary/80 disabled:opacity-50"
                               title="Sincronizează status"
                             >
                               <RefreshCw
@@ -1520,7 +1523,7 @@ const AnafManagement = () => {
               <select
                 value={messagesFilters.type}
                 onChange={(e) => setMessagesFilters({ ...messagesFilters, type: e.target.value })}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 {Object.entries(MESSAGE_TYPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -1604,7 +1607,7 @@ const AnafManagement = () => {
                               <button
                                 onClick={() => handleDownloadMessage(message.id, message.tip)}
                                 disabled={downloadingMessages[message.id]}
-                                className="text-viperx-primary hover:text-viperx-primary/80 disabled:opacity-50"
+                                className="text-primary hover:text-primary/80 disabled:opacity-50"
                                 title="Descarcă mesaj"
                               >
                                 <Download
@@ -1630,7 +1633,7 @@ const AnafManagement = () => {
           <div className="p-6">
             {statsLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+                <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
               </div>
             ) : !statistics ? (
               <div className="py-12 text-center">
@@ -1975,7 +1978,7 @@ const AnafManagement = () => {
                     setViewingMessage(null);
                   }}
                   disabled={downloadingMessages[viewingMessage.id]}
-                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-viperx-primary/90 transition disabled:opacity-50"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition disabled:opacity-50"
                 >
                   <Download className="mr-2 inline h-4 w-4" />
                   Descarcă Mesaj

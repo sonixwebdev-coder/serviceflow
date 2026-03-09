@@ -5,6 +5,7 @@ const { createNotification } = require('./notificationService');
 const { sendLeaveRequestNotification } = require('./pushNotificationService');
 const { optimizedTimeOffIncludes } = require('../utils/optimizedIncludes');
 const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
+const logger = require('../utils/logger');
 
 const normalizeLeaveType = (value) => (value ? value.toUpperCase().replace(/-/g, '_') : undefined);
 
@@ -146,7 +147,7 @@ const createTimeOffRequest = async (prisma, payload, currentUser) => {
     const recipientIds = adminsAndManagers.map(admin => admin.id);
     await sendLeaveRequestNotification(request, 'created', recipientIds);
   } catch (pushError) {
-    console.error('Failed to send push notifications for leave request creation:', pushError);
+    logger.error('Failed to send push notifications for leave request creation', { error: pushError.message });
     // Don't fail if push notifications fail
   }
 
@@ -300,7 +301,7 @@ const approveTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes 
   try {
     await sendLeaveRequestNotification(updated, 'approved', [request.employeeId]);
   } catch (pushError) {
-    console.error('Failed to send push notification for leave request approval:', pushError);
+    logger.error('Failed to send push notification for leave request approval', { error: pushError.message });
     // Don't fail if push notifications fail
   }
 
@@ -383,7 +384,7 @@ const rejectTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes }
   try {
     await sendLeaveRequestNotification(updated, 'rejected', [request.employeeId]);
   } catch (pushError) {
-    console.error('Failed to send push notification for leave request rejection:', pushError);
+    logger.error('Failed to send push notification for leave request rejection', { error: pushError.message });
     // Don't fail if push notifications fail
   }
 
@@ -464,7 +465,7 @@ const createMedicalLeave = async (prisma, payload, adminUser) => {
       await sendLeaveRequestNotification(request, 'created', adminIds);
     }
   } catch (pushError) {
-    console.error('Failed to send push notifications for medical leave creation:', pushError);
+    logger.error('Failed to send push notifications for medical leave creation', { error: pushError.message });
     // Don't fail if push notifications fail
   }
 

@@ -1,23 +1,31 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Users, Calendar, FileText, Ban, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Calendar, FileText, Ban, CheckCircle, Shield, ShieldOff } from 'lucide-react';
 import {
   useOrganization, useUpdateOrganization, useSuspendOrganization, useActivateOrganization,
+  useGrantPlan, useRevokeOverride,
 } from '@/hooks/useOrganizations';
+import useToast from '@/context/useToast';
 
 const PLAN_OPTIONS = ['FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE'];
 const STATUS_OPTIONS = ['ACTIVE', 'TRIAL', 'SUSPENDED', 'CANCELLED'];
+const OVERRIDE_PLAN_OPTIONS = ['PROFESSIONAL', 'ENTERPRISE'];
 
 export default function OrganizationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { data: org, isLoading } = useOrganization(id);
   const updateMutation = useUpdateOrganization();
   const suspendMutation = useSuspendOrganization();
   const activateMutation = useActivateOrganization();
+  const grantMutation = useGrantPlan();
+  const revokeMutation = useRevokeOverride();
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
+  const [showGrantForm, setShowGrantForm] = useState(false);
+  const [grantForm, setGrantForm] = useState({ plan: 'PROFESSIONAL', reason: '' });
 
   const startEditing = () => {
     setForm({
@@ -32,6 +40,31 @@ export default function OrganizationDetail() {
 
   const handleSave = () => {
     updateMutation.mutate({ id, ...form }, { onSuccess: () => setEditing(false) });
+  };
+
+  const handleGrant = () => {
+    grantMutation.mutate(
+      { id, plan: grantForm.plan, reason: grantForm.reason || undefined },
+      {
+        onSuccess: () => {
+          setShowGrantForm(false);
+          setGrantForm({ plan: 'PROFESSIONAL', reason: '' });
+          showToast({ title: 'Plan acordat', description: `Plan ${grantForm.plan} acordat cu succes.`, type: 'success' });
+        },
+      }
+    );
+  };
+
+  const handleRevoke = () => {
+    if (!window.confirm('Sigur doresti sa revoci override-ul? Organizatia va reveni la planul FREE sau la abonamentul Stripe activ.')) return;
+    revokeMutation.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          showToast({ title: 'Override revocat', description: 'Planul a fost resetat.', type: 'success' });
+        },
+      }
+    );
   };
 
   if (isLoading) {
@@ -54,10 +87,32 @@ export default function OrganizationDetail() {
             <h1 className="text-2xl font-bold text-gray-900">{org.name}</h1>
             <StatusBadge status={org.status} />
             <PlanBadge plan={org.plan} />
+            {org.planOverride && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
+                <Shield className="h-3 w-3" /> Override
+              </span>
+            )}
           </div>
           <p className="text-sm text-gray-500">/{org.slug}</p>
         </div>
         <div className="flex gap-2">
+          {!org.planOverride && (
+            <button
+              onClick={() => setShowGrantForm(!showGrantForm)}
+              className="flex items-center gap-2 rounded-lg border border-purple-200 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors"
+            >
+              <Shield className="h-4 w-4" /> Acorda Plan
+            </button>
+          )}
+          {org.planOverride && (
+            <button
+              onClick={handleRevoke}
+              disabled={revokeMutation.isPending}
+              className="flex items-center gap-2 rounded-lg border border-orange-200 px-3 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+            >
+              <ShieldOff className="h-4 w-4" /> Revocare Override
+            </button>
+          )}
           {org.status !== 'SUSPENDED' && (
             <button
               onClick={() => suspendMutation.mutate(id)}
@@ -86,6 +141,66 @@ export default function OrganizationDetail() {
           )}
         </div>
       </div>
+
+      {/* Grant Plan inline form */}
+      {showGrantForm && (
+        <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
+          <h4 className="text-sm font-semibold text-purple-900 mb-3">Acorda Plan (Override)</h4>
+          <div className="flex items-end gap-3">
+            <div>
+              <label className="block text-xs font-medium text-purple-700 mb-1">Plan</label>
+              <select
+                value={grantForm.plan}
+                onChange={(e) => setGrantForm({ ...grantForm, plan: e.target.value })}
+                className="rounded-lg border border-purple-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
+              >
+                {OVERRIDE_PLAN_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-purple-700 mb-1">Motiv (optional)</label>
+              <input
+                type="text"
+                value={grantForm.reason}
+                onChange={(e) => setGrantForm({ ...grantForm, reason: e.target.value })}
+                placeholder="ex: Early adopter, companie proprie"
+                className="w-full rounded-lg border border-purple-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+            <button
+              onClick={handleGrant}
+              disabled={grantMutation.isPending}
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            >
+              {grantMutation.isPending ? 'Se acorda...' : 'Acorda'}
+            </button>
+            <button
+              onClick={() => setShowGrantForm(false)}
+              className="rounded-lg border border-purple-200 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+            >
+              Anuleaza
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Override banner */}
+      {org.planOverride && (
+        <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+          <Shield className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+          <div>
+            <p className="text-sm font-semibold text-green-800">Plan acordat manual (override activ)</p>
+            <p className="mt-1 text-sm text-green-700">
+              Acordat de <span className="font-medium">{org.planOverrideBy}</span>
+              {org.planOverrideAt && (
+                <> la {new Date(org.planOverrideAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}</>
+              )}
+              {org.planOverrideReason && <> — {org.planOverrideReason}</>}
+            </p>
+            <p className="mt-1 text-xs text-green-600">Webhook-urile Stripe nu vor modifica acest plan.</p>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

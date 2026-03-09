@@ -16,6 +16,7 @@ export default function UserHoverCard({ user, children, disabled = false }) {
   const triggerRef = useRef(null);
   const cardRef = useRef(null);
   const timeoutRef = useRef(null);
+  const leaveTimeoutRef = useRef(null);
 
   const { user: currentUser } = useAuthStore();
   const { isUserOnline, onlineUsers, setActiveChannelId, addChannel } = useChatStore();
@@ -29,6 +30,11 @@ export default function UserHoverCard({ user, children, disabled = false }) {
 
   const handleMouseEnter = () => {
     if (disabled || isCurrentUser) return;
+
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
 
     timeoutRef.current = setTimeout(() => {
       if (triggerRef.current) {
@@ -60,7 +66,9 @@ export default function UserHoverCard({ user, children, disabled = false }) {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    setIsOpen(false);
+    leaveTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 150);
   };
 
   const handleSendDM = async () => {
@@ -78,12 +86,11 @@ export default function UserHoverCard({ user, children, disabled = false }) {
     }
   };
 
-  // Clean up timeout on unmount
+  // Clean up timeouts on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
     };
   }, []);
 
@@ -107,6 +114,10 @@ export default function UserHoverCard({ user, children, disabled = false }) {
           style={{ top: position.top, left: position.left }}
           onMouseEnter={() => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (leaveTimeoutRef.current) {
+              clearTimeout(leaveTimeoutRef.current);
+              leaveTimeoutRef.current = null;
+            }
           }}
           onMouseLeave={handleMouseLeave}
         >
@@ -114,7 +125,7 @@ export default function UserHoverCard({ user, children, disabled = false }) {
           <div className="p-4">
             <div className="flex items-start gap-3">
               <div className="relative flex-shrink-0">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-viperx-primary text-lg font-semibold text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white">
                   {user.firstName?.[0] || '?'}
                   {user.lastName?.[0] || ''}
                 </div>
@@ -162,7 +173,7 @@ export default function UserHoverCard({ user, children, disabled = false }) {
               <button
                 onClick={handleSendDM}
                 disabled={createDMMutation.isPending}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
               >
                 <MessageSquare className="h-4 w-4" />
                 {createDMMutation.isPending ? 'Se încarcă...' : 'Trimite mesaj'}

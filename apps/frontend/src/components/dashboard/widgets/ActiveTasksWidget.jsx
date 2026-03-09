@@ -88,7 +88,7 @@ export default function ActiveTasksWidget() {
 
       <button
         onClick={() => navigate('/tasks')}
-        className="w-full text-center text-sm text-viperx-primary hover:text-orange-600 font-medium py-2 flex items-center justify-center gap-1"
+        className="w-full text-center text-sm text-primary hover:text-orange-600 font-medium py-2 flex items-center justify-center gap-1"
       >
         Toate task-urile <ChevronRight className="h-4 w-4" />
       </button>

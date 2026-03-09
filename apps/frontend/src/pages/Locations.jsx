@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import confirm from '../utils/confirm';
 import {
   MapPin,
   Plus,
@@ -13,11 +14,12 @@ import {
   Check,
   Clock,
   Settings,
-  DollarSign,
+  Banknote,
 } from 'lucide-react';
 import { useLocations, useLocationMutations, useLocation } from '../hooks/useLocations';
 import useUsers from '../hooks/useUsers';
 import useToast from '../context/useToast';
+import TimePicker from '../components/ui/TimePicker';
 
 const getLocationStatus = (operatingHours) => {
   if (!operatingHours) return null;
@@ -25,18 +27,25 @@ const getLocationStatus = (operatingHours) => {
   const now = new Date();
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const today = dayNames[now.getDay()];
-  const todayHours = operatingHours[today];
+  const raw = operatingHours[today];
 
-  if (!todayHours || !todayHours.isOpen) {
+  if (!raw) return null;
+
+  // Normalize: handle both backend { open, close, closed } and frontend { isOpen, openTime, closeTime }
+  const isOpen = 'closed' in raw ? !raw.closed : (raw.isOpen !== false);
+  const openTime = raw.open || raw.openTime;
+  const closeTime = raw.close || raw.closeTime;
+
+  if (!isOpen) {
     return { isOpen: false, text: 'Inchis azi' };
   }
 
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-  if (currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime) {
-    return { isOpen: true, text: `Deschis pana la ${todayHours.closeTime}` };
-  } else if (currentTime < todayHours.openTime) {
-    return { isOpen: false, text: `Deschide la ${todayHours.openTime}` };
+  if (openTime && closeTime && currentTime >= openTime && currentTime <= closeTime) {
+    return { isOpen: true, text: `Deschis pana la ${closeTime}` };
+  } else if (openTime && currentTime < openTime) {
+    return { isOpen: false, text: `Deschide la ${openTime}` };
   } else {
     return { isOpen: false, text: 'Inchis' };
   }
@@ -51,13 +60,13 @@ const LocationCard = ({ location, onEdit, onDelete, onManageUsers }) => {
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-            <MapPin className="h-5 w-5 text-viperx-primary" />
+            <MapPin className="h-5 w-5 text-primary" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-gray-900">{location.name}</h3>
               {location.isPrimary && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-viperx-primary">
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-primary">
                   <Star size={10} className="fill-current" />
                   Principala
                 </span>
@@ -173,6 +182,42 @@ const DEFAULT_PRICING = {
   currencySymbol: 'RON',
 };
 
+/**
+ * Normalize operating hours to frontend format { isOpen, openTime, closeTime }.
+ * Handles both backend format { open, close, closed } and existing frontend format.
+ */
+const normalizeOperatingHours = (hours) => {
+  if (!hours) return DEFAULT_OPERATING_HOURS;
+  const result = {};
+  for (const [day, dayHours] of Object.entries(hours)) {
+    if (!dayHours || typeof dayHours !== 'object') continue;
+    if ('open' in dayHours || 'closed' in dayHours) {
+      // Backend format → convert to frontend format
+      result[day] = {
+        isOpen: !dayHours.closed,
+        openTime: dayHours.open || '09:00',
+        closeTime: dayHours.close || '18:00',
+      };
+    } else {
+      result[day] = dayHours;
+    }
+  }
+  return result;
+};
+
+/** Convert frontend { isOpen, openTime, closeTime } to backend { open, close, closed } */
+const toBackendHours = (operatingHours) => {
+  const result = {};
+  for (const [day, hours] of Object.entries(operatingHours)) {
+    result[day] = {
+      open: hours.openTime,
+      close: hours.closeTime,
+      closed: !hours.isOpen,
+    };
+  }
+  return result;
+};
+
 const LocationModal = ({ location, onClose, onSave, isSaving }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [formData, setFormData] = useState({
@@ -184,7 +229,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
     email: location?.email || '',
     isPrimary: location?.isPrimary || false,
     isActive: location?.isActive !== false,
-    operatingHours: location?.operatingHours || DEFAULT_OPERATING_HOURS,
+    operatingHours: normalizeOperatingHours(location?.operatingHours),
     settings: {
       pricing: location?.settings?.pricing || DEFAULT_PRICING,
     },
@@ -192,7 +237,10 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      operatingHours: toBackendHours(formData.operatingHours),
+    });
   };
 
   const updateOperatingHours = (day, field, value) => {
@@ -209,7 +257,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 margin-top-zero">
       <div className="relative w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
         <button
           type="button"
@@ -258,7 +306,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <DollarSign size={16} />
+            <Banknote size={16} />
             Preturi
           </button>
         </div>
@@ -275,7 +323,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="ex: Sediu Central"
                     required
                   />
@@ -289,7 +337,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="ex: Str. Exemplu nr. 10"
                   />
                 </div>
@@ -302,7 +350,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="ex: Bucuresti"
                   />
                 </div>
@@ -315,7 +363,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.county}
                     onChange={(e) => setFormData({ ...formData, county: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="ex: Ilfov"
                   />
                 </div>
@@ -328,7 +376,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="ex: 0721234567"
                   />
                 </div>
@@ -341,7 +389,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="ex: contact@locatie.ro"
                   />
                 </div>
@@ -353,7 +401,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="checkbox"
                     checked={formData.isActive}
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <span className="text-sm text-gray-700">Locatie activa</span>
                 </label>
@@ -364,7 +412,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                       type="checkbox"
                       checked={formData.isPrimary}
                       onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                     />
                     <span className="text-sm text-gray-700">Seteaza ca principala</span>
                   </label>
@@ -392,7 +440,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                         type="checkbox"
                         checked={dayHours.isOpen}
                         onChange={(e) => updateOperatingHours(key, 'isOpen', e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                       />
                       <span className={`text-sm font-medium ${dayHours.isOpen ? 'text-gray-900' : 'text-gray-400'}`}>
                         {label}
@@ -401,18 +449,14 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
 
                     {dayHours.isOpen && (
                       <div className="flex flex-1 items-center gap-2">
-                        <input
-                          type="time"
+                        <TimePicker
                           value={dayHours.openTime}
-                          onChange={(e) => updateOperatingHours(key, 'openTime', e.target.value)}
-                          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          onChange={(v) => updateOperatingHours(key, 'openTime', v)}
                         />
                         <span className="text-gray-400">-</span>
-                        <input
-                          type="time"
+                        <TimePicker
                           value={dayHours.closeTime}
-                          onChange={(e) => updateOperatingHours(key, 'closeTime', e.target.value)}
-                          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                          onChange={(v) => updateOperatingHours(key, 'closeTime', v)}
                         />
                       </div>
                     )}
@@ -454,7 +498,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                         },
                       }))
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="100"
                   />
                   <p className="mt-1 text-xs text-gray-500">
@@ -484,7 +528,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                         },
                       }))
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     placeholder="1.0"
                   />
                   <p className="mt-1 text-xs text-gray-500">
@@ -495,7 +539,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
 
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                 <div className="flex items-start gap-2">
-                  <DollarSign className="mt-0.5 h-4 w-4 text-blue-600" />
+                  <Banknote className="mt-0.5 h-4 w-4 text-blue-600" />
                   <div className="text-sm text-blue-800">
                     <p className="font-medium">Exemplu de calcul:</p>
                     <p className="mt-1">
@@ -530,7 +574,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
             <button
               type="submit"
               disabled={isSaving || !formData.name}
-              className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
             >
               {isSaving ? 'Se salveaza...' : location ? 'Salveaza' : 'Adauga'}
             </button>
@@ -615,7 +659,7 @@ const UserAssignmentModal = ({ location, onClose }) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cauta utilizatori..."
-            className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
 
@@ -652,7 +696,7 @@ const UserAssignmentModal = ({ location, onClose }) => {
                   <div
                     className={`flex h-5 w-5 items-center justify-center rounded border ${
                       isAssigned
-                        ? 'border-viperx-primary bg-viperx-primary text-white'
+                        ? 'border-primary bg-primary text-white'
                         : 'border-gray-300'
                     }`}
                   >
@@ -730,7 +774,7 @@ const Locations = () => {
   };
 
   const handleDelete = async (locationId) => {
-    if (!window.confirm('Esti sigur ca vrei sa stergi aceasta locatie?')) {
+    if (!await confirm({ title: 'Sterge locatie', text: 'Esti sigur ca vrei sa stergi aceasta locatie?', confirmText: 'Sterge', danger: true })) {
       return;
     }
 
@@ -754,7 +798,7 @@ const Locations = () => {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
@@ -774,7 +818,7 @@ const Locations = () => {
             setModalLocation(null);
             setShowModal(true);
           }}
-          className="flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
         >
           <Plus size={18} />
           Adauga locatie
@@ -792,7 +836,7 @@ const Locations = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cauta locatii..."
-          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
       </div>
 
@@ -812,7 +856,7 @@ const Locations = () => {
                 setModalLocation(null);
                 setShowModal(true);
               }}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
             >
               <Plus size={18} />
               Adauga locatie

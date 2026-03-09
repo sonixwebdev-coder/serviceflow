@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fetchCsrfToken } from '@/utils/api';
+import { fetchCsrfToken, bootstrapAuth } from '@/utils/api';
 import { ToastProvider } from '@/context/ToastContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import AdminLayout from '@/components/layout/AdminLayout';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import Organizations from '@/pages/Organizations';
@@ -14,6 +15,8 @@ import SystemLogs from '@/pages/SystemLogs';
 import PlatformSettings from '@/pages/PlatformSettings';
 import Tickets from '@/pages/Tickets';
 import TicketDetail from '@/pages/TicketDetail';
+import Maintenance from '@/pages/Maintenance';
+import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,19 +28,25 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  const [authReady, setAuthReady] = useState(false);
+
   useEffect(() => {
-    fetchCsrfToken();
+    // Fetch CSRF token and attempt silent auth refresh via httpOnly cookie
+    Promise.all([fetchCsrfToken(), bootstrapAuth()]).finally(() => {
+      setAuthReady(true);
+    });
   }, []);
 
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login loading={!authReady} />} />
           <Route
             element={
-              <ProtectedRoute>
+              <ProtectedRoute loading={!authReady}>
                 <AdminLayout />
               </ProtectedRoute>
             }
@@ -50,10 +59,13 @@ export default function App() {
             <Route path="settings" element={<PlatformSettings />} />
             <Route path="tickets" element={<Tickets />} />
             <Route path="tickets/:id" element={<TicketDetail />} />
+            <Route path="maintenance" element={<Maintenance />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

@@ -4,6 +4,7 @@
  */
 
 const { broadcastAuditLog } = require('../realtime/events');
+const logger = require('../utils/logger');
 
 /**
  * Log an audit action
@@ -60,7 +61,7 @@ const logAction = async (prisma, {
     return auditLog;
   } catch (error) {
     // Log but don't throw - audit logging should not break main operations
-    console.error('[AuditLog] Failed to create audit log:', error.message);
+    logger.error('Failed to create audit log', { error: error.message });
     return null;
   }
 };

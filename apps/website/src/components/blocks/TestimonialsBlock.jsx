@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Star, ChevronLeft, ChevronRight, Quote, Loader2 } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { websiteService } from '@/services/websiteService';
 
@@ -8,12 +8,25 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
   const {
     title,
     subtitle,
-    testimonials = [],
+    testimonials: templateTestimonials = [],
     layout = 'carousel',
     showRating = true,
     autoPlay = true,
     autoPlayInterval = 5000,
   } = data;
+
+  // Fetch real approved reviews from API when on public site
+  const { data: apiReviews } = useQuery({
+    queryKey: ['approved-reviews', subdomain],
+    queryFn: () => websiteService.getApprovedReviews(subdomain),
+    enabled: !!subdomain,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Use API reviews on public site, fallback to template data in editor preview
+  const testimonials = subdomain
+    ? (apiReviews || [])
+    : templateTestimonials;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);

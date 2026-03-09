@@ -262,7 +262,7 @@ const Profile = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-viperx-primary text-lg font-bold text-white">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-white">
           <User size={24} />
         </div>
         <div>
@@ -337,7 +337,7 @@ const Profile = () => {
                   value={profileForm.firstName}
                   onChange={handleProfileChange}
                   maxLength={100}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Ion"
                   required
                 />
@@ -353,7 +353,7 @@ const Profile = () => {
                   value={profileForm.lastName}
                   onChange={handleProfileChange}
                   maxLength={100}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Popescu"
                   required
                 />
@@ -371,7 +371,7 @@ const Profile = () => {
                 value={profileForm.email}
                 onChange={handleProfileChange}
                 maxLength={255}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="ion.popescu@example.com"
                 required
               />
@@ -388,7 +388,7 @@ const Profile = () => {
                 value={profileForm.phoneNumber}
                 onChange={handleProfileChange}
                 maxLength={20}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="+40712345678"
               />
             </div>
@@ -406,7 +406,7 @@ const Profile = () => {
               <button
                 type="submit"
                 disabled={isSavingProfile}
-                className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save size={16} />
                 {isSavingProfile ? 'Se salveaza...' : 'Salveaza modificarile'}
@@ -462,7 +462,7 @@ const Profile = () => {
                 value={passwordForm.currentPassword}
                 onChange={handlePasswordChange}
                 maxLength={128}
-                className={`w-full rounded-lg border ${passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary`}
+                className={`w-full rounded-lg border ${passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                 placeholder="Introdu parola curenta"
               />
               {passwordErrors.currentPassword && (
@@ -481,7 +481,7 @@ const Profile = () => {
                 value={passwordForm.newPassword}
                 onChange={handlePasswordChange}
                 maxLength={128}
-                className={`w-full rounded-lg border ${passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary`}
+                className={`w-full rounded-lg border ${passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                 placeholder="Minim 8 caractere"
               />
               {passwordErrors.newPassword && (
@@ -503,7 +503,7 @@ const Profile = () => {
                 value={passwordForm.confirmPassword}
                 onChange={handlePasswordChange}
                 maxLength={128}
-                className={`w-full rounded-lg border ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary`}
+                className={`w-full rounded-lg border ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
                 placeholder="Introdu din nou parola noua"
               />
               {passwordErrors.confirmPassword && (
@@ -524,7 +524,7 @@ const Profile = () => {
               <button
                 type="submit"
                 disabled={isSavingPassword}
-                className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-viperx-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save size={16} />
                 {isSavingPassword ? 'Se schimba...' : 'Schimba parola'}

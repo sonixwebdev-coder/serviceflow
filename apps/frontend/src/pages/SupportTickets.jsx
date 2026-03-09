@@ -60,7 +60,7 @@ export default function SupportTickets() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
         >
           <Plus className="h-4 w-4" />
           Creaza tichet
@@ -76,7 +76,7 @@ export default function SupportTickets() {
             placeholder="Cauta dupa subiect..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 pl-9 pr-3 py-2 text-sm focus:border-viperx-primary focus:ring-1 focus:ring-viperx-primary"
+            className="w-full rounded-lg border border-gray-300 pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
         <select
@@ -96,7 +96,7 @@ export default function SupportTickets() {
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-viperx-primary" />
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         ) : tickets.length === 0 ? (
           <div className="py-12 text-center text-sm text-gray-500">Niciun tichet gasit.</div>
@@ -190,7 +190,7 @@ export default function SupportTickets() {
                   maxLength={200}
                   value={form.subject}
                   onChange={(e) => setForm((prev) => ({ ...prev, subject: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary"
                   placeholder="Descrie pe scurt problema..."
                 />
               </div>
@@ -216,7 +216,7 @@ export default function SupportTickets() {
                   rows={4}
                   value={form.message}
                   onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:border-viperx-primary focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:border-primary focus:ring-1 focus:ring-primary"
                   placeholder="Descrie problema in detaliu..."
                 />
               </div>
@@ -231,7 +231,7 @@ export default function SupportTickets() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="inline-flex items-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
                 >
                   {creating && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
                   Trimite

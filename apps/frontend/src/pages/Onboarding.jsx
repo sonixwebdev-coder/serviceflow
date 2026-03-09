@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Building2, CheckCircle2 } from 'lucide-react';
+import { Check, Building2, CheckCircle2, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useUpdateCompanySettings } from '../hooks/useCompanySettings';
 import { useLocationMutations } from '../hooks/useLocations';
 import { useServicesMutation } from '../hooks/useServices';
 import useOnboardingStatus from '../hooks/useOnboardingStatus';
 import LocationStep from '../components/onboarding/LocationStep';
 import ServicesStep from '../components/onboarding/ServicesStep';
+import { validateVatNumber } from '../services/settingsService';
 
 const STEPS = [
   { id: 'company', title: 'Companie' },
@@ -15,13 +16,44 @@ const STEPS = [
   { id: 'done', title: 'Finalizare' },
 ];
 
-const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-viperx-primary focus:border-transparent transition';
+const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition';
+
+const STORAGE_KEY = 'onboarding_progress';
+
+const loadProgress = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
+const saveProgress = (step, completed) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, completed }));
+  } catch {
+    // ignore
+  }
+};
+
+const clearProgress = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+};
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
+  const saved = loadProgress();
+  const [currentStep, setCurrentStep] = useState(saved?.step ?? 0);
   const [error, setError] = useState('');
-  const [completedSteps, setCompletedSteps] = useState({ company: false, location: false, services: false });
+  const [completedSteps, setCompletedSteps] = useState(
+    saved?.completed ?? { company: false, location: false, services: false }
+  );
 
   // Hooks
   const { markCompleted, isMarkingCompleted, organization } = useOnboardingStatus();
@@ -35,12 +67,43 @@ const Onboarding = () => {
     address: '',
     email: '',
     phone: '',
+    entityType: 'SRL',
     vatNumber: '',
     registrationNumber: '',
+    cnp: '',
   });
   const [companyErrors, setCompanyErrors] = useState({});
 
+  // VAT validation state
+  const [vatValidation, setVatValidation] = useState({ status: 'idle', message: '', data: null });
+
+  const handleVerifyVat = async () => {
+    if (!companyData.vatNumber.trim()) return;
+    setVatValidation({ status: 'loading', message: '', data: null });
+    try {
+      const result = await validateVatNumber(companyData.vatNumber);
+      setVatValidation({ status: 'valid', message: `CUI valid — ${result.name}`, data: result });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Eroare la verificare';
+      setVatValidation({ status: 'invalid', message: msg, data: null });
+    }
+  };
+
+  const handleApplyViesData = () => {
+    if (!vatValidation.data) return;
+    const updates = {};
+    if (vatValidation.data.name) updates.companyName = vatValidation.data.name;
+    if (vatValidation.data.address) updates.address = vatValidation.data.address;
+    setCompanyData(prev => ({ ...prev, ...updates }));
+  };
+
+  // Persist progress to localStorage whenever step or completed state changes
+  useEffect(() => {
+    saveProgress(currentStep, completedSteps);
+  }, [currentStep, completedSteps]);
+
   const handleSkip = async () => {
+    clearProgress();
     try {
       await markCompleted();
       navigate('/dashboard', { replace: true });
@@ -60,7 +123,7 @@ const Onboarding = () => {
                 index < currentStep
                   ? 'bg-green-500 text-white'
                   : index === currentStep
-                  ? 'bg-viperx-primary text-white'
+                  ? 'bg-primary text-white'
                   : 'bg-gray-200 text-gray-500'
               }`}
             >
@@ -68,7 +131,7 @@ const Onboarding = () => {
             </div>
             <span
               className={`text-xs mt-1 ${
-                index === currentStep ? 'text-viperx-primary font-medium' : 'text-gray-500'
+                index === currentStep ? 'text-primary font-medium' : 'text-gray-500'
               }`}
             >
               {step.title}
@@ -170,27 +233,101 @@ const Onboarding = () => {
           {companyErrors.phone && <p className="text-red-500 text-xs mt-1">{companyErrors.phone}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">CUI (optional)</label>
-          <input
-            type="text"
-            value={companyData.vatNumber}
-            onChange={e => handleCompanyChange('vatNumber', e.target.value)}
-            placeholder="RO12345678"
-            className={inputClass}
-          />
+        {/* Entity type */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tip entitate juridica</label>
+          <div className="flex gap-6">
+            {['SRL', 'PFA'].map(type => (
+              <label key={type} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="entityType"
+                  value={type}
+                  checked={companyData.entityType === type}
+                  onChange={() => handleCompanyChange('entityType', type)}
+                  className="h-4 w-4 text-primary"
+                />
+                <span className="text-sm font-medium text-gray-700">{type}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nr. Registrul Comertului (optional)</label>
-          <input
-            type="text"
-            value={companyData.registrationNumber}
-            onChange={e => handleCompanyChange('registrationNumber', e.target.value)}
-            placeholder="J40/1234/2024"
-            className={inputClass}
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {companyData.entityType === 'PFA' ? 'NIF / CIF (optional)' : 'CUI (optional)'}
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={companyData.vatNumber}
+              onChange={e => {
+                handleCompanyChange('vatNumber', e.target.value);
+                setVatValidation({ status: 'idle', message: '', data: null });
+              }}
+              placeholder={companyData.entityType === 'PFA' ? 'Numar de identificare fiscala' : 'RO12345678'}
+              className={inputClass}
+            />
+            <button
+              type="button"
+              onClick={handleVerifyVat}
+              disabled={!companyData.vatNumber.trim() || vatValidation.status === 'loading'}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {vatValidation.status === 'loading' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : 'Verifica'}
+            </button>
+          </div>
+          {vatValidation.status === 'valid' && (
+            <div className="mt-2">
+              <div className="flex items-center gap-1.5 text-green-600 text-sm">
+                <CheckCircle className="w-4 h-4" />
+                <span>{vatValidation.message}</span>
+              </div>
+              {vatValidation.data?.name && (
+                <button
+                  type="button"
+                  onClick={handleApplyViesData}
+                  className="mt-1 text-xs text-primary hover:underline"
+                >
+                  Completeaza automat numele si adresa
+                </button>
+              )}
+            </div>
+          )}
+          {vatValidation.status === 'invalid' && (
+            <div className="flex items-center gap-1.5 mt-2 text-red-600 text-sm">
+              <XCircle className="w-4 h-4" />
+              <span>{vatValidation.message}</span>
+            </div>
+          )}
         </div>
+
+        {companyData.entityType === 'SRL' ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nr. Registrul Comertului (optional)</label>
+            <input
+              type="text"
+              value={companyData.registrationNumber}
+              onChange={e => handleCompanyChange('registrationNumber', e.target.value)}
+              placeholder="J40/1234/2024"
+              className={inputClass}
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">CNP (optional)</label>
+            <input
+              type="text"
+              value={companyData.cnp}
+              onChange={e => handleCompanyChange('cnp', e.target.value)}
+              placeholder="Cod numeric personal (13 cifre)"
+              maxLength={13}
+              className={inputClass}
+            />
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -199,7 +336,7 @@ const Onboarding = () => {
           type="button"
           onClick={handleCompanySubmit}
           disabled={isSavingCompany}
-          className="px-8 py-2.5 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 font-medium transition disabled:opacity-50"
+          className="px-8 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium transition disabled:opacity-50"
         >
           {isSavingCompany ? 'Se salveaza...' : 'Continua'}
         </button>
@@ -233,6 +370,7 @@ const Onboarding = () => {
 
   // Step 4: Completion
   const handleFinish = async () => {
+    clearProgress();
     try {
       await markCompleted();
       navigate('/dashboard', { replace: true });
@@ -280,7 +418,7 @@ const Onboarding = () => {
         type="button"
         onClick={handleFinish}
         disabled={isMarkingCompleted}
-        className="px-8 py-3 bg-viperx-primary text-white rounded-lg hover:bg-viperx-primary/90 font-semibold transition disabled:opacity-50 mt-4"
+        className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-semibold transition disabled:opacity-50 mt-4"
       >
         {isMarkingCompleted ? 'Se finalizeaza...' : 'Mergi la tablou de bord'}
       </button>
@@ -320,7 +458,7 @@ const Onboarding = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-viperx-primary mb-1">ForjaIt</h1>
+            <h1 className="text-3xl font-bold text-primary mb-1">ForjaIt</h1>
             <p className="text-gray-500 text-sm">Configureaza-ti contul in cateva minute</p>
           </div>
 

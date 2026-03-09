@@ -58,13 +58,13 @@ export default function TopClientsTable({ data = [], isLoading }) {
           {/* Client avatar */}
           <div
             className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-              item.client?.type === 'SRL' ? 'bg-blue-100' : 'bg-viperx-primary/10'
+              item.client?.type === 'SRL' ? 'bg-blue-100' : 'bg-primary/10'
             }`}
           >
             {item.client?.type === 'SRL' ? (
               <Building className="h-5 w-5 text-blue-600" />
             ) : (
-              <User className="h-5 w-5 text-viperx-primary" />
+              <User className="h-5 w-5 text-primary" />
             )}
           </div>
 

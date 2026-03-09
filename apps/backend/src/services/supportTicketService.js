@@ -83,9 +83,12 @@ const listAllTickets = async ({ page = 1, limit = 20, status, category, priority
   return { tickets, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 };
 
-const getTicket = async (ticketId) => {
-  const ticket = await prisma.supportTicket.findUnique({
-    where: { id: ticketId },
+const getTicket = async (ticketId, { organizationId } = {}) => {
+  const where = { id: ticketId };
+  if (organizationId) where.organizationId = organizationId;
+
+  const ticket = await prisma.supportTicket.findFirst({
+    where,
     include: {
       messages: {
         orderBy: { createdAt: 'asc' },

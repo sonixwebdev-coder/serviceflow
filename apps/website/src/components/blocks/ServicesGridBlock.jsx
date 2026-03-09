@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Clock, DollarSign } from 'lucide-react';
+import { Clock, Banknote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { websiteService } from '@/services/websiteService';
@@ -98,7 +98,7 @@ export default function ServicesGridBlock({ data, subdomain, branding }) {
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-white text-xs font-medium"
                       style={{ backgroundColor: primaryColor }}
                     >
-                      <DollarSign className="h-3.5 w-3.5" />
+                      <Banknote className="h-3.5 w-3.5" />
                       {service.price} {service.currency || 'RON'}
                     </span>
                   )}

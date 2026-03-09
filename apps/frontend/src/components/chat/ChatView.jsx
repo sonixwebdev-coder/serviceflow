@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
+import confirm from '../../utils/confirm';
 import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useChannel, useMessages, useMarkAsRead, useLeaveChannel, useArchiveChannel } from '../../hooks/useChat';
-import { Hash, Lock, MessageSquare, Users, MoreVertical, Settings, Menu, UserPlus, BellOff, LogOut, Archive, Copy } from 'lucide-react';
+import { Hash, Lock, MessageSquare, Users, MoreVertical, Settings, Menu, UserPlus, BellOff, LogOut, Archive, Copy, ArrowLeft } from 'lucide-react';
 import MessageList from './MessageList';
 import MessageComposer from './MessageComposer';
 import AddMembersDialog from './AddMembersDialog';
@@ -47,7 +48,7 @@ const MessagesLoadingSkeleton = () => (
  * Chat View Component
  * Main conversation area with header, messages, and composer
  */
-export default function ChatView() {
+export default function ChatView({ isMobile = false }) {
   const { activeChannelId, setMessages, resetUnreadCount, toggleSidebar, toggleMemberList, isSidebarOpen, isMemberListOpen, removeChannel, setActiveChannelId } = useChatStore();
   const { user: currentUser } = useAuthStore();
   const [isAddMembersOpen, setIsAddMembersOpen] = useState(false);
@@ -174,7 +175,7 @@ export default function ChatView() {
   };
 
   const handleLeaveChannel = async () => {
-    if (!window.confirm('Ești sigur că vrei să părăsești acest canal?')) {
+    if (!await confirm({ title: 'Paraseste canal', text: 'Esti sigur ca vrei sa parasesti acest canal?', confirmText: 'Paraseste', danger: true })) {
       setIsMenuOpen(false);
       return;
     }
@@ -199,7 +200,7 @@ export default function ChatView() {
   };
 
   const handleArchiveChannel = async () => {
-    if (!window.confirm('Ești sigur că vrei să arhivezi acest canal? Toți membrii vor pierde accesul.')) {
+    if (!await confirm({ title: 'Arhiveaza canal', text: 'Esti sigur ca vrei sa arhivezi acest canal? Toti membrii vor pierde accesul.', confirmText: 'Arhiveaza', danger: true })) {
       setIsMenuOpen(false);
       return;
     }
@@ -230,14 +231,24 @@ export default function ChatView() {
         <div className="flex items-center justify-between">
           {/* Left side - Sidebar toggle and channel info */}
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            {/* Sidebar toggle */}
-            <button
-              onClick={toggleSidebar}
-              className={`rounded-lg p-2 hover:bg-gray-100 ${isSidebarOpen ? 'text-viperx-primary' : 'text-gray-600'}`}
-              title={isSidebarOpen ? 'Ascunde sidebar' : 'Afișează sidebar'}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+            {/* Sidebar toggle / Back button on mobile */}
+            {isMobile ? (
+              <button
+                onClick={() => setActiveChannelId(null)}
+                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+                title="Înapoi la canale"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            ) : (
+              <button
+                onClick={toggleSidebar}
+                className={`rounded-lg p-2 hover:bg-gray-100 ${isSidebarOpen ? 'text-primary' : 'text-gray-600'}`}
+                title={isSidebarOpen ? 'Ascunde sidebar' : 'Afișează sidebar'}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
 
             <div className="text-gray-600">{getChannelIcon()}</div>
             <div className="min-w-0 flex-1">
@@ -256,7 +267,7 @@ export default function ChatView() {
             {channel.type !== 'DIRECT' && (
               <button
                 onClick={() => setIsAddMembersOpen(true)}
-                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-viperx-primary"
+                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-primary"
                 title="Adaugă membri"
               >
                 <UserPlus className="h-5 w-5" />
@@ -268,7 +279,7 @@ export default function ChatView() {
                 onClick={toggleMemberList}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isMemberListOpen
-                    ? 'bg-viperx-primary/10 text-viperx-primary'
+                    ? 'bg-primary/10 text-primary'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
                 title={isMemberListOpen ? 'Ascunde lista de membri' : 'Afișează lista de membri'}
@@ -281,7 +292,7 @@ export default function ChatView() {
             {channel.type !== 'DIRECT' && (
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-viperx-primary"
+                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-primary"
                 title="Setări canal"
               >
                 <Settings className="h-5 w-5" />
@@ -291,7 +302,7 @@ export default function ChatView() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`rounded-lg p-2 hover:bg-gray-100 ${isMenuOpen ? 'bg-gray-100 text-viperx-primary' : 'text-gray-600'}`}
+                className={`rounded-lg p-2 hover:bg-gray-100 ${isMenuOpen ? 'bg-gray-100 text-primary' : 'text-gray-600'}`}
                 title="Mai multe opțiuni"
               >
                 <MoreVertical className="h-5 w-5" />

@@ -20,4 +20,9 @@ export const loyaltyService = {
     const response = await api.post('/portal/loyalty/referral/validate', { referralCode: code });
     return response.data;
   },
+
+  async applyReferralCode(code) {
+    const response = await api.post('/portal/loyalty/referral/apply', { referralCode: code });
+    return response.data;
+  },
 };

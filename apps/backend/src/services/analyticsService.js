@@ -51,6 +51,7 @@ const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day', l
     orderBy: {
       paidAt: 'asc',
     },
+    take: 5000,
   });
 
   // Group invoices by period
@@ -99,6 +100,7 @@ const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day', l
     select: {
       total: true,
     },
+    take: 5000,
   });
 
   const prevRevenue = prevInvoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
@@ -153,6 +155,7 @@ const getAppointmentStats = async (prisma, { startDate, endDate, locationFilter 
       scheduledStart: true,
       paymentStatus: true,
     },
+    take: 10000,
   });
 
   // Count by status
@@ -268,6 +271,7 @@ const getClientAcquisition = async (prisma, { startDate, endDate, groupBy = 'day
     orderBy: {
       createdAt: 'asc',
     },
+    take: 5000,
   });
 
   // Group by period
@@ -374,6 +378,7 @@ const getInvoiceAging = async (prisma, { locationFilter = {} } = {}) => {
     orderBy: {
       dueDate: 'asc',
     },
+    take: 500,
   });
 
   // Categorize into aging buckets
@@ -756,138 +761,139 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
     orderBy: { name: 'asc' },
   });
 
-  // For each location, get key metrics
-  const locationMetrics = await Promise.all(
-    locations.map(async (location) => {
-      const locationFilter = { locationId: location.id };
+  // Batch all metrics in 7 queries total (instead of 7 per location)
+  const startOfPeriod = startOfDay(start);
+  const endOfPeriod = endOfDay(end);
 
-      // Run all queries in parallel for this location
-      const [
-        appointmentCount,
-        completedAppointments,
-        clientCount,
-        newClients,
-        revenue,
-        taskCount,
-        completedTasks,
-      ] = await Promise.all([
-        // Total appointments in period
-        prisma.appointment.count({
-          where: {
-            ...locationFilter,
-            scheduledStart: {
-              gte: startOfDay(start),
-              lte: endOfDay(end),
-            },
-          },
-        }),
+  const [
+    apptCountsByLocation,
+    completedApptsByLocation,
+    clientCountsByLocation,
+    newClientsByLocation,
+    taskCountsByLocation,
+    completedTasksByLocation,
+    revenueByLocation,
+  ] = await Promise.all([
+    // Total appointments grouped by locationId
+    prisma.appointment.groupBy({
+      by: ['locationId'],
+      where: { scheduledStart: { gte: startOfPeriod, lte: endOfPeriod } },
+      _count: { id: true },
+    }),
 
-        // Completed appointments in period
-        prisma.appointment.count({
-          where: {
-            ...locationFilter,
-            status: 'COMPLETED',
-            scheduledStart: {
-              gte: startOfDay(start),
-              lte: endOfDay(end),
-            },
-          },
-        }),
+    // Completed appointments grouped by locationId
+    prisma.appointment.groupBy({
+      by: ['locationId'],
+      where: { status: 'COMPLETED', scheduledStart: { gte: startOfPeriod, lte: endOfPeriod } },
+      _count: { id: true },
+    }),
 
-        // Total clients at this specific location
-        prisma.client.count({
-          where: locationFilter,
-        }),
+    // Total clients per location (all time)
+    prisma.client.groupBy({
+      by: ['locationId'],
+      _count: { id: true },
+    }),
 
-        // New clients in period at this specific location
-        prisma.client.count({
-          where: {
-            ...locationFilter,
-            createdAt: {
-              gte: startOfDay(start),
-              lte: endOfDay(end),
-            },
-          },
-        }),
+    // New clients per location in period
+    prisma.client.groupBy({
+      by: ['locationId'],
+      where: { createdAt: { gte: startOfPeriod, lte: endOfPeriod } },
+      _count: { id: true },
+    }),
 
-        // Revenue from paid invoices (via appointment location)
-        prisma.invoice.aggregate({
-          where: {
-            status: 'PAID',
-            appointment: locationFilter,
-            OR: [
-              {
-                paidAt: {
-                  gte: startOfDay(start),
-                  lte: endOfDay(end),
-                },
-              },
-              {
-                paidAt: null,
-                issueDate: {
-                  gte: startOfDay(start),
-                  lte: endOfDay(end),
-                },
-              },
-            ],
-          },
-          _sum: {
-            total: true,
-          },
-        }),
+    // Total tasks per location in period
+    prisma.task.groupBy({
+      by: ['locationId'],
+      where: { createdAt: { gte: startOfPeriod, lte: endOfPeriod } },
+      _count: { id: true },
+    }),
 
-        // Total tasks at this specific location in period
-        prisma.task.count({
-          where: {
-            ...locationFilter,
-            createdAt: {
-              gte: startOfDay(start),
-              lte: endOfDay(end),
-            },
-          },
-        }),
+    // Completed tasks per location in period
+    prisma.task.groupBy({
+      by: ['locationId'],
+      where: { status: 'COMPLETED', updatedAt: { gte: startOfPeriod, lte: endOfPeriod } },
+      _count: { id: true },
+    }),
 
-        // Completed tasks in period at this specific location
-        prisma.task.count({
-          where: {
-            ...locationFilter,
-            status: 'COMPLETED',
-            updatedAt: {
-              gte: startOfDay(start),
-              lte: endOfDay(end),
-            },
-          },
-        }),
-      ]);
+    // Revenue per location via appointment join — aggregate per appointment locationId
+    prisma.invoice.groupBy({
+      by: ['appointmentId'],
+      where: {
+        status: 'PAID',
+        OR: [
+          { paidAt: { gte: startOfPeriod, lte: endOfPeriod } },
+          { paidAt: null, issueDate: { gte: startOfPeriod, lte: endOfPeriod } },
+        ],
+      },
+      _sum: { total: true },
+    }).then(async (invoiceSums) => {
+      // Resolve locationId for each appointmentId
+      const appointmentIds = invoiceSums.map(r => r.appointmentId).filter(Boolean);
+      if (appointmentIds.length === 0) return [];
+      const appts = await prisma.appointment.findMany({
+        where: { id: { in: appointmentIds } },
+        select: { id: true, locationId: true },
+        take: 5000,
+      });
+      const apptLocationMap = Object.fromEntries(appts.map(a => [a.id, a.locationId]));
+      // Aggregate revenue by locationId
+      const revenueMap = {};
+      for (const row of invoiceSums) {
+        const locId = apptLocationMap[row.appointmentId];
+        if (!locId) continue;
+        revenueMap[locId] = (revenueMap[locId] || 0) + Number(row._sum.total || 0);
+      }
+      return Object.entries(revenueMap).map(([locationId, revenue]) => ({ locationId, revenue }));
+    }),
+  ]);
 
-      return {
-        location: {
-          id: location.id,
-          name: location.name,
-          slug: location.slug,
-          isPrimary: location.isPrimary,
+  // Build lookup maps for O(1) access
+  const toMap = (arr, key = 'locationId') => Object.fromEntries(arr.map(r => [r[key], r._count?.id ?? 0]));
+  const apptMap = toMap(apptCountsByLocation);
+  const completedApptMap = toMap(completedApptsByLocation);
+  const clientMap = toMap(clientCountsByLocation);
+  const newClientMap = toMap(newClientsByLocation);
+  const taskMap = toMap(taskCountsByLocation);
+  const completedTaskMap = toMap(completedTasksByLocation);
+  const revenueMap = Object.fromEntries(revenueByLocation.map(r => [r.locationId, r.revenue]));
+
+  const locationMetrics = locations.map((location) => {
+    const lid = location.id;
+    const appointmentCount = apptMap[lid] ?? 0;
+    const completedAppointments = completedApptMap[lid] ?? 0;
+    const clientCount = clientMap[lid] ?? 0;
+    const newClients = newClientMap[lid] ?? 0;
+    const taskCount = taskMap[lid] ?? 0;
+    const completedTasks = completedTaskMap[lid] ?? 0;
+    const revenue = revenueMap[lid] ?? 0;
+
+    return {
+      location: {
+        id: location.id,
+        name: location.name,
+        slug: location.slug,
+        isPrimary: location.isPrimary,
+      },
+      metrics: {
+        appointments: {
+          total: appointmentCount,
+          completed: completedAppointments,
+          completionRate: appointmentCount > 0
+            ? Math.round((completedAppointments / appointmentCount) * 100)
+            : 0,
         },
-        metrics: {
-          appointments: {
-            total: appointmentCount,
-            completed: completedAppointments,
-            completionRate: appointmentCount > 0
-              ? Math.round((completedAppointments / appointmentCount) * 100)
-              : 0,
-          },
-          clients: {
-            total: clientCount,
-            new: newClients,
-          },
-          revenue: Math.round((Number(revenue._sum.total) || 0) * 100) / 100,
-          tasks: {
-            total: taskCount,
-            completed: completedTasks,
-          },
+        clients: {
+          total: clientCount,
+          new: newClients,
         },
-      };
-    })
-  );
+        revenue: Math.round(revenue * 100) / 100,
+        tasks: {
+          total: taskCount,
+          completed: completedTasks,
+        },
+      },
+    };
+  });
 
   // Get unassigned records (null locationId) - legacy data
   const [
@@ -1005,6 +1011,7 @@ const getPaymentTrends = async (prisma, { startDate, endDate, groupBy = 'day', l
     orderBy: {
       paymentDate: 'asc',
     },
+    take: 5000,
   });
 
   const groupedPayments = {};
@@ -1040,6 +1047,7 @@ const getPaymentTrends = async (prisma, { startDate, endDate, groupBy = 'day', l
   const prevPayments = await prisma.payment.findMany({
     where: prevWhere,
     select: { amount: true },
+    take: 5000,
   });
 
   const previousPeriodAmount = prevPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);

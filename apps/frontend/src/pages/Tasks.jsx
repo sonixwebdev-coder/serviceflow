@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import confirm from '../utils/confirm';
+import { useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import {
@@ -76,10 +78,32 @@ const Tasks = () => {
   const [commentCountOverrides, setCommentCountOverrides] = useState({}); // Track updated counts
 
   const [statusOverrides, setStatusOverrides] = useState({});
-  const [statusLoading, setStatusLoading] = useState({});
 
   const [hiddenTasks, setHiddenTasks] = useState({});
-  const [deleteLoading, setDeleteLoading] = useState({});
+
+  const statusMutation = useMutation({
+    mutationFn: ({ taskId, status }) => updateTask(taskId, { status }),
+    onSuccess: () => refresh(),
+    onSettled: (_data, _error, { taskId }) => {
+      setStatusOverrides((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteTask,
+    onSuccess: () => refresh(),
+    onError: (_error, taskId) => {
+      setHiddenTasks((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+    },
+  });
 
   const [expandedTasks, setExpandedTasks] = useState({});
 
@@ -182,42 +206,22 @@ const Tasks = () => {
     return assignedIds.includes(userId) || creatorId.toString() === userId;
   };
 
-  const handleStatusChange = async (taskId, status) => {
+  const handleStatusChange = (taskId, status) => {
     const currentTask = tasks.find((task) => task._id === taskId);
     if (!currentTask) return;
 
     setStatusOverrides((prev) => ({ ...prev, [taskId]: status }));
-    setStatusLoading((prev) => ({ ...prev, [taskId]: true }));
-
-    let success = false;
-    try {
-      await updateTask(taskId, { status });
-      success = true;
-      await refresh();
-      showToast({
-        title: 'Task actualizat',
-        description: 'Status-ul a fost actualizat.',
-        type: 'success',
-      });
-    } catch (updateError) {
-      showToast({
-        title: 'Actualizare esuata',
-        description: updateError.message || 'Nu s-a putut actualiza status-ul.',
-        type: 'error',
-      });
-    } finally {
-      setStatusLoading((prev) => {
-        const next = { ...prev };
-        delete next[taskId];
-        return next;
-      });
-
-      setStatusOverrides((prev) => {
-        const next = { ...prev };
-        delete next[taskId];
-        return next;
-      });
-    }
+    statusMutation.mutate(
+      { taskId, status },
+      {
+        onSuccess: () => {
+          showToast({ title: 'Task actualizat', description: 'Status-ul a fost actualizat.', type: 'success' });
+        },
+        onError: (err) => {
+          showToast({ title: 'Actualizare esuata', description: err.message || 'Nu s-a putut actualiza status-ul.', type: 'error' });
+        },
+      }
+    );
   };
 
   const handleAddComment = async (taskId) => {
@@ -309,43 +313,19 @@ const Tasks = () => {
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Esti sigur ca vrei sa stergi acest task?')) {
+    if (!await confirm({ title: 'Sterge task', text: 'Esti sigur ca vrei sa stergi acest task?', confirmText: 'Sterge', danger: true })) {
       return;
     }
 
-    setDeleteLoading((prev) => ({ ...prev, [taskId]: true }));
     setHiddenTasks((prev) => ({ ...prev, [taskId]: true }));
-
-    let success = false;
-    try {
-      await deleteTask(taskId);
-      success = true;
-      await refresh();
-      showToast({
-        title: 'Task sters',
-        description: 'Task-ul a fost sters cu succes.',
-        type: 'success',
-      });
-    } catch (deleteError) {
-      showToast({
-        title: 'Stergere esuata',
-        description: deleteError.message || 'Te rugam sa incerci din nou.',
-        type: 'error',
-      });
-    } finally {
-      setDeleteLoading((prev) => {
-        const next = { ...prev };
-        delete next[taskId];
-        return next;
-      });
-      setHiddenTasks((prev) => {
-        const next = { ...prev };
-        if (!success) {
-          delete next[taskId];
-        }
-        return next;
-      });
-    }
+    deleteMutation.mutate(taskId, {
+      onSuccess: () => {
+        showToast({ title: 'Task sters', description: 'Task-ul a fost sters cu succes.', type: 'success' });
+      },
+      onError: (err) => {
+        showToast({ title: 'Stergere esuata', description: err.message || 'Te rugam sa incerci din nou.', type: 'error' });
+      },
+    });
   };
 
   const toggleTaskExpansion = async (taskId) => {
@@ -428,7 +408,7 @@ const Tasks = () => {
         <button
           type="button"
           onClick={openModal}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
         >
           <Plus size={18} />
           Task nou
@@ -439,7 +419,7 @@ const Tasks = () => {
       <div className="space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-viperx-primary" />
+            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         ) : error ? (
           <div className="rounded-xl bg-white border border-red-200 p-6 text-center text-sm text-red-600">{error}</div>
@@ -489,8 +469,8 @@ const Tasks = () => {
                       <button
                         type="button"
                         onClick={() => handleDeleteTask(task._id)}
-                        disabled={deleteLoading[task._id]}
-                        className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+                        disabled={deleteMutation.isPending && deleteMutation.variables === task._id}
+                        className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Sterge task"
                       >
                         <Trash2 size={16} />
@@ -536,8 +516,8 @@ const Tasks = () => {
                       <select
                         value={displayStatus}
                         onChange={(event) => handleStatusChange(task._id, event.target.value)}
-                        disabled={statusLoading[task._id]}
-                        className="w-full sm:w-auto rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary disabled:opacity-60"
+                        disabled={statusMutation.isPending && statusMutation.variables?.taskId === task._id}
+                        className="w-full sm:w-auto rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {statusOptions.map((status) => {
                           const meta = STATUS_META[status];
@@ -604,14 +584,14 @@ const Tasks = () => {
                                 setCommentMap((current) => ({ ...current, [task._id]: event.target.value }))
                               }
                               placeholder="Adauga un comentariu..."
-                              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary resize-none"
+                              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                               rows={2}
                             />
                             <button
                               type="button"
                               onClick={() => handleAddComment(task._id)}
                               disabled={commentLoading[task._id] || !(commentMap[task._id] || '').trim()}
-                              className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition self-stretch"
+                              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition self-stretch"
                             >
                               {commentLoading[task._id] ? 'Se trimite...' : 'Posteaza'}
                             </button>
@@ -675,7 +655,7 @@ const Tasks = () => {
                   name="title"
                   value={taskForm.title}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Introduceti titlul task-ului..."
                   required
                 />
@@ -687,7 +667,7 @@ const Tasks = () => {
                   name="description"
                   value={taskForm.description}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   rows={3}
                   placeholder="Detalii despre task..."
                 />
@@ -700,7 +680,7 @@ const Tasks = () => {
                     name="taskType"
                     value={taskForm.taskType}
                     onChange={handleFormChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
@@ -716,7 +696,7 @@ const Tasks = () => {
                     name="priority"
                     value={taskForm.priority}
                     onChange={handleFormChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-viperx-primary focus:outline-none focus:ring-1 focus:ring-viperx-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     {priorityOptions.map((priority) => {
                       const meta = PRIORITY_META[priority];
@@ -750,14 +730,14 @@ const Tasks = () => {
                       <label
                         key={employee._id}
                         className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition ${
-                          checked ? 'border-viperx-primary bg-orange-50' : 'border-gray-200 hover:bg-gray-50'
+                          checked ? 'border-primary bg-orange-50' : 'border-gray-200 hover:bg-gray-50'
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => handleAssigneeToggle(employee._id)}
-                          className="rounded border-gray-300 text-viperx-primary focus:ring-viperx-primary"
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
                         />
                         <span>
                           {employee.firstName} {employee.lastName}
@@ -779,7 +759,7 @@ const Tasks = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-lg bg-viperx-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Se creaza...' : 'Creaza task'}
                 </button>

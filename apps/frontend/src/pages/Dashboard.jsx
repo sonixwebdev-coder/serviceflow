@@ -125,7 +125,7 @@ function SortableWidget({ widget, isEditMode, children }) {
         {/* Widget header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
-            <IconComponent className="h-4 w-4 text-viperx-primary" />
+            <IconComponent className="h-4 w-4 text-primary" />
             {config?.title || 'Widget'}
           </h3>
           {isEditMode && (
@@ -157,7 +157,7 @@ function WidgetToggle({ widgetId, visible, onToggle }) {
       onClick={() => onToggle(widgetId)}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition ${
         visible
-          ? 'bg-viperx-primary/5 border-viperx-primary text-viperx-primary'
+          ? 'bg-primary/5 border-primary text-primary'
           : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
       }`}
     >
@@ -254,7 +254,7 @@ const Dashboard = () => {
           onClick={toggleEditMode}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition ${
             isEditMode
-              ? 'bg-viperx-primary text-white border-viperx-primary'
+              ? 'bg-primary text-white border-primary'
               : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
           }`}
         >
@@ -349,7 +349,7 @@ const Dashboard = () => {
           </p>
           <button
             onClick={toggleEditMode}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-viperx-primary text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition"
           >
             <Settings2 className="h-4 w-4" />
             Personalizeaza dashboard
