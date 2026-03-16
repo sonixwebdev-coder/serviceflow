@@ -13,18 +13,24 @@ router.get(
   '/',
   authenticateClient,
   asyncHandler(async (req, res) => {
-    const { status, page = 1, limit = 20 } = req.query;
+    const ALLOWED_STATUSES = ['DRAFT', 'GENERATED', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
+    const rawPage = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const rawLimit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const status = req.query.status?.toUpperCase();
 
     const where = {
       clientId: req.client.id,
     };
 
     if (status) {
-      where.status = status.toUpperCase();
+      if (!ALLOWED_STATUSES.includes(status)) {
+        return res.status(400).json({ error: 'Invalid status value' });
+      }
+      where.status = status;
     }
 
-    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-    const take = parseInt(limit, 10);
+    const skip = (rawPage - 1) * rawLimit;
+    const take = rawLimit;
 
     const [invoices, total] = await Promise.all([
       prisma.invoice.findMany({
@@ -61,10 +67,10 @@ router.get(
     res.json({
       items: transformedInvoices,
       pagination: {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
+        page: rawPage,
+        limit: rawLimit,
         total,
-        pages: Math.ceil(total / parseInt(limit, 10)),
+        pages: Math.ceil(total / rawLimit),
       },
     });
   })

@@ -1,5 +1,3 @@
-import Swal from 'sweetalert2';
-
 /**
  * Show a styled confirmation dialog.
  * Returns true if the user confirmed, false otherwise.
@@ -20,6 +18,7 @@ export const confirm = async ({
   icon = 'warning',
   danger = false,
 } = {}) => {
+  const { default: Swal } = await import('sweetalert2');
   const result = await Swal.fire({
     title,
     text,

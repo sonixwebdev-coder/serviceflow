@@ -10,7 +10,7 @@ const logger = require('../utils/logger');
 const createSocketServer = (httpServer) => {
   const corsOrigins = [
     process.env.FRONTEND_URL || 'https://forja.it.com',
-    process.env.CLIENT_PORTAL_URL || 'http://localhost:5174',
+    process.env.CLIENT_PORTAL_URL || 'https://portal.forja.it.com',
   ];
   if (process.env.NODE_ENV !== 'production') {
     corsOrigins.push('http://localhost:5173', 'http://localhost:5174');

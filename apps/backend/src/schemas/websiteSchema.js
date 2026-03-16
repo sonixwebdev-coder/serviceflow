@@ -405,7 +405,6 @@ const syncConfigSchema = z.object({
 
 const createWebsiteSchema = z.object({
   subdomain: subdomainSchema,
-  customDomain: z.string().max(255).optional(),
   branding: brandingSchema,
   seoDefaults: seoDefaultsSchema,
   templateId: z.string().max(50).optional(),
@@ -416,7 +415,6 @@ const createWebsiteSchema = z.object({
 
 const updateWebsiteSchema = z.object({
   subdomain: subdomainSchema.optional(),
-  customDomain: z.string().max(255).optional().nullable(),
   branding: brandingSchema,
   seoDefaults: seoDefaultsSchema,
   templateId: z.string().max(50).optional(),
@@ -509,15 +507,6 @@ const listLeadsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
-// ════════════════════════════════════════════════════════
-// Domain Verification Schema
-// ════════════════════════════════════════════════════════
-
-const verifyDomainSchema = z.object({
-  domain: z.string().min(1).max(255)
-    .regex(/^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Format de domeniu invalid'),
-});
-
 module.exports = {
   // Website schemas
   createWebsiteSchema,
@@ -531,8 +520,6 @@ module.exports = {
   createReviewSchema,
   updateLeadSchema,
   listLeadsQuerySchema,
-  // Domain schemas
-  verifyDomainSchema,
   // Block schemas (for reuse)
   blockSchema,
   heroBlockSchema,

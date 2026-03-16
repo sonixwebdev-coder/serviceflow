@@ -197,8 +197,12 @@ router.post(
       const subscription = await stripe.subscriptions.retrieve(session.subscription);
       await billingService.syncSubscription(subscription);
 
-      // Store subscription start date and billing interval
-      const updateData = { subscriptionStartedAt: new Date(), stripeCustomerId: session.customer };
+      // Store subscription start date (only on initial subscription, not upgrades) and billing interval
+      const existingOrg = await prisma.organization.findUnique({ where: { id: req.user.organizationId }, select: { subscriptionStartedAt: true } });
+      const updateData = { stripeCustomerId: session.customer };
+      if (!existingOrg?.subscriptionStartedAt) {
+        updateData.subscriptionStartedAt = new Date();
+      }
       const interval = subscription.items?.data?.[0]?.price?.recurring?.interval;
       if (interval) updateData.billingInterval = interval;
 

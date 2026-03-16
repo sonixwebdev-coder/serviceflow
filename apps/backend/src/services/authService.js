@@ -60,7 +60,8 @@ const loginUser = async ({ email, password, context }) => {
     },
   });
 
-  if (!user) {
+  // Return same error for non-existent or inactive accounts to prevent enumeration
+  if (!user || !user.isActive) {
     throw new AppError('Invalid credentials', 401);
   }
 
@@ -99,11 +100,6 @@ const loginUser = async ({ email, password, context }) => {
     }).catch(() => {});
   }
 
-  // Check if user account is active
-  if (!user.isActive) {
-    throw new AppError('Contul este dezactivat. Contactati administratorul.', 403, null, 'ACCOUNT_DEACTIVATED');
-  }
-
   // Context-based login separation
   if (context === 'admin' && !user.isSuperAdmin) {
     throw new AppError('Acces interzis: nu esti super admin', 403);
@@ -137,6 +133,15 @@ const loginUser = async ({ email, password, context }) => {
 
   // Track last login time (fire-and-forget)
   prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
+
+  // If 2FA is enabled, return a short-lived temp token instead of full session
+  if (user.twoFactorEnabled) {
+    const tempToken = signAccessToken(
+      { sub: user.id, purpose: '2fa' },
+      { expiresIn: '5m' }
+    );
+    return { requiresTwoFactor: true, tempToken };
+  }
 
   const payload = {
     sub: user.id,

@@ -199,15 +199,15 @@ router.post(
 router.post(
   '/reset-password',
   asyncHandler(async (req, res) => {
-    const { token, password } = req.body;
-
-    if (!token || !password) {
-      return res.status(400).json({ error: 'Token and new password are required' });
+    const schema = z.object({ token: z.string().min(1), password: passwordSchema });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
 
     await portalAuthService.resetPassword(prisma, {
-      resetToken: token,
-      newPassword: password,
+      resetToken: parsed.data.token,
+      newPassword: parsed.data.password,
     });
 
     res.json({ success: true });
@@ -222,16 +222,16 @@ router.post(
   '/change-password',
   authenticateClient,
   asyncHandler(async (req, res) => {
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Current and new passwords are required' });
+    const schema = z.object({ currentPassword: z.string().min(1), newPassword: passwordSchema });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0].message });
     }
 
     await portalAuthService.changePassword(prisma, {
       accountId: req.clientAccount.id,
-      currentPassword,
-      newPassword,
+      currentPassword: parsed.data.currentPassword,
+      newPassword: parsed.data.newPassword,
     });
 
     res.json({ success: true });

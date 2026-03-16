@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Palette, Type, Image } from 'lucide-react';
+import ImageUploadField from './ImageUploadField';
 
 const fontOptions = [
   { value: 'system-ui, sans-serif', label: 'System Default' },
@@ -174,62 +175,27 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
             Logo & Favicon
           </h3>
           <p className="text-sm text-gray-500 mt-1">
-            Adaugati logo-ul si favicon-ul website-ului
+            Incarcati logo-ul si favicon-ul website-ului
           </p>
         </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL Logo</label>
-            <input
-              type="text"
-              value={localBranding.logoUrl}
-              onChange={(e) => handleChange('logoUrl', e.target.value)}
-              placeholder="https://exemplu.ro/logo.png"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Recomandat: format PNG sau SVG, minim 200x50px
-            </p>
-            {localBranding.logoUrl && (
-              <div className="mt-2 p-4 bg-gray-50 rounded-lg inline-block">
-                <img
-                  src={localBranding.logoUrl}
-                  alt="Logo preview"
-                  className="max-h-12 object-contain"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-          </div>
+        <div className="p-6 space-y-5">
+          <ImageUploadField
+            value={localBranding.logoUrl}
+            onChange={(url) => handleChange('logoUrl', url)}
+            label="Logo"
+            hint="Recomandat: format PNG sau SVG, minim 200x50px"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+            previewClass="max-h-12 object-contain"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL Favicon</label>
-            <input
-              type="text"
-              value={localBranding.faviconUrl}
-              onChange={(e) => handleChange('faviconUrl', e.target.value)}
-              placeholder="https://exemplu.ro/favicon.ico"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Recomandat: format ICO sau PNG, 32x32px sau 64x64px
-            </p>
-            {localBranding.faviconUrl && (
-              <div className="mt-2 flex items-center gap-2">
-                <img
-                  src={localBranding.faviconUrl}
-                  alt="Favicon preview"
-                  className="w-8 h-8 object-contain"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-                <span className="text-sm text-gray-500">Favicon preview</span>
-              </div>
-            )}
-          </div>
+          <ImageUploadField
+            value={localBranding.faviconUrl}
+            onChange={(url) => handleChange('faviconUrl', url)}
+            label="Favicon"
+            hint="Recomandat: format ICO sau PNG, 32x32px sau 64x64px"
+            accept="image/x-icon,image/png,image/svg+xml"
+            previewClass="w-8 h-8 object-contain"
+          />
         </div>
       </div>
 

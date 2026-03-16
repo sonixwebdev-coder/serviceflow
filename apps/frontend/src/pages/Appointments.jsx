@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import confirm from '../utils/confirm';
 import { MessageSquare, X, Send, Plus, Trash2, FileText, CheckCircle2, Clock, AlertCircle, Edit2, Save, Cloud, CloudOff, Paperclip, Play, Pause, Download, Image as ImageIcon, User } from 'lucide-react';
 import { format, isBefore, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parse, getDay } from 'date-fns';
@@ -57,6 +58,7 @@ const localizer = dateFnsLocalizer({
 });
 
 const Appointments = () => {
+  const navigate = useNavigate();
   const [status, setStatus] = useState();
   const [search, setSearch] = useState('');
   const [dateRange, setDateRange] = useState({ start: null, end: null });
@@ -2981,7 +2983,7 @@ useEffect(() => {
                                   description: `Factura ${data.invoiceNumber} a fost creată cu succes.`,
                                   type: 'success',
                                 });
-                                window.location.href = '/crm/invoices';
+                                navigate('/crm/invoices');
                               },
                               onError: (error) => {
                                 showToast({

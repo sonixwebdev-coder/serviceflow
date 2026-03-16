@@ -234,15 +234,20 @@ router.post(
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    const fileUrl = `/uploads/messages/${req.file.filename}`;
-    const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
-      fileName: req.file.originalname,
-      fileUrl,
-      fileType: req.file.mimetype,
-      fileSize: req.file.size,
-    });
+    try {
+      const fileUrl = `/uploads/messages/${req.file.filename}`;
+      const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
+        fileName: req.file.originalname,
+        fileUrl,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size,
+      });
 
-    return created(res, message, 'File uploaded');
+      return created(res, message, 'File uploaded');
+    } catch (err) {
+      if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
+      throw err;
+    }
   })
 );
 
@@ -255,17 +260,22 @@ router.post(
       return res.status(400).json({ success: false, message: 'No audio file uploaded' });
     }
 
-    const fileUrl = `/uploads/messages/${req.file.filename}`;
-    const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
-      fileName: req.file.originalname || 'voice-message',
-      fileUrl,
-      fileType: req.file.mimetype,
-      fileSize: req.file.size,
-      isVoice: true,
-      duration: req.body.duration ? parseInt(req.body.duration, 10) : null,
-    });
+    try {
+      const fileUrl = `/uploads/messages/${req.file.filename}`;
+      const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
+        fileName: req.file.originalname || 'voice-message',
+        fileUrl,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size,
+        isVoice: true,
+        duration: req.body.duration ? parseInt(req.body.duration, 10) : null,
+      });
 
-    return created(res, message, 'Voice message uploaded');
+      return created(res, message, 'Voice message uploaded');
+    } catch (err) {
+      if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
+      throw err;
+    }
   })
 );
 

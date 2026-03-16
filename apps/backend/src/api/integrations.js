@@ -15,10 +15,16 @@ router.get(
   '/google/connect',
   authenticate,
   asyncHandler(async (req, res) => {
+    // Validate returnUrl is a safe relative path (prevent open redirect)
+    const rawReturnUrl = req.query.returnUrl || '/profile';
+    const returnUrl = /^\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(rawReturnUrl) && !rawReturnUrl.startsWith('//')
+      ? rawReturnUrl
+      : '/profile';
+
     const state = Buffer.from(
       JSON.stringify({
         userId: req.user.id,
-        returnUrl: req.query.returnUrl || '/profile',
+        returnUrl,
         locationId: req.query.locationId || null,
       })
     ).toString('base64');

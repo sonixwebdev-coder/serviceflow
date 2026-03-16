@@ -155,6 +155,11 @@ const Onboarding = () => {
     if (!companyData.address.trim()) errs.address = 'Adresa este obligatorie';
     if (!companyData.email.trim()) errs.email = 'Email-ul este obligatoriu';
     if (!companyData.phone.trim()) errs.phone = 'Telefonul este obligatoriu';
+    if (!companyData.vatNumber.trim()) {
+      errs.vatNumber = 'CUI-ul este obligatoriu';
+    } else if (vatValidation.status !== 'valid') {
+      errs.vatNumber = 'Verificarea CUI este obligatorie pentru a continua';
+    }
     return errs;
   };
 
@@ -255,7 +260,7 @@ const Onboarding = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {companyData.entityType === 'PFA' ? 'NIF / CIF (optional)' : 'CUI (optional)'}
+            {companyData.entityType === 'PFA' ? 'NIF / CIF *' : 'CUI *'}
           </label>
           <div className="flex gap-2">
             <input
@@ -301,6 +306,9 @@ const Onboarding = () => {
               <XCircle className="w-4 h-4" />
               <span>{vatValidation.message}</span>
             </div>
+          )}
+          {companyErrors.vatNumber && (
+            <p className="text-red-500 text-xs mt-1">{companyErrors.vatNumber}</p>
           )}
         </div>
 

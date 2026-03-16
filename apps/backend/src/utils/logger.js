@@ -15,9 +15,22 @@ const getLogFilePath = () => {
   return path.join(LOG_DIR, `${date}.log`);
 };
 
+let currentLogDate = null;
+let logStream = null;
+
+const getOrCreateStream = () => {
+  const today = new Date().toISOString().split('T')[0];
+  if (logStream && currentLogDate === today) return logStream;
+  if (logStream) logStream.end();
+  currentLogDate = today;
+  logStream = fs.createWriteStream(path.join(LOG_DIR, `${today}.log`), { flags: 'a' });
+  logStream.on('error', (err) => console.error('Log stream error:', err.message));
+  return logStream;
+};
+
 const writeToFile = (message) => {
   try {
-    fs.appendFileSync(getLogFilePath(), message + '\n');
+    getOrCreateStream().write(message + '\n');
   } catch (error) {
     console.error('Failed to write to log file:', error.message);
   }
@@ -68,8 +81,11 @@ const getPrisma = () => {
   return prisma;
 };
 
+let flushing = false;
+
 const flushBuffer = async () => {
-  if (buffer.length === 0) return;
+  if (buffer.length === 0 || flushing) return;
+  flushing = true;
 
   const entries = buffer.splice(0, buffer.length);
 
@@ -82,6 +98,8 @@ const flushBuffer = async () => {
     for (const entry of entries) {
       writeFileLog(entry.level, entry.category, `[DB_FALLBACK] ${entry.message}`, entry.data);
     }
+  } finally {
+    flushing = false;
   }
 };
 
@@ -157,6 +175,7 @@ const logger = {
   system: (message, data = {}) => log('INFO', 'SYSTEM', message, data),
   email: (message, data = {}) => log('INFO', 'EMAIL', message, data),
   realtime: (message, data = {}) => log('INFO', 'REALTIME', message, data),
+  notification: (message, data = {}) => log('INFO', 'NOTIFICATION', message, data),
 
   // Flush buffered logs (for graceful shutdown)
   flush: () => {

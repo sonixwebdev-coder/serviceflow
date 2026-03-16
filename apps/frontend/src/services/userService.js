@@ -44,6 +44,32 @@ export const fetchProfile = async () => {
   return response.data.data;
 };
 
+// 2FA functions
+export const get2FAStatus = async () => {
+  const response = await API.get('/auth/2fa/status');
+  return response.data.data;
+};
+
+export const setup2FA = async () => {
+  const response = await API.post('/auth/2fa/setup');
+  return response.data.data;
+};
+
+export const verifySetup2FA = async (code) => {
+  const response = await API.post('/auth/2fa/verify-setup', { code });
+  return response.data.data;
+};
+
+export const disable2FA = async (password, code) => {
+  const response = await API.post('/auth/2fa/disable', { password, code });
+  return response.data.data;
+};
+
+export const verifyTwoFactorLogin = async (tempToken, code, context = 'crm') => {
+  const response = await API.post('/auth/2fa/verify', { tempToken, code, context });
+  return response.data?.data || response.data;
+};
+
 export default {
   fetchUsers,
   fetchCurrentUser,
@@ -54,4 +80,9 @@ export default {
   updateProfile,
   changePassword,
   fetchProfile,
+  get2FAStatus,
+  setup2FA,
+  verifySetup2FA,
+  disable2FA,
+  verifyTwoFactorLogin,
 };

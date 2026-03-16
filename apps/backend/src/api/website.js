@@ -26,7 +26,6 @@ const {
   deleteLead,
   convertLeadToClient,
   approveReview,
-  verifyDomain,
   getCrmDataForBlocks,
 } = require('../services/websiteService');
 const {
@@ -37,7 +36,6 @@ const {
   listPagesQuerySchema,
   updateLeadSchema,
   listLeadsQuerySchema,
-  verifyDomainSchema,
 } = require('../schemas/websiteSchema');
 const { logFromRequest } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
@@ -136,6 +134,10 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { dataType } = req.params;
+    const ALLOWED_DATA_TYPES = ['services', 'team', 'locations'];
+    if (!ALLOWED_DATA_TYPES.includes(dataType)) {
+      return res.status(400).json({ success: false, message: 'Invalid dataType' });
+    }
     const data = await getCrmDataForBlocks(req.tenantPrisma, req.user.organizationId, dataType);
     return ok(res, data);
   })
@@ -217,34 +219,6 @@ router.post(
     });
 
     return ok(res, website, req.body.isPublished ? 'Website-ul a fost publicat' : 'Website-ul a fost retras');
-  })
-);
-
-/**
- * POST /api/website/:websiteId/verify-domain
- * Verify custom domain ownership (admin only)
- */
-router.post(
-  '/:websiteId/verify-domain',
-  authenticate,
-  authorize({ roles: ['admin'] }),
-  validate(verifyDomainSchema),
-  asyncHandler(async (req, res) => {
-    const website = await verifyDomain(
-      req.tenantPrisma,
-      req.params.websiteId,
-      req.body.domain,
-      req.user.organizationId
-    );
-
-    await logFromRequest(req, {
-      action: 'UPDATE',
-      entityType: 'Website',
-      entityId: website.id,
-      description: `Domeniul ${req.body.domain} a fost verificat`,
-    });
-
-    return ok(res, website, 'Domeniul a fost verificat cu succes');
   })
 );
 
@@ -357,7 +331,7 @@ router.get(
   '/:websiteId/pages/:pageId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const page = await getPageById(req.tenantPrisma, req.params.pageId);
+    const page = await getPageById(req.tenantPrisma, req.params.pageId, req.user.organizationId);
     return ok(res, page);
   })
 );
@@ -400,7 +374,7 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
-    const page = await getPageById(req.tenantPrisma, req.params.pageId);
+    const page = await getPageById(req.tenantPrisma, req.params.pageId, req.user.organizationId);
     const result = await deletePage(req.tenantPrisma, req.params.pageId, req.user.organizationId);
 
     await logFromRequest(req, {
@@ -438,7 +412,7 @@ router.get(
   '/:websiteId/leads/:leadId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const lead = await getLeadById(req.tenantPrisma, req.params.leadId);
+    const lead = await getLeadById(req.tenantPrisma, req.params.leadId, req.user.organizationId);
     return ok(res, lead);
   })
 );
@@ -479,7 +453,7 @@ router.delete(
   '/:websiteId/leads/:leadId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const lead = await getLeadById(req.tenantPrisma, req.params.leadId);
+    const lead = await getLeadById(req.tenantPrisma, req.params.leadId, req.user.organizationId);
     const result = await deleteLead(req.tenantPrisma, req.params.leadId, req.user.organizationId);
 
     await logFromRequest(req, {

@@ -195,6 +195,11 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
     }).catch(() => {});
   }
 
+  // Check email verification
+  if (!account.isVerified) {
+    throw new AppError('Adresa de email nu a fost verificata. Verificati email-ul pentru linkul de confirmare.', 403, null, 'EMAIL_NOT_VERIFIED');
+  }
+
   // Check organization status
   const orgStatus = account.client?.organization?.status;
   if (orgStatus === 'SUSPENDED' || orgStatus === 'CANCELLED') {
@@ -291,12 +296,6 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
     throw new AppError('Invalid or expired refresh token', 401);
   }
 
-  // Rotate token - revoke old one
-  await prisma.clientRefreshToken.update({
-    where: { id: stored.id },
-    data: { revokedAt: new Date() },
-  });
-
   // Create new JWT access token
   const payload = {
     sub: stored.account.id,
@@ -309,16 +308,22 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
   const accessToken = signAccessToken(payload);
   const { token: newRefreshToken, expiresAt } = generateRefreshToken();
 
-  // Store new refresh token
-  await prisma.clientRefreshToken.create({
-    data: {
-      accountId: stored.account.id,
-      token: newRefreshToken,
-      expiresAt,
-      userAgent,
-      ipAddress,
-    },
-  });
+  // Atomic token rotation — revoke old + create new in single transaction
+  await prisma.$transaction([
+    prisma.clientRefreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date() },
+    }),
+    prisma.clientRefreshToken.create({
+      data: {
+        accountId: stored.account.id,
+        token: newRefreshToken,
+        expiresAt,
+        userAgent,
+        ipAddress,
+      },
+    }),
+  ]);
 
   // Get sector configuration from activity sector
   const activitySector = stored.account.client.organization?.activitySector;
@@ -473,6 +478,12 @@ const resetPassword = async (prisma, { resetToken, newPassword }) => {
     },
   });
 
+  // Revoke all refresh tokens
+  await prisma.clientRefreshToken.updateMany({
+    where: { accountId: account.id, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+
   // Invalidate all sessions
   await prisma.clientSession.deleteMany({
     where: { accountId: account.id },
@@ -575,6 +586,12 @@ const changePassword = async (prisma, { accountId, currentPassword, newPassword 
   await prisma.clientAccount.update({
     where: { id: accountId },
     data: { password: hashedPassword },
+  });
+
+  // Revoke all refresh tokens (force re-login on other devices)
+  await prisma.clientRefreshToken.updateMany({
+    where: { accountId, revokedAt: null },
+    data: { revokedAt: new Date() },
   });
 
   return { success: true };

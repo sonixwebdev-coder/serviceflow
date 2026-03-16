@@ -5,6 +5,21 @@ const authorize = require('../middleware/authorize');
 const asyncHandler = require('../middleware/asyncHandler');
 const analyticsService = require('../services/analyticsService');
 
+// Validate and cap date range to 1 year max
+const validateDateRange = (req, res, next) => {
+  const { startDate, endDate } = req.query;
+  if (startDate && endDate) {
+    const diff = new Date(endDate) - new Date(startDate);
+    if (isNaN(diff) || diff < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid date range' });
+    }
+    if (diff > 366 * 24 * 60 * 60 * 1000) {
+      return res.status(400).json({ success: false, message: 'Date range cannot exceed 1 year' });
+    }
+  }
+  next();
+};
+
 /**
  * GET /api/analytics/overview
  * Get dashboard overview metrics
@@ -27,6 +42,7 @@ router.get(
 router.get(
   '/revenue',
   authenticate,
+  validateDateRange,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
     const locationFilter = await req.getLocationFilter({ includeNull: true });
@@ -48,6 +64,7 @@ router.get(
 router.get(
   '/payments',
   authenticate,
+  validateDateRange,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
     const locationFilter = await req.getLocationFilter({ includeNull: true });
@@ -69,6 +86,7 @@ router.get(
 router.get(
   '/appointments',
   authenticate,
+  validateDateRange,
   asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     const locationFilter = await req.getLocationFilter({ includeNull: true });
@@ -89,6 +107,7 @@ router.get(
 router.get(
   '/clients',
   authenticate,
+  validateDateRange,
   asyncHandler(async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
     const locationFilter = await req.getLocationFilter({ includeNull: true });
@@ -124,6 +143,7 @@ router.get(
   '/locations/comparison',
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
+  validateDateRange,
   asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     const data = await analyticsService.getLocationComparison(req.tenantPrisma, {

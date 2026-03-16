@@ -8,11 +8,8 @@ const cache = require('../utils/cache');
 /**
  * Invalidate all public caches for a website
  */
-const invalidateWebsiteCache = async (subdomain, customDomain) => {
-  const promises = [];
-  if (subdomain) promises.push(cache.del(`website:subdomain:${subdomain}`));
-  if (customDomain) promises.push(cache.del(`website:domain:${customDomain}`));
-  await Promise.all(promises);
+const invalidateWebsiteCache = async (subdomain) => {
+  if (subdomain) await cache.del(`website:subdomain:${subdomain}`);
 };
 
 /**
@@ -44,24 +41,6 @@ const isSubdomainAvailable = async (prisma, subdomain, excludeWebsiteId = null) 
   return !existing;
 };
 
-/**
- * Check if a custom domain is available
- */
-const isCustomDomainAvailable = async (prisma, customDomain, excludeWebsiteId = null) => {
-  if (!customDomain) return true;
-
-  const where = { customDomain };
-  if (excludeWebsiteId) {
-    where.id = { not: excludeWebsiteId };
-  }
-
-  const existing = await prisma.website.findFirst({
-    where,
-    select: { id: true },
-  });
-
-  return !existing;
-};
 
 // ============== Website CRUD ==============
 
@@ -69,9 +48,6 @@ const isCustomDomainAvailable = async (prisma, customDomain, excludeWebsiteId = 
  * Build the public URL for a website
  */
 function buildWebsiteUrl(website) {
-  if (website.customDomain && website.domainVerified) {
-    return `https://${website.customDomain}`;
-  }
   const baseUrl = process.env.WEBSITE_BASE_URL;
   if (baseUrl) {
     return `${baseUrl}/${website.subdomain}`;
@@ -116,36 +92,11 @@ const createWebsite = async (prisma, data, organizationId) => {
     throw new AppError('Organizatia are deja un website', 409);
   }
 
-  // Check subdomain availability
-  const isAvailable = await isSubdomainAvailable(prisma, data.subdomain);
-  if (!isAvailable) {
-    throw new AppError('Subdomain-ul nu este disponibil', 409);
-  }
-
-  // Check custom domain if provided
-  if (data.customDomain) {
-    const org = await prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { plan: true },
-    });
-
-    const canHaveCustomDomain = getPlanLimit(org.plan, 'customDomain');
-    if (!canHaveCustomDomain) {
-      throw new AppError('Planul dvs. nu permite domeniu personalizat', 403);
-    }
-
-    const isDomainAvailable = await isCustomDomainAvailable(prisma, data.customDomain);
-    if (!isDomainAvailable) {
-      throw new AppError('Domeniul personalizat nu este disponibil', 409);
-    }
-  }
-
   try {
     const website = await prisma.website.create({
       data: {
         organizationId,
         subdomain: data.subdomain,
-        customDomain: data.customDomain,
         branding: data.branding || {},
         seoDefaults: data.seoDefaults || {},
         templateId: data.templateId,
@@ -182,7 +133,7 @@ const createWebsite = async (prisma, data, organizationId) => {
     return { ...website, url: buildWebsiteUrl(website) };
   } catch (error) {
     if (error.code === 'P2002') {
-      throw new AppError('Subdomain-ul sau domeniul nu este disponibil', 409);
+      throw new AppError('Subdomain-ul nu este disponibil', 409);
     }
     throw error;
   }
@@ -212,26 +163,6 @@ const updateWebsite = async (prisma, websiteId, data, organizationId) => {
     }
   }
 
-  // Check custom domain
-  if (data.customDomain !== undefined && data.customDomain !== website.customDomain) {
-    if (data.customDomain) {
-      const org = await prisma.organization.findUnique({
-        where: { id: organizationId },
-        select: { plan: true },
-      });
-
-      const canHaveCustomDomain = getPlanLimit(org.plan, 'customDomain');
-      if (!canHaveCustomDomain) {
-        throw new AppError('Planul dvs. nu permite domeniu personalizat', 403);
-      }
-
-      const isDomainAvailable = await isCustomDomainAvailable(prisma, data.customDomain, websiteId);
-      if (!isDomainAvailable) {
-        throw new AppError('Domeniul personalizat nu este disponibil', 409);
-      }
-    }
-  }
-
   // Check branding removal permission
   if (data.showBranding === false) {
     const org = await prisma.organization.findUnique({
@@ -250,8 +181,6 @@ const updateWebsite = async (prisma, websiteId, data, organizationId) => {
       where: { id: websiteId },
       data: {
         subdomain: data.subdomain,
-        customDomain: data.customDomain,
-        domainVerified: data.customDomain !== website.customDomain ? false : undefined,
         branding: data.branding,
         seoDefaults: data.seoDefaults,
         templateId: data.templateId,
@@ -275,12 +204,12 @@ const updateWebsite = async (prisma, websiteId, data, organizationId) => {
     });
 
     // Invalidate public caches
-    await invalidateWebsiteCache(website.subdomain, website.customDomain);
+    await invalidateWebsiteCache(website.subdomain);
 
     return { ...updatedWebsite, url: buildWebsiteUrl(updatedWebsite) };
   } catch (error) {
     if (error.code === 'P2002') {
-      throw new AppError('Subdomain-ul sau domeniul nu este disponibil', 409);
+      throw new AppError('Subdomain-ul nu este disponibil', 409);
     }
     throw error;
   }
@@ -307,7 +236,7 @@ const deleteWebsite = async (prisma, websiteId, organizationId) => {
   });
 
   // Invalidate public caches
-  await invalidateWebsiteCache(website.subdomain, website.customDomain);
+  await invalidateWebsiteCache(website.subdomain);
 
   return { message: 'Website-ul a fost sters cu succes' };
 };
@@ -356,7 +285,7 @@ const listPages = async (prisma, websiteId, query = {}) => {
 /**
  * Get a page by ID
  */
-const getPageById = async (prisma, pageId) => {
+const getPageById = async (prisma, pageId, organizationId = null) => {
   const page = await prisma.websitePage.findUnique({
     where: { id: pageId },
     include: {
@@ -366,12 +295,17 @@ const getPageById = async (prisma, pageId) => {
           subdomain: true,
           branding: true,
           seoDefaults: true,
+          organizationId: true,
         },
       },
     },
   });
 
   if (!page) {
+    throw new AppError('Pagina nu a fost gasita', 404);
+  }
+
+  if (organizationId && page.website.organizationId !== organizationId) {
     throw new AppError('Pagina nu a fost gasita', 404);
   }
 
@@ -548,7 +482,6 @@ const updatePage = async (prisma, pageId, data, organizationId) => {
         select: {
           organizationId: true,
           subdomain: true,
-          customDomain: true,
         },
       },
     },
@@ -583,7 +516,7 @@ const updatePage = async (prisma, pageId, data, organizationId) => {
     if (data.slug && data.slug !== page.slug) {
       await cache.del(`website:${page.websiteId}:page:${data.slug}`);
     }
-    await invalidateWebsiteCache(page.website.subdomain, page.website.customDomain);
+    await invalidateWebsiteCache(page.website.subdomain);
 
     return updatedPage;
   } catch (error) {
@@ -605,7 +538,6 @@ const deletePage = async (prisma, pageId, organizationId) => {
         select: {
           organizationId: true,
           subdomain: true,
-          customDomain: true,
         },
       },
     },
@@ -630,7 +562,7 @@ const deletePage = async (prisma, pageId, organizationId) => {
 
   // Invalidate caches
   await cache.del(`website:${page.websiteId}:page:${page.slug}`);
-  await invalidateWebsiteCache(page.website.subdomain, page.website.customDomain);
+  await invalidateWebsiteCache(page.website.subdomain);
 
   return { message: 'Pagina a fost stearsa cu succes' };
 };
@@ -651,6 +583,16 @@ const reorderPages = async (prisma, websiteId, pageIds, organizationId) => {
     throw new AppError('Nu aveti permisiunea de a modifica acest website', 403);
   }
 
+  // Verify all submitted pageIds belong to this website
+  const existingPages = await prisma.websitePage.findMany({
+    where: { id: { in: pageIds }, websiteId },
+    select: { id: true },
+  });
+
+  if (existingPages.length !== pageIds.length) {
+    throw new AppError('Unul sau mai multe ID-uri de pagina sunt invalide', 400);
+  }
+
   // Update sort order atomically in a single transaction
   await prisma.$transaction(
     pageIds.map((pageId, index) =>
@@ -662,7 +604,7 @@ const reorderPages = async (prisma, websiteId, pageIds, organizationId) => {
   );
 
   // Invalidate website cache (page order changed)
-  await invalidateWebsiteCache(website.subdomain, website.customDomain);
+  await invalidateWebsiteCache(website.subdomain);
 
   return { message: 'Ordinea paginilor a fost actualizata' };
 };
@@ -720,12 +662,17 @@ const listLeads = async (prisma, websiteId, query = {}) => {
 /**
  * Get a lead by ID
  */
-const getLeadById = async (prisma, leadId) => {
+const getLeadById = async (prisma, leadId, organizationId = null) => {
   const lead = await prisma.websiteLead.findUnique({
     where: { id: leadId },
+    include: organizationId ? { website: { select: { organizationId: true } } } : undefined,
   });
 
   if (!lead) {
+    throw new AppError('Lead-ul nu a fost gasit', 404);
+  }
+
+  if (organizationId && lead.website.organizationId !== organizationId) {
     throw new AppError('Lead-ul nu a fost gasit', 404);
   }
 
@@ -1128,70 +1075,6 @@ const getWebsiteBySubdomain = async (prisma, subdomain) => {
   return website;
 };
 
-/**
- * Get website by custom domain (public)
- */
-const getWebsiteByCustomDomain = async (prisma, customDomain) => {
-  const cacheKey = `website:domain:${customDomain}`;
-  const cached = await cache.get(cacheKey);
-  if (cached) return cached;
-
-  const website = await prisma.website.findUnique({
-    where: { customDomain },
-    include: {
-      organization: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          activitySector: true,
-          settings: true,
-        },
-      },
-      pages: {
-        where: { isPublished: true },
-        orderBy: { sortOrder: 'asc' },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          pageType: true,
-          isPublished: true,
-          seo: true,
-          sortOrder: true,
-        },
-      },
-    },
-  });
-
-  if (!website || !website.isPublished || !website.domainVerified) {
-    throw new AppError('Website-ul nu a fost gasit', 404);
-  }
-
-  // Fetch primary location for contact info
-  const primaryLocation = await prisma.location.findFirst({
-    where: {
-      organizationId: website.organization.id,
-      isPrimary: true,
-      isActive: true,
-    },
-    select: {
-      phone: true,
-      email: true,
-      address: true,
-      city: true,
-      county: true,
-      operatingHours: true,
-    },
-  });
-
-  if (primaryLocation) {
-    website.organization.primaryLocation = primaryLocation;
-  }
-
-  await cache.set(cacheKey, website, cache.TTL.LONG);
-  return website;
-};
 
 /**
  * Get public page content
@@ -1312,35 +1195,6 @@ const _fetchCrmData = async (prisma, organizationId, dataType) => {
   }
 };
 
-/**
- * Verify domain ownership
- */
-const verifyDomain = async (prisma, websiteId, domain, organizationId) => {
-  const website = await prisma.website.findUnique({
-    where: { id: websiteId },
-  });
-
-  if (!website) {
-    throw new AppError('Website-ul nu a fost gasit', 404);
-  }
-
-  if (website.organizationId !== organizationId) {
-    throw new AppError('Nu aveti permisiunea de a modifica acest website', 403);
-  }
-
-  if (website.customDomain !== domain) {
-    throw new AppError('Domeniul nu corespunde', 400);
-  }
-
-  // In production, this would verify DNS records (CNAME or TXT)
-  // For now, we'll just mark it as verified
-  const updatedWebsite = await prisma.website.update({
-    where: { id: websiteId },
-    data: { domainVerified: true },
-  });
-
-  return { ...updatedWebsite, url: buildWebsiteUrl(updatedWebsite) };
-};
 
 /**
  * Generate sitemap data
@@ -1364,9 +1218,7 @@ const generateSitemapData = async (prisma, websiteId) => {
     throw new AppError('Website-ul nu a fost gasit', 404);
   }
 
-  const baseUrl = website.customDomain && website.domainVerified
-    ? `https://${website.customDomain}`
-    : `https://${website.subdomain}.forja.it.com`;
+  const baseUrl = `https://${website.subdomain}.forja.it.com`;
 
   const urls = website.pages.map(page => ({
     loc: page.slug === 'home' ? baseUrl : `${baseUrl}/${page.slug}`,
@@ -1385,7 +1237,6 @@ module.exports = {
   updateWebsite,
   deleteWebsite,
   isSubdomainAvailable,
-  isCustomDomainAvailable,
 
   // Pages
   listPages,
@@ -1410,9 +1261,7 @@ module.exports = {
 
   // Public
   getWebsiteBySubdomain,
-  getWebsiteByCustomDomain,
   getPublicPage,
   getCrmDataForBlocks,
-  verifyDomain,
   generateSitemapData,
 };

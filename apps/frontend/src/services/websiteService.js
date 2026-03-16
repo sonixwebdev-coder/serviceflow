@@ -32,11 +32,6 @@ export const publishWebsite = async (websiteId, isPublished) => {
   return response.data?.data || response.data;
 };
 
-export const verifyDomain = async (websiteId, domain) => {
-  const response = await API.post(`/website/${websiteId}/verify-domain`, { domain });
-  return response.data?.data || response.data;
-};
-
 // ============== CRM Data ==============
 
 export const fetchCrmData = async (dataType) => {
@@ -137,7 +132,6 @@ export default {
   deleteWebsite,
   checkSubdomainAvailability,
   publishWebsite,
-  verifyDomain,
   // CRM Data
   fetchCrmData,
   // Pages

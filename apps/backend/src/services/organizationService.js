@@ -42,24 +42,6 @@ const createOrganization = async ({
     );
   }
 
-  // Check if slug is already taken
-  const existingOrg = await prisma.organization.findUnique({
-    where: { slug },
-  });
-
-  if (existingOrg) {
-    throw new AppError('Organization slug is already taken', 409);
-  }
-
-  // Check if email is already in use
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (existingUser) {
-    throw new AppError('Email is already in use', 409);
-  }
-
   // Hash password
   const hash = await bcrypt.hash(password, parseInt(process.env.HASH_SALT_ROUNDS || '10', 10));
 
@@ -85,6 +67,7 @@ const createOrganization = async ({
     },
   };
 
+  try {
   await prisma.$transaction(async (tx) => {
     // Create organization
     const selectedPlan = plan || 'PROFESSIONAL';
@@ -174,6 +157,15 @@ const createOrganization = async ({
       },
     });
   });
+  } catch (error) {
+    if (error.code === 'P2002') {
+      const field = error.meta?.target;
+      if (field?.includes('slug')) throw new AppError('Organization slug is already taken', 409);
+      if (field?.includes('email')) throw new AppError('Email is already in use', 409);
+      throw new AppError('A resource with this data already exists', 409);
+    }
+    throw error;
+  }
 
   // Send welcome email (fire-and-forget)
   sendCrmWelcomeEmail({

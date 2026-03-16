@@ -7,21 +7,22 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { USER_ROLES } from './utils/constants';
-import RealtimeBridge from './components/realtime/RealtimeBridge.jsx';
-import GlobalSearch from './components/search/GlobalSearch.jsx';
+import AuthenticatedProviders from './components/auth/AuthenticatedProviders.jsx';
 import DataPreferences from './components/ui/DataPreferences.jsx';
 import NotFound from './pages/NotFound';
 
-// Public pages (static imports - needed immediately)
+// Auth pages (static imports - needed immediately on initial load)
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import CreateFirstAdmin from './pages/CreateFirstAdmin';
-import BusinessLanding from './pages/BusinessLanding.jsx';
-import TermeniConditii from './pages/TermeniConditii.jsx';
-import Confidentialitate from './pages/Confidentialitate.jsx';
-import Preturi from './pages/Preturi.jsx';
+
+// Public marketing pages (lazy-loaded - not part of main auth flow)
+const BusinessLanding = lazy(() => import('./pages/BusinessLanding.jsx'));
+const TermeniConditii = lazy(() => import('./pages/TermeniConditii.jsx'));
+const Confidentialitate = lazy(() => import('./pages/Confidentialitate.jsx'));
+const Preturi = lazy(() => import('./pages/Preturi.jsx'));
 
 // Protected pages (lazy-loaded - only fetched when navigated to)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -68,8 +69,7 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <TerminologyProvider>
-            <RealtimeBridge />
-            <GlobalSearch />
+            <AuthenticatedProviders />
             <DataPreferences />
             <Suspense fallback={<PageLoader />}>
             <Routes>

@@ -1124,65 +1124,30 @@ const exportAllData = async (prismaClient, userId, userRoles) => {
 
   try {
     // Export each entity
-    const exportPromises = [
-      exportAppointments(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
-        name: 'Programari',
-        fileName: result.filename,
-        buffer: result.buffer,
-        recordCount: 0,
-      })).catch(() => null),
-
-      exportInvoices(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
-        name: 'Facturi',
-        fileName: result.filename,
-        buffer: result.buffer,
-        recordCount: 0,
-      })).catch(() => null),
-
-      exportClients(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
-        name: 'Clienti',
-        fileName: result.filename,
-        buffer: result.buffer,
-        recordCount: 0,
-      })).catch(() => null),
-
-      exportUsers(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
-        name: 'Angajati',
-        fileName: result.filename,
-        buffer: result.buffer,
-        recordCount: 0,
-      })).catch(() => null),
-
-      exportLeaveRequests(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
-        name: 'Cereri_Concediu',
-        fileName: result.filename,
-        buffer: result.buffer,
-        recordCount: 0,
-      })).catch(() => null),
-
-      exportTimeTracking(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
-        name: 'Pontaj',
-        fileName: result.filename,
-        buffer: result.buffer,
-        recordCount: 0,
-      })).catch(() => null),
-
-      exportTasks(prismaClient, 'excel', {}, userId, userRoles).then(result => ({
-        name: 'Sarcini',
-        fileName: result.filename,
-        buffer: result.buffer,
-        recordCount: 0,
-      })).catch(() => null),
+    // Run exports sequentially to avoid holding all buffers in memory simultaneously
+    const exportTasks = [
+      { name: 'Programari', fn: exportAppointments },
+      { name: 'Facturi', fn: exportInvoices },
+      { name: 'Clienti', fn: exportClients },
+      { name: 'Angajati', fn: exportUsers },
+      { name: 'Cereri_Concediu', fn: exportLeaveRequests },
+      { name: 'Pontaj', fn: exportTimeTracking },
+      { name: 'Sarcini', fn: exportTasks },
     ];
 
-    const results = await Promise.all(exportPromises);
-
-    // Filter out null results (entities with no data)
-    results.forEach(result => {
-      if (result) {
-        entities.push(result);
+    for (const task of exportTasks) {
+      try {
+        const result = await task.fn(prismaClient, 'excel', {}, userId, userRoles);
+        entities.push({
+          name: task.name,
+          fileName: result.filename,
+          buffer: result.buffer,
+          recordCount: 0,
+        });
+      } catch {
+        // Skip entities that fail to export
       }
-    });
+    }
 
     if (entities.length === 0) {
       throw new AppError('No data available to export', 404);

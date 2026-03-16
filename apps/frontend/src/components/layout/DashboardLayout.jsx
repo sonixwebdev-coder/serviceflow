@@ -466,6 +466,7 @@ const DashboardLayout = ({ children }) => {
             type="button"
             className="text-gray-600 transition hover:text-gray-900 lg:hidden"
             onClick={() => setSidebarOpen(true)}
+            aria-label="Deschide meniu"
           >
             <Menu size={24} />
           </button>
@@ -476,6 +477,7 @@ const DashboardLayout = ({ children }) => {
               type="button"
               className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
               onClick={() => setNotificationsOpen(true)}
+              aria-label={unreadCount > 0 ? `Notificari (${unreadCount} necitite)` : 'Notificari'}
             >
               <Bell size={20} />
               {unreadCount > 0 && (

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Share2, X } from 'lucide-react';
+import ImageUploadField from './ImageUploadField';
 
 const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
   const [localSeo, setLocalSeo] = useState({
@@ -197,29 +198,14 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
             Imaginea care apare cand aceasta pagina este distribuita pe social media
           </p>
         </div>
-        <div className="p-6 space-y-3">
-          <input
-            type="text"
+        <div className="p-6">
+          <ImageUploadField
             value={localSeo.ogImage}
-            onChange={(e) => handleChange('ogImage', e.target.value)}
-            placeholder="https://exemplu.ro/imagine-social.jpg"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(url) => handleChange('ogImage', url)}
+            hint="Recomandat: imagine 1200x630px pentru afisare optima pe Facebook si Twitter"
+            accept="image/jpeg,image/png,image/webp"
+            previewClass="max-h-40 object-contain"
           />
-          <p className="text-xs text-gray-500">
-            Recomandat: imagine 1200x630px pentru afisare optima pe Facebook si Twitter
-          </p>
-          {localSeo.ogImage && (
-            <div className="border rounded-lg overflow-hidden max-w-sm">
-              <img
-                src={localSeo.ogImage}
-                alt="Social preview"
-                className="w-full h-auto"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            </div>
-          )}
         </div>
       </div>
 

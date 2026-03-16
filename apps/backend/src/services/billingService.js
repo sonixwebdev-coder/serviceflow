@@ -283,7 +283,7 @@ const syncSubscription = async (stripeSubscription) => {
       orgStatus = 'ACTIVE';
       break;
     case 'past_due':
-      orgStatus = 'ACTIVE';
+      orgStatus = 'PAYMENT_REQUIRED';
       break;
     case 'canceled':
     case 'unpaid':

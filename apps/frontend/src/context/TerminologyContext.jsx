@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import API from '../utils/api';
 import { useAuthStore } from '../state/useAuthStore';
 
@@ -76,7 +76,7 @@ export const TerminologyProvider = ({ children }) => {
   const [invoiceSequence, setInvoiceSequence] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
 
   const applySettings = (settings) => {
     if (settings.terminology) setTerminology(settings.terminology);
@@ -89,9 +89,9 @@ export const TerminologyProvider = ({ children }) => {
     if (settings.invoiceSequence !== undefined) setInvoiceSequence(settings.invoiceSequence || null);
   };
 
-  // Fetch terminology from API - only when access token is available
+  // Fetch terminology from API - only when authenticated (not on every token refresh)
   useEffect(() => {
-    if (!accessToken) {
+    if (!isAuthenticated) {
       setLoading(false);
       return;
     }
@@ -116,7 +116,7 @@ export const TerminologyProvider = ({ children }) => {
     fetchSettings();
 
     return () => { cancelled = true; };
-  }, [accessToken]);
+  }, [isAuthenticated]);
 
   /**
    * Refresh settings from API (call after updating settings)
@@ -133,7 +133,7 @@ export const TerminologyProvider = ({ children }) => {
     }
   };
 
-  const value = {
+  const value = useMemo(() => ({
     terminology,
     features,
     assetFieldConfig,
@@ -158,7 +158,7 @@ export const TerminologyProvider = ({ children }) => {
 
     // Sector-derived asset type (vehicle, appliance, equipment, etc.)
     assetType: sectorConfig?.assetType || 'vehicle',
-  };
+  }), [terminology, features, assetFieldConfig, publicBooking, sectorConfig, orgDescription, publicListing, invoiceSequence, loading, refreshSettings]);
 
   return (
     <TerminologyContext.Provider value={value}>

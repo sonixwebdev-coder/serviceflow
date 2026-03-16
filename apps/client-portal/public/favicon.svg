@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#0D9488"/>
+  <!-- User/portal icon -->
+  <circle cx="32" cy="24" r="9" fill="#FFF" opacity="0.3"/>
+  <path d="M18 48 C18 38 24 33 32 33 C40 33 46 38 46 48" fill="#FFF" opacity="0.3"/>
+  <!-- Letter P -->
+  <text x="32" y="44" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="800" fill="#FFFFFF" text-anchor="middle">P</text>
+  <!-- Spark accent -->
+  <circle cx="46" cy="13" r="2.5" fill="#FCD34D"/>
+  <circle cx="46" cy="13" r="1.2" fill="#FEFCE8"/>
+</svg>

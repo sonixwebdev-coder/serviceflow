@@ -9,7 +9,12 @@ const { setRefreshCookie, clearRefreshCookie } = require('../utils/cookies');
 const cache = require('../utils/cache');
 const { verifyAccessToken } = require('../utils/token');
 
+const twoFactorRouter = require('./twoFactor');
+
 const router = express.Router();
+
+// Mount 2FA routes
+router.use('/2fa', twoFactorRouter);
 
 // Cookie name per context: admin panel uses a separate cookie so sessions don't collide
 const getCookieName = (context) => context === 'admin' ? 'sf_admin_refresh' : 'sf_refresh';
@@ -26,6 +31,12 @@ router.post(
   validate(loginSchema),
   asyncHandler(async (req, res) => {
     const auth = await loginUser(req.body);
+
+    // If 2FA is required, don't issue tokens — return temp token for 2FA verification
+    if (auth.requiresTwoFactor) {
+      return ok(res, { requiresTwoFactor: true, tempToken: auth.tempToken }, '2FA required');
+    }
+
     const cookieName = getCookieName(req.body.context);
     setRefreshCookie(res, auth.refreshToken, cookieName);
     return ok(res, { user: auth.user, accessToken: auth.accessToken }, 'Login successful');

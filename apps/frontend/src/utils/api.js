@@ -117,7 +117,7 @@ API.interceptors.response.use(
   async (error) => {
     const { response, config } = error;
     if (!response) {
-      return Promise.reject({ message: 'Network error. Please check your connection.' });
+      return Promise.reject(new Error('Network error. Please check your connection.'));
     }
 
     // Don't try to refresh token on login/register endpoints
@@ -172,8 +172,10 @@ API.interceptors.response.use(
       config.headers.Authorization = `Bearer ${nextAccessToken}`;
       return API(config);
     } catch (refreshError) {
+      useAuthStore.getState().clear();
+      useLocationStore.getState().reset();
       window.location.href = '/login';
-      return Promise.reject(refreshError.response?.data || { message: 'Session expired' });
+      return Promise.reject(refreshError.response?.data || new Error('Session expired'));
     }
   }
 );

@@ -164,8 +164,8 @@ const ensureAssigneePermissions = async (tx, assigneeIds = [], currentUser) => {
   }
 };
 
-const ensureRampAvailability = async (tx, scheduledStart, scheduledEnd, excludeAppointmentId) => {
-  const settings = await getCompanySettings();
+const ensureRampAvailability = async (tx, scheduledStart, scheduledEnd, excludeAppointmentId, organizationId) => {
+  const settings = await getCompanySettings(organizationId);
   const rampCount = Number(settings.rampCount) || 0;
   if (!rampCount) return;
 
@@ -404,7 +404,7 @@ const listAppointments = async (prisma, filters = {}, options = {}) => {
     where,
     include: useMinimal ? minimalAppointmentIncludes : includeConfig,
     orderBy,
-    take: 500, // Safety limit
+    take: useMinimal ? 500 : 100, // Calendar views allow more, detail list capped
   });
 
   return appointments;
@@ -434,7 +434,7 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
 
   await prisma.$transaction(async (tx) => {
     await ensureAssigneePermissions(tx, payload.assigneeIds, currentUser);
-    await ensureRampAvailability(tx, scheduledStart, scheduledEnd);
+    await ensureRampAvailability(tx, scheduledStart, scheduledEnd, null, currentUser.organizationId);
 
     const client = await resolveClient(tx, payload.client, payload.clientId, currentUser.organizationId);
     logger.info('✅ Client resolved', { clientId: client?.id });
@@ -618,6 +618,7 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
           type: 'APPOINTMENT',
           entityType: 'APPOINTMENT',
           entityId: appointment.id,
+          organizationId: appointment.organizationId,
           metadata: {
             appointmentId: appointment.id,
             scheduledStart: appointment.scheduledStart,
@@ -721,7 +722,7 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     if (payload.assigneeIds) {
       await ensureAssigneePermissions(tx, payload.assigneeIds, currentUser);
     }
-    await ensureRampAvailability(tx, scheduledStart, scheduledEnd, appointmentId);
+    await ensureRampAvailability(tx, scheduledStart, scheduledEnd, appointmentId, currentUser.organizationId);
 
     const client = await resolveClient(tx, payload.client, payload.clientId ?? existing.clientId, currentUser.organizationId);
     const asset = await resolveAsset(
@@ -873,6 +874,7 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
             type: 'APPOINTMENT',
             entityType: 'APPOINTMENT',
             entityId: updated.id,
+            organizationId: updated.organizationId,
             metadata: {
               appointmentId: updated.id,
               status: updated.status,
@@ -951,6 +953,14 @@ const cancelAppointment = async (prisma, appointmentId, reason, currentUser) => 
 
   if (!appointment) {
     throw new AppError('Programarea nu a fost gasita. Verificati ID-ul programarii.', 404);
+  }
+
+  if (appointment.status === 'COMPLETED') {
+    throw new AppError('Nu se pot anula programarile finalizate.', 400);
+  }
+
+  if (appointment.status === 'CANCELLED') {
+    throw new AppError('Programarea este deja anulata.', 400);
   }
 
   const updated = await prisma.appointment.update({

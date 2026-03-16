@@ -5,7 +5,6 @@ const asyncHandler = require('../../middleware/asyncHandler');
 const validate = require('../../middleware/validate');
 const {
   getWebsiteBySubdomain,
-  getWebsiteByCustomDomain,
   getPublicPage,
   createLead,
   createReview,
@@ -41,18 +40,6 @@ router.get(
   })
 );
 
-/**
- * GET /api/portal/website/domain/:domain
- * Get website config by custom domain
- */
-router.get(
-  '/domain/:domain',
-  asyncHandler(async (req, res) => {
-    const { domain } = req.params;
-    const website = await getWebsiteByCustomDomain(prisma, domain);
-    return ok(res, website);
-  })
-);
 
 /**
  * GET /api/portal/website/:subdomain/page/:slug
@@ -81,6 +68,10 @@ router.get(
   '/:subdomain/crm/:dataType',
   asyncHandler(async (req, res) => {
     const { subdomain, dataType } = req.params;
+    const ALLOWED_DATA_TYPES = ['services', 'team', 'locations'];
+    if (!ALLOWED_DATA_TYPES.includes(dataType)) {
+      return res.status(400).json({ success: false, message: 'Invalid dataType' });
+    }
 
     // Endpoint-level cache: short-circuits both the subdomain lookup and CRM data fetch
     const cacheKey = `portal:crm:${subdomain}:${dataType}`;
@@ -220,9 +211,7 @@ router.get(
     // First get the website to verify it exists and is published
     const website = await getWebsiteBySubdomain(prisma, subdomain);
 
-    const baseUrl = website.customDomain && website.domainVerified
-      ? `https://${website.customDomain}`
-      : `https://${website.subdomain}.forja.it.com`;
+    const baseUrl = `https://${website.subdomain}.forja.it.com`;
 
     const robotsTxt = `User-agent: *
 Allow: /

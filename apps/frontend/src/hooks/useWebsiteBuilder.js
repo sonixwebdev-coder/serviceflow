@@ -7,7 +7,6 @@ import {
   deleteWebsite,
   checkSubdomainAvailability,
   publishWebsite,
-  verifyDomain,
   fetchCrmData,
   fetchPages,
   fetchPageById,
@@ -79,13 +78,6 @@ export const useWebsiteMutations = () => {
     },
   });
 
-  const verifyDomainMutation = useMutation({
-    mutationFn: ({ websiteId, domain }) => verifyDomain(websiteId, domain),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['website'] });
-    },
-  });
-
   return {
     createWebsite: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
@@ -102,10 +94,6 @@ export const useWebsiteMutations = () => {
     publishWebsite: publishMutation.mutateAsync,
     isPublishing: publishMutation.isPending,
     publishError: publishMutation.error?.response?.data?.message || publishMutation.error?.message || null,
-
-    verifyDomain: verifyDomainMutation.mutateAsync,
-    isVerifyingDomain: verifyDomainMutation.isPending,
-    verifyDomainError: verifyDomainMutation.error?.response?.data?.message || verifyDomainMutation.error?.message || null,
   };
 };
 

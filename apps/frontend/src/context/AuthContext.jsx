@@ -5,6 +5,7 @@ import AuthContext from './AuthContext';
 import { useAuthStore } from '../state/useAuthStore.js';
 import { queryClient } from '../lib/queryClient';
 import useLocationStore from '../state/useLocationStore';
+import { verifyTwoFactorLogin } from '../services/userService';
 
 /**
  * Cache only minimal, non-sensitive user fields in localStorage.
@@ -59,8 +60,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await API.post('/auth/login', { email, password, context: 'crm' });
       const payload = response.data?.data || response.data;
+
+      // If 2FA is required, return temp token for the login page to handle
+      if (payload.requiresTwoFactor) {
+        return { success: false, requiresTwoFactor: true, tempToken: payload.tempToken };
+      }
+
       setSession({ user: payload.user, accessToken: payload.accessToken });
-      // Only cache minimal display fields in localStorage (no sensitive data)
       cacheUserForDisplay(payload.user);
 
       return { success: true };
@@ -69,6 +75,19 @@ export const AuthProvider = ({ children }) => {
       const message = data?.message || error?.message || 'Login failed. Please try again.';
       const code = data?.code || null;
       return { success: false, message, code };
+    }
+  };
+
+  const verifyTwoFactor = async (tempToken, code) => {
+    try {
+      const payload = await verifyTwoFactorLogin(tempToken, code, 'crm');
+      setSession({ user: payload.user, accessToken: payload.accessToken });
+      cacheUserForDisplay(payload.user);
+      return { success: true };
+    } catch (error) {
+      const data = error?.response?.data;
+      const message = data?.message || error?.message || 'Cod invalid';
+      return { success: false, message };
     }
   };
 
@@ -117,6 +136,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     hasRole,
+    verifyTwoFactor,
     isAuthenticated: Boolean(user && accessToken),
   };
 

@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import useAuth from '../../context/useAuth';
 import useOnboardingStatus from '../../hooks/useOnboardingStatus';
 import { USER_ROLES } from '../../utils/constants';
@@ -37,8 +37,11 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-6xl font-bold text-gray-300 mb-4">403</h1>
-          <p className="text-xl text-gray-600 mb-4">Access Denied</p>
-          <p className="text-gray-500">You don't have permission to access this page.</p>
+          <p className="text-xl text-gray-600 mb-4">Acces interzis</p>
+          <p className="text-gray-500 mb-6">Nu ai permisiunea de a accesa aceasta pagina.</p>
+          <Link to="/dashboard" className="text-orange-600 hover:text-orange-700 font-medium">
+            Inapoi la dashboard
+          </Link>
         </div>
       </div>
     );

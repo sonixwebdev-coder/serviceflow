@@ -43,7 +43,7 @@ const Assets = () => {
     if (!client) return;
     // Navigate to clients page with search pre-filled
     const searchTerm = client.type === 'SRL' ? client.companyName : `${client.firstName} ${client.lastName}`;
-    navigate(`/clients?search=${encodeURIComponent(searchTerm)}`);
+    navigate(`/crm/clients?search=${encodeURIComponent(searchTerm)}`);
   };
 
   return (

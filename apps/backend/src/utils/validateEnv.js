@@ -22,6 +22,12 @@ const envSchema = z.object({
   ENCRYPTION_KEY: z.string().min(32).optional(),
   CORS_ORIGINS: z.string().min(1).optional(),
 
+  // ── URLs (optional in dev, validated in production superRefine) ──
+  FRONTEND_URL: z.string().url().optional(),
+  CLIENT_PORTAL_URL: z.string().url().optional(),
+  WEBSITE_BASE_URL: z.string().url().optional(),
+  API_BASE_URL: z.string().url().optional(),
+
   // ── Optional with defaults ──
   PORT: z.coerce.number().int().positive().default(5000),
   HASH_SALT_ROUNDS: z.coerce.number().int().min(4).max(20).default(12),
@@ -41,6 +47,12 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1).optional(),
   SMTP_PASSWORD: z.string().min(1).optional(),
 
+  BREVO_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z.string().email().optional(),
+  EMAIL_FROM_NAME: z.string().min(1).optional(),
+
+  FILE_STORAGE_ROOT: z.string().min(1).optional(),
+
   VAPID_PUBLIC_KEY: z.string().min(1).optional(),
   VAPID_PRIVATE_KEY: z.string().min(1).optional(),
   VAPID_SUBJECT: z.string().startsWith('mailto:').optional(),
@@ -58,6 +70,20 @@ const envSchema = z.object({
         path: ['CORS_ORIGINS'],
         code: z.ZodIssueCode.custom,
         message: 'CORS_ORIGINS is required in production',
+      });
+    }
+    if (!data.FRONTEND_URL) {
+      ctx.addIssue({
+        path: ['FRONTEND_URL'],
+        code: z.ZodIssueCode.custom,
+        message: 'FRONTEND_URL is required in production (used for email links and redirects)',
+      });
+    }
+    if (!data.CLIENT_PORTAL_URL) {
+      ctx.addIssue({
+        path: ['CLIENT_PORTAL_URL'],
+        code: z.ZodIssueCode.custom,
+        message: 'CLIENT_PORTAL_URL is required in production (used for portal email links)',
       });
     }
   }

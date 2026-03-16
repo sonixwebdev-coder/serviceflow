@@ -212,9 +212,10 @@ const rolesKey = () => 'roles:all';
  * @returns {string} Cache key
  */
 const userListKey = (filters = {}) => {
-  const { search, role, isActive, organizationId } = filters;
+  const { search, role, isActive, organizationId, locationId } = filters;
   const parts = ['users:list'];
   if (organizationId) parts.push(`org:${organizationId}`);
+  if (locationId) parts.push(`loc:${locationId}`);
   if (search) parts.push(`search:${search}`);
   if (role) parts.push(`role:${role}`);
   if (typeof isActive === 'boolean') parts.push(`active:${isActive}`);
@@ -250,6 +251,14 @@ const dashboardStatsKey = (userId) => `dashboard:stats:${userId}`;
  */
 const appointmentCountKey = (userId, date) => `appointments:count:${userId}:${date}`;
 
+/**
+ * Generate cache key for VAT validation result
+ * @param {string} countryCode - Country code (e.g. 'RO')
+ * @param {string} number - VAT number without prefix
+ * @returns {string} Cache key
+ */
+const vatKey = (countryCode, number) => `vat:${countryCode.toUpperCase()}:${String(number).replace(/\s/g, '')}`;
+
 module.exports = {
   TTL,
   get,
@@ -271,4 +280,5 @@ module.exports = {
   userTasksKey,
   dashboardStatsKey,
   appointmentCountKey,
+  vatKey,
 };

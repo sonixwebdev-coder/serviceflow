@@ -11,7 +11,6 @@ const PLAN_LIMITS = {
     maxClients: 50,
     maxAppointments: 50,
     maxWebsitePages: 1,
-    customDomain: false,
     removeBranding: false,
   },
   STARTER: {
@@ -20,7 +19,6 @@ const PLAN_LIMITS = {
     maxClients: 500,
     maxAppointments: 500,
     maxWebsitePages: 5,
-    customDomain: false,
     removeBranding: false,
   },
   PROFESSIONAL: {
@@ -29,7 +27,6 @@ const PLAN_LIMITS = {
     maxClients: 2000,
     maxAppointments: 5000,
     maxWebsitePages: 15,
-    customDomain: true,
     removeBranding: true,
   },
   ENTERPRISE: {
@@ -38,7 +35,6 @@ const PLAN_LIMITS = {
     maxClients: Infinity,
     maxAppointments: Infinity,
     maxWebsitePages: Infinity,
-    customDomain: true,
     removeBranding: true,
   },
 };

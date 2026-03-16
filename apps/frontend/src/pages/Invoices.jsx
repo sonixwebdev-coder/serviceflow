@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import confirm from '../utils/confirm';
 import { getFileUrl } from '../utils/api';
 import { format } from 'date-fns';
@@ -128,32 +128,36 @@ const Invoices = () => {
     setEditForm({ notes: '', dueDate: '', status: '', lineItems: [] }); // Reset form
   };
 
-  // When invoice data loads, populate edit form using useEffect
+  // When invoice data loads, populate edit form
   const [formInitialized, setFormInitialized] = useState(false);
 
-  if (selectedInvoice && !formInitialized) {
-    setEditForm({
-      notes: selectedInvoice.notes || '',
-      dueDate: selectedInvoice.dueDate ? format(new Date(selectedInvoice.dueDate), 'yyyy-MM-dd') : '',
-      status: selectedInvoice.status || 'draft',
-      lineItems: selectedInvoice.lineItems?.map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        hardwareQuantity: item.hardwareQuantity != null ? Number(item.hardwareQuantity) : (Number(item.quantity) || 1),
-        laborQuantity: item.laborQuantity != null ? Number(item.laborQuantity) : (Number(item.quantity) || 1),
-        hardwarePrice: Number(item.hardwarePrice || 0),
-        laborPrice: Number(item.laborPrice || 0),
-        hardwareUnit: item.hardwareUnit || '',
-        laborUnit: item.laborUnit || '',
-      })) || [],
-    });
-    setFormInitialized(true);
-  }
+  useEffect(() => {
+    if (selectedInvoice && !formInitialized) {
+      setEditForm({
+        notes: selectedInvoice.notes || '',
+        dueDate: selectedInvoice.dueDate ? format(new Date(selectedInvoice.dueDate), 'yyyy-MM-dd') : '',
+        status: selectedInvoice.status || 'draft',
+        lineItems: selectedInvoice.lineItems?.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          hardwareQuantity: item.hardwareQuantity != null ? Number(item.hardwareQuantity) : (Number(item.quantity) || 1),
+          laborQuantity: item.laborQuantity != null ? Number(item.laborQuantity) : (Number(item.quantity) || 1),
+          hardwarePrice: Number(item.hardwarePrice || 0),
+          laborPrice: Number(item.laborPrice || 0),
+          hardwareUnit: item.hardwareUnit || '',
+          laborUnit: item.laborUnit || '',
+        })) || [],
+      });
+      setFormInitialized(true);
+    }
+  }, [selectedInvoice, formInitialized]);
 
-  if (!selectedInvoiceId && formInitialized) {
-    setFormInitialized(false);
-  }
+  useEffect(() => {
+    if (!selectedInvoiceId && formInitialized) {
+      setFormInitialized(false);
+    }
+  }, [selectedInvoiceId, formInitialized]);
 
   // Calculate totals dynamically when editing
   const calculatedTotals = useMemo(() => {

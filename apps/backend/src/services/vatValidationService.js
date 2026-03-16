@@ -1,9 +1,23 @@
 const { AppError } = require('../utils/errors');
+const cache = require('../utils/cache');
+const logger = require('../utils/logger');
 
 const VIES_URL = 'https://ec.europa.eu/taxation_customs/vies/services/checkVatService';
 const VIES_TIMEOUT = 10000;
+const VAT_CACHE_TTL = 86400; // 24 hours
 
 const CUI_TEST_KEY = [7, 5, 3, 2, 1, 7, 5, 3, 2];
+
+/**
+ * Escape XML special characters to prevent SOAP injection.
+ */
+const xmlEscape = (str) =>
+  String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 
 /**
  * Validate a Romanian CUI/CIF using the checksum algorithm.
@@ -52,12 +66,20 @@ function validateCuiChecksum(cui) {
  * Call the EU VIES SOAP API to verify a VAT number.
  */
 async function validateVatVies(countryCode, vatNumber) {
+  // Strict allowlist: countryCode must be exactly 2 uppercase letters, vatNumber alphanumeric only
+  if (!/^[A-Z]{2}$/.test(countryCode)) {
+    throw new AppError('Codul de tara este invalid', 400);
+  }
+  if (!/^[A-Z0-9]{1,20}$/.test(vatNumber)) {
+    throw new AppError('Formatul numarului TVA este invalid', 400);
+  }
+
   const soapBody = `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
   <soapenv:Body>
     <urn:checkVat>
-      <urn:countryCode>${countryCode}</urn:countryCode>
-      <urn:vatNumber>${vatNumber}</urn:vatNumber>
+      <urn:countryCode>${xmlEscape(countryCode)}</urn:countryCode>
+      <urn:vatNumber>${xmlEscape(vatNumber)}</urn:vatNumber>
     </urn:checkVat>
   </soapenv:Body>
 </soapenv:Envelope>`;
@@ -65,14 +87,16 @@ async function validateVatVies(countryCode, vatNumber) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), VIES_TIMEOUT);
 
-  let response;
+  let xml;
   try {
-    response = await fetch(VIES_URL, {
+    const response = await fetch(VIES_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/xml; charset=utf-8' },
       body: soapBody,
       signal: controller.signal,
     });
+    // Read body under the same abort signal so slow-drip responses are also caught
+    xml = await response.text();
   } catch (err) {
     if (err.name === 'AbortError') {
       throw new AppError('Serviciul VIES nu este disponibil momentan. Incercati mai tarziu.', 503);
@@ -81,8 +105,6 @@ async function validateVatVies(countryCode, vatNumber) {
   } finally {
     clearTimeout(timeout);
   }
-
-  const xml = await response.text();
 
   // Check for SOAP faults
   const faultMatch = xml.match(/<faultstring>([^<]*)<\/faultstring>/);
@@ -131,20 +153,46 @@ async function validateVatNumber(vatNumber) {
     }
   }
 
+  // Check Redis cache first
+  const cacheKey = cache.vatKey(countryCode, number);
+  const cached = await cache.get(cacheKey);
+  if (cached) {
+    logger.debug(`VAT cache hit for ${countryCode}${number}`);
+    return cached;
+  }
+
   // VIES verification
-  const viesResult = await validateVatVies(countryCode, number);
+  let viesResult;
+  try {
+    viesResult = await validateVatVies(countryCode, number);
+  } catch (err) {
+    // On VIES unavailability (503), try to serve from cache as fallback
+    if (err.statusCode === 503 || err.status === 503) {
+      const fallback = await cache.get(cacheKey);
+      if (fallback) {
+        logger.info(`VIES unavailable, serving cached result for ${countryCode}${number}`);
+        return fallback;
+      }
+    }
+    throw err;
+  }
 
   if (!viesResult.valid) {
     throw new AppError('CUI-ul nu a fost gasit in registrul VIES. Verificati numarul.', 400);
   }
 
-  return {
+  const result = {
     valid: true,
     countryCode,
     vatNumber: number,
     name: viesResult.name,
     address: viesResult.address,
   };
+
+  // Cache only valid results (don't cache failures — user may have mistyped)
+  await cache.set(cacheKey, result, VAT_CACHE_TTL);
+
+  return result;
 }
 
 module.exports = {

@@ -1,4 +1,7 @@
-require('dotenv').config();
+const path = require('path');
+// Load .env from root monorepo first, then backend-local overrides
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+require('dotenv').config(); // backend-local .env (won't overwrite already-set vars)
 const validateEnv = require('./src/utils/validateEnv');
 validateEnv();
 
@@ -7,7 +10,6 @@ initSentry();
 
 const http = require('http');
 const express = require('express');
-const path = require('path');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis');
@@ -47,6 +49,9 @@ process.on('unhandledRejection', async (reason) => {
 });
 
 const app = express();
+
+// Trust one proxy hop (nginx) so req.ip returns the real client IP for rate limiting
+app.set('trust proxy', 1);
 
 const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname, 'storage');
 
@@ -121,7 +126,7 @@ const helmetMiddleware = helmet({
       frameAncestors: ["'self'"], // Allow being framed by same origin
     },
   },
-  frameguard: false, // Disable X-Frame-Options to allow PDF embedding
+  frameguard: { action: 'sameorigin' },
   hsts: {
     maxAge: 31536000, // 1 year
     includeSubDomains: true,
@@ -147,6 +152,16 @@ app.use((req, res, next) => {
 
 // Remove X-Powered-By header
 app.disable('x-powered-by');
+
+// Global request timeout (30s default, export routes get longer)
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    if (!res.headersSent) {
+      res.status(503).json({ success: false, message: 'Request timeout' });
+    }
+  });
+  next();
+});
 
 // CORS middleware for API routes
 app.use(cors(corsOptions));
@@ -255,7 +270,18 @@ const analyticsLimiter = rateLimit({
   store: makeRateLimitStore('analytics'),
 });
 
+// 2FA verification — very strict per-IP to slow brute force (account lockout handles per-user)
+const twoFaVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many 2FA verification attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: makeRateLimitStore('2fa-verify'),
+});
+
 // Apply rate limits — most specific routes first, then broader catch-alls
+app.use('/api/auth/2fa/verify', twoFaVerifyLimiter);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/portal/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/auth/refresh', refreshLimiter);
@@ -291,11 +317,22 @@ app.use('/api/super-admin', superAdminLimiter, superAdminRouter);
 app.use('/api', apiRouter);
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'ForjaIt API',
-    timestamp: new Date().toISOString()
+app.get('/health', async (req, res) => {
+  const checks = { db: false, redis: false };
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.db = true;
+  } catch {}
+  try {
+    const redisClient = getRedisClient();
+    if (redisClient) { await redisClient.ping(); checks.redis = true; }
+    else { checks.redis = null; }
+  } catch {}
+  const healthy = checks.db;
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'OK' : 'DEGRADED',
+    checks,
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -358,14 +395,27 @@ async function startServer() {
   const gracefulShutdown = async (signal) => {
     logger.system(`${signal} received, shutting down gracefully`);
     stopJobs();
-    await logger.flush();
-    await Promise.all([
-      prisma.$disconnect(),
-      closeRedis(),
-    ]);
-    httpServer.close(() => {
+
+    // Force exit after 10 seconds if connections don't drain
+    const forceExit = setTimeout(() => {
+      logger.system('Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+    forceExit.unref();
+
+    httpServer.close(async () => {
+      await logger.flush();
+      await Promise.all([
+        prisma.$disconnect(),
+        closeRedis(),
+      ]);
       process.exit(0);
     });
+
+    // Close idle keep-alive connections immediately (Node 18.2+)
+    if (httpServer.closeAllConnections) {
+      httpServer.closeAllConnections();
+    }
   };
 
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#7C3AED"/>
+  <!-- Shield silhouette -->
+  <path d="M32 12 L48 20 L48 34 C48 44 40 52 32 54 C24 52 16 44 16 34 L16 20 Z" fill="#FFF" opacity="0.2"/>
+  <!-- Letter A -->
+  <text x="32" y="44" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="800" fill="#FFFFFF" text-anchor="middle">A</text>
+  <!-- Spark accent -->
+  <circle cx="46" cy="13" r="2.5" fill="#FCD34D"/>
+  <circle cx="46" cy="13" r="1.2" fill="#FEFCE8"/>
+</svg>

@@ -535,12 +535,12 @@ const listInvoices = async (prisma, filters = {}, options = {}) => {
     : { createdAt: 'desc' };
 
   if (!paginate) {
-    // Cap at 1000 to prevent unbounded memory usage; use export endpoints for full datasets
+    // Cap at 200 to prevent unbounded memory usage; use export endpoints for full datasets
     const invoices = await prisma.invoice.findMany({
       where,
       include: includeConfig,
       orderBy,
-      take: 1000,
+      take: 200,
     });
 
     return invoices.map(mapInvoice);
@@ -1070,7 +1070,7 @@ const markInvoiceAsPaid = async (prismaClient, id, options = {}) => {
   }
 
   // Calculate total paid from existing payments
-  const totalPaid = await calculateTotalPaid(prisma, invoice.appointmentId, { tx: client });
+  const totalPaid = await calculateTotalPaid(client, invoice.appointmentId, { tx: client });
   const invoiceTotal = Number(invoice.total);
   const remainingAmount = roundCurrency(invoiceTotal - totalPaid);
 
@@ -1109,7 +1109,7 @@ const markInvoiceAsPaid = async (prismaClient, id, options = {}) => {
   }
 
   // Recalculate payment totals after potentially adding TVA adjustment
-  const newTotalPaid = await calculateTotalPaid(prisma, invoice.appointmentId, { tx: client });
+  const newTotalPaid = await calculateTotalPaid(client, invoice.appointmentId, { tx: client });
   const newRemainingBalance = roundCurrency(invoiceTotal - newTotalPaid);
   const newPaymentStatus = newTotalPaid === 0 ? 'UNPAID' : (newRemainingBalance <= 0 ? 'PAID' : 'PARTIAL');
 

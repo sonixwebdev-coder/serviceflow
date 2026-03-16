@@ -174,13 +174,6 @@ const getUserById = async (prisma, userId, options = {}) => {
           role: true,
         },
       },
-      appointmentsCreated: true,
-      appointmentsUpdated: true,
-      appointmentAssignees: {
-        include: {
-          appointment: true,
-        },
-      },
     },
   });
 
@@ -602,11 +595,17 @@ const changePassword = async (prisma, userId, { currentPassword, newPassword }) 
     data: { password: hash },
   });
 
+  // Revoke all refresh tokens (force re-login on other devices)
+  await prisma.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+
   // Invalidate user cache
   await cache.del(cache.userWithRolesKey(userId));
 
   // SECURITY: Log successful password change
-  console.info(`[SECURITY] Password changed successfully for user ${userId} (${user.email})`);
+  logger.info(`Password changed successfully for user ${userId} (${user.email})`);
 
   return { message: 'Password changed successfully' };
 };
