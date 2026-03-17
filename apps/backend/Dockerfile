@@ -2,21 +2,20 @@ FROM node:20-slim AS base
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# Copy root workspace files
+# Copy root workspace + backend package manifests
 COPY package.json package-lock.json ./
+COPY apps/backend/package.json apps/backend/
 COPY prisma ./prisma/
 
-# Copy backend package.json
-COPY apps/backend/package.json apps/backend/
-
-# Install production dependencies only
-RUN npm ci --workspace apps/backend --include-workspace-root --omit=dev
+# Install all workspace dependencies (production only)
+RUN npm ci --omit=dev
 
 # Generate Prisma client
 RUN npx prisma generate --schema prisma/schema.prisma
 
-# Copy backend source
+# Copy backend source (exclude stale lock file)
 COPY apps/backend apps/backend/
+RUN rm -f apps/backend/package-lock.json
 
 # Create writable directories (storage, uploads, logs)
 RUN mkdir -p /app/apps/backend/storage /app/apps/backend/uploads /app/apps/backend/logs
