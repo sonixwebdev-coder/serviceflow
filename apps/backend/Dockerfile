@@ -27,4 +27,4 @@ USER appuser
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy --schema prisma/schema.prisma && node apps/backend/server.js"]
+CMD ["sh", "-c", "npx prisma db push --schema prisma/schema.prisma && node apps/backend/server.js"]
