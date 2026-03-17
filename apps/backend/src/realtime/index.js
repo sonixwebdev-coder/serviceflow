@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
 
 const createSocketServer = (httpServer) => {
   const corsOrigins = [
-    process.env.FRONTEND_URL || 'https://forja.it.com',
+    process.env.FRONTEND_URL || 'https://app.forja.it.com',
     process.env.CLIENT_PORTAL_URL || 'https://portal.forja.it.com',
   ];
   if (process.env.NODE_ENV !== 'production') {
