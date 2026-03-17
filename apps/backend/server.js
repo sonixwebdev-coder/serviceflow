@@ -316,8 +316,13 @@ app.use('/api/super-admin', superAdminLimiter, superAdminRouter);
 // Prisma-powered API
 app.use('/api', apiRouter);
 
-// Health check
-app.get('/health', async (req, res) => {
+// Liveness check — always 200, proves the process is running (used by ForjaHost / load balancers)
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Readiness check — verifies DB and Redis connectivity (use for deeper monitoring)
+app.get('/health/ready', async (req, res) => {
   const checks = { db: false, redis: false };
   try {
     await prisma.$queryRaw`SELECT 1`;
