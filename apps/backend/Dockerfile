@@ -13,6 +13,9 @@ RUN npm ci --omit=dev
 # Generate Prisma client
 RUN npx prisma generate --schema prisma/schema.prisma
 
+# Run any migrations
+RUN npx prisma migrate deploy --schema prisma/schema.prisma
+
 # Copy backend source (exclude stale lock file)
 COPY apps/backend apps/backend/
 RUN rm -f apps/backend/package-lock.json
