@@ -18,12 +18,12 @@ RUN npx prisma generate --schema prisma/schema.prisma
 # Copy backend source
 COPY apps/backend apps/backend/
 
-# Create storage directories
-RUN mkdir -p /app/apps/backend/storage /app/apps/backend/uploads
+# Create writable directories (storage, uploads, logs)
+RUN mkdir -p /app/apps/backend/storage /app/apps/backend/uploads /app/apps/backend/logs
 
 # Non-root user
 RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup -s /bin/sh appuser
-RUN chown -R appuser:appgroup /app/apps/backend/storage /app/apps/backend/uploads
+RUN chown -R appuser:appgroup /app/apps/backend/storage /app/apps/backend/uploads /app/apps/backend/logs
 USER appuser
 
 EXPOSE 3000

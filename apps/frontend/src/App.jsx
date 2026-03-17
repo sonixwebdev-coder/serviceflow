@@ -10,6 +10,7 @@ import { USER_ROLES } from './utils/constants';
 import AuthenticatedProviders from './components/auth/AuthenticatedProviders.jsx';
 import DataPreferences from './components/ui/DataPreferences.jsx';
 import NotFound from './pages/NotFound';
+import useAuth from './context/useAuth';
 
 // Auth pages (static imports - needed immediately on initial load)
 import Login from './pages/Login';
@@ -17,6 +18,13 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import CreateFirstAdmin from './pages/CreateFirstAdmin';
+
+// Root redirect: landing page if not logged in, dashboard if logged in
+const RootRedirect = () => {
+  const { loading, isAuthenticated } = useAuth();
+  if (loading) return null;
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/business'} replace />;
+};
 
 // Public marketing pages (lazy-loaded - not part of main auth flow)
 const BusinessLanding = lazy(() => import('./pages/BusinessLanding.jsx'));
@@ -405,7 +413,7 @@ function App() {
           />
 
           {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<RootRedirect />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
