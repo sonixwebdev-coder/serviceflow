@@ -166,11 +166,79 @@ router.post(
     const { token } = req.body;
 
     if (!token) {
-      return res.status(400).json({ error: 'Verification token is required' });
+      return res.status(400).json({ error: 'Token-ul de verificare este obligatoriu' });
     }
 
     await portalAuthService.verifyEmail(prisma, token);
     res.json({ success: true });
+  })
+);
+
+/**
+ * POST /api/portal/auth/resend-verification
+ * Resend verification email
+ */
+router.post(
+  '/resend-verification',
+  asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Adresa de email este obligatorie' });
+    }
+
+    const account = await prisma.clientAccount.findUnique({
+      where: { email: email.toLowerCase() },
+      include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            companyName: true,
+            type: true,
+            organizationId: true,
+          },
+        },
+      },
+    });
+
+    // Always return success to prevent email enumeration
+    if (!account || account.isVerified || !account.verificationToken) {
+      return res.json({ success: true, message: 'Daca exista un cont neverificat, email-ul de verificare a fost retrimis' });
+    }
+
+    // Send verification email
+    const { sendVerificationEmail } = require('../../services/email/emailService');
+    const { getCompanySettings } = require('../../services/companySettingService');
+
+    if (account.client?.organizationId) {
+      const org = await prisma.organization.findUnique({
+        where: { id: account.client.organizationId },
+        select: { slug: true },
+      });
+      const portalUrl = process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
+      const verificationLink = `${portalUrl}/${org?.slug || ''}/verify-email?token=${account.verificationToken}`;
+
+      const clientName = account.client.type === 'SRL'
+        ? account.client.companyName
+        : `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
+
+      try {
+        const companySettings = await getCompanySettings(account.client.organizationId);
+        await sendVerificationEmail(prisma, {
+          email: account.email,
+          clientName,
+          verificationLink,
+          companySettings,
+          organizationId: account.client.organizationId,
+        });
+      } catch (err) {
+        // Don't fail the request if email fails
+      }
+    }
+
+    res.json({ success: true, message: 'Daca exista un cont neverificat, email-ul de verificare a fost retrimis' });
   })
 );
 
@@ -184,11 +252,11 @@ router.post(
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+      return res.status(400).json({ error: 'Adresa de email este obligatorie' });
     }
 
     await portalAuthService.requestPasswordReset(prisma, email);
-    res.json({ success: true, message: 'If an account exists, a reset email has been sent' });
+    res.json({ success: true, message: 'Daca exista un cont, un email de resetare a fost trimis' });
   })
 );
 

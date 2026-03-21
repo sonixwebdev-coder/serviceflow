@@ -4,7 +4,7 @@ const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { signAccessToken, verifyAccessToken, generateRefreshToken, REFRESH_TOKEN_TTL_DAYS } = require('../utils/token');
 const { getSectorConfig } = require('../constants/activitySectors');
-const { sendPasswordResetEmail, sendWelcomeEmail } = require('./email/emailService');
+const { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationEmail } = require('./email/emailService');
 const { getCompanySettings } = require('./companySettingService');
 
 const SALT_ROUNDS = 10;
@@ -58,7 +58,7 @@ const registerClient = async (prisma, { email, password, clientId, referralCode 
   });
 
   if (!client) {
-    throw new AppError('Client not found', 404);
+    throw new AppError('Clientul nu a fost gasit', 404);
   }
 
   // Check if account already exists
@@ -73,9 +73,9 @@ const registerClient = async (prisma, { email, password, clientId, referralCode 
 
   if (existingAccount) {
     if (existingAccount.clientId === clientId) {
-      throw new AppError('This client already has an account', 400);
+      throw new AppError('Acest client are deja un cont', 400);
     }
-    throw new AppError('An account with this email already exists', 400);
+    throw new AppError('Un cont cu aceasta adresa de email exista deja', 400);
   }
 
   const hashedPassword = await hashPassword(password);
@@ -116,11 +116,34 @@ const registerClient = async (prisma, { email, password, clientId, referralCode 
     }
   }
 
+  // Send verification email (fire-and-forget)
+  if (account.client?.organizationId) {
+    const orgSlug = await prisma.organization.findUnique({
+      where: { id: account.client.organizationId },
+      select: { slug: true },
+    });
+    const portalUrl = process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
+    const verificationLink = `${portalUrl}/${orgSlug?.slug || ''}/verify-email?token=${verificationToken}`;
+
+    const clientName = account.client.type === 'SRL'
+      ? account.client.companyName
+      : `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
+
+    getCompanySettings(account.client.organizationId).then((companySettings) => {
+      sendVerificationEmail(prisma, {
+        email: email.toLowerCase(),
+        clientName,
+        verificationLink,
+        companySettings,
+        organizationId: account.client.organizationId,
+      }).catch((err) => logger.error('[EMAIL] Verification email failed:', err.message));
+    }).catch(() => {});
+  }
+
   return {
     id: account.id,
     email: account.email,
     isVerified: account.isVerified,
-    verificationToken,
     client: account.client,
   };
 };
@@ -158,7 +181,7 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
   });
 
   if (!account) {
-    throw new AppError('Invalid email or password', 401);
+    throw new AppError('Email sau parola invalide', 401);
   }
 
   // Check if account is locked (brute-force protection)
@@ -184,7 +207,7 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
     }
 
     prisma.clientAccount.update({ where: { id: account.id }, data: updateData }).catch(() => {});
-    throw new AppError('Invalid email or password', 401);
+    throw new AppError('Email sau parola invalide', 401);
   }
 
   // Reset failed attempts on successful login
@@ -293,7 +316,7 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
   });
 
   if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
-    throw new AppError('Invalid or expired refresh token', 401);
+    throw new AppError('Token de reimprospatare invalid sau expirat', 401);
   }
 
   // Create new JWT access token
@@ -358,7 +381,7 @@ const verifyEmail = async (prisma, verificationToken) => {
   });
 
   if (!account) {
-    throw new AppError('Invalid verification token', 400);
+    throw new AppError('Token de verificare invalid', 400);
   }
 
   await prisma.clientAccount.update({
@@ -464,7 +487,7 @@ const resetPassword = async (prisma, { resetToken, newPassword }) => {
   });
 
   if (!account) {
-    throw new AppError('Invalid or expired reset token', 400);
+    throw new AppError('Token de resetare invalid sau expirat', 400);
   }
 
   const hashedPassword = await hashPassword(newPassword);
@@ -573,12 +596,12 @@ const changePassword = async (prisma, { accountId, currentPassword, newPassword 
   });
 
   if (!account) {
-    throw new AppError('Account not found', 404);
+    throw new AppError('Contul nu a fost gasit', 404);
   }
 
   const isValid = await verifyPassword(currentPassword, account.password);
   if (!isValid) {
-    throw new AppError('Current password is incorrect', 400);
+    throw new AppError('Parola curenta este incorecta', 400);
   }
 
   const hashedPassword = await hashPassword(newPassword);

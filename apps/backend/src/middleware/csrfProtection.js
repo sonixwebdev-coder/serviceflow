@@ -62,6 +62,7 @@ const CSRF_EXEMPT_PATHS = [
   '/api/portal/auth/register',
   '/api/portal/auth/refresh',
   '/api/organizations/signup',
+  '/api/organizations/validate-vat',
   '/api/organizations/check-slug',
   '/files', // Static file serving
   '/api/webhooks/stripe', // Stripe webhook (uses signature verification instead)
@@ -75,6 +76,8 @@ const CSRF_EXEMPT_PATHS = [
   '/api/portal/auth/reset-password', // Password reset confirmation
   '/api/auth/forgot-password', // Admin password reset request
   '/api/auth/reset-password', // Admin password reset confirmation
+  '/api/contact', // Public contact form (rate-limited + validated)
+  '/api/pricing', // Public pricing display (rate-limited, read-only)
 ];
 
 /**

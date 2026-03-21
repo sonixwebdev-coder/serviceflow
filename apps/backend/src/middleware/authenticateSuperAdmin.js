@@ -14,6 +14,11 @@ const authenticateSuperAdmin = async (req, res, next) => {
     const token = header.replace('Bearer ', '');
     const payload = verifyAccessToken(token);
 
+    // Reject non-admin tokens from admin routes
+    if (payload.type && payload.type !== 'admin') {
+      throw new AppError('Token invalid pentru panoul de administrare', 401);
+    }
+
     // Check if token was revoked (logout)
     if (await cache.isTokenBlacklisted(token)) {
       throw new AppError('Token revoked', 401);

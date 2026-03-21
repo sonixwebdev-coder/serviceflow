@@ -47,7 +47,7 @@ export default function Login({ loading }) {
           <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-primary-600 flex items-center justify-center text-xl font-bold text-white">
             F
           </div>
-          <h1 className="text-2xl font-bold text-white">Forja Admin</h1>
+          <h1 className="text-2xl font-bold text-white">ForjaIt Admin</h1>
           <p className="mt-1 text-sm text-gray-400">Super Admin Dashboard</p>
         </div>
 
@@ -66,7 +66,7 @@ export default function Login({ loading }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-              placeholder="admin@forja.ro"
+              placeholder="admin@forja.it.com"
             />
           </div>
 

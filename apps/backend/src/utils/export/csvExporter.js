@@ -67,7 +67,6 @@ const exportToCSV = (data, options = {}) => {
  */
 const FIELD_CONFIGS = {
   appointments: [
-    { label: 'ID', value: 'id' },
     { label: 'Titlu', value: 'title' },
     { label: 'Descriere', value: 'description' },
     { label: 'Status', value: 'status' },
@@ -75,24 +74,33 @@ const FIELD_CONFIGS = {
     { label: 'Data sfarsit', value: 'scheduledEnd' },
     { label: 'Locatie', value: 'location' },
     { label: 'Client', value: 'client.name' },
+    { label: 'Telefon client', value: 'client.phone' },
     { label: 'Activ', value: 'asset.identifier' },
     { label: 'Producator', value: 'asset.manufacturer' },
     { label: 'Model', value: 'asset.model' },
+    { label: 'Asignati', value: 'assignees' },
+    { label: 'Status plata', value: 'paymentStatus' },
+    { label: 'Avans', value: 'advancePayment' },
     { label: 'Creat de', value: 'createdBy.name' },
     { label: 'Data creare', value: 'createdAt' },
   ],
   invoices: [
-    { label: 'ID', value: 'id' },
     { label: 'Numar factura', value: 'invoiceNumber' },
     { label: 'Client', value: 'client.name' },
+    { label: 'CUI Client', value: 'client.vatNumber' },
     { label: 'Status', value: 'status' },
+    { label: 'Status plata', value: 'paymentStatus' },
     { label: 'Data emitere', value: 'issueDate' },
     { label: 'Data scadenta', value: 'dueDate' },
     { label: 'Subtotal', value: 'subtotal' },
     { label: 'TVA', value: 'tax' },
     { label: 'Total', value: 'total' },
+    { label: 'Avans', value: 'advancePayment' },
+    { label: 'Rest de plata', value: 'remainingBalance' },
+    { label: 'Reducere fidelitate', value: 'loyaltyDiscount' },
     { label: 'Data trimitere', value: 'sentAt' },
     { label: 'Data plata', value: 'paidAt' },
+    { label: 'Observatii', value: 'notes' },
   ],
   clients: [
     // ID field excluded from export as per requirements
@@ -151,7 +159,6 @@ const FIELD_CONFIGS = {
     { label: 'Sursa', value: 'source' },
   ],
   tasks: [
-    { label: 'ID', value: 'id' },
     { label: 'Titlu', value: 'title' },
     { label: 'Descriere', value: 'description' },
     { label: 'Tip', value: 'taskType' },
@@ -160,6 +167,7 @@ const FIELD_CONFIGS = {
     { label: 'Data scadenta', value: 'dueDate' },
     { label: 'Ore estimate', value: 'estimatedHours' },
     { label: 'Procent completare', value: 'completionPercentage' },
+    { label: 'Asignati', value: 'assignees' },
     { label: 'Client', value: 'customerName' },
     { label: 'Telefon client', value: 'customerPhone' },
     { label: 'Activ client', value: 'customerVehicle' },

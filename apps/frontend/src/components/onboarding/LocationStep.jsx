@@ -202,14 +202,16 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between pt-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="px-6 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition"
-        >
-          Inapoi
-        </button>
+      <div className={`flex ${onBack ? 'justify-between' : 'justify-end'} pt-4`}>
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-6 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition"
+          >
+            Inapoi
+          </button>
+        )}
         <button
           type="button"
           onClick={handleSubmit}

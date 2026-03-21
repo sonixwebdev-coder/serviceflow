@@ -18,6 +18,14 @@ const createOrganization = async ({
   phoneNumber,
   activitySector,
   plan,
+  // Company profile fields (collected during signup after VAT validation)
+  vatNumber,
+  companyAddress,
+  companyEmail,
+  companyPhone,
+  entityType,
+  registrationNumber,
+  cnp,
 }) => {
   // Validate required fields
   if (!organizationName || !slug || !email || !password || !firstName || !lastName) {
@@ -135,13 +143,14 @@ const createOrganization = async ({
       },
     });
 
-    // Generate JWT payload
+    // Generate JWT payload with CRM type for session isolation
     const payload = {
       sub: userWithRoles.id,
       email: userWithRoles.email,
       name: `${userWithRoles.firstName} ${userWithRoles.lastName}`,
       roles: userWithRoles.roles.map((r) => r.role.key),
       organizationId: organization.id,
+      type: 'crm',
     };
 
     // Generate tokens
@@ -154,8 +163,36 @@ const createOrganization = async ({
         userId: userWithRoles.id,
         token: refreshToken,
         expiresAt,
+        context: 'crm',
       },
     });
+
+    // Store company profile fields if provided (from signup with VAT validation)
+    const companyFields = {
+      companyName: organizationName,
+      ...(vatNumber && { vatNumber }),
+      ...(companyAddress && { address: companyAddress }),
+      ...(companyEmail && { email: companyEmail }),
+      ...(companyPhone && { phone: companyPhone }),
+      ...(entityType && { entityType }),
+      ...(registrationNumber && { registrationNumber }),
+      ...(cnp && { cnp }),
+    };
+
+    const settingEntries = Object.entries(companyFields).filter(([, v]) => v != null && v !== '');
+    if (settingEntries.length > 0) {
+      await Promise.all(
+        settingEntries.map(([key, value]) =>
+          tx.companySetting.create({
+            data: {
+              name: key,
+              value: { value },
+              organizationId: organization.id,
+            },
+          })
+        )
+      );
+    }
   });
   } catch (error) {
     if (error.code === 'P2002') {
@@ -323,22 +360,9 @@ const getRemainingQuota = async (organizationId, resource) => {
     appointments: organization.maxAppointments,
   }[resource];
 
-  // Unlimited
-  if (baseLimit >= 999999) {
-    return { limit: Infinity, used: 0, remaining: Infinity, addonBoost: 0 };
-  }
-
   const now = new Date();
-  const addons = await prisma.quotaAddon.findMany({
-    where: {
-      organizationId,
-      resource,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-    },
-  });
-  const addonBoost = addons.reduce((sum, a) => sum + a.amount, 0);
-  const effectiveLimit = baseLimit + addonBoost;
 
+  // Count actual usage regardless of plan
   let used;
   if (resource === 'appointments') {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -350,6 +374,21 @@ const getRemainingQuota = async (organizationId, resource) => {
   } else {
     used = await prisma.user.count({ where: { organizationId } });
   }
+
+  // Unlimited
+  if (baseLimit >= 999999) {
+    return { limit: Infinity, used, remaining: Infinity, addonBoost: 0 };
+  }
+
+  const addons = await prisma.quotaAddon.findMany({
+    where: {
+      organizationId,
+      resource,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+  });
+  const addonBoost = addons.reduce((sum, a) => sum + a.amount, 0);
+  const effectiveLimit = baseLimit + addonBoost;
 
   return {
     limit: effectiveLimit,

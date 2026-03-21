@@ -137,6 +137,10 @@ export default function DynamicPage() {
     <>
       {pageDescription && <meta name="description" content={pageDescription} />}
       {seo?.keywords && <meta name="keywords" content={Array.isArray(seo.keywords) ? seo.keywords.join(', ') : seo.keywords} />}
+      {seo?.canonicalUrl && <link rel="canonical" href={seo.canonicalUrl} />}
+      {(seo?.robotsIndex === false || seo?.robotsFollow === false) && (
+        <meta name="robots" content={`${seo.robotsIndex === false ? 'noindex' : 'index'}, ${seo.robotsFollow === false ? 'nofollow' : 'follow'}`} />
+      )}
       {seo?.ogImage && <meta property="og:image" content={seo.ogImage} />}
       <meta property="og:title" content={pageTitle} />
       {pageDescription && <meta property="og:description" content={pageDescription} />}
@@ -149,6 +153,17 @@ export default function DynamicPage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
         />
       ))}
+      {seo?.customSchema && (() => {
+        try {
+          JSON.parse(seo.customSchema);
+          return (
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: seo.customSchema.replace(/</g, '\\u003c') }}
+            />
+          );
+        } catch { return null; }
+      })()}
 
       <div className="page-content">
         {content?.map((block) => (

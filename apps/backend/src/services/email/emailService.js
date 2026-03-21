@@ -851,6 +851,44 @@ const getDefaultTemplate = (templateName) => {
 </html>
 `,
     },
+    'email-verification': {
+      subject: 'Verificare adresa de email - {{companyName}}',
+      bodyHtml: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #4f46e5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+    .button { display: inline-block; background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Verificare Email</h1>
+    </div>
+    <div class="content">
+      <p>Buna ziua, {{clientName}}!</p>
+      <p>Iti multumim pentru inregistrare. Te rugam sa iti confirmi adresa de email apasand butonul de mai jos:</p>
+      <p style="text-align: center;">
+        <a href="{{verificationLink}}" class="button">Confirma adresa de email</a>
+      </p>
+      <p style="margin-top: 20px; font-size: 13px; color: #6b7280;">Daca butonul nu functioneaza, copiaza si lipeste acest link in browser: <br><a href="{{verificationLink}}">{{verificationLink}}</a></p>
+    </div>
+    <div class="footer">
+      <p>{{companyName}}</p>
+      {{#if companyPhone}}<p>{{companyPhone}}</p>{{/if}}
+    </div>
+  </div>
+</body>
+</html>
+`,
+    },
     'welcome': {
       subject: 'Bine ai venit la {{companyName}}!',
       bodyHtml: `
@@ -1504,7 +1542,7 @@ const sendInvoiceCreatedEmail = async (prisma, { invoice, client, companySetting
     dueDate: new Date(invoice.dueDate).toLocaleDateString('ro-RO'),
     total: Number(invoice.total).toFixed(2),
     pdfUrl: invoice.pdfUrl,
-    companyName: companySettings?.name || 'Forja',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -1521,6 +1559,28 @@ const sendInvoiceCreatedEmail = async (prisma, { invoice, client, companySetting
 /**
  * Send welcome email to new client
  */
+const sendVerificationEmail = async (prisma, { email, clientName, verificationLink, companySettings, organizationId }) => {
+  if (!email) {
+    logger.warn(`Cannot send verification email: no email provided`);
+    return null;
+  }
+
+  const templateData = {
+    clientName: clientName || 'Client',
+    verificationLink,
+    companyName: companySettings?.name || 'ForjaIt',
+    companyPhone: companySettings?.phone,
+  };
+
+  return sendEmail(prisma, {
+    to: email,
+    template: 'email-verification',
+    templateData,
+    recipientType: 'CLIENT',
+    organizationId,
+  });
+};
+
 const sendWelcomeEmail = async (prisma, { client, companySettings, organizationId }) => {
   if (!client?.email) {
     logger.warn(`Cannot send welcome email: client has no email`);
@@ -1533,7 +1593,7 @@ const sendWelcomeEmail = async (prisma, { client, companySettings, organizationI
 
   const templateData = {
     clientName: clientName || 'Client',
-    companyName: companySettings?.name || 'Forja',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -1560,7 +1620,7 @@ const sendPasswordResetEmail = async (prisma, { email, clientName, resetLink, ex
     clientName: clientName || 'Client',
     resetLink,
     expiresIn: expiresIn || '1 ora',
-    companyName: companySettings?.name || 'Forja',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -1594,7 +1654,7 @@ const sendAppointmentCancelledEmail = async (prisma, { appointment, client, canc
     time: appointmentDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
     location: appointment.location,
     cancellationReason: cancellationReason || appointment.cancellationReason,
-    companyName: companySettings?.name || 'Forja',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -1630,7 +1690,7 @@ const sendAppointmentRescheduledEmail = async (prisma, { appointment, client, ol
     newDate: newDate.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }),
     newTime: newDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
     location: appointment.location,
-    companyName: companySettings?.name || 'Forja',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -1663,7 +1723,7 @@ const sendInvoiceOverdueEmail = async (prisma, { invoice, client, daysOverdue, c
     dueDate: new Date(invoice.dueDate).toLocaleDateString('ro-RO'),
     daysOverdue: daysOverdue || 1,
     total: Number(invoice.total).toFixed(2),
-    companyName: companySettings?.name || 'Forja',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -1739,7 +1799,7 @@ const sendPaymentReceivedEmail = async (prisma, { client, amount, paymentDate, p
       : new Date(paymentDate).toLocaleDateString('ro-RO'),
     paymentMethod: paymentMethods[paymentMethod] || paymentMethod,
     invoiceNumber,
-    companyName: companySettings?.name || 'Forja',
+    companyName: companySettings?.name || 'ForjaIt',
     companyPhone: companySettings?.phone,
   };
 
@@ -1851,6 +1911,7 @@ const listTemplates = async (prisma) => {
 
   // Get all default template names
   const defaultTemplateNames = [
+    'email-verification',
     'appointment-reminder',
     'appointment-confirmation',
     'appointment-cancelled',
@@ -1895,6 +1956,7 @@ module.exports = {
   sendAppointmentReminder,
   sendInvoiceCreatedEmail,
   sendInvoiceOverdueEmail,
+  sendVerificationEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendAppointmentCancelledEmail,

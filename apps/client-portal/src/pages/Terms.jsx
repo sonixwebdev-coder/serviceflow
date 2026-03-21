@@ -111,6 +111,31 @@ export default function Terms() {
           </p>
         </section>
       </div>
+
+      {/* ANPC */}
+      <div className="mt-12 border-t border-gray-200 pt-8">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+          Solutionarea alternativa a litigiilor
+        </p>
+        <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+          <a
+            href="https://anpc.ro/ce-este-sal/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-900 transition-colors"
+          >
+            ANPC - SAL
+          </a>
+          <a
+            href="https://ec.europa.eu/consumers/odr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-900 transition-colors"
+          >
+            Platforma SOL (Online Dispute Resolution)
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

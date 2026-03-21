@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Share2, X } from 'lucide-react';
+import { Search, Share2, X, Code, Shield, Link2 } from 'lucide-react';
 import ImageUploadField from './ImageUploadField';
 
 const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = false }) => {
@@ -8,6 +8,11 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
     description: seoDefaults.description || '',
     keywords: seoDefaults.keywords || [],
     ogImage: seoDefaults.ogImage || '',
+    canonicalUrl: seoDefaults.canonicalUrl || '',
+    robotsIndex: seoDefaults.robotsIndex !== false,
+    robotsFollow: seoDefaults.robotsFollow !== false,
+    customSchema: seoDefaults.customSchema || '',
+    customHeadCode: seoDefaults.customHeadCode || '',
   });
   const [keywordInput, setKeywordInput] = useState('');
 
@@ -44,6 +49,11 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       description: seoDefaults.description || '',
       keywords: seoDefaults.keywords || [],
       ogImage: seoDefaults.ogImage || '',
+      canonicalUrl: seoDefaults.canonicalUrl || '',
+      robotsIndex: seoDefaults.robotsIndex !== false,
+      robotsFollow: seoDefaults.robotsFollow !== false,
+      customSchema: seoDefaults.customSchema || '',
+      customHeadCode: seoDefaults.customHeadCode || '',
     });
 
   const titleLength = localSeo.title.length;
@@ -206,6 +216,117 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
             accept="image/jpeg,image/png,image/webp"
             previewClass="max-h-40 object-contain"
           />
+        </div>
+      </div>
+
+      {/* Canonical URL */}
+      <div className="bg-white rounded-lg border shadow-sm">
+        <div className="p-6 border-b">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            URL Canonical
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            URL-ul principal al website-ului. Ajuta motoarele de cautare sa evite continutul duplicat.
+          </p>
+        </div>
+        <div className="p-6">
+          <input
+            type="url"
+            value={localSeo.canonicalUrl}
+            onChange={(e) => handleChange('canonicalUrl', e.target.value)}
+            placeholder="https://www.exemplu.ro"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Robots Meta */}
+      <div className="bg-white rounded-lg border shadow-sm">
+        <div className="p-6 border-b">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Indexare motoare de cautare
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Controleaza cum interactioneaza motoarele de cautare cu website-ul
+          </p>
+        </div>
+        <div className="p-6 space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localSeo.robotsIndex}
+              onChange={(e) => handleChange('robotsIndex', e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-900">Permite indexarea</span>
+              <p className="text-xs text-gray-500">Motoarele de cautare vor include website-ul in rezultate</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={localSeo.robotsFollow}
+              onChange={(e) => handleChange('robotsFollow', e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-900">Permite urmarirea link-urilor</span>
+              <p className="text-xs text-gray-500">Motoarele de cautare vor urma link-urile de pe website</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Custom Schema.org / JSON-LD */}
+      <div className="bg-white rounded-lg border shadow-sm">
+        <div className="p-6 border-b">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Code className="h-5 w-5" />
+            Schema.org (Date structurate)
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Adaugati date structurate JSON-LD personalizate pentru a imbunatati aparitia in rezultatele Google (rich snippets)
+          </p>
+        </div>
+        <div className="p-6 space-y-2">
+          <textarea
+            value={localSeo.customSchema}
+            onChange={(e) => handleChange('customSchema', e.target.value)}
+            placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "LocalBusiness",\n  "name": "Numele afacerii"\n}'}
+            rows={8}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+          />
+          <p className="text-xs text-gray-500">
+            Introduceti un obiect JSON-LD valid. Se adauga automat schema LocalBusiness si FAQPage din continutul paginilor.
+          </p>
+        </div>
+      </div>
+
+      {/* Custom Head Code */}
+      <div className="bg-white rounded-lg border shadow-sm">
+        <div className="p-6 border-b">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Code className="h-5 w-5" />
+            Cod personalizat (Head)
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Adaugati cod HTML in sectiunea &lt;head&gt; a website-ului (ex: Google Analytics, verificare Search Console, pixeli de tracking)
+          </p>
+        </div>
+        <div className="p-6 space-y-2">
+          <textarea
+            value={localSeo.customHeadCode}
+            onChange={(e) => handleChange('customHeadCode', e.target.value)}
+            placeholder={'<!-- Google Analytics -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>'}
+            rows={6}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+          />
+          <p className="text-xs text-gray-500">
+            Codul va fi inserat in &lt;head&gt; pe toate paginile website-ului.
+          </p>
         </div>
       </div>
 

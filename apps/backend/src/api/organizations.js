@@ -23,6 +23,7 @@ const {
 const { publicBookingSchema, servicesArraySchema } = require('../schemas/organizationSettingsSchema');
 const { logFromRequest } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
+const { validateVatNumber } = require('../services/vatValidationService');
 
 const router = express.Router();
 
@@ -31,6 +32,15 @@ const slugCheckLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 20, // 20 requests per minute
   message: 'Too many slug check requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for public VAT validation (prevent abuse)
+const vatValidationLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 10,
+  message: 'Prea multe cereri de verificare CUI. Incercati din nou in cateva minute.',
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -54,6 +64,21 @@ const slugSchema = z.object({
 router.post(
   '/signup',
   asyncHandler(async (req, res) => {
+    // Block authenticated super admins from creating orgs through the public signup
+    // (which would issue a CRM refresh cookie and hijack their admin session)
+    const authHeader = req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const { verifyAccessToken } = require('../utils/token');
+        const payload = verifyAccessToken(authHeader.replace('Bearer ', ''));
+        if (payload.type === 'admin') {
+          return res.status(403).json({ error: 'Conturile super admin nu pot folosi formularul public de inregistrare' });
+        }
+      } catch {
+        // Invalid/expired token — proceed with signup as a public user
+      }
+    }
+
     const result = await createOrganization(req.body);
     setRefreshCookie(res, result.refreshToken);
     const { refreshToken: _rt, ...body } = result;
@@ -357,6 +382,20 @@ router.post(
     });
 
     return ok(res, { status: 'CANCELLED' }, 'Organization deactivated');
+  })
+);
+
+/**
+ * Public VAT validation endpoint for signup flow
+ * Validates CUI via ANAF/VIES before org creation
+ */
+router.post(
+  '/validate-vat',
+  vatValidationLimiter,
+  validate(z.object({ vatNumber: z.string().min(1).max(60) })),
+  asyncHandler(async (req, res) => {
+    const result = await validateVatNumber(req.body.vatNumber);
+    return ok(res, result);
   })
 );
 

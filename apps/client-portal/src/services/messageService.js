@@ -46,12 +46,7 @@ export const messageService = {
 
     const response = await api.post(
       `/portal/appointments/${appointmentId}/messages/upload-file`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
+      formData
     );
     return response.data;
   },
@@ -68,12 +63,7 @@ export const messageService = {
 
     const response = await api.post(
       `/portal/appointments/${appointmentId}/messages/upload-voice`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
+      formData
     );
     return response.data;
   },

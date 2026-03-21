@@ -587,7 +587,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
 
 const UserAssignmentModal = ({ location, onClose }) => {
   const { showToast } = useToast();
-  const { users } = useUsers();
+  const { users } = useUsers({ allLocations: 'true' });
   const { location: locationDetails, loading: loadingDetails } = useLocation(location?.id);
   const { assignUsers, removeUsers, isAssigning, isRemoving } = useLocationMutations();
 

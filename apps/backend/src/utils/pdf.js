@@ -1430,7 +1430,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
   });
   context.cursor -= 12;
 
-  context.page.drawText(sanitizeForPdf(company.footerNote || 'Document generat automat de sistemul de management Forja.'), {
+  context.page.drawText(sanitizeForPdf(company.footerNote || 'Document generat automat de sistemul de management ForjaIt.'), {
     x: context.margin,
     y: context.cursor,
     size: 8,
@@ -1916,7 +1916,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
   });
   context.cursor -= 12;
 
-  context.page.drawText(sanitizeForPdf(company.footerNote || 'Document generat automat de sistemul de management Forja.'), {
+  context.page.drawText(sanitizeForPdf(company.footerNote || 'Document generat automat de sistemul de management ForjaIt.'), {
     x: context.margin,
     y: context.cursor,
     size: 8,

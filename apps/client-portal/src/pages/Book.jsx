@@ -847,7 +847,7 @@ export default function Book() {
 
                 {bookingMutation.isError && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    {bookingMutation.error?.response?.data?.error || 'A aparut o eroare. Te rugam sa incerci din nou.'}
+                    {bookingMutation.error?.response?.data?.message || 'A aparut o eroare. Te rugam sa incerci din nou.'}
                   </div>
                 )}
               </div>

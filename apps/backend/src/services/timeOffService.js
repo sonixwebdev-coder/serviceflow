@@ -125,7 +125,7 @@ const createTimeOffRequest = async (prisma, payload, currentUser) => {
 
   await Promise.all(
     adminsAndManagers.map((admin) =>
-      createNotification(prisma, {
+      createNotification({
         recipientId: admin.id,
         title: 'Cerere de concediu noua',
         message: `${employeeName} a solicitat concediu pentru ${dateRange} (${totalDays} ${totalDays === 1 ? 'zi' : 'zile'})`,
@@ -282,7 +282,7 @@ const approveTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes 
   const reviewerName = `${reviewer.firstName} ${reviewer.lastName}`;
   const dateRange = `${start.toLocaleDateString('ro-RO')} - ${end.toLocaleDateString('ro-RO')}`;
 
-  await createNotification(prisma, {
+  await createNotification({
     recipientId: request.employeeId,
     title: 'Cerere de concediu aprobata',
     message: `Cererea ta de concediu pentru ${dateRange} a fost aprobata de ${reviewerName}${reviewNotes ? `: ${reviewNotes}` : ''}`,
@@ -364,7 +364,7 @@ const rejectTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes }
   const end = new Date(request.endDate);
   const dateRange = `${start.toLocaleDateString('ro-RO')} - ${end.toLocaleDateString('ro-RO')}`;
 
-  await createNotification(prisma, {
+  await createNotification({
     recipientId: request.employeeId,
     title: 'Cerere de concediu respinsa',
     message: `Cererea ta de concediu pentru ${dateRange} a fost respinsa de ${reviewerName}: ${reviewNotes}`,

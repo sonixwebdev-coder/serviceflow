@@ -817,11 +817,6 @@ const Invoices = () => {
                       <h2 className="text-lg font-semibold text-gray-900 truncate">
                         {selectedInvoice.invoiceNumber}
                       </h2>
-                      {selectedInvoice.anafSync && (
-                        <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-                          ANAF
-                        </span>
-                      )}
                     </div>
                     <p className="mt-0.5 text-sm text-gray-500 truncate">
                       {getClientName(selectedInvoice)} &middot; {formatDate(selectedInvoice.issueDate)}

@@ -254,11 +254,7 @@ const CompanySettings = () => {
         formData.append('logo', logoFile);
 
         try {
-          const uploadResponse = await API.post('/settings/company/logo', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          const uploadResponse = await API.post('/settings/company/logo', formData);
           logoUrl = uploadResponse.data?.data?.logoUrl || uploadResponse.data?.logoUrl;
         } catch (uploadError) {
           showToast({

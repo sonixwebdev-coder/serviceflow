@@ -110,7 +110,7 @@ const createLocation = async (prisma, data, organizationId) => {
   });
 
   if (!org) {
-    throw new AppError('Organization not found', 404);
+    throw new AppError('Organizatia nu a fost gasita', 404);
   }
 
   const currentCount = await prisma.location.count({
@@ -171,6 +171,24 @@ const createLocation = async (prisma, data, organizationId) => {
         },
         data: { isPrimary: false },
       });
+    }
+
+    // Auto-assign all org users to the first location
+    if (isFirstLocation) {
+      const orgUsers = await prisma.user.findMany({
+        where: { organizationId, isActive: true },
+        select: { id: true },
+      });
+      if (orgUsers.length > 0) {
+        await prisma.userLocation.createMany({
+          data: orgUsers.map((u) => ({
+            userId: u.id,
+            locationId: location.id,
+            isPrimary: true,
+          })),
+          skipDuplicates: true,
+        });
+      }
     }
 
     // Auto-create a chat channel for this location

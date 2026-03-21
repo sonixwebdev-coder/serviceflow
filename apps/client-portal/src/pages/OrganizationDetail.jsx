@@ -6,6 +6,11 @@ import Button from '@/components/ui/Button';
 import { getSectorConfig } from '@/utils/sectors';
 import { formatCurrency } from '@/lib/utils';
 
+const DAY_NAMES_RO = {
+  monday: 'Luni', tuesday: 'Marti', wednesday: 'Miercuri',
+  thursday: 'Joi', friday: 'Vineri', saturday: 'Sambata', sunday: 'Duminica',
+};
+
 export default function OrganizationDetail() {
   const { slug } = useParams();
   const { data, isLoading, isError } = useMarketplaceOrganization(slug);
@@ -176,7 +181,7 @@ export default function OrganizationDetail() {
                                 <div className="space-y-0.5">
                                   {Object.entries(loc.operatingHours).map(([day, hours]) => (
                                     <div key={day}>
-                                      <span className="font-medium capitalize">{day}:</span>{' '}
+                                      <span className="font-medium">{DAY_NAMES_RO[day] || day}:</span>{' '}
                                       {(hours.closed === true || hours.isOpen === false)
                                         ? 'Inchis'
                                         : `${hours.open || hours.openTime} - ${hours.close || hours.closeTime}`}

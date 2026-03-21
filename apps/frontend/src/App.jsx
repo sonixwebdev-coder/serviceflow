@@ -216,7 +216,7 @@ function App() {
           <Route
             path="/crm/invoices"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.SALES]}>
                 <DashboardLayout>
                   <Invoices />
                 </DashboardLayout>
@@ -227,7 +227,7 @@ function App() {
           <Route
             path="/crm/loyalty"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
                 <DashboardLayout>
                   <LoyaltyDashboard />
                 </DashboardLayout>
@@ -260,7 +260,7 @@ function App() {
           <Route
             path="/activity"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
                 <DashboardLayout>
                   <ActivityTimeline />
                 </DashboardLayout>
@@ -271,7 +271,7 @@ function App() {
           <Route
             path="/analytics"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
                 <DashboardLayout>
                   <Analytics />
                 </DashboardLayout>

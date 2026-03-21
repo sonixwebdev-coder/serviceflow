@@ -187,11 +187,23 @@ const createSocketServer = (httpServer) => {
 
     // Verify channel membership before processing typing
     const verifyChannelMember = async (channelId) => {
-      const member = await prisma.chatChannelMember.findFirst({
+      if (!prisma.chatMember) return false;
+      const member = await prisma.chatMember.findFirst({
         where: { channelId, userId: socket.user.id },
         select: { id: true },
       });
       return !!member;
+    };
+
+    // Cache user info to avoid DB lookups on every keystroke
+    let cachedUser = null;
+    const getSocketUser = async () => {
+      if (cachedUser) return cachedUser;
+      cachedUser = await prisma.user.findUnique({
+        where: { id: socket.user.id },
+        select: { id: true, firstName: true, lastName: true },
+      });
+      return cachedUser;
     };
 
     // Handle typing indicators
@@ -200,14 +212,14 @@ const createSocketServer = (httpServer) => {
         if (!channelId || isTypingThrottled(channelId)) return;
         if (!(await verifyChannelMember(channelId))) return;
 
-        await startTyping(prisma, channelId, socket.user.id);
+        const user = await getSocketUser();
+        if (!user) return;
 
-        const user = await prisma.user.findUnique({
-          where: { id: socket.user.id },
-          select: { id: true, firstName: true, lastName: true },
-        });
-
+        // Broadcast immediately — DB persistence is fire-and-forget
         broadcastTyping(socket.user.organizationId, channelId, user, true);
+        startTyping(prisma, channelId, socket.user.id).catch((err) =>
+          logger.debug('Typing persist error (non-critical)', err.message)
+        );
       } catch (error) {
         logger.error('Error handling typing start', error);
       }
@@ -218,14 +230,14 @@ const createSocketServer = (httpServer) => {
         if (!channelId) return;
         if (!(await verifyChannelMember(channelId))) return;
 
-        await stopTyping(prisma, channelId, socket.user.id);
+        const user = await getSocketUser();
+        if (!user) return;
 
-        const user = await prisma.user.findUnique({
-          where: { id: socket.user.id },
-          select: { id: true, firstName: true, lastName: true },
-        });
-
+        // Broadcast immediately — DB persistence is fire-and-forget
         broadcastTyping(socket.user.organizationId, channelId, user, false);
+        stopTyping(prisma, channelId, socket.user.id).catch((err) =>
+          logger.debug('Typing persist error (non-critical)', err.message)
+        );
       } catch (error) {
         logger.error('Error handling typing stop', error);
       }
@@ -238,6 +250,11 @@ const createSocketServer = (httpServer) => {
           logger.error('Error updating presence on disconnect', err);
         });
         broadcastPresence(socket.user.organizationId, socket.user.id, false);
+
+        // Clean up any stuck typing indicators for this user
+        prisma.chatTypingIndicator.deleteMany({
+          where: { userId: socket.user.id },
+        }).catch(() => {});
       }
     });
   });

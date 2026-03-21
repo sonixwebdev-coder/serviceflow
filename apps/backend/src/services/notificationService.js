@@ -5,6 +5,11 @@ const { broadcastNotification } = require('../realtime/events');
 const logger = require('../utils/logger');
 
 const createNotification = async ({ recipientId, title, message, type, entityType, entityId, metadata, organizationId }) => {
+  if (!recipientId) {
+    logger.error('Cannot create notification without recipientId', { title, entityType, entityId });
+    return null;
+  }
+
   // Get organization ID from recipient if not provided
   let orgId = organizationId;
   if (!orgId) {

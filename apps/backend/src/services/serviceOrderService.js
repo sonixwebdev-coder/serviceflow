@@ -5,6 +5,7 @@ const {mapUser} = require('../utils/transform');
 const {buildServiceOrderPdf} = require('../utils/pdf');
 const {writeFile, readFile, removeFile, exists} = require('../utils/storage');
 const {getCompanySettings} = require('./companySettingService');
+const logger = require('../utils/logger');
 
 const VALID_STATUSES = ['DRAFT', 'GENERATED', 'SENT', 'SIGNED', 'CANCELLED'];
 const IMMUTABLE_STATUSES = new Set(['SIGNED', 'CANCELLED']);
@@ -552,16 +553,22 @@ const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) 
     const mapped = mapServiceOrder(orderWithLatestAppointment);
     const action = existing ? 'updated' : 'created';
 
-    await persistPdfForOrder({
+    // Generate PDF asynchronously — don't block the response on PDF generation
+    mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
+
+    persistPdfForOrder({
         mappedOrder: mapped,
         relativePath: relativePdfPath,
         previousPath: existing?.pdfUrl,
         updateRecord: false,
         companySettings,
         client,
+    }).catch((err) => {
+        logger.error('Failed to generate service order PDF (will retry on next view)', {
+            serviceOrderId: mapped.id,
+            error: err.message,
+        });
     });
-
-    mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
     if (typeof onResult === 'function') {
         onResult(mapped, action);

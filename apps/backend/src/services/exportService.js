@@ -105,9 +105,15 @@ const transformAppointmentData = (appointments) => {
     'asset.manufacturer': appt.asset?.manufacturer || '',
     'asset.model': appt.asset?.model || '',
     'asset.name': appt.asset?.name || '',
+    assignees: appt.assignees?.map(a =>
+      `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim()
+    ).join(', ') || '',
+    paymentStatus: getStatusLabelRO(appt.paymentStatus),
+    advancePayment: formatCurrency(appt.advancePayment),
     'createdBy.name': appt.createdBy
       ? `${appt.createdBy.firstName || ''} ${appt.createdBy.lastName || ''}`.trim()
       : '',
+    createdAt: formatDateTime(appt.createdAt),
   }));
 };
 
@@ -158,6 +164,11 @@ const exportAppointments = async (prismaClient, format, filters = {}, userId, us
       include: {
         client: true,
         asset: true,
+        assignees: {
+          include: {
+            user: { select: { firstName: true, lastName: true } },
+          },
+        },
         createdBy: {
           select: {
             id: true,
@@ -237,11 +248,15 @@ const transformInvoiceData = (invoices) => {
       : '',
     'client.vatNumber': inv.client?.vatNumber || '',
     status: getStatusLabelRO(inv.status),
+    paymentStatus: getStatusLabelRO(inv.paymentStatus),
     issueDate: formatDate(inv.issueDate),
     dueDate: formatDate(inv.dueDate),
     subtotal: formatCurrency(inv.subtotal),
     tax: formatCurrency(inv.tax),
     total: formatCurrency(inv.total),
+    advancePayment: formatCurrency(inv.advancePayment),
+    remainingBalance: formatCurrency(inv.remainingBalance),
+    loyaltyDiscount: inv.loyaltyDiscount ? formatCurrency(inv.loyaltyDiscount) : '',
     sentAt: inv.sentAt ? formatDateTime(inv.sentAt) : '',
     paidAt: inv.paidAt ? formatDateTime(inv.paidAt) : '',
     notes: inv.notes || '',
@@ -415,7 +430,7 @@ const exportBulkInvoicePDFs = async (prismaClient, invoiceIds, userId, userRoles
 /**
  * Export invoices as ANAF UBL XML ZIP
  */
-const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles) => {
+const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles, organizationId) => {
   const permission = checkExportPermission(userId, userRoles, 'invoices');
 
   if (!permission.canExport) {
@@ -442,9 +457,8 @@ const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles
     throw new AppError('No invoices found', 404);
   }
 
-  // Get company settings for the supplier data
-  const companySettings = await prismaClient.companySetting.findFirst();
-  const company = companySettings || {};
+  // Get merged company settings (DB values + defaults) for the supplier data
+  const company = await getCompanySettings(organizationId);
 
   const files = [];
   for (const invoice of invoices) {
@@ -482,9 +496,13 @@ const transformClientData = (clients) => {
     contactName: client.contactName || '',
     phone: client.phone || '',
     email: client.email || '',
+    address: client.address || '',
+    isOnline: client.isOnline ? 'Da' : 'Nu',
+    fidelityCardSerie: client.fidelityCardSerie || '',
     vatNumber: client.vatNumber || '',
     registrationNumber: client.registrationNumber || '',
     notes: client.notes || '',
+    createdAt: formatDateTime(client.createdAt),
   }));
 };
 
@@ -1075,12 +1093,16 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
     dueDate: task.dueDate ? formatDate(task.dueDate) : '',
     estimatedHours: task.estimatedHours || 0,
     completionPercentage: task.completionPercentage || 0,
+    assignees: task.assignments?.map(a =>
+      `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim()
+    ).join(', ') || '',
     customerName: task.customerName || '',
     customerPhone: task.customerPhone || '',
     customerVehicle: task.customerVehicle || '',
     'createdBy.name': task.createdBy
       ? `${task.createdBy.firstName || ''} ${task.createdBy.lastName || ''}`.trim()
       : '',
+    createdAt: formatDateTime(task.createdAt),
   }));
 
   let buffer;
@@ -1109,7 +1131,7 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
 /**
  * Export all data as ZIP archive (admin only)
  */
-const exportAllData = async (prismaClient, userId, userRoles) => {
+const exportAllData = async (prismaClient, userId, userRoles, organizationId) => {
   const roleKeys = userRoles?.map(r => {
     if (typeof r === 'string') return r;
     return r.role?.key || r.key;
@@ -1123,8 +1145,7 @@ const exportAllData = async (prismaClient, userId, userRoles) => {
   const entities = [];
 
   try {
-    // Export each entity
-    // Run exports sequentially to avoid holding all buffers in memory simultaneously
+    // Export each standard entity via the existing export functions
     const exportTasks = [
       { name: 'Programari', fn: exportAppointments },
       { name: 'Facturi', fn: exportInvoices },
@@ -1145,9 +1166,142 @@ const exportAllData = async (prismaClient, userId, userRoles) => {
           recordCount: 0,
         });
       } catch {
-        // Skip entities that fail to export
+        // Skip entities that have no data (404) or fail
       }
     }
+
+    // Export additional entities that don't have dedicated export functions
+    // -- Assets
+    try {
+      const assets = await prismaClient.asset.findMany({
+        include: { client: { select: { firstName: true, lastName: true, companyName: true, type: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: MAX_EXPORT_RECORDS,
+      });
+      if (assets.length > 0) {
+        const data = assets.map(a => ({
+          name: a.name || '',
+          identifier: a.identifier || '',
+          type: a.type || '',
+          manufacturer: a.manufacturer || '',
+          model: a.model || '',
+          year: a.year || '',
+          client: a.client
+            ? (a.client.type === 'SRL' ? a.client.companyName : `${a.client.firstName || ''} ${a.client.lastName || ''}`.trim())
+            : '',
+          createdAt: formatDateTime(a.createdAt),
+        }));
+        const buffer = await exportEntityToExcel('assets', data);
+        entities.push({ name: 'Echipamente', fileName: generateFilename('echipamente', 'excel'), buffer, recordCount: data.length });
+      }
+    } catch { /* skip */ }
+
+    // -- Service Orders
+    try {
+      const serviceOrders = await prismaClient.serviceOrder.findMany({
+        include: {
+          appointment: { select: { title: true } },
+          lineItems: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: MAX_EXPORT_RECORDS,
+      });
+      if (serviceOrders.length > 0) {
+        const data = serviceOrders.map(so => ({
+          orderNumber: so.orderNumber || '',
+          status: getStatusLabelRO(so.status),
+          appointment: so.appointment?.title || '',
+          subtotal: formatCurrency(so.subtotal),
+          tax: formatCurrency(so.tax),
+          total: formatCurrency(so.total),
+          lineItems: so.lineItems?.length || 0,
+          notes: so.notes || '',
+          createdAt: formatDateTime(so.createdAt),
+        }));
+        const buffer = await exportEntityToExcel('serviceOrders', data);
+        entities.push({ name: 'Comenzi_Service', fileName: generateFilename('comenzi_service', 'excel'), buffer, recordCount: data.length });
+      }
+    } catch { /* skip */ }
+
+    // -- Payments
+    try {
+      const payments = await prismaClient.payment.findMany({
+        include: {
+          appointment: { select: { title: true } },
+          createdBy: { select: { firstName: true, lastName: true } },
+        },
+        orderBy: { paymentDate: 'desc' },
+        take: MAX_EXPORT_RECORDS,
+      });
+      if (payments.length > 0) {
+        const data = payments.map(p => ({
+          amount: formatCurrency(p.amount),
+          paymentMethod: p.paymentMethod || '',
+          type: p.type || '',
+          paymentDate: formatDateTime(p.paymentDate),
+          appointment: p.appointment?.title || '',
+          reference: p.reference || '',
+          notes: p.notes || '',
+          createdBy: p.createdBy ? `${p.createdBy.firstName || ''} ${p.createdBy.lastName || ''}`.trim() : '',
+        }));
+        const buffer = await exportEntityToExcel('payments', data);
+        entities.push({ name: 'Plati', fileName: generateFilename('plati', 'excel'), buffer, recordCount: data.length });
+      }
+    } catch { /* skip */ }
+
+    // -- Schedules
+    try {
+      const schedules = await prismaClient.schedule.findMany({
+        include: {
+          employee: { select: { firstName: true, lastName: true } },
+        },
+        orderBy: { date: 'desc' },
+        take: MAX_EXPORT_RECORDS,
+      });
+      if (schedules.length > 0) {
+        const data = schedules.map(s => ({
+          employee: s.employee ? `${s.employee.firstName || ''} ${s.employee.lastName || ''}`.trim() : '',
+          date: formatDate(s.date),
+          startTime: s.startTime || '',
+          endTime: s.endTime || '',
+          shiftType: s.shiftType || '',
+          status: getStatusLabelRO(s.status),
+          notes: s.notes || '',
+        }));
+        const buffer = await exportEntityToExcel('schedules', data);
+        entities.push({ name: 'Program', fileName: generateFilename('program', 'excel'), buffer, recordCount: data.length });
+      }
+    } catch { /* skip */ }
+
+    // -- Locations
+    try {
+      const locations = await prismaClient.location.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      if (locations.length > 0) {
+        const data = locations.map(l => ({
+          name: l.name || '',
+          address: l.address || '',
+          city: l.city || '',
+          county: l.county || '',
+          phone: l.phone || '',
+          email: l.email || '',
+          isPrimary: l.isPrimary ? 'Da' : 'Nu',
+          isActive: l.isActive ? 'Da' : 'Nu',
+        }));
+        const buffer = await exportEntityToExcel('locations', data);
+        entities.push({ name: 'Locatii', fileName: generateFilename('locatii', 'excel'), buffer, recordCount: data.length });
+      }
+    } catch { /* skip */ }
+
+    // -- Company Settings (as JSON for easy re-import)
+    try {
+      const companySettings = await getCompanySettings(organizationId);
+      if (companySettings && Object.keys(companySettings).length > 0) {
+        const buffer = Buffer.from(JSON.stringify(companySettings, null, 2), 'utf-8');
+        entities.push({ name: 'Setari_Companie', fileName: 'setari_companie.json', buffer, recordCount: 1 });
+      }
+    } catch { /* skip */ }
 
     if (entities.length === 0) {
       throw new AppError('No data available to export', 404);

@@ -71,7 +71,7 @@ export default function ForgotPassword() {
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {forgotPasswordMutation.isError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {forgotPasswordMutation.error?.response?.data?.error || 'Eroare la trimiterea email-ului'}
+              {forgotPasswordMutation.error?.response?.data?.message || 'Eroare la trimiterea email-ului'}
             </div>
           )}
 

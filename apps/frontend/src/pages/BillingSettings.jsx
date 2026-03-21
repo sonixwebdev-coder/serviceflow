@@ -27,77 +27,13 @@ import {
   purchaseAddon,
   verifyCheckout,
 } from '../services/billingService';
-
-const PLAN_NAMES = {
-  FREE: 'Gratuit',
-  STARTER: 'Starter',
-  PROFESSIONAL: 'Profesional',
-  ENTERPRISE: 'Enterprise',
-};
-
-// Fallback prices — used only when admin hasn't configured display prices
-const FALLBACK_PRICES = {
-  STARTER: { monthly: 99, annual: 79 },
-  PROFESSIONAL: { monthly: 249, annual: 199 },
-  ENTERPRISE: { monthly: 499, annual: 399 },
-};
-
-const PLAN_RANK = { FREE: 0, STARTER: 1, PROFESSIONAL: 2, ENTERPRISE: 3 };
-
-const PLAN_FEATURES = {
-  FREE: {
-    quotas: { users: 2, clients: 50, appointments: 50 },
-    features: [
-      'Gestionare programari',
-      'Gestionare clienti',
-      'Portal clienti',
-    ],
-  },
-  STARTER: {
-    quotas: { users: 5, clients: 500, appointments: 500 },
-    features: [
-      'Gestionare programari',
-      'Gestionare clienti',
-      'Facturare de baza',
-      'Website builder (1 pagina)',
-      'Suport email',
-      'Program de loialitate',
-      'Portal clienti',
-    ],
-  },
-  PROFESSIONAL: {
-    quotas: { users: 15, clients: 2000, appointments: 5000 },
-    popular: true,
-    features: [
-      'Gestionare programari',
-      'Gestionare clienti',
-      'Facturare de baza',
-      'Website builder complet',
-      'Suport prioritar',
-      'Program de loialitate',
-      'Portal clienti',
-      'Integrare Google Calendar',
-      'Export date (CSV/Excel)',
-    ],
-  },
-  ENTERPRISE: {
-    quotas: { users: -1, clients: -1, appointments: -1 },
-    features: [
-      'Gestionare programari',
-      'Gestionare clienti',
-      'Facturare de baza',
-      'Website builder complet',
-      'Suport prioritar',
-      'Program de loialitate',
-      'Portal clienti',
-      'Integrare Google Calendar',
-      'Export date (CSV/Excel)',
-      'Utilizatori nelimitati',
-      'Clienti nelimitati',
-      'Programari nelimitate',
-    ],
-  },
-};
+import {
+  PLAN_NAMES,
+  PLAN_PRICES as FALLBACK_PRICES,
+  PLAN_RANK,
+  PLAN_QUOTAS,
+  PLAN_FEATURES_FLAT,
+} from '../constants/plans';
 
 const STATUS_LABELS = {
   ACTIVE: { label: 'Activ', color: 'bg-green-100 text-green-700' },
@@ -199,7 +135,7 @@ function UpgradeCard({ plan, interval, onSelect, currentPlan, displayPrices }) {
 
 function PlanComparisonTable({ currentPlan }) {
   const plans = ['FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE'];
-  const allFeatures = [...new Set(plans.flatMap((p) => PLAN_FEATURES[p].features))];
+  const allFeatures = [...new Set(plans.flatMap((p) => PLAN_FEATURES_FLAT[p]))];
 
   const quotaRows = [
     { label: 'Utilizatori', key: 'users', icon: Users },
@@ -218,7 +154,7 @@ function PlanComparisonTable({ currentPlan }) {
               <th className="py-3 pr-4 text-left text-xs font-medium uppercase tracking-wider text-gray-400" />
               {plans.map((plan) => {
                 const isCurrent = currentPlan === plan;
-                const isPopular = PLAN_FEATURES[plan]?.popular;
+                const isPopular = plan === 'PROFESSIONAL';
                 return (
                   <th
                     key={plan}
@@ -260,7 +196,7 @@ function PlanComparisonTable({ currentPlan }) {
                   </div>
                 </td>
                 {plans.map((plan) => {
-                  const val = PLAN_FEATURES[plan].quotas[key];
+                  const val = PLAN_QUOTAS[plan][key];
                   const isCurrent = currentPlan === plan;
                   return (
                     <td key={plan} className={`px-4 py-3 text-center ${isCurrent ? 'bg-blue-50/50' : ''}`}>
@@ -283,7 +219,7 @@ function PlanComparisonTable({ currentPlan }) {
               <tr key={feature} className="border-t border-gray-50">
                 <td className="py-2.5 pr-4 text-gray-600">{feature}</td>
                 {plans.map((plan) => {
-                  const included = PLAN_FEATURES[plan].features.includes(feature);
+                  const included = PLAN_FEATURES_FLAT[plan].includes(feature);
                   const isCurrent = currentPlan === plan;
                   return (
                     <td key={plan} className={`px-4 py-2.5 text-center ${isCurrent ? 'bg-blue-50/50' : ''}`}>

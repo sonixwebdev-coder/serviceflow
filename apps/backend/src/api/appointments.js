@@ -109,6 +109,7 @@ router.get(
 router.post(
   '/',
   authenticate,
+  authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(createAppointmentSchema),
   asyncHandler(async (req, res) => {
     const locationContext = await req.getLocationContext();
@@ -141,6 +142,7 @@ router.get(
 router.patch(
   '/:appointmentId',
   authenticate,
+  authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(updateAppointmentSchema),
   asyncHandler(async (req, res) => {
     const appointment = await updateAppointment(req.tenantPrisma, req.params.appointmentId, req.body, req.user);
@@ -161,6 +163,7 @@ router.patch(
 router.post(
   '/:appointmentId/cancel',
   authenticate,
+  authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(z.object({ reason: z.string().optional() })),
   asyncHandler(async (req, res) => {
     const appointment = await cancelAppointment(req.tenantPrisma, req.params.appointmentId, req.body.reason, req.user);

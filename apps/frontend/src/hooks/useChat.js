@@ -247,9 +247,7 @@ export function useUploadFile() {
 
   return useMutation({
     mutationFn: async ({ channelId, formData }) => {
-      const res = await API.post(`/chat/channels/${channelId}/upload-file`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await API.post(`/chat/channels/${channelId}/upload-file`, formData);
       return res.data.data;
     },
     onSuccess: (data, variables) => {
@@ -268,9 +266,7 @@ export function useUploadFileToMessage(messageId) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await API.post(`/chat/messages/${messageId}/attachments`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await API.post(`/chat/messages/${messageId}/attachments`, formData);
       return res.data.data;
     },
   });
@@ -285,9 +281,7 @@ export function useUploadVoice(channelId) {
       const formData = new FormData();
       formData.append('voice', audioBlob, 'voice-message.webm');
 
-      const res = await API.post(`/chat/channels/${channelId}/upload-voice`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await API.post(`/chat/channels/${channelId}/upload-voice`, formData);
       return res.data.data;
     },
   });

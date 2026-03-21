@@ -58,7 +58,7 @@ const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname,
 // CORS configuration (defined early for use in multiple places)
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
-    ? (process.env.CORS_ORIGINS || 'https://forja.it.com,https://app.forja.it.com,https://portal.forja.it.com,https://admin.forja.it.com').split(',').map(s => s.trim())
+    ? (process.env.CORS_ORIGINS || 'https://forja.it.com,https://app.forja.it.com,https://portal.forja.it.com,https://admin.forja.it.com,https://website.forja.it.com').split(',').map(s => s.trim())
     : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
   credentials: true
 };
@@ -171,8 +171,9 @@ const stripeWebhookRouter = require('./src/api/webhooks');
 app.use('/api/webhooks', stripeWebhookRouter);
 
 // Body parser middleware with size limits
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+// 5mb to support website template bulk operations (rich content pages)
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Cookie parser middleware (required for CSRF protection)
 app.use(cookieParser());

@@ -72,8 +72,10 @@ const setDownloadHeaders = (res, filename, contentType) => {
   res.setHeader('X-Frame-Options', 'DENY');
 };
 
-// Apply authentication to all routes FIRST
+// Apply authentication and authorization to all routes
+const authorize = require('../middleware/authorize');
 router.use(authenticate);
+router.use(authorize({ roles: ['admin', 'manager'] }));
 router.use(extractUserRoles);
 // Then apply rate limiting AFTER authentication
 router.use(exportLimiter);
@@ -315,7 +317,8 @@ router.post(
       req.tenantPrisma,
       invoiceIds,
       req.user.id,
-      req.userRoles
+      req.userRoles,
+      req.user.organizationId
     );
 
     setDownloadHeaders(res, result.filename, result.contentType);
@@ -343,7 +346,7 @@ router.post(
       throw new AppError('Only administrators can export all data', 403);
     }
 
-    const result = await exportAllData(req.tenantPrisma, req.user.id, req.userRoles);
+    const result = await exportAllData(req.tenantPrisma, req.user.id, req.userRoles, req.user.organizationId);
 
     setDownloadHeaders(res, result.filename, result.contentType);
     return res.send(result.buffer);

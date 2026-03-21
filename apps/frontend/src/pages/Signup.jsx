@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signupOrganization, checkSlugAvailability } from '../services/organizationService';
+import { signupOrganization, checkSlugAvailability, validateVatPublic, fetchPricing } from '../services/organizationService';
 import { getSectorList } from '../constants/activitySectors';
 import { useAuthStore } from '../state/useAuthStore';
-import { Car, Scissors, Wrench, Smartphone, Check, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Car, Scissors, Wrench, Smartphone, Check, ArrowLeft, ArrowRight, Building2, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { SIGNUP_PLANS } from '../constants/plans';
 
 const STEPS = [
   { id: 'organization', title: 'Organizatie', description: 'Detalii organizatie' },
   { id: 'admin', title: 'Administrator', description: 'Cont administrator' },
   { id: 'sector', title: 'Domeniu', description: 'Domeniu de activitate' },
+  { id: 'company', title: 'Companie', description: 'Profil companie' },
 ];
 
 const SECTOR_ICONS = {
@@ -41,7 +43,40 @@ const Signup = () => {
     acceptedTerms: false,
   });
 
+  // Company profile state (step 4)
+  const [companyData, setCompanyData] = useState({
+    companyAddress: '',
+    companyEmail: '',
+    companyPhone: '',
+    entityType: 'SRL',
+    vatNumber: '',
+    registrationNumber: '',
+    cnp: '',
+  });
+  const [companyErrors, setCompanyErrors] = useState({});
+  const [vatValidation, setVatValidation] = useState({ status: 'idle', message: '', data: null });
+  const [nameFromVies, setNameFromVies] = useState(false);
+
   const sectors = getSectorList();
+
+  // Fetch dynamic prices from PlatformSettings
+  const [dynamicPrices, setDynamicPrices] = useState(null);
+  useEffect(() => {
+    fetchPricing()
+      .then(setDynamicPrices)
+      .catch(() => {/* keep fallback prices */});
+  }, []);
+
+  // Override SIGNUP_PLANS prices with dynamic values when available
+  const signupPlans = useMemo(() => {
+    if (!dynamicPrices) return SIGNUP_PLANS;
+    const keyMap = { STARTER: 'starter', PROFESSIONAL: 'professional', ENTERPRISE: 'enterprise' };
+    return SIGNUP_PLANS.map((plan) => {
+      const remote = dynamicPrices[keyMap[plan.key]];
+      if (!remote || remote.monthly == null) return plan;
+      return { ...plan, price: remote.monthly };
+    });
+  }, [dynamicPrices]);
 
   // Auto-generate slug from organization name (only if not manually edited)
   useEffect(() => {
@@ -91,6 +126,34 @@ const Signup = () => {
   const handleSectorSelect = (sectorKey) => {
     setFormData((prev) => ({ ...prev, activitySector: sectorKey }));
     setError('');
+  };
+
+  const handleCompanyChange = (field, value) => {
+    setCompanyData(prev => ({ ...prev, [field]: value }));
+    if (companyErrors[field]) setCompanyErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+
+  const handleVerifyVat = async () => {
+    if (!companyData.vatNumber.trim()) return;
+    setVatValidation({ status: 'loading', message: '', data: null });
+    try {
+      const result = await validateVatPublic(companyData.vatNumber);
+      setVatValidation({ status: 'valid', message: `CUI valid — ${result.name}`, data: result });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Eroare la verificare';
+      setVatValidation({ status: 'invalid', message: msg, data: null });
+    }
+  };
+
+  const handleApplyViesData = () => {
+    if (!vatValidation.data) return;
+    if (vatValidation.data.name) {
+      setFormData(prev => ({ ...prev, organizationName: vatValidation.data.name }));
+      setNameFromVies(true);
+    }
+    if (vatValidation.data.address) {
+      setCompanyData(prev => ({ ...prev, companyAddress: vatValidation.data.address }));
+    }
   };
 
   const validateStep = (step) => {
@@ -145,6 +208,22 @@ const Signup = () => {
           return false;
         }
         return true;
+      case 3: {
+        const errs = {};
+        if (!companyData.companyAddress.trim()) errs.companyAddress = 'Adresa este obligatorie';
+        if (!companyData.companyEmail.trim()) errs.companyEmail = 'Email-ul este obligatoriu';
+        if (!companyData.companyPhone.trim()) errs.companyPhone = 'Telefonul este obligatoriu';
+        if (!companyData.vatNumber.trim()) {
+          errs.vatNumber = 'CUI-ul este obligatoriu';
+        } else if (vatValidation.status !== 'valid') {
+          errs.vatNumber = 'Verificarea CUI este obligatorie pentru a continua';
+        }
+        if (Object.keys(errs).length > 0) {
+          setCompanyErrors(errs);
+          return false;
+        }
+        return true;
+      }
       default:
         return true;
     }
@@ -172,7 +251,11 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const { confirmPassword, acceptedTerms, ...payload } = formData;
+      const { confirmPassword, acceptedTerms, ...signupFields } = formData;
+      const payload = {
+        ...signupFields,
+        ...companyData,
+      };
       const result = await signupOrganization(payload);
 
       // Set auth session (accessToken + user) in the store so API calls work immediately
@@ -253,10 +336,14 @@ const Signup = () => {
           required
           value={formData.organizationName}
           onChange={handleChange}
-          className={inputClasses}
+          readOnly={nameFromVies}
+          className={`${inputClasses} ${nameFromVies ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
           placeholder="Service Auto Expert SRL"
           disabled={loading}
         />
+        {nameFromVies && (
+          <p className="text-xs text-gray-400 mt-1">Numele a fost completat automat din VIES</p>
+        )}
       </div>
 
       <div>
@@ -430,12 +517,6 @@ const Signup = () => {
     </div>
   );
 
-  const SIGNUP_PLANS = [
-    { key: 'STARTER', name: 'Starter', price: 99, desc: '5 utilizatori, 500 clienti' },
-    { key: 'PROFESSIONAL', name: 'Professional', price: 249, desc: '15 utilizatori, 2.000 clienti', recommended: true },
-    { key: 'ENTERPRISE', name: 'Enterprise', price: 499, desc: 'Nelimitat' },
-  ];
-
   const renderSectorStep = () => (
     <div className="space-y-6">
       <div>
@@ -492,7 +573,7 @@ const Signup = () => {
       <div>
         <p className="text-sm font-medium text-gray-700 mb-3">Alege planul (14 zile gratuit pe orice plan)</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {SIGNUP_PLANS.map((plan) => {
+          {signupPlans.map((plan) => {
             const isSelected = formData.plan === plan.key;
             return (
               <button
@@ -529,6 +610,160 @@ const Signup = () => {
     </div>
   );
 
+  const renderCompanyStep = () => (
+    <div className="space-y-5">
+      <div className="text-center mb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 rounded-full mb-3">
+          <Building2 className="w-6 h-6 text-orange-600" />
+        </div>
+        <h2 className="text-lg font-semibold text-gray-800">Profil companie</h2>
+        <p className="text-gray-500 text-xs mt-1">Informatii esentiale pentru facturare si identificare</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Adresa *</label>
+          <input
+            type="text"
+            value={companyData.companyAddress}
+            onChange={e => handleCompanyChange('companyAddress', e.target.value)}
+            className={`${inputClasses} ${companyErrors.companyAddress ? '!border-red-400' : ''}`}
+            disabled={loading}
+          />
+          {companyErrors.companyAddress && <p className="text-red-500 text-xs mt-1">{companyErrors.companyAddress}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email companie *</label>
+          <input
+            type="email"
+            value={companyData.companyEmail}
+            onChange={e => handleCompanyChange('companyEmail', e.target.value)}
+            className={`${inputClasses} ${companyErrors.companyEmail ? '!border-red-400' : ''}`}
+            disabled={loading}
+          />
+          {companyErrors.companyEmail && <p className="text-red-500 text-xs mt-1">{companyErrors.companyEmail}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Telefon companie *</label>
+          <input
+            type="tel"
+            value={companyData.companyPhone}
+            onChange={e => handleCompanyChange('companyPhone', e.target.value)}
+            className={`${inputClasses} ${companyErrors.companyPhone ? '!border-red-400' : ''}`}
+            disabled={loading}
+          />
+          {companyErrors.companyPhone && <p className="text-red-500 text-xs mt-1">{companyErrors.companyPhone}</p>}
+        </div>
+
+        {/* Entity type */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tip entitate juridica</label>
+          <div className="flex gap-6">
+            {['SRL', 'PFA'].map(type => (
+              <label key={type} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="entityType"
+                  value={type}
+                  checked={companyData.entityType === type}
+                  onChange={() => handleCompanyChange('entityType', type)}
+                  className="h-4 w-4 text-blue-600"
+                  disabled={loading}
+                />
+                <span className="text-sm font-medium text-gray-700">{type}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {companyData.entityType === 'PFA' ? 'NIF / CIF *' : 'CUI *'}
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={companyData.vatNumber}
+              onChange={e => {
+                handleCompanyChange('vatNumber', e.target.value);
+                setVatValidation({ status: 'idle', message: '', data: null });
+                setNameFromVies(false);
+              }}
+              placeholder={companyData.entityType === 'PFA' ? 'Numar de identificare fiscala' : 'RO12345678'}
+              className={inputClasses}
+              disabled={loading}
+            />
+            <button
+              type="button"
+              onClick={handleVerifyVat}
+              disabled={!companyData.vatNumber.trim() || vatValidation.status === 'loading' || loading}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {vatValidation.status === 'loading' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : 'Verifica'}
+            </button>
+          </div>
+          {vatValidation.status === 'valid' && (
+            <div className="mt-2">
+              <div className="flex items-center gap-1.5 text-green-600 text-sm">
+                <CheckCircle className="w-4 h-4" />
+                <span>{vatValidation.message}</span>
+              </div>
+              {vatValidation.data?.name && !nameFromVies && (
+                <button
+                  type="button"
+                  onClick={handleApplyViesData}
+                  className="mt-1 text-xs text-blue-600 hover:underline"
+                >
+                  Completeaza automat numele si adresa
+                </button>
+              )}
+            </div>
+          )}
+          {vatValidation.status === 'invalid' && (
+            <div className="flex items-center gap-1.5 mt-2 text-red-600 text-sm">
+              <XCircle className="w-4 h-4" />
+              <span>{vatValidation.message}</span>
+            </div>
+          )}
+          {companyErrors.vatNumber && (
+            <p className="text-red-500 text-xs mt-1">{companyErrors.vatNumber}</p>
+          )}
+        </div>
+
+        {companyData.entityType === 'SRL' ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nr. Registrul Comertului (optional)</label>
+            <input
+              type="text"
+              value={companyData.registrationNumber}
+              onChange={e => handleCompanyChange('registrationNumber', e.target.value)}
+              placeholder="J40/1234/2024"
+              className={inputClasses}
+              disabled={loading}
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">CNP (optional)</label>
+            <input
+              type="text"
+              value={companyData.cnp}
+              onChange={e => handleCompanyChange('cnp', e.target.value)}
+              placeholder="Cod numeric personal (13 cifre)"
+              maxLength={13}
+              className={inputClasses}
+              disabled={loading}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
@@ -537,6 +772,8 @@ const Signup = () => {
         return renderAdminStep();
       case 2:
         return renderSectorStep();
+      case 3:
+        return renderCompanyStep();
       default:
         return null;
     }
@@ -611,7 +848,7 @@ const Signup = () => {
                 ) : (
                   <button
                     type="submit"
-                    disabled={loading || !formData.activitySector}
+                    disabled={loading || vatValidation.status !== 'valid'}
                     className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Se creeaza...' : 'Creeaza Contul'}

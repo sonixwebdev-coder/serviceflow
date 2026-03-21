@@ -16,7 +16,6 @@ import {
   Settings,
   FileText,
   User,
-  // FileCheck, // ANAF functionality temporarily disabled
   Globe,
   CheckSquare,
   ChevronDown,
@@ -95,8 +94,8 @@ const DashboardLayout = ({ children }) => {
       { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
       { name: 'Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },
       { name: 'Clienti Online', href: '/crm/online-clients', icon: Globe, roles: [] },
-      { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
-      { name: 'Fidelitate', href: '/crm/loyalty', icon: Gift, roles: [] },
+      { name: 'Facturi', href: '/crm/invoices', icon: FileText, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.SALES] },
+      { name: 'Fidelitate', href: '/crm/loyalty', icon: Gift, roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER] },
     ];
 
     // Only show Assets nav item for sectors with assets (not BEAUTY)
@@ -149,23 +148,16 @@ const DashboardLayout = ({ children }) => {
       name: 'Activitate',
       href: '/activity',
       icon: Activity,
-      roles: []
+      roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER]
     },
     {
       name: 'Statistici',
       href: '/analytics',
       icon: BarChart3,
-      roles: []
+      roles: [USER_ROLES.ADMIN, USER_ROLES.MANAGER]
     },
 
     // 5. Configuration (admin only)
-    // ANAF functionality temporarily disabled
-    // {
-    //   name: 'ANAF E-Factura',
-    //   href: '/anaf',
-    //   icon: FileCheck,
-    //   roles: [USER_ROLES.ADMIN]
-    // },
     {
       name: 'Setari',
       key: 'setari',

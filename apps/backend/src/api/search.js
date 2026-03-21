@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
+const authorize = require('../middleware/authorize');
 const asyncHandler = require('../middleware/asyncHandler');
 const searchService = require('../services/searchService');
 
@@ -12,6 +13,7 @@ const searchService = require('../services/searchService');
 router.get(
   '/',
   authenticate,
+  authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
     const { q, limit, types } = req.query;
     const locationFilter = await req.getLocationFilter({ includeNull: true });
@@ -120,6 +122,7 @@ router.get(
 router.get(
   '/invoices',
   authenticate,
+  authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
     const locationFilter = await req.getLocationFilter({ includeNull: true });
@@ -140,6 +143,7 @@ router.get(
 router.get(
   '/users',
   authenticate,
+  authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
     const { q, limit } = req.query;
     const results = await searchService.searchUsers(

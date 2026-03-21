@@ -5,6 +5,9 @@ const { emitToOrganization } = require('../realtime/emitter');
 const { ACTIVITY_SECTORS, getSectorConfig } = require('../constants/activitySectors');
 const { sendAppointmentReminder } = require('./email/emailService');
 const { getCompanySettings } = require('./companySettingService');
+const { createNotification } = require('./notificationService');
+const { sendPushToUser } = require('./pushNotificationService');
+const { dateInTimezone, dayBoundsInTimezone } = require('../utils/timezone');
 const logger = require('../utils/logger');
 
 const SALT_ROUNDS = 10;
@@ -150,12 +153,10 @@ const getOrganizationCapacity = async (prisma, organizationId, locationId = null
  * Get available time slots for booking
  */
 const getAvailableSlots = async (prisma, { organizationId, date, duration = 60, settings = null, locationId = null }) => {
-  // Parse date as local date (not UTC)
+  // Parse date using business timezone (Europe/Bucharest) to avoid UTC offset issues
   const [year, month, day] = date.split('-').map(Number);
-  const targetDate = new Date(year, month - 1, day);
 
-  const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
-  const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+  const { startOfDay, endOfDay } = dayBoundsInTimezone(year, month, day);
 
   // Get organization's resource capacity (optionally filtered by location)
   const { totalCapacity } = await getOrganizationCapacity(prisma, organizationId, locationId);
@@ -198,12 +199,13 @@ const getAvailableSlots = async (prisma, { organizationId, date, duration = 60, 
 
   for (let hour = workStart; hour < workEnd; hour++) {
     for (let minute = 0; minute < 60; minute += slotInterval) {
-      const slotStart = new Date(year, month - 1, day, hour, minute, 0, 0);
-      const slotEnd = new Date(slotStart);
-      slotEnd.setMinutes(slotEnd.getMinutes() + duration);
+      const slotStart = dateInTimezone(year, month, day, hour, minute);
+      const slotEnd = new Date(slotStart.getTime() + duration * 60 * 1000);
 
-      // Skip if slot ends after work hours
-      if (slotEnd.getHours() > workEnd || (slotEnd.getHours() === workEnd && slotEnd.getMinutes() > 0)) {
+      // Skip if slot ends after work hours (check using local hour/minute)
+      const endHour = hour + Math.floor((minute + duration) / 60);
+      const endMinute = (minute + duration) % 60;
+      if (endHour > workEnd || (endHour === workEnd && endMinute > 0)) {
         continue;
       }
 
@@ -441,6 +443,58 @@ const createPublicBooking = async (prisma, {
       }).catch((err) => logger.error('[EMAIL] Public booking confirmation failed:', err.message));
     }).catch(() => {});
   }
+
+  // Notify admin users about new website booking (bell + push, fire-and-forget)
+  const clientName = result.client
+    ? `${result.client.firstName || ''} ${result.client.lastName || ''}`.trim() || 'Client'
+    : 'Client';
+  const dateStr = new Date(result.appointment.scheduledStart).toLocaleDateString('ro-RO');
+  const timeStr = new Date(result.appointment.scheduledStart).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+
+  prisma.user.findMany({
+    where: {
+      organizationId,
+      isActive: true,
+      roles: { some: { role: { key: 'admin' } } },
+    },
+    select: { id: true },
+  }).then((adminUsers) => {
+    const promises = adminUsers.map(async (admin) => {
+      try {
+        await createNotification({
+          recipientId: admin.id,
+          title: 'Programare noua de pe site',
+          message: `${clientName} a creat o programare: ${result.appointment.title} - ${dateStr} ${timeStr}`,
+          type: 'APPOINTMENT',
+          entityType: 'APPOINTMENT',
+          entityId: result.appointment.id,
+          metadata: {
+            appointmentId: result.appointment.id,
+            clientId: result.client.id,
+            clientName,
+            scheduledStart: result.appointment.scheduledStart,
+            createdFromWebsite: true,
+          },
+          organizationId,
+        });
+
+        await sendPushToUser(admin.id, {
+          title: 'Programare noua de pe site',
+          body: `${clientName}: ${result.appointment.title} - ${dateStr} ${timeStr}`,
+          icon: '/icons/calendar.png',
+          badge: '/icons/badge.png',
+          data: {
+            type: 'appointment',
+            appointmentId: result.appointment.id,
+            url: `/appointments?id=${result.appointment.id}`,
+          },
+        });
+      } catch (err) {
+        logger.warn(`Notificarea catre adminul ${admin.id} a esuat`, { error: err.message });
+      }
+    });
+    Promise.all(promises).catch(() => {});
+  }).catch((err) => logger.warn('Nu s-au putut trimite notificarile pentru programarea de pe site', { error: err.message }));
 
   return {
     success: true,

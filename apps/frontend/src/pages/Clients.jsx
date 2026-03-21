@@ -437,11 +437,7 @@ const Clients = () => {
       formData.append('file', selectedFile);
 
       // Import as offline clients (isOnline=false)
-      const response = await API.post('/clients/import?isOnline=false', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await API.post('/clients/import?isOnline=false', formData);
 
       const results = response.data?.data || response.data;
       setImportResults(results);

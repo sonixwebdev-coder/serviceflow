@@ -1111,6 +1111,34 @@ const getPublicPage = async (prisma, websiteId, slug) => {
   });
 
   if (!page || !page.isPublished) {
+    // Fallback: if slug is 'home' and no home page exists, return first published page
+    if (slug === 'home') {
+      const fallback = await prisma.websitePage.findFirst({
+        where: { websiteId, isPublished: true },
+        orderBy: { sortOrder: 'asc' },
+        include: {
+          website: {
+            select: {
+              branding: true,
+              seoDefaults: true,
+              theme: true,
+              showBranding: true,
+              organization: {
+                select: {
+                  id: true,
+                  name: true,
+                  activitySector: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (fallback) {
+        await cache.set(cacheKey, fallback, cache.TTL.MEDIUM);
+        return fallback;
+      }
+    }
     throw new AppError('Pagina nu a fost gasita', 404);
   }
 

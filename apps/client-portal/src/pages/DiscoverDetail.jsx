@@ -15,6 +15,11 @@ import { getSectorConfig } from '@/utils/sectors';
 import { formatCurrency, cn } from '@/lib/utils';
 import useToast from '@/context/useToast';
 
+const DAY_NAMES_RO = {
+  monday: 'Luni', tuesday: 'Marti', wednesday: 'Miercuri',
+  thursday: 'Joi', friday: 'Vineri', saturday: 'Sambata', sunday: 'Duminica',
+};
+
 export default function DiscoverDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -186,7 +191,7 @@ export default function DiscoverDetail() {
                               <div className="space-y-0.5">
                                 {Object.entries(loc.operatingHours).map(([day, hours]) => (
                                   <div key={day}>
-                                    <span className="font-medium capitalize">{day}:</span>{' '}
+                                    <span className="font-medium">{DAY_NAMES_RO[day] || day}:</span>{' '}
                                     {(hours.closed === true || hours.isOpen === false)
                                       ? 'Inchis'
                                       : `${hours.open || hours.openTime} - ${hours.close || hours.closeTime}`}
@@ -364,7 +369,7 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
     onError: (error) => {
       showToast({
         type: 'error',
-        title: error.response?.data?.error || 'Eroare la crearea programarii',
+        title: error.response?.data?.message || 'Eroare la crearea programarii',
       });
     },
   });
@@ -736,7 +741,7 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
 
               {bookingMutation.isError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {bookingMutation.error?.response?.data?.error || 'A aparut o eroare. Te rugam sa incerci din nou.'}
+                  {bookingMutation.error?.response?.data?.message || 'A aparut o eroare. Te rugam sa incerci din nou.'}
                 </div>
               )}
             </div>

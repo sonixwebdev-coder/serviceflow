@@ -118,9 +118,8 @@ export const rejectReview = async (websiteId, leadId) => {
 export const uploadWebsiteImage = async (file) => {
   const formData = new FormData();
   formData.append('image', file);
-  const response = await API.post('/website/images', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  // Don't set Content-Type manually — axios auto-sets it with the correct multipart boundary
+  const response = await API.post('/website/images', formData);
   return response.data?.data?.url || response.data?.url;
 };
 

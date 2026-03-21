@@ -25,7 +25,7 @@ export default function AdminLayout() {
         <div className="h-8 w-8 rounded-lg bg-primary-600 flex items-center justify-center text-sm font-bold">
           F
         </div>
-        <span className="text-lg font-semibold">Forja Admin</span>
+        <span className="text-lg font-semibold">ForjaIt Admin</span>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
@@ -109,7 +109,7 @@ export default function AdminLayout() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-semibold text-gray-900">Forja Admin</span>
+          <span className="text-sm font-semibold text-gray-900">ForjaIt Admin</span>
         </div>
         <div className="p-4 sm:p-6">
           <Outlet />

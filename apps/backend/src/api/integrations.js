@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
+const authorize = require('../middleware/authorize');
 const asyncHandler = require('../middleware/asyncHandler');
 const googleOAuthService = require('../services/google/googleOAuthService');
 const googleCalendarService = require('../services/google/googleCalendarService');
 const logger = require('../utils/logger');
 const prisma = require('../../lib/prisma'); // Global prisma for unauthenticated callback
+
+// Permission check for integration routes (technicians excluded)
+const integrationsPermission = authorize({ permissions: ['integrations:manage'] });
 
 /**
  * GET /api/integrations/google/connect
@@ -14,6 +18,7 @@ const prisma = require('../../lib/prisma'); // Global prisma for unauthenticated
 router.get(
   '/google/connect',
   authenticate,
+  authorize({ permissions: ['integrations:manage'] }),
   asyncHandler(async (req, res) => {
     // Validate returnUrl is a safe relative path (prevent open redirect)
     const rawReturnUrl = req.query.returnUrl || '/profile';
@@ -102,6 +107,7 @@ router.get(
 router.get(
   '/google/status',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const status = await googleOAuthService.getConnectionStatus(req.tenantPrisma, req.user.id);
     res.json(status);
@@ -115,6 +121,7 @@ router.get(
 router.post(
   '/google/disconnect',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const locationId = req.query.locationId || null;
     await googleOAuthService.disconnectCalendar(req.tenantPrisma, req.user.id, locationId);
@@ -129,6 +136,7 @@ router.post(
 router.get(
   '/google/calendars',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const locationId = req.query.locationId || null;
     const calendars = await googleCalendarService.listCalendars(req.tenantPrisma, req.user.id, locationId);
@@ -143,6 +151,7 @@ router.get(
 router.put(
   '/google/settings',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const { calendarId, syncEnabled, locationId } = req.body;
     const config = await googleCalendarService.updateSyncSettings(req.tenantPrisma, req.user.id, {
@@ -161,6 +170,7 @@ router.put(
 router.post(
   '/google/sync',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const { locationId } = req.body;
     const result = await googleCalendarService.syncAllAppointments(req.tenantPrisma, req.user.id, locationId);
@@ -175,6 +185,7 @@ router.post(
 router.post(
   '/google/sync/:appointmentId',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const { appointmentId } = req.params;
 
@@ -205,6 +216,7 @@ router.post(
 router.get(
   '/google/sync-status/:appointmentId',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const { appointmentId } = req.params;
     const status = await googleCalendarService.getAppointmentSyncStatus(
@@ -223,6 +235,7 @@ router.get(
 router.post(
   '/google/import',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const { timeMin, timeMax, maxResults } = req.body;
     const options = {};
@@ -247,6 +260,7 @@ router.post(
 router.post(
   '/google/sync-bidirectional',
   authenticate,
+  integrationsPermission,
   asyncHandler(async (req, res) => {
     const result = await googleCalendarService.syncBidirectional(
       req.tenantPrisma,

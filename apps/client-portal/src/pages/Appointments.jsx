@@ -204,7 +204,7 @@ export default function Appointments() {
     } catch (error) {
       showToast({
         type: 'error',
-        title: error.response?.data?.error || 'Eroare la crearea programarii',
+        title: error.response?.data?.message || 'Eroare la crearea programarii',
       });
     }
   };

@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/business" className="text-lg font-bold tracking-tight text-gray-900">
             ForjaIt
           </Link>
@@ -21,7 +21,7 @@ export default function PrivacyPolicy() {
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Politica de Confidentialitate</h1>
         <p className="mt-2 text-sm text-gray-500">Ultima actualizare: 8 martie 2026</p>
 
@@ -249,19 +249,74 @@ export default function PrivacyPolicy() {
         </div>
       </main>
 
+      {/* ANPC */}
+      <section className="border-t border-gray-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+            Solutionarea alternativa a litigiilor
+          </p>
+          <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+            <a
+              href="https://anpc.ro/ce-este-sal/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-gray-900 transition-colors"
+            >
+              ANPC - SAL
+            </a>
+            <a
+              href="https://ec.europa.eu/consumers/odr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-gray-900 transition-colors"
+            >
+              Platformă SOL (Online Dispute Resolution)
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-gray-50">
-        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-xs text-gray-400">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+          <div className="grid gap-8 sm:grid-cols-3">
+            <div>
+              <span className="text-base font-bold text-gray-900">ForjaIt</span>
+              <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                Platforma completa de management pentru afaceri de servicii. CRM, programari, facturare, website si comunicare totul intr-un singur loc.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Produs</h4>
+              <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                <li>
+                  <Link to="/business" className="hover:text-gray-900 transition-colors">
+                    Acasa
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/pricing" className="hover:text-gray-900 transition-colors">
+                    Preturi
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Legal</h4>
+              <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                <li>
+                  <Link to="/terms" className="hover:text-gray-900 transition-colors">
+                    Termeni si Conditii
+                  </Link>
+                </li>
+                <li>
+                  <span className="text-gray-900 font-medium">Confidentialitate</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
             &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
-          </span>
-          <div className="flex gap-6 text-xs text-gray-500">
-            <Link to="/terms" className="hover:text-gray-900 transition-colors">
-              Termeni si Conditii
-            </Link>
-            <Link to="/business" className="hover:text-gray-900 transition-colors">
-              Pagina principala
-            </Link>
           </div>
         </div>
       </footer>

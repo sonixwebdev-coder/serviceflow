@@ -108,19 +108,6 @@ const mapInvoice = (invoice) => {
           registrationNumber: invoice.client.registrationNumber,
         }
       : null,
-    anafSync: invoice.anafSync
-      ? {
-          id: invoice.anafSync.id,
-          status: invoice.anafSync.status,
-          uploadIndex: invoice.anafSync.uploadIndex,
-          uploadedAt: invoice.anafSync.uploadedAt,
-          processedAt: invoice.anafSync.processedAt,
-          lastCheckedAt: invoice.anafSync.lastCheckedAt,
-          errorMessage: invoice.anafSync.errorMessage,
-          retryCount: invoice.anafSync.retryCount,
-          maxRetries: invoice.anafSync.maxRetries,
-        }
-      : null,
     pdfUrl: invoice.pdfUrl ? `/files/${invoice.pdfUrl.replace(/\\/g, '/')}` : null,
   };
 };
@@ -753,16 +740,22 @@ const createInvoice = async (prisma, payload, options = {}) => {
     pdfUrl: invoice.pdfUrl ? `/files/${invoice.pdfUrl.replace(/\\/g, '/')}` : null,
   };
 
-  await persistPdfForInvoice({
+  mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
+
+  // Generate PDF asynchronously — don't block the response
+  persistPdfForInvoice({
     mappedInvoice: mapped,
     relativePath: relativePdfPath,
     previousPath: null,
     updateRecord: false,
     companySettings,
     client,
+  }).catch((err) => {
+    logger.error('Failed to generate invoice PDF (will retry on next view)', {
+      invoiceId: mapped.id,
+      error: err.message,
+    });
   });
-
-  mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
   if (!skipBroadcast) {
     broadcastInvoice('created', mapped);
@@ -935,17 +928,22 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
   });
 
   const mapped = mapInvoice(invoice);
+  mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
-  await persistPdfForInvoice({
+  // Generate PDF asynchronously — don't block the response
+  persistPdfForInvoice({
     mappedInvoice: mapped,
     relativePath: relativePdfPath,
     previousPath: existing.pdfUrl,
     updateRecord: false,
     companySettings,
     client,
+  }).catch((err) => {
+    logger.error('Failed to generate invoice PDF on update', {
+      invoiceId: mapped.id,
+      error: err.message,
+    });
   });
-
-  mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
   if (!skipBroadcast) {
     broadcastInvoice('updated', mapped);
@@ -1139,15 +1137,20 @@ const markInvoiceAsPaid = async (prismaClient, id, options = {}) => {
 
   const mapped = mapInvoice(updated);
 
-  // Regenerate PDF to reflect PAID status and updated payment info
+  // Regenerate PDF to reflect PAID status and updated payment info (async)
   const companySettings = await getCompanySettings(invoice.organizationId);
-  await persistPdfForInvoice({
+  persistPdfForInvoice({
     mappedInvoice: mapped,
     relativePath: invoice.pdfUrl || buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, id),
     previousPath: invoice.pdfUrl,
     updateRecord: false,
     companySettings,
     client,
+  }).catch((err) => {
+    logger.error('Failed to regenerate invoice PDF after payment', {
+      invoiceId: mapped.id,
+      error: err.message,
+    });
   });
 
   if (!skipBroadcast) {

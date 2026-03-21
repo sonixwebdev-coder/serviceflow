@@ -198,7 +198,13 @@ export default function WebsiteLayout() {
         <meta name="description" content={seoDefaults.description} />
       )}
       {seoDefaults?.keywords && (
-        <meta name="keywords" content={seoDefaults.keywords} />
+        <meta name="keywords" content={Array.isArray(seoDefaults.keywords) ? seoDefaults.keywords.join(', ') : seoDefaults.keywords} />
+      )}
+      {seoDefaults?.canonicalUrl && (
+        <link rel="canonical" href={seoDefaults.canonicalUrl} />
+      )}
+      {(seoDefaults?.robotsIndex === false || seoDefaults?.robotsFollow === false) && (
+        <meta name="robots" content={`${seoDefaults.robotsIndex === false ? 'noindex' : 'index'}, ${seoDefaults.robotsFollow === false ? 'nofollow' : 'follow'}`} />
       )}
       {seoDefaults?.ogImage && (
         <meta property="og:image" content={seoDefaults.ogImage} />
@@ -209,6 +215,20 @@ export default function WebsiteLayout() {
       )}
       {branding?.faviconUrl && (
         <link rel="icon" href={branding.faviconUrl} />
+      )}
+      {seoDefaults?.customSchema && (() => {
+        try {
+          JSON.parse(seoDefaults.customSchema);
+          return (
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: seoDefaults.customSchema.replace(/</g, '\\u003c') }}
+            />
+          );
+        } catch { return null; }
+      })()}
+      {seoDefaults?.customHeadCode && (
+        <div dangerouslySetInnerHTML={{ __html: seoDefaults.customHeadCode }} />
       )}
 
       <div className="min-h-screen flex flex-col">

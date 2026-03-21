@@ -21,7 +21,10 @@ import {
   Mail,
   Building2,
   Bell,
+  Send,
+  Loader2,
 } from 'lucide-react';
+import API from '../utils/api';
 
 // ---------------------------------------------------------------------------
 // FAQ Accordion Item
@@ -46,6 +49,101 @@ function FAQItem({ question, answer }) {
         <p className="text-sm leading-relaxed text-gray-600">{answer}</p>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Contact Form
+// ---------------------------------------------------------------------------
+function ContactForm() {
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus('sending');
+    setErrorMsg('');
+    try {
+      await API.post('/contact', form);
+      setStatus('sent');
+      setForm({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      setStatus('error');
+      setErrorMsg(err.response?.data?.message || 'Eroare la trimiterea mesajului. Incercati din nou.');
+    }
+  };
+
+  if (status === 'sent') {
+    return (
+      <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
+        <Check className="mx-auto h-10 w-10 text-green-600 mb-3" />
+        <h3 className="text-lg font-semibold text-gray-900">Mesaj trimis!</h3>
+        <p className="mt-2 text-sm text-gray-600">Va vom raspunde in cel mai scurt timp.</p>
+        <button
+          onClick={() => setStatus('idle')}
+          className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-800"
+        >
+          Trimite alt mesaj
+        </button>
+      </div>
+    );
+  }
+
+  const inputCls = 'w-full rounded-lg border border-gray-300 bg-gray-50/50 px-3 py-2 text-sm transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none';
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">Contacteaza-ne</h3>
+      {status === 'error' && (
+        <p className="text-sm text-red-600">{errorMsg}</p>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <input
+          type="text"
+          placeholder="Nume *"
+          required
+          value={form.name}
+          onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+          className={inputCls}
+        />
+        <input
+          type="email"
+          placeholder="Email *"
+          required
+          value={form.email}
+          onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))}
+          className={inputCls}
+        />
+      </div>
+      <input
+        type="text"
+        placeholder="Subiect *"
+        required
+        value={form.subject}
+        onChange={(e) => setForm(p => ({ ...p, subject: e.target.value }))}
+        className={inputCls}
+      />
+      <textarea
+        placeholder="Mesajul tau *"
+        required
+        rows={4}
+        value={form.message}
+        onChange={(e) => setForm(p => ({ ...p, message: e.target.value }))}
+        className={inputCls + ' resize-none'}
+      />
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+      >
+        {status === 'sending' ? (
+          <><Loader2 className="h-4 w-4 animate-spin" /> Se trimite...</>
+        ) : (
+          <><Send className="h-4 w-4" /> Trimite mesajul</>
+        )}
+      </button>
+    </form>
   );
 }
 
@@ -229,27 +327,39 @@ const SECTORS = [
 const FAQ_ITEMS = [
   {
     q: 'Cat costa ForjaIt?',
-    a: 'Poti incepe gratuit. Planurile cu functionalitati avansate sunt disponibile pe masura ce cresti.',
+    a: 'Toate planurile includ 14 zile de proba gratuita fara card bancar. Planul Starter porneste de la 99 RON/luna pentru echipe mici (5 utilizatori, 500 clienti). Professional la 249 RON/luna acopera majoritatea afacerilor (15 utilizatori, 2.000 clienti), iar Enterprise la 499 RON/luna ofera resurse nelimitate.',
   },
   {
     q: 'Cat dureaza configurarea?',
-    a: 'Sub 5 minute. Creeaza contul, adauga serviciile si esti gata sa primesti programari.',
+    a: 'Contul se creeaza in mai putin de 5 minute. Parcurgi un wizard in care adaugi datele firmei (cu verificare CUI automata), locatia principala si serviciile oferite. Dupa aceea esti gata sa primesti programari si sa gestionezi clientii.',
   },
   {
     q: 'Pot folosi platforma pe telefon?',
-    a: 'Da. Platforma este complet responsiva si functioneaza pe orice dispozitiv.',
+    a: 'Da. Interfata este complet responsiva si functioneaza pe orice dispozitiv — telefon, tableta sau desktop. Primesti notificari in timp real pentru programari noi, mesaje de la clienti si actualizari de status.',
   },
   {
     q: 'Clientii mei trebuie sa isi faca cont?',
-    a: 'Nu obligatoriu. Pot programa direct din marketplace sau de pe site-ul tau, fara cont.',
+    a: 'Nu este obligatoriu. Clientii pot programa direct din marketplace-ul ForjaIt sau de pe site-ul tau, fara sa isi creeze un cont. Daca doresc, pot accesa portalul clientilor pentru a-si vedea istoricul programarilor, a comunica prin chat si a primi notificari.',
   },
   {
-    q: 'Pot sa imi conectez propriul domeniu?',
-    a: 'Da. Website builder-ul suporta domenii personalizate.',
+    q: 'Ce tipuri de afaceri poate gestiona ForjaIt?',
+    a: 'Platforma este configurabila pe domenii: service auto, saloane de infrumusetare, ateliere de reparatii, servicii digitale, IT & electronice, home services si multe altele. Terminologia, tipurile de active si fluxurile se adapteaza automat in functie de domeniul ales.',
+  },
+  {
+    q: 'Pot genera facturi si devize din platforma?',
+    a: 'Da. ForjaIt include un sistem complet de facturare cu generare automata de PDF-uri, numerotare configurabila, suport pentru TVA si note personalizate. Devizele (fise de lucru) pot fi create direct din programari cu detalii de manopera si piese.',
+  },
+  {
+    q: 'Pot sa imi construiesc un website cu ForjaIt?',
+    a: 'Da. Website builder-ul inclus ofera blocuri pre-construite (hero, servicii, echipa, testimoniale, galerie, FAQ, contact) si template-uri pe industrie. Poti lansa un site profesional optimizat SEO in mai putin de o ora.',
   },
   {
     q: 'Datele mele sunt in siguranta?',
-    a: 'Absolut. Comunicatii criptate, GDPR compliant, backup-uri automate.',
+    a: 'Toate comunicatiile sunt criptate (HTTPS). Platforma este conforma GDPR, cu politici de confidentialitate si termeni clari. Datele sunt stocate pe servere securizate cu backup-uri automate.',
+  },
+  {
+    q: 'Pot anula abonamentul oricand?',
+    a: 'Da. Nu exista contract pe termen lung. Poti anula sau schimba planul oricand din setarile contului. Datele tale raman disponibile pana la expirarea perioadei platite.',
   },
 ];
 
@@ -601,7 +711,7 @@ export default function BusinessLanding() {
       <section className="py-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Cu Forja, lucrurile stau altfel.
+            Cu ForjaIt, lucrurile stau altfel.
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {SOLUTIONS.map((s) => (
@@ -723,7 +833,7 @@ export default function BusinessLanding() {
                 <div className="h-2.5 w-2.5 rounded-full bg-green-300" />
               </div>
               <div className="flex-1 rounded bg-white border border-gray-200 px-3 py-1 text-[10px] text-gray-400 text-center">
-                portal.forja.ro
+                portal.forja.it.com
               </div>
             </div>
             <div className="rounded-b-xl border border-gray-200 bg-white p-5">
@@ -771,20 +881,30 @@ export default function BusinessLanding() {
       {/* 10. FINAL CTA                                                    */}
       {/* ================================================================ */}
       <section id="contact" className="border-t border-gray-100 py-20">
-        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Gata sa incerci?</h2>
-          <p className="mt-3 text-sm text-gray-500">
-            Creeaza contul in 30 de secunde. Fara card, fara obligatii.
-          </p>
-          <Link
-            to="/signup"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
-          >
-            Incearca gratuit <ArrowRight className="h-4 w-4" />
-          </Link>
-          <p className="mt-4 text-xs text-gray-400">
-            Ai intrebari? Scrie-ne la contact@forja.ro
-          </p>
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <div className="grid gap-12 md:grid-cols-2">
+            {/* Left — CTA */}
+            <div className="flex flex-col justify-center text-center md:text-left">
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900">Gata sa incerci?</h2>
+              <p className="mt-3 text-sm text-gray-500">
+                Creeaza contul in 30 de secunde. Fara card, fara obligatii.
+              </p>
+              <div className="mt-6">
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                >
+                  Incearca gratuit <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              <p className="mt-4 text-xs text-gray-400">
+                Sau scrie-ne folosind formularul de contact.
+              </p>
+            </div>
+
+            {/* Right — Contact Form */}
+            <ContactForm />
+          </div>
         </div>
       </section>
 
@@ -796,7 +916,7 @@ export default function BusinessLanding() {
           <div className="grid gap-8 sm:grid-cols-3">
             {/* Col 1 */}
             <div>
-              <span className="text-base font-bold text-gray-900">Forja</span>
+              <span className="text-base font-bold text-gray-900">ForjaIt</span>
               <p className="mt-2 text-xs leading-relaxed text-gray-500">
                 Platforma completa de management pentru afaceri de servicii. CRM, programari, facturare, website si comunicare totul intr-un singur loc.
               </p>
@@ -849,7 +969,7 @@ export default function BusinessLanding() {
             </div>
           </div>
           <div className="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} Forja. Toate drepturile rezervate.
+            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
           </div>
         </div>
       </footer>

@@ -145,7 +145,7 @@ export default function Profile() {
     } catch (error) {
       showToast({
         type: 'error',
-        title: error.response?.data?.error || 'Eroare la salvare',
+        title: error.response?.data?.message || 'Eroare la salvare',
       });
     }
   };
@@ -160,7 +160,7 @@ export default function Profile() {
     } catch (error) {
       showToast({
         type: 'error',
-        title: error.response?.data?.error || 'Eroare la stergere',
+        title: error.response?.data?.message || 'Eroare la stergere',
       });
     }
   };
@@ -473,7 +473,7 @@ export default function Profile() {
             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
               {changePasswordMutation.isError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {changePasswordMutation.error?.response?.data?.error || 'Eroare la schimbarea parolei'}
+                  {changePasswordMutation.error?.response?.data?.message || 'Eroare la schimbarea parolei'}
                 </div>
               )}
               {changePasswordMutation.isSuccess && (

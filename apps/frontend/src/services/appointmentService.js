@@ -43,9 +43,7 @@ export const uploadMessageFile = async (appointmentId, file) => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await API.post(`/appointments/${appointmentId}/messages/upload-file`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const response = await API.post(`/appointments/${appointmentId}/messages/upload-file`, formData);
   return response.data?.data || response.data;
 };
 
@@ -56,9 +54,7 @@ export const uploadMessageVoice = async (appointmentId, audioBlob, duration) => 
     formData.append('duration', duration.toString());
   }
 
-  const response = await API.post(`/appointments/${appointmentId}/messages/upload-voice`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const response = await API.post(`/appointments/${appointmentId}/messages/upload-voice`, formData);
   return response.data?.data || response.data;
 };
 

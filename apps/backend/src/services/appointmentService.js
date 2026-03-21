@@ -14,6 +14,7 @@ const {
   sendAppointmentReminder,
   sendAppointmentCancelledEmail,
   sendAppointmentRescheduledEmail,
+  sendEmail,
 } = require('./email/emailService');
 
 const STATUS_MAP = new Map([
@@ -835,14 +836,14 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
       });
 
       const statusMessages = {
-        PENDING: 'Comanda de service in asteptare',
-        APPROVED: 'Comanda de service aprobata',
-        IN_PROGRESS: 'Comanda de service in lucru',
-        COMPLETED: 'Comanda de service finalizata',
-        CANCELLED: 'Comanda de service anulata',
+        PENDING: 'Programare in asteptare',
+        APPROVED: 'Programare aprobata',
+        IN_PROGRESS: 'Programare in lucru',
+        COMPLETED: 'Programare finalizata',
+        CANCELLED: 'Programare anulata',
       };
 
-      const title = statusMessages[updated.status] || 'Actualizare comanda service';
+      const title = statusMessages[updated.status] || 'Actualizare programare';
       const recipientIds = new Set();
 
       // Add all assignees
@@ -900,6 +901,41 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
       } catch (pushError) {
         logger.error('Failed to send push notifications for appointment update', { error: pushError.message, appointmentId: updated.id });
         // Don't fail if push notifications fail
+      }
+
+      // Send email to client on status change (fire-and-forget)
+      if (updated.client?.email) {
+        const clientName = updated.client.type === 'SRL'
+          ? updated.client.companyName
+          : `${updated.client.firstName || ''} ${updated.client.lastName || ''}`.trim();
+
+        const statusLabels = {
+          PENDING: 'In asteptare',
+          APPROVED: 'Aprobata',
+          IN_PROGRESS: 'In lucru',
+          COMPLETED: 'Finalizata',
+          CANCELLED: 'Anulata',
+        };
+
+        getCompanySettings(updated.organizationId).then((companySettings) => {
+          sendEmail(prisma, {
+            to: updated.client.email,
+            template: 'appointment-status-change',
+            templateData: {
+              clientName: clientName || 'Client',
+              appointmentTitle: updated.title,
+              date: new Date(updated.scheduledStart).toLocaleDateString('ro-RO'),
+              time: new Date(updated.scheduledStart).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
+              oldStatus: statusLabels[existing.status] || existing.status,
+              newStatus: statusLabels[updated.status] || updated.status,
+              companyName: companySettings?.name || 'ForjaIt',
+              companyPhone: companySettings?.phone,
+            },
+            recipientType: 'CLIENT',
+            recipientId: updated.clientId,
+            organizationId: updated.organizationId,
+          }).catch((err) => logger.error('[EMAIL] Appointment status change email failed:', err.message));
+        }).catch(() => {});
       }
     }
   } catch (notifError) {

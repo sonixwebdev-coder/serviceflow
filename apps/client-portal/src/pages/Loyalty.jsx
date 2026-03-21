@@ -161,7 +161,7 @@ export default function Loyalty() {
         setValidationResult(null);
       },
       onError: (err) => {
-        setValidationError(err.response?.data?.error || 'Eroare la aplicarea codului');
+        setValidationError(err.response?.data?.message || 'Eroare la aplicarea codului');
         setValidationResult(null);
       },
     });

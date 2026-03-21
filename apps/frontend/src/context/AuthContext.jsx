@@ -56,6 +56,36 @@ export const AuthProvider = ({ children }) => {
       });
   }, [hydrate, clear]);
 
+  // Cross-tab session sync: detect login/logout from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key !== 'user') return;
+
+      const currentUserId = useAuthStore.getState().user?.id;
+
+      if (!e.newValue) {
+        // Another tab logged out — clear this tab too
+        clear();
+        queryClient.clear();
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const newUser = JSON.parse(e.newValue);
+        if (newUser.id && newUser.id !== currentUserId) {
+          // Different user logged in on another tab — reload to sync session
+          window.location.reload();
+        }
+      } catch {
+        // Malformed data, ignore
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [clear, navigate]);
+
   const login = async (email, password) => {
     try {
       const response = await API.post('/auth/login', { email, password, context: 'crm' });

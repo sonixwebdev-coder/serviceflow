@@ -137,6 +137,7 @@ model User {
   chatChannelsCreated    ChatChannel[]           @relation("ChatChannelCreatedBy")
   chatMembers            ChatMember[]
   chatMessages           ChatMessage[]
+  chatTypingIndicators   ChatTypingIndicator[]
   chatReadReceipts       ChatReadReceipt[]
   googleCalendarConfigs  GoogleCalendarConfig[]
   supportTickets         SupportTicket[]       @relation("TicketCreatedBy")
@@ -248,6 +249,7 @@ model RefreshToken {
   id        String    @id @default(cuid())
   userId    String
   token     String    @unique
+  context   String?   // 'admin' or 'crm' — token type for session isolation
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime  @default(now())
@@ -515,6 +517,7 @@ model ChatChannel {
   createdBy       User              @relation("ChatChannelCreatedBy", fields: [createdById], references: [id])
   members         ChatMember[]
   messages        ChatMessage[]
+  typingIndicators ChatTypingIndicator[]
 
   @@index([organizationId])
   @@index([locationId])
@@ -594,6 +597,8 @@ model ChatTypingIndicator {
   channelId       String
   userId          String
   startedAt       DateTime         @default(now())
+  channel         ChatChannel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([channelId, userId])
   @@index([startedAt])
@@ -664,7 +669,6 @@ model Invoice {
   loyaltyDiscount    Decimal?          @db.Decimal(12, 2)
   loyaltyTierAtTime  String?
   organizationId   String
-  anafSync         AnafInvoiceSync?
   appointment      Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   client           Client            @relation(fields: [clientId], references: [id])
   organization     Organization      @relation(fields: [organizationId], references: [id])
@@ -952,112 +956,9 @@ model PersonalTodo {
   @@index([dueDate])
 }
 
-model Company {
-  id                 String      @id @default(cuid())
-  name               String
-  vatNumber          String      @unique
-  registrationNumber String?
-  address            String?
-  city               String?
-  county             String?
-  country            String      @default("RO")
-  phone              String?
-  email              String?
-  bankAccount        String?
-  bankName           String?
-  isActive           Boolean     @default(true)
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  anafConfig         AnafConfig?
-}
 
-model AnafConfig {
-  id           String      @id @default(cuid())
-  companyId    String      @unique
-  clientId     String
-  clientSecret String
-  redirectUri  String
-  cif          String
-  isActive     Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  demoMode     Boolean     @default(false)
-  environment  String      @default("test")
-  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  tokens       AnafToken[]
 
-  @@index([cif])
-  @@index([environment])
-}
 
-model AnafToken {
-  id               String     @id @default(cuid())
-  configId         String
-  accessToken      String
-  refreshToken     String
-  expiresAt        DateTime
-  refreshExpiresAt DateTime
-  tokenType        String     @default("Bearer")
-  scope            String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  isDemoData       Boolean    @default(false)
-  config           AnafConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
-
-  @@index([configId])
-  @@index([expiresAt])
-  @@index([isDemoData])
-}
-
-model AnafInvoiceSync {
-  id            String            @id @default(cuid())
-  invoiceId     String            @unique
-  uploadIndex   String?
-  downloadId    String?
-  status        AnafInvoiceStatus @default(PENDING)
-  anafStatus    String?
-  errorMessage  String?
-  uploadedAt    DateTime?
-  processedAt   DateTime?
-  lastCheckedAt DateTime?
-  retryCount    Int               @default(0)
-  maxRetries    Int               @default(3)
-  xmlContent    String?
-  responseData  Json?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  isDemoData    Boolean           @default(false)
-  invoice       Invoice           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@index([invoiceId])
-  @@index([status])
-  @@index([uploadIndex])
-  @@index([createdAt])
-  @@index([isDemoData])
-}
-
-model AnafMessage {
-  id            String    @id @default(cuid())
-  anafMessageId String    @unique
-  cif           String
-  solicitareId  String?
-  tip           String
-  dataCreare    String
-  downloadId    String?
-  downloaded    Boolean   @default(false)
-  downloadedAt  DateTime?
-  content       String?
-  metadata      Json?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  isDemoData    Boolean   @default(false)
-
-  @@index([cif])
-  @@index([tip])
-  @@index([downloaded])
-  @@index([dataCreare])
-  @@index([isDemoData])
-}
 
 model PushSubscription {
   id        String   @id @default(cuid())
@@ -1268,15 +1169,7 @@ enum PersonalTodoPriority {
   URGENT
 }
 
-enum AnafInvoiceStatus {
-  PENDING
-  UPLOADING
-  UPLOADED
-  PROCESSING
-  OK
-  ERROR
-  REJECTED
-}
+
 
 enum ChatChannelType {
   PUBLIC

@@ -1,6 +1,7 @@
 const express = require('express');
 const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
+const authorize = require('../middleware/authorize');
 const { ok } = require('../utils/http');
 const {
   listAuditLogs,
@@ -9,6 +10,9 @@ const {
 } = require('../services/auditLogService');
 
 const router = express.Router();
+
+// Restrict audit log routes — only admins and managers
+router.use(authenticate, authorize({ permissions: ['audit:read'] }));
 
 /**
  * GET /audit-logs

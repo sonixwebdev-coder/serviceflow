@@ -15,7 +15,16 @@ const fetchUserForAuth = async (userId) => {
       roles: {
         select: {
           role: {
-            select: { key: true },
+            select: {
+              key: true,
+              permissions: {
+                select: {
+                  permission: {
+                    select: { key: true },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -23,6 +32,16 @@ const fetchUserForAuth = async (userId) => {
   });
 
   if (!user || !user.isActive) return null;
+
+  const roles = user.roles.map((assignment) => assignment.role.key);
+
+  // Collect unique permissions from all assigned roles
+  const permissionSet = new Set();
+  for (const assignment of user.roles) {
+    for (const rp of assignment.role.permissions) {
+      permissionSet.add(rp.permission.key);
+    }
+  }
 
   return {
     id: user.id,
@@ -32,7 +51,8 @@ const fetchUserForAuth = async (userId) => {
     organizationId: user.organizationId,
     orgStatus: user.organization?.status,
     orgTrialEndsAt: user.organization?.trialEndsAt,
-    roles: user.roles.map((assignment) => assignment.role.key),
+    roles,
+    permissions: Array.from(permissionSet),
   };
 };
 
@@ -46,6 +66,11 @@ const authenticate = async (req, res, next) => {
 
     const token = header.replace('Bearer ', '');
     const payload = verifyAccessToken(token);
+
+    // Reject non-CRM tokens (e.g. admin tokens) from CRM routes
+    if (payload.type && payload.type !== 'crm') {
+      throw new AppError('Token invalid pentru aceasta aplicatie', 401);
+    }
 
     // Check if token was revoked (logout)
     if (await cache.isTokenBlacklisted(token)) {
@@ -100,6 +125,7 @@ const authenticate = async (req, res, next) => {
       organizationId: userData.organizationId,
       orgStatus: userData.orgStatus,
       roles: userData.roles,
+      permissions: userData.permissions || [],
     };
 
     next();

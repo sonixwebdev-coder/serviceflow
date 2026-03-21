@@ -1,129 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, X as XIcon, Menu, X, ArrowRight } from 'lucide-react';
-
-const TIERS = [
-  {
-    name: 'Gratuit',
-    price: { monthly: 0, annual: 0 },
-    description: 'Pentru a testa platforma si a vedea daca ti se potriveste.',
-    cta: 'Incepe gratuit',
-    ctaStyle: 'border border-gray-300 text-gray-700 hover:bg-gray-50',
-    highlight: false,
-    limits: {
-      locatii: '1',
-      utilizatori: '2',
-      clienti: '50',
-      programari: '100 / luna',
-      paginiweb: '1',
-    },
-    features: [
-      { text: 'CRM de baza', included: true },
-      { text: 'Calendar programari', included: true },
-      { text: 'Widget programari publice', included: true },
-      { text: 'Facturare de baza (20 / luna)', included: true },
-      { text: 'Notificari email', included: true },
-      { text: 'Website cu branding ForjaIt', included: true },
-      { text: 'Chat cu clientii', included: false },
-      { text: 'Portal clienti', included: false },
-      { text: 'Management echipa', included: false },
-      { text: 'Analytics', included: false },
-      { text: 'Export date', included: false },
-      { text: 'Google Calendar sync', included: false },
-    ],
-  },
-  {
-    name: 'Starter',
-    price: { monthly: 99, annual: 79 },
-    description: 'Tot ce ai nevoie ca solo operator sau micro-afacere.',
-    cta: 'Incearca 14 zile gratuit',
-    ctaStyle: 'bg-blue-600 text-white hover:bg-blue-700',
-    highlight: false,
-    limits: {
-      locatii: '1',
-      utilizatori: '5',
-      clienti: '500',
-      programari: 'Nelimitate',
-      paginiweb: '5',
-    },
-    features: [
-      { text: 'CRM complet (import / export)', included: true },
-      { text: 'Programari nelimitate', included: true },
-      { text: 'Widget programari publice', included: true },
-      { text: 'Facturare completa + PDF', included: true },
-      { text: 'Notificari email + push', included: true },
-      { text: 'Template-uri website (4 industrii)', included: true },
-      { text: 'Chat cu clientii', included: true },
-      { text: 'Portal clienti', included: true },
-      { text: 'Google Calendar sync', included: true },
-      { text: 'Analytics de baza', included: true },
-      { text: 'Export CSV', included: true },
-      { text: 'Management echipa', included: false },
-    ],
-  },
-  {
-    name: 'Profesional',
-    price: { monthly: 249, annual: 199 },
-    description: 'Pentru echipe in crestere si afaceri cu mai multe locatii.',
-    cta: 'Incearca 14 zile gratuit',
-    ctaStyle: 'bg-blue-600 text-white hover:bg-blue-700',
-    highlight: true,
-    badge: 'Popular',
-    limits: {
-      locatii: '3',
-      utilizatori: '15',
-      clienti: '2,000',
-      programari: 'Nelimitate',
-      paginiweb: '15',
-    },
-    features: [
-      { text: 'Tot din Starter, plus:', included: true, bold: true },
-      { text: 'Multi-locatie (pana la 3)', included: true },
-      { text: 'Management echipa complet', included: true },
-      { text: 'Pontaj (clock in / out)', included: true },
-      { text: 'Cereri concediu cu aprobare', included: true },
-      { text: 'Task-uri si todos', included: true },
-      { text: 'Website builder complet (15 blocuri)', included: true },
-      { text: 'Domeniu custom', included: true },
-      { text: 'Stergere branding ForjaIt', included: true },
-      { text: 'Comenzi de lucru + PDF', included: true },
-      { text: 'Analytics avansat', included: true },
-      { text: 'Export CSV / Excel / PDF / JSON', included: true },
-    ],
-  },
-  {
-    name: 'Enterprise',
-    price: { monthly: 499, annual: 399 },
-    description: 'Fara limite. Pentru lanturi de service si operatiuni mari.',
-    cta: 'Contacteaza-ne',
-    ctaStyle: 'border border-gray-300 text-gray-700 hover:bg-gray-50',
-    highlight: false,
-    limits: {
-      locatii: 'Nelimitat',
-      utilizatori: 'Nelimitat',
-      clienti: 'Nelimitat',
-      programari: 'Nelimitate',
-      paginiweb: 'Nelimitat',
-    },
-    features: [
-      { text: 'Tot din Profesional, plus:', included: true, bold: true },
-      { text: 'Locatii nelimitate', included: true },
-      { text: 'Utilizatori nelimitati', included: true },
-      { text: 'Export complet de date (ZIP)', included: true },
-      { text: 'Suport prioritar dedicat', included: true },
-      { text: 'Onboarding personalizat', included: true },
-      { text: 'API access (in curand)', included: true },
-    ],
-  },
-];
-
-const LIMIT_LABELS = {
-  locatii: 'Locatii',
-  utilizatori: 'Utilizatori',
-  clienti: 'Clienti',
-  programari: 'Programari',
-  paginiweb: 'Pagini website',
-};
+import { PLAN_TIERS, LIMIT_LABELS } from '../constants/plans';
+import { fetchPricing } from '../services/organizationService';
 
 const FAQ_ITEMS = [
   {
@@ -177,6 +56,30 @@ function FAQItem({ question, answer }) {
 export default function Preturi() {
   const [annual, setAnnual] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dynamicPrices, setDynamicPrices] = useState(null);
+
+  useEffect(() => {
+    fetchPricing()
+      .then(setDynamicPrices)
+      .catch(() => {/* keep fallback prices */});
+  }, []);
+
+  // Merge dynamic prices into PLAN_TIERS, falling back to hardcoded values
+  const tiers = useMemo(() => {
+    if (!dynamicPrices) return PLAN_TIERS;
+    const keyMap = { STARTER: 'starter', PROFESSIONAL: 'professional', ENTERPRISE: 'enterprise' };
+    return PLAN_TIERS.map((tier) => {
+      const remote = dynamicPrices[keyMap[tier.key]];
+      if (!remote) return tier;
+      return {
+        ...tier,
+        price: {
+          monthly: remote.monthly ?? tier.price.monthly,
+          annual: remote.annual ?? tier.price.annual,
+        },
+      };
+    });
+  }, [dynamicPrices]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -184,7 +87,7 @@ export default function Preturi() {
       <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/business" className="text-lg font-bold tracking-tight text-gray-900">
-            Forja
+            ForjaIt
           </Link>
 
           <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">
@@ -273,11 +176,11 @@ export default function Preturi() {
       {/* Pricing cards */}
       <section className="pb-20">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 sm:px-6 lg:grid-cols-4">
-          {TIERS.map((tier) => {
+          {tiers.map((tier) => {
             const price = annual ? tier.price.annual : tier.price.monthly;
             return (
               <div
-                key={tier.name}
+                key={tier.key}
                 className={`relative flex flex-col rounded-2xl border p-6 ${
                   tier.highlight
                     ? 'border-blue-600 shadow-lg ring-1 ring-blue-600'
@@ -321,11 +224,11 @@ export default function Preturi() {
                 {/* CTA */}
                 <Link
                   to={
-                    tier.name === 'Enterprise'
+                    tier.key === 'ENTERPRISE'
                       ? '/business#contact'
-                      : tier.name === 'Gratuit'
+                      : tier.key === 'FREE'
                         ? '/signup'
-                        : `/signup?plan=${tier.name.toLowerCase()}`
+                        : `/signup?plan=${tier.key.toLowerCase()}`
                   }
                   className={`mt-6 block rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors ${tier.ctaStyle}`}
                 >
@@ -424,7 +327,7 @@ export default function Preturi() {
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
-              <span className="text-base font-bold text-gray-900">Forja</span>
+              <span className="text-base font-bold text-gray-900">ForjaIt</span>
               <p className="mt-2 text-xs leading-relaxed text-gray-500">
                 Platforma completa de management pentru afaceri de servicii. CRM, programari, facturare, website si comunicare totul intr-un singur loc.
               </p>
@@ -459,7 +362,7 @@ export default function Preturi() {
             </div>
           </div>
           <div className="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} Forja. Toate drepturile rezervate.
+            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
           </div>
         </div>
       </footer>

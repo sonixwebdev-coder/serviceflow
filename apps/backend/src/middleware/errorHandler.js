@@ -9,6 +9,11 @@ const { captureException } = require('../utils/sentry');
 const sanitizeErrorMessage = (err) => {
   const originalMessage = err.message || '';
 
+  // If it's an AppError, the developer intentionally set a user-friendly message
+  if (err instanceof AppError) {
+    return originalMessage;
+  }
+
   // Prisma-specific errors
   if (err.name === 'PrismaClientValidationError' || originalMessage.includes('Invalid `')) {
     return 'A apărut o eroare la procesarea datelor. Te rugăm să încerci din nou.';
@@ -62,11 +67,6 @@ const sanitizeErrorMessage = (err) => {
   // Generic error patterns - keep it vague for security
   if (originalMessage.includes('Unknown argument') || originalMessage.includes('Unknown field')) {
     return 'A apărut o eroare la procesarea datelor. Te rugăm să încerci din nou.';
-  }
-
-  // If it's already an AppError, it's likely already user-friendly
-  if (err instanceof AppError) {
-    return originalMessage;
   }
 
   // For unknown errors in production, return generic message

@@ -22,8 +22,6 @@ const settingsRouter = require('./settings');
 const invoicesRouter = require('./invoices');
 const exportsRouter = require('./exports');
 const pushNotificationsRouter = require('./pushNotifications');
-// ANAF functionality temporarily disabled
-// const anafRouter = require('./anaf');
 const paymentsRouter = require('./payments');
 const chatRouter = require('./chat');
 const auditLogsRouter = require('./auditLogs');
@@ -37,6 +35,8 @@ const publicWebsiteRouter = require('./portal/website');
 const billingRouter = require('./billing');
 const loyaltyRouter = require('./loyalty');
 const supportRouter = require('./support');
+const contactRouter = require('./contact');
+const pricingRouter = require('./pricing');
 
 
 const router = express.Router();
@@ -74,8 +74,6 @@ router.use('/settings', settingsRouter);
 router.use('/invoices', invoicesRouter);
 router.use('/exports', exportsRouter);
 router.use('/push-notifications', pushNotificationsRouter);
-// ANAF functionality temporarily disabled
-// router.use('/anaf', anafRouter);
 router.use('/payments', paymentsRouter);
 router.use('/chat', chatRouter);
 router.use('/audit-logs', auditLogsRouter);
@@ -89,6 +87,8 @@ router.use('/sites', publicWebsiteRouter);
 router.use('/billing', billingRouter);
 router.use('/loyalty', loyaltyRouter);
 router.use('/support', supportRouter);
+router.use('/contact', contactRouter);
+router.use('/pricing', pricingRouter);
 
 
 module.exports = router;

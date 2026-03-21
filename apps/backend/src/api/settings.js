@@ -10,7 +10,7 @@ const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
 const { ok, created } = require('../utils/http');
 const { getCompanySettings, updateCompanySettings } = require('../services/companySettingService');
-const { validateVatNumber } = require('../services/vatValidationService');
+const { validateVatNumber, validateCuiChecksum } = require('../services/vatValidationService');
 const { AppError } = require('../utils/errors');
 
 const router = express.Router();
@@ -118,6 +118,17 @@ router.put(
   authorize({ roles: ['admin'] }),
   validate(companySettingsSchema),
   asyncHandler(async (req, res) => {
+    // Backend VAT checksum validation (fast, no external dependency)
+    if (req.body.vatNumber) {
+      const stripped = req.body.vatNumber.trim().toUpperCase().replace(/^RO/, '').trim();
+      if (stripped.length > 0) {
+        const checksumResult = validateCuiChecksum(stripped);
+        if (!checksumResult.valid) {
+          throw new AppError(checksumResult.error, 400);
+        }
+      }
+    }
+
     const settings = await updateCompanySettings(req.body, req.user);
     return ok(res, settings, 'Company settings updated');
   })

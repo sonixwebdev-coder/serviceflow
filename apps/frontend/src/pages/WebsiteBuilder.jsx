@@ -30,7 +30,7 @@ import {
 } from '@/hooks/useWebsiteBuilder';
 import BlockEditor from '@/components/website-builder/BlockEditor';
 import FloatingHelperWidget from '@/components/website-builder/FloatingHelperWidget';
-import { BrandingSettings, SeoSettings, PageSeoSettings, DomainSettings, HeaderFooterSettings } from '@/components/website-builder/settings';
+import { BrandingSettings, SeoSettings, PageSeoSettings, HeaderFooterSettings } from '@/components/website-builder/settings';
 import { TemplateSelector, getTemplateById, templates as allTemplates, getTemplatesBySector } from '@/components/website-builder/templates';
 import { createPage as createPageService, bulkUpsertPages, fetchPages as fetchPagesService } from '@/services/websiteService';
 import useToast from '@/context/useToast';
@@ -391,7 +391,6 @@ const WebsiteBuilder = () => {
     { id: 'pages', label: 'Pagini', icon: FileText },
     { id: 'branding', label: 'Branding', icon: Palette },
     { id: 'seo', label: 'SEO', icon: Search },
-    { id: 'domain', label: 'Domeniu', icon: Globe },
     { id: 'layout', label: 'Header & Footer', icon: Layout },
     { id: 'templates', label: 'Template-uri', icon: Layers },
   ];
@@ -759,16 +758,6 @@ const WebsiteBuilder = () => {
               siteName={user?.organization?.name}
               onChange={(seoDefaults) => handleUpdateWebsite({ seoDefaults })}
               isLoading={isUpdating}
-            />
-          )}
-
-          {/* Domain Tab */}
-          {activeTab === 'domain' && (
-            <DomainSettings
-              subdomain={website?.subdomain}
-              onSubdomainChange={(subdomain) => handleUpdateWebsite({ subdomain })}
-              checkingSubdomain={isChecking}
-              subdomainAvailable={isAvailable}
             />
           )}
 

@@ -33,9 +33,11 @@ router.get(
   authenticate,
   validate(listUsersQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const locationContext = await req.getLocationContext();
+    // allLocations=true bypasses location filter (for modals like user assignment)
+    const skipLocationFilter = req.query.allLocations === 'true';
+    const locationContext = skipLocationFilter ? {} : await req.getLocationContext();
     const users = await listUsers(req.tenantPrisma, req.query, req.user, {
-      locationId: locationContext.currentLocationId,
+      locationId: locationContext.currentLocationId || null,
     });
     return ok(res, users);
   })

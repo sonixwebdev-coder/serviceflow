@@ -1,11 +1,6 @@
 import { Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const PLAN_NAMES = {
-  STARTER: 'Starter',
-  PROFESSIONAL: 'Profesional',
-  ENTERPRISE: 'Enterprise',
-};
+import { PLAN_NAMES } from '../../constants/plans';
 
 /**
  * Reusable upgrade prompt shown when a user hits a plan limit.

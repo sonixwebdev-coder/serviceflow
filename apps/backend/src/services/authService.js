@@ -143,12 +143,15 @@ const loginUser = async ({ email, password, context }) => {
     return { requiresTwoFactor: true, tempToken };
   }
 
+  const tokenType = context || (user.isSuperAdmin ? 'admin' : 'crm');
+
   const payload = {
     sub: user.id,
     email: user.email,
     name: `${user.firstName} ${user.lastName}`,
     roles: user.roles.map((assignment) => assignment.role.key),
     organizationId: user.organizationId,
+    type: tokenType,
   };
 
   const accessToken = signAccessToken(payload);
@@ -159,6 +162,7 @@ const loginUser = async ({ email, password, context }) => {
       userId: user.id,
       token: refreshToken,
       expiresAt,
+      context: tokenType,
     },
   });
 
@@ -202,12 +206,16 @@ const refreshSession = async ({ token }) => {
     }
   }
 
+  // Preserve token type from the stored refresh token, or infer from user
+  const tokenType = stored.context || (stored.user.isSuperAdmin ? 'admin' : 'crm');
+
   const payload = {
     sub: stored.user.id,
     email: stored.user.email,
     name: `${stored.user.firstName} ${stored.user.lastName}`,
     roles: stored.user.roles.map((assignment) => assignment.role.key),
     organizationId: stored.user.organizationId,
+    type: tokenType,
   };
 
   const accessToken = signAccessToken(payload);
@@ -224,6 +232,7 @@ const refreshSession = async ({ token }) => {
         userId: stored.user.id,
         token: nextToken,
         expiresAt,
+        context: tokenType,
       },
     }),
   ]);

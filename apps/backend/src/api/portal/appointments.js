@@ -11,6 +11,8 @@ const { broadcastAppointmentCreated } = require('../../realtime/events');
 const { createNotification } = require('../../services/notificationService');
 const { sendPushToUser } = require('../../services/pushNotificationService');
 const { getCompanySettings } = require('../../services/companySettingService');
+const { sendAppointmentReminder } = require('../../services/email/emailService');
+const { dateInTimezone, dayBoundsInTimezone, DEFAULT_TIMEZONE } = require('../../utils/timezone');
 const logger = require('../../utils/logger');
 
 const DEFAULT_WORK_START = 9; // 9 AM
@@ -31,8 +33,10 @@ const getAvailableDatesForClient = async (organizationId, days = 30) => {
   const allowWeekends = pbSettings.allowWeekends ?? false;
 
   const dates = [];
+  // Use business timezone to determine "today"
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const nowInTZ = new Date(now.toLocaleString('en-US', { timeZone: DEFAULT_TIMEZONE }));
+  const today = new Date(nowInTZ.getFullYear(), nowInTZ.getMonth(), nowInTZ.getDate());
 
   for (let i = 0; i < days; i++) {
     const date = new Date(today);
@@ -49,8 +53,8 @@ const getAvailableDatesForClient = async (organizationId, days = 30) => {
 
     dates.push({
       date: `${year}-${month}-${day}`,
-      dayOfWeek: date.toLocaleDateString('ro-RO', { weekday: 'long' }),
-      formatted: date.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }),
+      dayOfWeek: date.toLocaleDateString('ro-RO', { weekday: 'long', timeZone: DEFAULT_TIMEZONE }),
+      formatted: date.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', timeZone: DEFAULT_TIMEZONE }),
     });
   }
 
@@ -83,18 +87,19 @@ const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAU
     totalCapacity = Number(settings?.rampCount) || 1;
   }
 
-  // Parse date as local date
+  // Parse date components
   const [year, month, day] = date.split('-').map(Number);
 
-  // Check if this is today by comparing date strings (avoid timezone issues)
+  // Check if this is today using the business timezone
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const nowInTZ = new Date(now.toLocaleString('en-US', { timeZone: DEFAULT_TIMEZONE }));
+  const todayStr = `${nowInTZ.getFullYear()}-${String(nowInTZ.getMonth() + 1).padStart(2, '0')}-${String(nowInTZ.getDate()).padStart(2, '0')}`;
   const isToday = date === todayStr;
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  const currentHour = nowInTZ.getHours();
+  const currentMinute = nowInTZ.getMinutes();
 
-  const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
-  const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+  // Build day bounds in the business timezone so queries match correctly
+  const { startOfDay, endOfDay } = dayBoundsInTimezone(year, month, day);
 
   // Build appointment query with optional location filter
   const appointmentWhere = {
@@ -126,12 +131,13 @@ const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAU
         }
       }
 
-      const slotStart = new Date(year, month - 1, day, hour, minute, 0, 0);
-      const slotEnd = new Date(slotStart);
-      slotEnd.setMinutes(slotEnd.getMinutes() + duration);
+      const slotStart = dateInTimezone(year, month, day, hour, minute);
+      const slotEnd = new Date(slotStart.getTime() + duration * 60 * 1000);
 
-      // Skip if slot ends after work hours
-      if (slotEnd.getHours() > workEnd || (slotEnd.getHours() === workEnd && slotEnd.getMinutes() > 0)) {
+      // Skip if slot ends after work hours (check using end hour/minute in local terms)
+      const endHour = hour + Math.floor((minute + duration) / 60);
+      const endMinute = (minute + duration) % 60;
+      if (endHour > workEnd || (endHour === workEnd && endMinute > 0)) {
         continue;
       }
 
@@ -499,8 +505,20 @@ router.post(
 
     // Don't wait for notifications to complete
     Promise.all(notificationPromises).catch((error) => {
-      logger.warn('Some notifications failed', { error: error.message });
+      logger.warn('Unele notificari nu au fost trimise', { error: error.message });
     });
+
+    // Send confirmation email to client (fire-and-forget)
+    if (client?.email) {
+      getCompanySettings(organizationId).then((companySettings) => {
+        sendAppointmentReminder(prisma, {
+          appointment,
+          client,
+          companySettings,
+          organizationId,
+        }).catch((err) => logger.error('[EMAIL] Confirmarea programarii din portal a esuat:', err.message));
+      }).catch(() => {});
+    }
 
     res.status(201).json(appointment);
   })
