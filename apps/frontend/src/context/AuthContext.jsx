@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import API, { refreshAuthSession } from '../utils/api';
 import AuthContext from './AuthContext';
 import { useAuthStore } from '../state/useAuthStore.js';
 import { queryClient } from '../lib/queryClient';
 import useLocationStore from '../state/useLocationStore';
 import { verifyTwoFactorLogin } from '../services/userService';
+
+// Marketing pages where token refresh is unnecessary — skip to avoid 401 noise
+const NO_REFRESH_PATHS = ['/business', '/terms', '/privacy', '/pricing'];
 
 /**
  * Cache only minimal, non-sensitive user fields in localStorage.
@@ -26,34 +29,40 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const { user, accessToken, setSession, setUser, hydrate, clear } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     // Clean up stale localStorage keys from pre-migration auth
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
 
+    const isPublicPage = NO_REFRESH_PATHS.includes(location.pathname);
+
     // On mount, try to restore session via httpOnly cookie refresh
     const storedUser = localStorage.getItem('user');
 
-    if (storedUser) {
+    if (storedUser && !isPublicPage) {
       try {
         // Hydrate cached user for instant UI, then refresh to get access token
         hydrate({ user: JSON.parse(storedUser), accessToken: null });
       } catch {
         localStorage.removeItem('user');
       }
-    }
 
-    // Attempt silent refresh to get a fresh access token from cookie
-    refreshAuthSession()
-      .catch(() => {
-        // No valid refresh cookie - user needs to re-login
-        clear();
-        localStorage.removeItem('user');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      // Attempt silent refresh to get a fresh access token from cookie
+      refreshAuthSession()
+        .catch(() => {
+          // No valid refresh cookie - user needs to re-login
+          clear();
+          localStorage.removeItem('user');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      // No stored user or on a public page — skip refresh
+      setLoading(false);
+    }
   }, [hydrate, clear]);
 
   // Cross-tab session sync: detect login/logout from other tabs

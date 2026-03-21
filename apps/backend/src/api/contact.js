@@ -6,6 +6,7 @@ const validate = require('../middleware/validate');
 const { ok } = require('../utils/http');
 const logger = require('../utils/logger');
 const { sendEmail } = require('../services/email/emailService');
+const prisma = require('../../lib/prisma');
 
 const router = express.Router();
 
@@ -31,9 +32,14 @@ router.post(
   asyncHandler(async (req, res) => {
     const { name, email, subject, message } = req.body;
 
+    // Persist the contact message in its own table (separate from CRM tickets)
+    await prisma.platformContactMessage.create({
+      data: { name, email, subject, message },
+    });
+
     const adminEmail = process.env.PLATFORM_CONTACT_EMAIL || process.env.COMPANY_EMAIL || 'contact@forja.it.com';
 
-    sendEmail({
+    sendEmail(null, {
       to: adminEmail,
       subject: `[Contact ForjaIt] ${subject}`,
       html: `

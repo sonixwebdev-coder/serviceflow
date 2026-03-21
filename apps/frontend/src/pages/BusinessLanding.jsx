@@ -70,7 +70,11 @@ function ContactForm() {
       setForm({ name: '', email: '', subject: '', message: '' });
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err.response?.data?.message || 'Eroare la trimiterea mesajului. Incercati din nou.');
+      const data = err.response?.data;
+      const msg = data?.errors?.length
+        ? data.errors.map(e => e.message).join('. ')
+        : data?.message || 'Eroare la trimiterea mesajului. Incercati din nou.';
+      setErrorMsg(msg);
     }
   };
 
@@ -103,6 +107,8 @@ function ContactForm() {
           type="text"
           placeholder="Nume *"
           required
+          minLength={2}
+          maxLength={100}
           value={form.name}
           onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
           className={inputCls}
@@ -120,18 +126,25 @@ function ContactForm() {
         type="text"
         placeholder="Subiect *"
         required
+        minLength={3}
+        maxLength={200}
         value={form.subject}
         onChange={(e) => setForm(p => ({ ...p, subject: e.target.value }))}
         className={inputCls}
       />
-      <textarea
-        placeholder="Mesajul tau *"
-        required
-        rows={4}
-        value={form.message}
-        onChange={(e) => setForm(p => ({ ...p, message: e.target.value }))}
-        className={inputCls + ' resize-none'}
-      />
+      <div>
+        <textarea
+          placeholder="Descrie cat mai detaliat cererea ta * (minim 10 caractere)"
+          required
+          minLength={10}
+          maxLength={2000}
+          rows={4}
+          value={form.message}
+          onChange={(e) => setForm(p => ({ ...p, message: e.target.value }))}
+          className={inputCls + ' resize-none'}
+        />
+        <p className="mt-1 text-xs text-gray-400">{form.message.length}/2000 caractere (minim 10)</p>
+      </div>
       <button
         type="submit"
         disabled={status === 'sending'}

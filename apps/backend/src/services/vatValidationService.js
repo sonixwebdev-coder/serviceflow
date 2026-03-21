@@ -117,10 +117,10 @@ async function validateVatVies(countryCode, vatNumber) {
     throw new AppError('Serviciul VIES nu este disponibil momentan. Incercati mai tarziu.', 503);
   }
 
-  // Parse response fields
-  const validMatch = xml.match(/<valid>([^<]*)<\/valid>/);
-  const nameMatch = xml.match(/<name>([^<]*)<\/name>/);
-  const addressMatch = xml.match(/<address>([^<]*)<\/address>/);
+  // Parse response fields (handle namespace prefixes like <ns2:valid>)
+  const validMatch = xml.match(/<(?:\w+:)?valid>([^<]*)<\/(?:\w+:)?valid>/);
+  const nameMatch = xml.match(/<(?:\w+:)?name>([^<]*)<\/(?:\w+:)?name>/);
+  const addressMatch = xml.match(/<(?:\w+:)?address>([^<]*)<\/(?:\w+:)?address>/);
 
   const isValid = validMatch ? validMatch[1] === 'true' : false;
   const name = nameMatch ? nameMatch[1].trim() : '';

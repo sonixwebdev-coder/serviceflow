@@ -949,6 +949,71 @@ router.post(
   })
 );
 
+// ─── Platform Contact Messages ──────────────────────────────────────────────
+
+// GET /contact-messages - List public contact form submissions
+router.get(
+  '/contact-messages',
+  asyncHandler(async (req, res) => {
+    const { status, page = 1, limit = 20 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const where = status ? { status } : {};
+
+    const [messages, total] = await Promise.all([
+      prisma.platformContactMessage.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: Number(limit),
+      }),
+      prisma.platformContactMessage.count({ where }),
+    ]);
+
+    return ok(res, { messages, total, page: Number(page), limit: Number(limit) });
+  })
+);
+
+// GET /contact-messages/stats
+router.get(
+  '/contact-messages/stats',
+  asyncHandler(async (req, res) => {
+    const [total, newCount, readCount, repliedCount, archivedCount] = await Promise.all([
+      prisma.platformContactMessage.count(),
+      prisma.platformContactMessage.count({ where: { status: 'NEW' } }),
+      prisma.platformContactMessage.count({ where: { status: 'READ' } }),
+      prisma.platformContactMessage.count({ where: { status: 'REPLIED' } }),
+      prisma.platformContactMessage.count({ where: { status: 'ARCHIVED' } }),
+    ]);
+    return ok(res, { total, new: newCount, read: readCount, replied: repliedCount, archived: archivedCount });
+  })
+);
+
+// PATCH /contact-messages/:id - Update status/notes
+router.patch(
+  '/contact-messages/:id',
+  asyncHandler(async (req, res) => {
+    const { status, notes } = req.body;
+    const data = {};
+    if (status) data.status = status;
+    if (notes !== undefined) data.notes = notes;
+
+    const message = await prisma.platformContactMessage.update({
+      where: { id: req.params.id },
+      data,
+    });
+    return ok(res, message);
+  })
+);
+
+// DELETE /contact-messages/:id
+router.delete(
+  '/contact-messages/:id',
+  asyncHandler(async (req, res) => {
+    await prisma.platformContactMessage.delete({ where: { id: req.params.id } });
+    return ok(res, null, 'Message deleted');
+  })
+);
+
 // ─── Maintenance ─────────────────────────────────────────────────────────────
 
 // POST /maintenance/cleanup — Run manual cleanup

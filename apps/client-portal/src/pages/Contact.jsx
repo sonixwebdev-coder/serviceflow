@@ -18,7 +18,11 @@ export default function Contact() {
       setForm({ name: '', email: '', subject: '', message: '' });
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err.response?.data?.message || 'Eroare la trimiterea mesajului. Incercati din nou.');
+      const data = err.response?.data;
+      const msg = data?.errors?.length
+        ? data.errors.map(e => e.message).join('. ')
+        : data?.message || 'Eroare la trimiterea mesajului. Incercati din nou.';
+      setErrorMsg(msg);
     }
   };
 
@@ -97,9 +101,12 @@ export default function Contact() {
                 <input
                   type="text"
                   required
+                  minLength={2}
+                  maxLength={100}
                   value={form.name}
                   onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
                   className={inputCls}
+                  placeholder="Minim 2 caractere"
                 />
               </div>
               <div>
@@ -110,6 +117,7 @@ export default function Contact() {
                   value={form.email}
                   onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))}
                   className={inputCls}
+                  placeholder="exemplu@email.com"
                 />
               </div>
             </div>
@@ -118,9 +126,12 @@ export default function Contact() {
               <input
                 type="text"
                 required
+                minLength={3}
+                maxLength={200}
                 value={form.subject}
                 onChange={(e) => setForm(p => ({ ...p, subject: e.target.value }))}
                 className={inputCls}
+                placeholder="Minim 3 caractere"
               />
             </div>
             <div>
@@ -128,10 +139,14 @@ export default function Contact() {
               <textarea
                 required
                 rows={5}
+                minLength={10}
+                maxLength={2000}
                 value={form.message}
                 onChange={(e) => setForm(p => ({ ...p, message: e.target.value }))}
                 className={inputCls + ' resize-none'}
+                placeholder="Descrie cat mai detaliat cererea ta (minim 10 caractere)"
               />
+              <p className="mt-1 text-xs text-gray-400">{form.message.length}/2000 caractere (minim 10)</p>
             </div>
             <button
               type="submit"

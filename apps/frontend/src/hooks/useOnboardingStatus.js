@@ -52,8 +52,13 @@ export const useOnboardingStatus = () => {
         settings: { ...existingSettings, onboardingCompleted: true },
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organization-me'] });
+    onSuccess: (updatedOrg) => {
+      // Update cache immediately so ProtectedRoute sees the change before refetch
+      queryClient.setQueryData(['organization-me'], (old) => ({
+        ...old,
+        ...updatedOrg,
+        settings: { ...old?.settings, ...updatedOrg?.settings, onboardingCompleted: true },
+      }));
     },
   });
 

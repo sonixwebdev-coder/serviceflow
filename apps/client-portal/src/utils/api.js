@@ -113,6 +113,12 @@ api.interceptors.response.use(
 
     // Handle auth errors - try to refresh token
     if (response.status === 401 && !config._authRetry) {
+      // Skip auth handling on public pages where user isn't logged in
+      const { accessToken } = useAuthStore.getState();
+      if (!accessToken) {
+        return Promise.reject(response.data || error);
+      }
+
       const code = response.data?.code;
 
       // If token expired, try to refresh

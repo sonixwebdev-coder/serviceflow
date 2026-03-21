@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Building2, CreditCard, ScrollText, LogOut, Settings as SettingsIcon, LifeBuoy, Wrench, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, CreditCard, ScrollText, LogOut, Settings as SettingsIcon, LifeBuoy, Wrench, Menu, X, Mail } from 'lucide-react';
 import useAuthStore from '@/state/useAuthStore';
 import { useLogout } from '@/hooks/useAuth';
 
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/logs', icon: ScrollText, label: 'Loguri' },
   { to: '/settings', icon: SettingsIcon, label: 'Setari' },
   { to: '/tickets', icon: LifeBuoy, label: 'Tichete' },
+  { to: '/contact-messages', icon: Mail, label: 'Mesaje Contact' },
   { to: '/maintenance', icon: Wrench, label: 'Mentenanta' },
 ];
 

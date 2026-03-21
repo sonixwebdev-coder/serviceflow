@@ -70,8 +70,10 @@ router.post(
       where: { userId: req.user.id, isPrimary: true },
     });
 
-    await req.tenantPrisma.userLocation.create({
-      data: {
+    await req.tenantPrisma.userLocation.upsert({
+      where: { userId_locationId: { userId: req.user.id, locationId: location.id } },
+      update: {},
+      create: {
         userId: req.user.id,
         locationId: location.id,
         isPrimary: !existingPrimary,

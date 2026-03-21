@@ -16,6 +16,7 @@ import PlatformSettings from '@/pages/PlatformSettings';
 import Tickets from '@/pages/Tickets';
 import TicketDetail from '@/pages/TicketDetail';
 import Maintenance from '@/pages/Maintenance';
+import ContactMessages from '@/pages/ContactMessages';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="settings" element={<PlatformSettings />} />
             <Route path="tickets" element={<Tickets />} />
             <Route path="tickets/:id" element={<TicketDetail />} />
+            <Route path="contact-messages" element={<ContactMessages />} />
             <Route path="maintenance" element={<Maintenance />} />
           </Route>
           <Route path="*" element={<NotFound />} />

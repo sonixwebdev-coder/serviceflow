@@ -117,7 +117,7 @@ export default function Privacy() {
             ANPC - SAL
           </a>
           <a
-            href="https://ec.europa.eu/consumers/odr"
+            href="https://consumer-redress.ec.europa.eu/index_en"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-gray-900 transition-colors"

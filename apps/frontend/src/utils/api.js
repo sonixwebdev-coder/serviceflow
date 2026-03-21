@@ -165,6 +165,12 @@ API.interceptors.response.use(
       return Promise.reject(response.data || { message: 'Request failed' });
     }
 
+    // Skip token refresh if user is not logged in (public page requests)
+    const { accessToken: currentToken } = useAuthStore.getState();
+    if (!currentToken) {
+      return Promise.reject(response.data || { message: 'Unauthorized' });
+    }
+
     try {
       const refreshed = await queueTokenRefresh();
       const nextAccessToken = refreshed.accessToken;

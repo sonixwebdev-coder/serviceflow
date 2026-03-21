@@ -1,3 +1,6 @@
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
 -- CreateEnum
 CREATE TYPE "EmploymentType" AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACTOR');
 
@@ -117,6 +120,9 @@ CREATE TYPE "TicketPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
 
 -- CreateEnum
 CREATE TYPE "TicketMessageAuthorType" AS ENUM ('ORG_USER', 'SUPER_ADMIN');
+
+-- CreateEnum
+CREATE TYPE "ContactMessageStatus" AS ENUM ('NEW', 'READ', 'REPLIED', 'ARCHIVED');
 
 -- CreateTable
 CREATE TABLE "Organization" (
@@ -1178,6 +1184,21 @@ CREATE TABLE "SupportMessage" (
     CONSTRAINT "SupportMessage_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "PlatformContactMessage" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "status" "ContactMessageStatus" NOT NULL DEFAULT 'NEW',
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PlatformContactMessage_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Organization_slug_key" ON "Organization"("slug");
 
@@ -1768,6 +1789,12 @@ CREATE INDEX "SupportTicket_createdAt_idx" ON "SupportTicket"("createdAt");
 
 -- CreateIndex
 CREATE INDEX "SupportMessage_ticketId_createdAt_idx" ON "SupportMessage"("ticketId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "PlatformContactMessage_status_idx" ON "PlatformContactMessage"("status");
+
+-- CreateIndex
+CREATE INDEX "PlatformContactMessage_createdAt_idx" ON "PlatformContactMessage"("createdAt");
 
 -- AddForeignKey
 ALTER TABLE "quota_addons" ADD CONSTRAINT "quota_addons_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "Organization"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
