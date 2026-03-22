@@ -747,6 +747,20 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                       onCheckedChange={(v) => updateData('showAddress', v)}
                     />
                   </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Afiseaza harta</label>
+                    <Switch
+                      checked={block.data?.showMap || false}
+                      onCheckedChange={(v) => updateData('showMap', v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Afiseaza locatiile din CRM</label>
+                    <Switch
+                      checked={block.data?.showLocations || false}
+                      onCheckedChange={(v) => updateData('showLocations', v)}
+                    />
+                  </div>
                 </>
               )}
 

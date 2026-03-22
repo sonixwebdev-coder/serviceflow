@@ -469,7 +469,7 @@ export const useRealtimeEvents = () => {
       });
 
       // Show browser notification if permission granted
-      if (Notification.permission === 'granted') {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         const notification = new Notification('Programare nouă din portal', {
           body: `${clientName}${assetInfo}\n${formattedDate}`,
           icon: '/favicon.ico',
@@ -484,7 +484,7 @@ export const useRealtimeEvents = () => {
           window.focus();
           notification.close();
         };
-      } else if (Notification.permission === 'default') {
+      } else if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
         // Request permission for future notifications
         Notification.requestPermission();
       }

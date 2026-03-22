@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle, Navigation } from 'lucide-react';
 
-const ContactFormBlock = ({ data, settings, isEditing = false, onClick }) => {
+const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData = [] }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const {
@@ -19,8 +19,12 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick }) => {
     successMessage = 'Multumim pentru mesaj! Veti fi contactat in curand.',
     showPhone = true,
     showAddress = true,
+    showMap = false,
+    showLocations = false,
     contactInfo = {},
   } = data || {};
+
+  const displayLocations = showLocations ? crmData : [];
 
   const {
     backgroundColor = '#ffffff',
@@ -219,9 +223,64 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick }) => {
                   </div>
                 </div>
               )}
+
+              {/* Map preview placeholder */}
+              {showMap && contactInfo?.address && (
+                <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                  <div className="h-48 bg-gray-100 flex items-center justify-center text-gray-400">
+                    <div className="text-center">
+                      <MapPin className="h-8 w-8 mx-auto mb-2" />
+                      <p className="text-sm">Harta Google Maps</p>
+                      <p className="text-xs mt-1">{contactInfo.address}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* CRM Locations section */}
+        {showLocations && displayLocations.length > 0 && (
+          <div className="mt-10">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Locatiile noastre</h3>
+            <div className={cn(
+              'grid gap-6',
+              displayLocations.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'grid-cols-1 md:grid-cols-2'
+            )}>
+              {displayLocations.map((location, index) => (
+                <div key={location.id || index} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{location.name}</h4>
+                      {location.address && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          {location.address}
+                          {location.city && `, ${location.city}`}
+                        </p>
+                      )}
+                      {location.phone && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                          <Phone className="h-3.5 w-3.5 text-gray-400" />
+                          {location.phone}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showLocations && displayLocations.length === 0 && (
+          <div className="mt-10 text-center py-8 text-gray-400 border border-dashed border-gray-300 rounded-xl">
+            <MapPin className="h-8 w-8 mx-auto mb-2" />
+            <p className="text-sm">Locatiile CRM vor fi afisate aici</p>
+            <p className="text-xs mt-1">Sincronizate automat din CRM</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -241,6 +300,8 @@ export const contactFormBlockDefaults = {
   successMessage: 'Multumim pentru mesaj! Veti fi contactat in curand.',
   showPhone: true,
   showAddress: true,
+  showMap: false,
+  showLocations: false,
   contactInfo: {},
 };
 

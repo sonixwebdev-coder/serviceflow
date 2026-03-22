@@ -1,7 +1,18 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Send, Phone, MapPin, Mail, Clock, CheckCircle } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Send, Phone, MapPin, Mail, Clock, CheckCircle, Navigation, ExternalLink } from 'lucide-react';
 import { websiteService } from '@/services/websiteService';
+
+function getMapEmbedUrl(address) {
+  if (!address) return null;
+  return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+}
+
+function getDirectionsUrl(location) {
+  const query = [location.address, location.city, location.county]
+    .filter(Boolean).join(', ');
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
+}
 
 export default function ContactFormBlock({ data, subdomain, branding }) {
   const {
@@ -17,12 +28,22 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
     submitText = 'Trimite mesajul',
     showPhone = false,
     showAddress = false,
+    showMap = false,
+    showLocations = false,
     contactInfo = {},
   } = data;
 
   const primaryColor = branding?.primaryColor || '#2563eb';
   const [formData, setFormData] = useState({});
   const [submitted, setSubmitted] = useState(false);
+
+  const { data: crmLocations } = useQuery({
+    queryKey: ['crm-locations', subdomain],
+    queryFn: () => websiteService.getCrmData(subdomain, 'locations'),
+    enabled: showLocations,
+  });
+
+  const locations = showLocations ? (crmLocations || []) : [];
 
   const hasContactInfo = (showPhone && contactInfo.phone) || (showAddress && contactInfo.address) || contactInfo.email || contactInfo.schedule;
 
@@ -248,9 +269,114 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
                 </div>
               </div>
             )}
+
+            {/* Map embed */}
+            {showMap && contactInfo.address && (
+              <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200">
+                <iframe
+                  src={getMapEmbedUrl(contactInfo.address)}
+                  className="w-full h-[200px]"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Map"
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* CRM Locations */}
+      {showLocations && locations.length > 0 && (
+        <div className="mt-10">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Locatiile noastre</h3>
+
+          {/* Map for first location */}
+          {showMap && (
+            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 mb-6">
+              <iframe
+                src={getMapEmbedUrl(
+                  [locations[0].address, locations[0].city, locations[0].county].filter(Boolean).join(', ')
+                )}
+                className="w-full h-[300px] md:h-[350px]"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Locations map"
+              />
+            </div>
+          )}
+
+          <div className={`grid gap-6 ${locations.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+            {locations.map((location, index) => (
+              <div
+                key={location.id || index}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{location.name}</h4>
+                    {location.address && (
+                      <p className="text-gray-600 text-sm mt-1">
+                        {location.address}
+                        {location.city && `, ${location.city}`}
+                        {location.county && `, ${location.county}`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2 ml-8">
+                  {location.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <a
+                        href={`tel:${location.phone}`}
+                        className="text-sm hover:underline"
+                        style={{ color: primaryColor }}
+                      >
+                        {location.phone}
+                      </a>
+                    </div>
+                  )}
+                  {location.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      <a
+                        href={`mailto:${location.email}`}
+                        className="text-sm hover:underline"
+                        style={{ color: primaryColor }}
+                      >
+                        {location.email}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {(location.address || location.city) && (
+                  <div className="mt-4 ml-8">
+                    <a
+                      href={getDirectionsUrl(location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+                      style={{ color: primaryColor }}
+                    >
+                      <Navigation className="h-3.5 w-3.5" />
+                      Indicatii
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

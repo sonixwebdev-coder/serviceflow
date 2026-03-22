@@ -28,7 +28,7 @@ export const isPushSupported = () => {
  * Check if notification permission is granted
  */
 export const hasNotificationPermission = () => {
-  return Notification.permission === 'granted';
+  return typeof Notification !== 'undefined' && Notification.permission === 'granted';
 };
 
 /**

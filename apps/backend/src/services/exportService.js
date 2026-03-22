@@ -1146,7 +1146,7 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
 
   try {
     // Export each standard entity via the existing export functions
-    const exportTasks = [
+    const exportJobs = [
       { name: 'Programari', fn: exportAppointments },
       { name: 'Facturi', fn: exportInvoices },
       { name: 'Clienti', fn: exportClients },
@@ -1156,7 +1156,7 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
       { name: 'Sarcini', fn: exportTasks },
     ];
 
-    for (const task of exportTasks) {
+    for (const task of exportJobs) {
       try {
         const result = await task.fn(prismaClient, 'excel', {}, userId, userRoles);
         entities.push({

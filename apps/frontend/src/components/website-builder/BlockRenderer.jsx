@@ -57,6 +57,8 @@ const BlockRenderer = ({ block, isEditing = false, isSelected = false, onClick, 
     blockCrmData = crmData.team || [];
   } else if (block.type === 'locations-map' && block.data?.autoSync) {
     blockCrmData = crmData.locations || [];
+  } else if (block.type === 'contact-form' && block.data?.showLocations) {
+    blockCrmData = crmData.locations || [];
   }
 
   return (
