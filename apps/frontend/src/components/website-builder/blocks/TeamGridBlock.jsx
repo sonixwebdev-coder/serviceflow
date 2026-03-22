@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { User, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { getFileUrl } from '@/utils/api';
 
 const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [] }) => {
   const {
@@ -79,7 +80,7 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
                 <div className="mx-auto w-32 h-32 rounded-full overflow-hidden mb-4 bg-gray-100">
                   {member.image ? (
                     <img
-                      src={member.image}
+                      src={getFileUrl(member.image)}
                       alt={member.name}
                       className="w-full h-full object-cover"
                     />

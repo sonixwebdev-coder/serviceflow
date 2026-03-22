@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, resolveFileUrl } from '@/lib/utils';
 
 export default function GalleryBlock({ data }) {
   const {
@@ -76,7 +76,7 @@ export default function GalleryBlock({ data }) {
               onClick={() => openLightbox(index)}
             >
               <img
-                src={image.src || image}
+                src={resolveFileUrl(image.src || image)}
                 alt={image.alt || `Image ${index + 1}`}
                 loading="lazy"
                 className="w-full h-full object-cover aspect-square group-hover:scale-110 transition-transform duration-500"
@@ -112,7 +112,7 @@ export default function GalleryBlock({ data }) {
           </button>
 
           <img
-            src={images[currentIndex]?.src || images[currentIndex]}
+            src={resolveFileUrl(images[currentIndex]?.src || images[currentIndex])}
             alt={images[currentIndex]?.alt || ''}
             className="max-w-[90vw] max-h-[85vh] object-contain"
             onClick={(e) => e.stopPropagation()}

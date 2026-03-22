@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { websiteService } from '@/services/websiteService';
+import { resolveFileUrl } from '@/lib/utils';
 import BlockRenderer from '@/components/blocks/BlockRenderer';
 
 function generateJsonLd(website, page, content) {
@@ -16,7 +17,7 @@ function generateJsonLd(website, page, content) {
       '@type': 'LocalBusiness',
       name: org?.name,
       ...(website?.seoDefaults?.description && { description: website.seoDefaults.description }),
-      ...(website?.branding?.logoUrl && { image: website.branding.logoUrl }),
+      ...(website?.branding?.logoUrl && { image: resolveFileUrl(website.branding.logoUrl) }),
       ...(loc?.address && {
         address: {
           '@type': 'PostalAddress',

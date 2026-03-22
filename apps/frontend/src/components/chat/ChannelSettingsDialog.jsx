@@ -159,13 +159,13 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div className="w-full max-w-md rounded-lg bg-white shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-4">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Setări Canal</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Setări Canal</h2>
           </div>
           <button
             onClick={handleClose}

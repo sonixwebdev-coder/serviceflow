@@ -139,13 +139,13 @@ export default function CreateDMDialog({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-4">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
           <div className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Mesaj Nou</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Mesaj Nou</h2>
           </div>
           <button
             onClick={handleClose}
@@ -264,7 +264,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
         )}
 
         {/* User List */}
-        <div className="max-h-96 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
           {loading ? (
             <div className="py-8 text-center text-sm text-gray-500">Se încarcă utilizatorii...</div>
           ) : filteredUsers.length === 0 ? (
@@ -338,7 +338,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-200 p-4 flex-shrink-0">
           <div className="flex gap-2">
             <button
               onClick={handleClose}

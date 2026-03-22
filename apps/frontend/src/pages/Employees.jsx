@@ -797,28 +797,28 @@ const Employees = () => {
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-2xl rounded-xl bg-white shadow-2xl"
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl"
             style={{ margin: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                 {modalMode === 'create' ? 'Adauga angajat' : `Editeaza ${targetUser?.firstName}`}
               </h2>
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                className="rounded-lg border border-gray-200 p-1.5 sm:p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="px-6 py-4">
+            <div className="px-4 sm:px-6 py-3 sm:py-4">
               {renderForm()}
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+            <div className="flex justify-end gap-3 border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
               <button
                 type="button"
                 onClick={closeModal}

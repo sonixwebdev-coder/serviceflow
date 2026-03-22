@@ -171,8 +171,8 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           {DAYS_OF_WEEK.map(({ key, label }) => {
             const dayHours = formData.operatingHours[key];
             return (
-              <div key={key} className="flex items-center gap-3">
-                <label className="flex items-center gap-2 w-28">
+              <div key={key} className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <label className="flex items-center gap-2 w-24 sm:w-28">
                   <input
                     type="checkbox"
                     checked={dayHours.isOpen}

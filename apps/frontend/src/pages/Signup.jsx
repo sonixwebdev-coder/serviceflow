@@ -338,7 +338,7 @@ const Signup = () => {
           onChange={handleChange}
           readOnly={nameFromVies}
           className={`${inputClasses} ${nameFromVies ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-          placeholder="Service Auto Expert SRL"
+          placeholder="Numele companiei SRL"
           disabled={loading}
         />
         {nameFromVies && (
@@ -365,7 +365,7 @@ const Signup = () => {
                 ? '!border-green-400 focus:!border-green-500 focus:!ring-green-500/20'
                 : ''
             }`}
-            placeholder="service-auto-expert"
+            placeholder="numele-companiei"
             disabled={loading}
             pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
           />
@@ -872,8 +872,21 @@ const Signup = () => {
 
       {/* Footer */}
       <footer className="border-t border-gray-100">
-        <div className="mx-auto max-w-6xl px-4 py-6 text-center text-xs text-gray-400 sm:px-6">
-          &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-3 text-xs text-gray-500">
+            <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+              ANPC
+            </a>
+            <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+              SAL
+            </a>
+            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+              SOL
+            </a>
+          </div>
+          <p className="text-center text-xs text-gray-400">
+            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+          </p>
         </div>
       </footer>
     </div>

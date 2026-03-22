@@ -674,7 +674,7 @@ const LeaveRequests = () => {
                       </td>
                       {isManagerial && request.status === LEAVE_STATUS.PENDING && (
                         <td className="px-6 py-4">
-                          <div className="flex flex-col gap-2 min-w-[200px]">
+                          <div className="flex flex-col gap-2">
                             <textarea
                               value={reviewNotesMap[request._id] || ''}
                               onChange={(event) =>
@@ -820,8 +820,8 @@ const LeaveRequests = () => {
             style={{ margin: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Cerere concediu</h2>
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Cerere concediu</h2>
               <button
                 type="button"
                 onClick={closeModal}
@@ -831,7 +831,7 @@ const LeaveRequests = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+            <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-3 sm:py-4 space-y-4">
               {formError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {formError}
@@ -854,7 +854,7 @@ const LeaveRequests = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data inceput *</label>
                   <input
@@ -921,8 +921,8 @@ const LeaveRequests = () => {
             style={{ margin: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Adauga concediu medical</h2>
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Adauga concediu medical</h2>
               <button
                 type="button"
                 onClick={closeMedicalLeaveModal}
@@ -932,7 +932,7 @@ const LeaveRequests = () => {
               </button>
             </div>
 
-            <form onSubmit={handleMedicalLeaveSubmit} className="px-6 py-4 space-y-4">
+            <form onSubmit={handleMedicalLeaveSubmit} className="px-4 sm:px-6 py-3 sm:py-4 space-y-4">
               {medicalLeaveError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {medicalLeaveError}
@@ -957,7 +957,7 @@ const LeaveRequests = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <DatePicker
                   label="Data inceput"
                   value={medicalLeaveForm.startDate}

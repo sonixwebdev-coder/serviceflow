@@ -635,7 +635,7 @@ const UserAssignmentModal = ({ location, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 margin-top-zero">
       <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
         <button
           type="button"

@@ -5,6 +5,19 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+const FILE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+
+/**
+ * Resolve a relative file path (e.g. /files/logos/img.png) to a full URL
+ * pointing at the API file server. Returns full URLs unchanged.
+ */
+export function resolveFileUrl(filePath) {
+  if (!filePath) return '';
+  if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+  const normalized = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  return `${FILE_BASE_URL}${normalized}`;
+}
+
 /**
  * Convert hex color to CSS custom property format
  */

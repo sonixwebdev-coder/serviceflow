@@ -768,7 +768,7 @@ const createInvoice = async (prisma, payload, options = {}) => {
       invoice: mapped,
       client: invoiceClient,
       companySettings,
-      organizationId: appointment?.organizationId,
+      organizationId,
     }).catch((err) => logger.error('[EMAIL] Invoice created email failed:', err.message));
   }
 

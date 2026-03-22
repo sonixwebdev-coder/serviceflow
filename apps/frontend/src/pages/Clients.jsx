@@ -712,32 +712,32 @@ const Clients = () => {
             className="flex-1 bg-gray-900/40"
             onClick={closeDrawer}
           />
-          <aside className="flex h-screen w-full max-w-3xl flex-col bg-white shadow-2xl overflow-hidden">
+          <aside className="flex h-screen w-full sm:max-w-3xl flex-col bg-white shadow-2xl overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-white">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 bg-white">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                   {isEditing ? 'Editeaza Client' : 'Detalii Client'}
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">
                   {isEditing ? 'Modifica informatiile clientului' : 'Informatii complete despre client'}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                 {!isEditing ? (
                   <>
                     <button
                       type="button"
                       onClick={startEditing}
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <Edit2 size={16} />
-                      Editeaza
+                      <span className="hidden sm:inline">Editeaza</span>
                     </button>
                     <button
                       type="button"
                       onClick={closeDrawer}
-                      className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                      className="rounded-lg border border-gray-200 p-1.5 sm:p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
                     >
                       <X size={18} />
                     </button>
@@ -748,18 +748,19 @@ const Clients = () => {
                       type="button"
                       onClick={handleSave}
                       disabled={updateClientMutation.isPending}
-                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save size={16} />
-                      {updateClientMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
+                      <span className="hidden sm:inline">{updateClientMutation.isPending ? 'Se salveaza...' : 'Salveaza'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsEditing(false)}
                       disabled={updateClientMutation.isPending}
-                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      className="rounded-lg border border-gray-200 px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
-                      Anuleaza
+                      <span className="hidden sm:inline">Anuleaza</span>
+                      <X size={14} className="sm:hidden" />
                     </button>
                   </>
                 )}
@@ -773,10 +774,10 @@ const Clients = () => {
                   <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
                 </div>
               ) : selectedClient ? (
-                <div className="space-y-6 p-6">
+                <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
                   {isEditing ? (
                     /* Edit Form */
-                    <div className="rounded-xl border border-gray-200 bg-white p-6">
+                    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
                       <h3 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
                         <User size={18} className="text-primary" />
                         Editeaza Informatii Client
@@ -809,7 +810,7 @@ const Clients = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         {editForm.type === 'SRL' ? (
                           <>
                             <div>
@@ -946,7 +947,7 @@ const Clients = () => {
                           <User size={18} className="text-primary" />
                           Informatii Client
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           {selectedClient.type === 'SRL' ? (
                         <>
                           <div>
@@ -1049,7 +1050,7 @@ const Clients = () => {
                           /* Add Asset Form */
                           <div className="rounded-lg border-2 border-primary bg-blue-50 p-4">
                             <h4 className="font-semibold text-gray-900 mb-3">{assetSingular} Nou</h4>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div className="col-span-2">
                                 <label className="block text-xs font-medium text-gray-700 mb-1">Nume (generat automat daca e gol)</label>
                                 <input
@@ -1282,7 +1283,7 @@ const Clients = () => {
                                   /* Edit Asset Form */
                                   <>
                                     <h4 className="font-semibold text-gray-900 mb-3">Editeaza {assetSingular}</h4>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                       <div className="col-span-2">
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Nume</label>
                                         <input

@@ -605,17 +605,19 @@ const createMutation = useMutation({
         setSelectedAppointmentId(data.id);
         setActiveTab('details');
 
-        // Generate and open PDF automatically
-        (async () => {
-          try {
-            const { blob: pdfBlob } = await downloadServiceOrderPdf(data.id, { refresh: true });
-            const pdfUrl = window.URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
-            setTimeout(() => window.URL.revokeObjectURL(pdfUrl), 60000);
-          } catch (error) {
-            console.error('Error opening PDF:', error);
-          }
-        })();
+        // Generate and open PDF automatically (only for orgs that use assets/service orders)
+        if (hasAssets) {
+          (async () => {
+            try {
+              const { blob: pdfBlob } = await downloadServiceOrderPdf(data.id, { refresh: true });
+              const pdfUrl = window.URL.createObjectURL(pdfBlob);
+              window.open(pdfUrl, '_blank');
+              setTimeout(() => window.URL.revokeObjectURL(pdfUrl), 60000);
+            } catch (error) {
+              console.error('Error opening PDF:', error);
+            }
+          })();
+        }
       }
     },
     onError: (error) => {
@@ -1350,14 +1352,14 @@ useEffect(() => {
         >
           <div
             ref={modalRef}
-            className="relative mx-auto flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="relative mx-auto flex h-full max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-xl sm:rounded-2xl bg-white shadow-2xl"
             onMouseDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b px-6 py-4">
+            <div className="flex items-center justify-between border-b px-4 sm:px-6 py-3 sm:py-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Creeaza programare</h2>
-                <p className="text-sm text-gray-500">Completeaza detaliile necesare pentru noua programare.</p>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">Creeaza programare</h2>
+                <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Completeaza detaliile necesare pentru noua programare.</p>
               </div>
               <button
                 type="button"
@@ -1370,7 +1372,7 @@ useEffect(() => {
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleCreateSubmit} className="flex-1 space-y-6 overflow-y-auto px-6 py-4">
+            <form onSubmit={handleCreateSubmit} className="flex-1 space-y-4 sm:space-y-6 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">
               {formErrors.length > 0 && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   <ul className="list-disc space-y-1 pl-5">
@@ -1392,7 +1394,7 @@ useEffect(() => {
                         value={formState.title}
                         onChange={(event) => setFormState((prev) => ({ ...prev, title: event.target.value }))}
                         className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="Ex. Revizie auto"
+                        placeholder="Ex. Programare client"
                       />
                     </div>
                     <div className="flex flex-col lg:col-span-3">
@@ -1491,7 +1493,7 @@ useEffect(() => {
                       </label>
                       <ClientAutocomplete
                         onClientSelect={handleClientSelect}
-                        placeholder="Cauta dupa nume, telefon, email, numar auto..."
+                        placeholder="Cauta dupa nume, telefon, email..."
                       />
                     </div>
 
@@ -1735,7 +1737,7 @@ useEffect(() => {
                               value={item.name}
                               onChange={(event) => handleLineItemChange(index, 'name', event.target.value)}
                               className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                              placeholder="ex: Schimb ulei, Becuri, etc."
+                              placeholder="ex: Serviciu, Produs, etc."
                             />
                           </div>
                           <button
@@ -1957,21 +1959,21 @@ useEffect(() => {
       )}
 
       {selectedAppointmentId && (
-        <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-3xl flex-col border-l border-gray-200 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b px-6 py-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Detalii programare</h2>
-              <p className="text-sm text-gray-500">Consulta programarea, echipa alocata si conversatiile.</p>
+        <div className="fixed inset-y-0 right-0 z-40 flex w-full sm:max-w-3xl flex-col border-l border-gray-200 bg-white shadow-xl">
+          <div className="flex items-center justify-between border-b px-4 sm:px-6 py-3 sm:py-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Detalii programare</h2>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Consulta programarea, echipa alocata si conversatiile.</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
               {selectedAppointment?.status !== 'COMPLETED' && !isEditingAppointment && (
                 <button
                   type="button"
                   onClick={startEditingAppointment}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 sm:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <Edit2 size={14} />
-                  Editeaza
+                  <span className="hidden sm:inline">Editeaza</span>
                 </button>
               )}
               {isEditingAppointment && (
@@ -1980,18 +1982,19 @@ useEffect(() => {
                     type="button"
                     onClick={handleSaveAppointment}
                     disabled={updateMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary px-2 sm:px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     <Save size={14} />
-                    {updateMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
+                    <span className="hidden sm:inline">{updateMutation.isPending ? 'Se salveaza...' : 'Salveaza'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={cancelEditingAppointment}
                     disabled={updateMutation.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 sm:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    Anuleaza
+                    <span className="hidden sm:inline">Anuleaza</span>
+                    <X size={14} className="sm:hidden" />
                   </button>
                 </>
               )}
@@ -2008,7 +2011,7 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="flex border-b px-6">
+          <div className="flex border-b px-4 sm:px-6">
             <button
               type="button"
               onClick={() => setActiveTab('details')}
@@ -2039,7 +2042,7 @@ useEffect(() => {
           </div>
 
           {activeTab === 'details' ? (
-            <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
+            <div className="flex-1 space-y-4 sm:space-y-6 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
               {!selectedAppointment ? (
                 <div className="text-sm text-gray-500">Se incarca detaliile...</div>
               ) : (
@@ -2055,7 +2058,7 @@ useEffect(() => {
                             value={editForm.title || ''}
                             onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                            placeholder="Ex. Revizie auto"
+                            placeholder="Ex. Programare client"
                           />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2481,7 +2484,7 @@ useEffect(() => {
                                       value={item.name}
                                       onChange={(event) => handleLineItemChange(index, 'name', event.target.value)}
                                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                                      placeholder="ex: Schimb ulei motor, Becuri far, etc."
+                                      placeholder="ex: Serviciu, Produs, etc."
                                     />
                                   </div>
                                   <button

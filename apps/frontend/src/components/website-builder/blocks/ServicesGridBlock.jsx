@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Clock, Banknote } from 'lucide-react';
+import { getFileUrl } from '@/utils/api';
 
 const ServicesGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [] }) => {
   const {
@@ -79,7 +80,7 @@ const ServicesGridBlock = ({ data, settings, isEditing = false, onClick, crmData
                 {service.image && (
                   <div className="h-48 overflow-hidden">
                     <img
-                      src={service.image}
+                      src={getFileUrl(service.image)}
                       alt={service.name}
                       className="w-full h-full object-cover"
                     />

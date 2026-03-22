@@ -692,7 +692,7 @@ const PersonalTodos = () => {
                   onChange={handleFormChange}
                   maxLength={200}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  placeholder="Ex: Verifica stocul de ulei"
+                  placeholder="Ex: Pregateste raportul zilnic"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   {todoForm.title.length}/200 caractere

@@ -368,7 +368,11 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Datele mele sunt in siguranta?',
-    a: 'Toate comunicatiile sunt criptate (HTTPS). Platforma este conforma GDPR, cu politici de confidentialitate si termeni clari. Datele sunt stocate pe servere securizate cu backup-uri automate.',
+    a: 'Da. Toate comunicatiile sunt criptate prin HTTPS/TLS. Parolele sunt stocate folosind algoritmi de hashing securizati (bcrypt). Platforma include autentificare in doi factori (2FA), protectie CSRF, control al accesului bazat pe roluri (RBAC) si jurnalizarea tuturor actiunilor sensibile. Datele sunt stocate pe servere securizate in Uniunea Europeana cu backup-uri automate zilnice. Platforma este conforma GDPR si Legii nr. 190/2018.',
+  },
+  {
+    q: 'Cat timp sunt pastrate datele mele?',
+    a: 'Datele contului sunt pastrate pe durata utilizarii platformei plus 30 de zile dupa stergere. Documentele financiar-contabile (facturi, chitante) sunt pastrate 5 ani conform Legii contabilitatii nr. 82/1991, modificata prin Legea nr. 36/2023. Situatiile financiare anuale se pastreaza 10 ani. Jurnalele de activitate se sterg automat dupa 12 luni. La stergerea contului, datele fara obligatie legala de pastrare sunt eliminate in 30 de zile.',
   },
   {
     q: 'Pot anula abonamentul oricand?',
@@ -981,8 +985,21 @@ export default function BusinessLanding() {
               </ul>
             </div>
           </div>
-          <div className="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+          <div className="mt-10 border-t border-gray-200 pt-6">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-4 text-xs text-gray-500">
+              <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                ANPC
+              </a>
+              <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                SAL
+              </a>
+              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                SOL
+              </a>
+            </div>
+            <p className="text-center text-xs text-gray-400">
+              &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+            </p>
           </div>
         </div>
       </footer>

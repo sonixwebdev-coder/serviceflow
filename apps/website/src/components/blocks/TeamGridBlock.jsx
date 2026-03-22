@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
+import { cn, resolveFileUrl } from '@/lib/utils';
 import { websiteService } from '@/services/websiteService';
 
 function SkeletonMember() {
@@ -69,7 +69,7 @@ export default function TeamGridBlock({ data, subdomain, branding }) {
               <div className="mb-4">
                 {member.avatar || member.profileImage ? (
                   <img
-                    src={member.avatar || member.profileImage}
+                    src={resolveFileUrl(member.avatar || member.profileImage)}
                     alt={member.name || `${member.firstName} ${member.lastName}`}
                     className="w-32 h-32 lg:w-40 lg:h-40 rounded-full mx-auto object-cover ring-4 ring-gray-100 group-hover:ring-opacity-50 transition-all duration-300"
                     style={{ '--tw-ring-color': `${primaryColor}30` }}

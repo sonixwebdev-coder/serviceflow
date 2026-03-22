@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { getFileUrl } from '@/utils/api';
 
 const isSafeUrl = (url) => {
   if (!url) return false;
@@ -70,7 +71,7 @@ const HeroBlock = ({ data, settings, isEditing = false, onClick }) => {
         <>
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${backgroundImage})` }}
+            style={{ backgroundImage: `url(${getFileUrl(backgroundImage)})` }}
           />
           <div
             className="absolute inset-0"

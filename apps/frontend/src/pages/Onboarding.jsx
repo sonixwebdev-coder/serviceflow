@@ -77,7 +77,7 @@ const Onboarding = () => {
         <div key={step.id} className="flex items-center">
           <div className="flex flex-col items-center">
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-semibold transition-all ${
                 index < currentStep
                   ? 'bg-green-500 text-white'
                   : index === currentStep
@@ -85,10 +85,10 @@ const Onboarding = () => {
                   : 'bg-gray-200 text-gray-500'
               }`}
             >
-              {index < currentStep ? <Check className="w-5 h-5" /> : index + 1}
+              {index < currentStep ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : index + 1}
             </div>
             <span
-              className={`text-xs mt-1 ${
+              className={`text-[10px] sm:text-xs mt-1 ${
                 index === currentStep ? 'text-primary font-medium' : 'text-gray-500'
               }`}
             >
@@ -97,7 +97,7 @@ const Onboarding = () => {
           </div>
           {index < STEPS.length - 1 && (
             <div
-              className={`w-16 h-1 mx-2 ${
+              className={`w-8 sm:w-16 h-0.5 sm:h-1 mx-1 sm:mx-2 ${
                 index < currentStep ? 'bg-green-500' : 'bg-gray-200'
               }`}
             />
@@ -211,10 +211,10 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-8">
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-primary mb-1">ForjaIt</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-1">ForjaIt</h1>
             <p className="text-gray-500 text-sm">Configureaza locatia si serviciile</p>
           </div>
 

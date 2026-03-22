@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { USER_ROLES } from './utils/constants';
 import AuthenticatedProviders from './components/auth/AuthenticatedProviders.jsx';
 import DataPreferences from './components/ui/DataPreferences.jsx';
+import ScrollToTop from './components/ScrollToTop.jsx';
 import NotFound from './pages/NotFound';
 import useAuth from './context/useAuth';
 
@@ -74,6 +75,7 @@ function App() {
   return (
     <ErrorBoundary>
     <BrowserRouter>
+      <ScrollToTop />
       <ToastProvider>
         <AuthProvider>
           <TerminologyProvider>

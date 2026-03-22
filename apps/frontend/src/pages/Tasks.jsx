@@ -626,22 +626,22 @@ const Tasks = () => {
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-2xl rounded-xl bg-white shadow-2xl"
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl"
             style={{ margin: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Task nou</h2>
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Task nou</h2>
               <button
                 type="button"
                 onClick={closeModal}
-                className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+                className="rounded-lg border border-gray-200 p-1.5 sm:p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="px-6 py-4 space-y-4">
+            <form onSubmit={handleCreateTask} className="px-4 sm:px-6 py-3 sm:py-4 space-y-4">
               {taskFormError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {taskFormError}

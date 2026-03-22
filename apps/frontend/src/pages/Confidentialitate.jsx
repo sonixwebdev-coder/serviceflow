@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">1. Operatorul de date</h2>
             <p className="mt-2">
-              Operatorul de date cu caracter personal este ForjaIt SRL, cu sediul in Romania. Aceasta
+              Operatorul de date cu caracter personal este ForjaIt, cu sediul in Romania. Aceasta
               Politica de Confidentialitate descrie modul in care colectam, utilizam, stocam si protejam
               datele dumneavoastra cu caracter personal, in conformitate cu Regulamentul (UE) 2016/679
               (GDPR) si legislatia nationala aplicabila.
@@ -107,10 +107,36 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">5. Durata stocarii datelor</h2>
             <p className="mt-2">
-              Pastram datele dumneavoastra cu caracter personal pe durata utilizarii Platformei si pentru o
-              perioada de 30 de zile dupa stergerea contului, pentru a permite recuperarea accidentala. Datele
-              necesare conformarii cu obligatiile legale (de ex. date fiscale) pot fi pastrate pentru perioade
-              mai lungi, conform legislatiei aplicabile. Jurnalele de activitate sunt sterse automat dupa 12 luni.
+              Pastram datele dumneavoastra cu caracter personal conform principiului minimizarii datelor (GDPR) si
+              in conformitate cu legislatia nationala aplicabila. Perioadele de retentie sunt urmatoarele:
+            </p>
+            <ul className="mt-3 list-disc pl-5 space-y-1">
+              <li>
+                <strong>Date de cont si profil:</strong> pe durata utilizarii Platformei si pentru 30 de zile
+                dupa stergerea contului, pentru a permite recuperarea accidentala
+              </li>
+              <li>
+                <strong>Documente financiar-contabile (facturi, chitante, documente justificative):</strong> 5 ani,
+                calculati de la 1 iulie al anului urmator incheierii exercitiului financiar in care au fost intocmite
+                (Legea contabilitatii nr. 82/1991, modificata prin Legea nr. 36/2023)
+              </li>
+              <li>
+                <strong>Situatii financiare anuale si rapoarte:</strong> 10 ani (Legea nr. 82/1991)
+              </li>
+              <li>
+                <strong>Date despre clienti si programari:</strong> pe durata relatiei contractuale cu organizatia
+                care le-a introdus, plus 3 ani dupa incetarea relatiei (termenul general de prescriptie conform
+                Codului Civil)
+              </li>
+              <li>
+                <strong>Jurnale de activitate si date tehnice:</strong> 12 luni, apoi se sterg automat
+              </li>
+              <li>
+                <strong>Date de marketing (consimtamant):</strong> pana la retragerea consimtamantului
+              </li>
+            </ul>
+            <p className="mt-3">
+              La expirarea perioadelor de retentie, datele sunt sterse definitiv sau anonimizate ireversibil.
             </p>
           </section>
 
@@ -158,12 +184,31 @@ export default function PrivacyPolicy() {
 
           {/* 7 */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">7. Module de analiza si preferinte</h2>
+            <h2 className="text-lg font-semibold text-gray-900">7. Cookie-uri si date stocate local</h2>
             <p className="mt-2">
-              Platforma utilizeaza module de analiza tehnice esentiale pentru functionarea corecta a serviciului
-              (de ex. sesiune de autentificare, preferinte de limba). Aceste module sunt necesare si nu pot fi
-              dezactivate. Module optionale de analiza sunt activate doar cu consimtamantul dumneavoastra
-              explicit, pe care il puteti gestiona din bara de preferinte afisata la prima vizita.
+              In conformitate cu Legea nr. 506/2004 si Directiva ePrivacy, Platforma utilizeaza urmatoarele
+              tipuri de cookie-uri si mecanisme de stocare locala:
+            </p>
+            <ul className="mt-3 list-disc pl-5 space-y-1">
+              <li>
+                <strong>Cookie-uri strict necesare (fara consimtamant):</strong> cookie de sesiune pentru
+                autentificare (httpOnly, securizat), token CSRF pentru protectia formularelor, preferinte de
+                interfata. Acestea sunt esentiale pentru functionarea Platformei si nu pot fi dezactivate.
+              </li>
+              <li>
+                <strong>Stocare locala (localStorage):</strong> preferintele utilizatorului (tema, sidebar,
+                filtre salvate), date de sesiune pentru experienta de utilizare. Nu contin date cu caracter
+                personal sensibile.
+              </li>
+              <li>
+                <strong>Cookie-uri de analiza (cu consimtamant):</strong> pot fi activate optional pentru a
+                intelege cum este utilizata Platforma si a imbunatati experienta. Acestea sunt activate doar
+                cu consimtamantul dumneavoastra explicit.
+              </li>
+            </ul>
+            <p className="mt-3">
+              Puteti gestiona preferintele privind cookie-urile din bannerul afisat la prima vizita sau din
+              setarile browserului. Dezactivarea cookie-urilor strict necesare poate afecta functionarea Platformei.
             </p>
           </section>
 
@@ -242,7 +287,7 @@ export default function PrivacyPolicy() {
                 <strong>Email:</strong> contact@forja.it.com
               </li>
               <li>
-                <strong>Operator:</strong> ForjaIt SRL
+                <strong>Operator:</strong> ForjaIt
               </li>
             </ul>
           </section>
@@ -315,8 +360,21 @@ export default function PrivacyPolicy() {
               </ul>
             </div>
           </div>
-          <div className="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+          <div className="mt-10 border-t border-gray-200 pt-6">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-4 text-xs text-gray-500">
+              <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                ANPC
+              </a>
+              <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                SAL
+              </a>
+              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                SOL
+              </a>
+            </div>
+            <p className="text-center text-xs text-gray-400">
+              &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+            </p>
           </div>
         </div>
       </footer>

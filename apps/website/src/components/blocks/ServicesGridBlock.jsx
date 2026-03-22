@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Clock, Banknote } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn, resolveFileUrl } from '@/lib/utils';
 import { websiteService } from '@/services/websiteService';
 
 function SkeletonCard() {
@@ -78,7 +78,7 @@ export default function ServicesGridBlock({ data, subdomain, branding }) {
             >
               {service.image && (
                 <img
-                  src={service.image}
+                  src={resolveFileUrl(service.image)}
                   alt={service.name}
                   className="w-full h-40 object-cover"
                 />

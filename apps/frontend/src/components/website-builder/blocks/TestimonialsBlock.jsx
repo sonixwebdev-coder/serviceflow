@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Star, ChevronLeft, ChevronRight, Quote, User } from 'lucide-react';
+import { getFileUrl } from '@/utils/api';
 
 const TestimonialsBlock = ({ data, settings, isEditing = false, onClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -62,7 +63,7 @@ const TestimonialsBlock = ({ data, settings, isEditing = false, onClick }) => {
       <div className="flex items-center gap-4">
         {(testimonial.image || testimonial.avatar) ? (
           <img
-            src={testimonial.image || testimonial.avatar}
+            src={getFileUrl(testimonial.image || testimonial.avatar)}
             alt={displayName}
             className="w-12 h-12 rounded-full object-cover"
           />

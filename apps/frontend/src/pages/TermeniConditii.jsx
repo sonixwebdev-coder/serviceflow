@@ -31,7 +31,7 @@ export default function TermsAndConditions() {
             <h2 className="text-lg font-semibold text-gray-900">1. Introducere</h2>
             <p className="mt-2">
               Acesti Termeni si Conditii (denumiti in continuare „Termenii") reglementeaza utilizarea platformei
-              ForjaIt (denumita in continuare „Platforma"), operata de ForjaIt SRL, cu sediul in Romania.
+              ForjaIt (denumita in continuare „Platforma"), operata de ForjaIt, cu sediul in Romania.
               Prin accesarea sau utilizarea Platformei, confirmati ca ati citit, inteles si acceptat acesti Termeni
               in integralitatea lor.
             </p>
@@ -89,7 +89,7 @@ export default function TermsAndConditions() {
             <h2 className="text-lg font-semibold text-gray-900">5. Proprietate intelectuala</h2>
             <p className="mt-2">
               Platforma, inclusiv dar fara a se limita la codul sursa, designul, logo-urile, textele si
-              functionalitajile, sunt proprietatea exclusiva a ForjaIt SRL si sunt protejate de legislatia
+              functionalitajile, sunt proprietatea exclusiva a ForjaIt si sunt protejate de legislatia
               privind drepturile de autor si proprietatea intelectuala. Nu aveti dreptul sa copiati, modificati,
               distribuiti sau sa creati opere derivate fara acordul scris prealabil.
             </p>
@@ -97,7 +97,7 @@ export default function TermsAndConditions() {
 
           {/* 6 */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">6. Datele utilizatorilor</h2>
+            <h2 className="text-lg font-semibold text-gray-900">6. Datele utilizatorilor si retentia datelor</h2>
             <p className="mt-2">
               Datele pe care le introduceti in Platforma (informatii clienti, programari, facturi etc.) va
               apartin. ForjaIt actioneaza ca procesator de date in conformitate cu Regulamentul General
@@ -107,6 +107,31 @@ export default function TermsAndConditions() {
                 Politica de Confidentialitate
               </Link>
               .
+            </p>
+            <p className="mt-3">
+              In conformitate cu legislatia romana, datele sunt pastrate conform urmatoarelor perioade:
+            </p>
+            <ul className="mt-3 list-disc pl-5 space-y-1">
+              <li>
+                <strong>Documente financiar-contabile</strong> (facturi, chitante): <strong>5 ani</strong> de la
+                1 iulie al anului urmator exercitiului financiar (Legea nr. 82/1991, modificata prin Legea nr. 36/2023)
+              </li>
+              <li>
+                <strong>Situatii financiare anuale:</strong> <strong>10 ani</strong> (Legea nr. 82/1991)
+              </li>
+              <li>
+                <strong>Date de cont si profil:</strong> pe durata utilizarii + 30 de zile dupa stergerea contului
+              </li>
+              <li>
+                <strong>Date clienti si programari:</strong> pe durata relatiei contractuale + 3 ani (termen de prescriptie)
+              </li>
+              <li>
+                <strong>Jurnale de activitate:</strong> 12 luni
+              </li>
+            </ul>
+            <p className="mt-3">
+              La stergerea contului, datele vor fi eliminate conform perioadelor de retentie de mai sus.
+              Datele fara obligatie legala de pastrare sunt sterse in termen de 30 de zile.
             </p>
           </section>
 
@@ -125,7 +150,7 @@ export default function TermsAndConditions() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900">8. Limitarea raspunderii</h2>
             <p className="mt-2">
-              In masura maxima permisa de lege, ForjaIt SRL nu va fi raspunzator pentru:
+              In masura maxima permisa de lege, ForjaIt nu va fi raspunzator pentru:
             </p>
             <ul className="mt-3 list-disc pl-5 space-y-1">
               <li>Pierderi indirecte, incidentale sau consecvente rezultate din utilizarea Platformei</li>
@@ -134,7 +159,7 @@ export default function TermsAndConditions() {
               <li>Actiunile sau omisiunile tertilor</li>
             </ul>
             <p className="mt-3">
-              Raspunderea totala a ForjaIt SRL nu va depasi suma platita de utilizator pentru servicii in
+              Raspunderea totala a ForjaIt nu va depasi suma platita de utilizator pentru servicii in
               ultimele 12 luni.
             </p>
           </section>
@@ -183,7 +208,7 @@ export default function TermsAndConditions() {
                 <strong>Email:</strong> contact@forja.it.com
               </li>
               <li>
-                <strong>Platforma:</strong> ForjaIt SRL
+                <strong>Platforma:</strong> ForjaIt
               </li>
             </ul>
           </section>
@@ -256,8 +281,21 @@ export default function TermsAndConditions() {
               </ul>
             </div>
           </div>
-          <div className="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+          <div className="mt-10 border-t border-gray-200 pt-6">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-4 text-xs text-gray-500">
+              <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                ANPC
+              </a>
+              <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                SAL
+              </a>
+              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+                SOL
+              </a>
+            </div>
+            <p className="text-center text-xs text-gray-400">
+              &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+            </p>
           </div>
         </div>
       </footer>

@@ -5,7 +5,7 @@ import { useTerminology } from '../context/TerminologyContext';
 import useToast from '../context/useToast';
 import { exportAllData, downloadFile } from '../services/exportService';
 import { validateVatNumber } from '../services/settingsService';
-import API from '../utils/api.js';
+import API, { getFileUrl } from '../utils/api.js';
 
 const fields = [
   { name: 'companyName', label: 'Nume companie', required: true },
@@ -90,8 +90,7 @@ const CompanySettings = () => {
       }
       // Convert relative logo URL to absolute URL for preview
       if (data.logoUrl) {
-        const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-        setLogoPreview(`${baseUrl}${data.logoUrl}`);
+        setLogoPreview(getFileUrl(data.logoUrl));
       } else {
         setLogoPreview(null);
       }

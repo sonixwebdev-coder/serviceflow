@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Star, ChevronLeft, ChevronRight, Quote, Loader2 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { cn } from '@/lib/utils';
+import { cn, resolveFileUrl } from '@/lib/utils';
 import { websiteService } from '@/services/websiteService';
 
 export default function TestimonialsBlock({ data, branding, subdomain }) {
@@ -90,7 +90,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
       <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
         {testimonial.avatar ? (
           <img
-            src={testimonial.avatar}
+            src={resolveFileUrl(testimonial.avatar)}
             alt={testimonial.name}
             className="w-12 h-12 rounded-full object-cover"
           />

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, Loader2, X } from 'lucide-react';
 import { uploadWebsiteImage } from '@/services/websiteService';
+import { getFileUrl } from '@/utils/api';
 
 function ImageUploadField({ value, onChange, label, hint, accept, previewClass = 'max-h-12 object-contain' }) {
   const [uploading, setUploading] = useState(false);
@@ -61,7 +62,7 @@ function ImageUploadField({ value, onChange, label, hint, accept, previewClass =
       {value && (
         <div className="mt-2 p-3 bg-gray-50 rounded-lg inline-block">
           <img
-            src={value}
+            src={getFileUrl(value)}
             alt="Preview"
             className={previewClass}
             onError={(e) => { e.target.style.display = 'none'; }}

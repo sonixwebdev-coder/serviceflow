@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn, resolveFileUrl } from '@/lib/utils';
 
 export default function ImageBlock({ data, settings }) {
   const { src, alt, caption, link } = data;
@@ -9,7 +9,7 @@ export default function ImageBlock({ data, settings }) {
   const imageElement = (
     <figure>
       <img
-        src={src}
+        src={resolveFileUrl(src)}
         alt={alt || ''}
         loading="lazy"
         className={cn(

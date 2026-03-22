@@ -85,8 +85,8 @@ const staticCorsMiddleware = (req, res, next) => {
 // Allows public access to logos and website assets only
 // Accepts token from: Authorization header, ?token= query param (for <img>, <a>, <audio>)
 const staticAuthMiddleware = (req, res, next) => {
-  // Public paths — logos and website assets don't require auth
-  if (req.path.startsWith('/logos/') || req.path.startsWith('/websites/')) {
+  // Public paths — logos, website assets, and website images don't require auth
+  if (req.path.startsWith('/logos/') || req.path.startsWith('/websites/') || req.path.startsWith('/website-images/')) {
     return next();
   }
 

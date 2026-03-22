@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn, resolveFileUrl } from '@/lib/utils';
 
 const isSafeUrl = (url) => {
   if (!url) return false;
@@ -41,7 +41,7 @@ export default function HeroBlock({ data, settings, subdomain, branding }) {
         heightClasses[height] || heightClasses.large
       )}
       style={{
-        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundImage: backgroundImage ? `url(${resolveFileUrl(backgroundImage)})` : undefined,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

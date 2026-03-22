@@ -96,8 +96,8 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 margin-top-zero">
-      <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" style={{ margin: 0 }}>
+      <div className="relative w-full max-w-lg rounded-lg bg-white p-4 sm:p-6 shadow-xl">
         <button
           type="button"
           onClick={onClose}
@@ -139,7 +139,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Pret

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Menu, X, Phone, Mail, MapPin, Clock, Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { websiteService } from '@/services/websiteService';
-import { cn, applyBranding } from '@/lib/utils';
+import { cn, applyBranding, resolveFileUrl } from '@/lib/utils';
 import UserPreferences from './UserPreferences';
 import ShareButtons from './ShareButtons';
 
@@ -241,7 +241,7 @@ export default function WebsiteLayout() {
                 <Link to={`/${subdomain}`} className="flex items-center gap-3">
                   {branding?.logoUrl ? (
                     <img
-                      src={branding.logoUrl}
+                      src={resolveFileUrl(branding.logoUrl)}
                       alt={organization?.name}
                       className="h-10 w-auto"
                     />

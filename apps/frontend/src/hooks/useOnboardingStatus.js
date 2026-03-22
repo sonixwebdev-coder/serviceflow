@@ -46,8 +46,9 @@ export const useOnboardingStatus = () => {
 
   const markCompletedMutation = useMutation({
     mutationFn: async () => {
-      const currentOrg = queryClient.getQueryData(['organization-me']) || orgQuery.data;
-      const existingSettings = currentOrg?.settings || {};
+      // Fetch fresh org data to avoid overwriting settings saved by other endpoints (e.g. services)
+      const freshOrg = await fetchCurrentOrganization();
+      const existingSettings = freshOrg?.settings || {};
       return updateOrganization({
         settings: { ...existingSettings, onboardingCompleted: true },
       });
