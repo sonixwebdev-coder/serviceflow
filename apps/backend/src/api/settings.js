@@ -86,7 +86,17 @@ router.post(
   '/company/logo',
   authenticate,
   authorize({ roles: ['admin'] }),
-  logoUpload.single('logo'),
+  (req, res, next) => {
+    logoUpload.single('logo')(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          return next(err);
+        }
+        return next(new AppError(err.message || 'File upload failed', 400));
+      }
+      next();
+    });
+  },
   asyncHandler(async (req, res) => {
     if (!req.file) {
       throw new AppError('No file uploaded', 400);

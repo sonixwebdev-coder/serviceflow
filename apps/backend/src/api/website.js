@@ -557,7 +557,17 @@ router.post(
   '/images',
   authenticate,
   authorize({ roles: ['admin'] }),
-  imageUpload.single('image'),
+  (req, res, next) => {
+    imageUpload.single('image')(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          return next(err);
+        }
+        return next(new AppError(err.message || 'File upload failed', 400));
+      }
+      next();
+    });
+  },
   asyncHandler(async (req, res) => {
     if (!req.file) {
       throw new AppError('Nu a fost furnizat niciun fisier', 400);

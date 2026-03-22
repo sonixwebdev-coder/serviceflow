@@ -1,3 +1,4 @@
+const multer = require('multer');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { captureException } = require('../utils/sentry');
@@ -84,6 +85,18 @@ const sanitizeErrorMessage = (err) => {
 const errorHandler = (err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
+  }
+
+  // Handle multer errors (file upload issues)
+  if (err instanceof multer.MulterError) {
+    const multerMessages = {
+      LIMIT_FILE_SIZE: 'Fișierul este prea mare.',
+      LIMIT_FILE_COUNT: 'Prea multe fișiere.',
+      LIMIT_UNEXPECTED_FILE: 'Câmp de fișier neașteptat.',
+    };
+    const message = multerMessages[err.code] || 'Eroare la încărcarea fișierului.';
+    logger.warn('Multer error', { code: err.code, field: err.field, path: req.path });
+    return res.status(400).json({ success: false, message });
   }
 
   const status = err instanceof AppError ? err.status : err.status || err.statusCode || 500;
