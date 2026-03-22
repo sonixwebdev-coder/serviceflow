@@ -371,7 +371,17 @@ router.delete(
 router.post(
   '/messages/:messageId/attachments',
   authenticate,
-  fileUpload.single('file'),
+  (req, res, next) => {
+    fileUpload.single('file')(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          return next(err);
+        }
+        return next(new AppError(err.message || 'File upload failed', 400));
+      }
+      next();
+    });
+  },
   asyncHandler(async (req, res) => {
     if (!req.file) {
       throw new AppError('No file uploaded', 400);
@@ -408,7 +418,17 @@ router.post(
 router.post(
   '/channels/:channelId/upload-file',
   authenticate,
-  fileUpload.single('file'),
+  (req, res, next) => {
+    fileUpload.single('file')(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          return next(err);
+        }
+        return next(new AppError(err.message || 'File upload failed', 400));
+      }
+      next();
+    });
+  },
   asyncHandler(async (req, res) => {
     if (!req.file) {
       throw new AppError('No file uploaded', 400);
@@ -511,7 +531,17 @@ router.post(
 router.post(
   '/channels/:channelId/upload-voice',
   authenticate,
-  voiceUpload.single('voice'),
+  (req, res, next) => {
+    voiceUpload.single('voice')(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          return next(err);
+        }
+        return next(new AppError(err.message || 'Voice upload failed', 400));
+      }
+      next();
+    });
+  },
   asyncHandler(async (req, res) => {
     if (!req.file) {
       throw new AppError('No voice file uploaded', 400);

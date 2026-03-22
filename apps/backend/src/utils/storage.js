@@ -25,8 +25,19 @@ const resolvePath = (relativePath = '') => {
 
 const writeFile = async (relativePath, buffer) => {
   const fullPath = resolvePath(relativePath);
-  await ensureDirectory(path.dirname(fullPath));
-  await fsp.writeFile(fullPath, buffer);
+  try {
+    await ensureDirectory(path.dirname(fullPath));
+    await fsp.writeFile(fullPath, buffer);
+  } catch (err) {
+    if (err.code === 'EACCES') {
+      const { AppError } = require('./errors');
+      throw new AppError(
+        'Server storage is not writable. Please check file system permissions.',
+        500
+      );
+    }
+    throw err;
+  }
   return fullPath;
 };
 
