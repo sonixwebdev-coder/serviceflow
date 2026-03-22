@@ -40,24 +40,18 @@ const fileUpload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
-      'text/csv',
+    // Block only dangerous executable types
+    const blockedTypes = [
+      'application/x-executable',
+      'application/x-msdownload',
+      'application/x-msdos-program',
     ];
+    const blockedExtensions = /\.(exe|bat|cmd|sh|msi|dll|com|scr|pif|vbs|js|wsf|ps1)$/i;
 
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
+    if (blockedTypes.includes(file.mimetype) || blockedExtensions.test(file.originalname)) {
       cb(new AppError('File type not allowed', 400), false);
+    } else {
+      cb(null, true);
     }
   },
 });
