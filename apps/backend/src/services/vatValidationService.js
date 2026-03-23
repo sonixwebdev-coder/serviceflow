@@ -3,7 +3,9 @@ const cache = require('../utils/cache');
 const logger = require('../utils/logger');
 
 const VIES_URL = 'https://ec.europa.eu/taxation_customs/vies/services/checkVatService';
+const ANAF_URL = 'https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva';
 const VIES_TIMEOUT = 10000;
+const ANAF_TIMEOUT = 10000;
 const VAT_CACHE_TTL = 86400; // 24 hours
 
 const CUI_TEST_KEY = [7, 5, 3, 2, 1, 7, 5, 3, 2];
@@ -130,7 +132,65 @@ async function validateVatVies(countryCode, vatNumber) {
 }
 
 /**
- * Orchestrator: validate a VAT number (local checksum + VIES).
+ * Call the ANAF public API to verify a Romanian CUI.
+ * Used as a fallback when VIES is unavailable.
+ */
+async function validateVatAnaf(vatNumber) {
+  const cui = parseInt(vatNumber, 10);
+  if (isNaN(cui)) {
+    throw new AppError('CUI-ul trebuie sa fie numeric', 400);
+  }
+
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ANAF_TIMEOUT);
+
+  let data;
+  try {
+    const response = await fetch(ANAF_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ cui, data: today }]),
+      signal: controller.signal,
+    });
+
+    // ANAF returns 200 when found, 404 when not found — both have valid JSON bodies
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // Non-JSON response (HTML error page, etc.) means service is truly down
+      throw new Error(`ANAF returned non-JSON response (status ${response.status})`);
+    }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new AppError('Serviciul ANAF nu este disponibil momentan.', 503);
+    }
+    if (err instanceof AppError) throw err;
+    throw new AppError('Serviciul ANAF nu este disponibil momentan.', 503);
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  // ANAF returns { found: [...], notFound: [...] }
+  const found = data?.found?.[0];
+  if (!found?.date_generale) {
+    return { valid: false, name: '', address: '' };
+  }
+
+  const generalData = found.date_generale;
+
+  return {
+    valid: true,
+    name: generalData.denumire || '',
+    address: generalData.adresa || '',
+  };
+}
+
+/**
+ * Orchestrator: validate a VAT number.
+ * RO: local checksum → cache → ANAF (primary) → VIES (fallback) → cache fallback
+ * EU: cache → VIES → cache fallback
  */
 async function validateVatNumber(vatNumber) {
   let input = String(vatNumber).trim().toUpperCase();
@@ -161,32 +221,58 @@ async function validateVatNumber(vatNumber) {
     return cached;
   }
 
-  // VIES verification
-  let viesResult;
-  try {
-    viesResult = await validateVatVies(countryCode, number);
-  } catch (err) {
-    // On VIES unavailability (503), try to serve from cache as fallback
-    if (err.statusCode === 503 || err.status === 503) {
-      const fallback = await cache.get(cacheKey);
-      if (fallback) {
-        logger.info(`VIES unavailable, serving cached result for ${countryCode}${number}`);
-        return fallback;
+  // Romanian CUIs: ANAF primary, VIES fallback
+  // Non-Romanian EU VAT: VIES only
+  let validationResult;
+
+  if (countryCode === 'RO') {
+    try {
+      validationResult = await validateVatAnaf(number);
+    } catch (anafErr) {
+      const anafUnavailable = anafErr.status === 503;
+      if (anafUnavailable) {
+        logger.info(`ANAF unavailable for RO${number}, falling back to VIES`);
+        try {
+          validationResult = await validateVatVies(countryCode, number);
+        } catch (viesErr) {
+          logger.warn(`VIES fallback also failed for RO${number}: ${viesErr.message}`);
+          const fallback = await cache.get(cacheKey);
+          if (fallback) {
+            logger.info(`Both ANAF and VIES unavailable, serving cached result for RO${number}`);
+            return fallback;
+          }
+          throw new AppError('Serviciile de validare (ANAF si VIES) nu sunt disponibile momentan. Incercati mai tarziu.', 503);
+        }
+      } else {
+        throw anafErr;
       }
     }
-    throw err;
+  } else {
+    try {
+      validationResult = await validateVatVies(countryCode, number);
+    } catch (viesErr) {
+      const isUnavailable = viesErr.status === 503;
+      if (isUnavailable) {
+        const fallback = await cache.get(cacheKey);
+        if (fallback) {
+          logger.info(`VIES unavailable, serving cached result for ${countryCode}${number}`);
+          return fallback;
+        }
+      }
+      throw viesErr;
+    }
   }
 
-  if (!viesResult.valid) {
-    throw new AppError('CUI-ul nu a fost gasit in registrul VIES. Verificati numarul.', 400);
+  if (!validationResult.valid) {
+    throw new AppError('CUI-ul nu a fost gasit in registru. Verificati numarul.', 400);
   }
 
   const result = {
     valid: true,
     countryCode,
     vatNumber: number,
-    name: viesResult.name,
-    address: viesResult.address,
+    name: validationResult.name,
+    address: validationResult.address,
   };
 
   // Cache only valid results (don't cache failures — user may have mistyped)
@@ -198,5 +284,6 @@ async function validateVatNumber(vatNumber) {
 module.exports = {
   validateCuiChecksum,
   validateVatVies,
+  validateVatAnaf,
   validateVatNumber,
 };

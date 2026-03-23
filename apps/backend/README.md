@@ -1,8 +1,8 @@
-# ViperX CRM API (Backend)
+# ForjaIt Backend API
 
-Express backend that is being migrated from MongoDB to PostgreSQL + Prisma to power the unified Team Manager + CRM experience.
+Express REST API powering the ForjaIt platform. PostgreSQL via Prisma ORM, real-time communication with Socket.io, Redis caching, Stripe billing, and Brevo transactional emails.
 
-## 🛠️ Setup
+## Setup
 
 1. Install workspace dependencies from the monorepo root:
    ```bash
@@ -14,16 +14,14 @@ Express backend that is being migrated from MongoDB to PostgreSQL + Prisma to po
    cp apps/backend/.env.example apps/backend/.env
    ```
 
-3. Configure the following keys in `apps/backend/.env`:
+3. Configure the required keys in `apps/backend/.env`:
    ```env
    PORT=5000
-   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/viperx"
-   MONGODB_URI="mongodb://127.0.0.1:27017/viperx"  # temporary while legacy modules are ported
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/forjait"
    JWT_ACCESS_SECRET=your_access_secret
    JWT_REFRESH_SECRET=your_refresh_secret
-   JWT_SECRET=legacy_secret_for_existing_routes
 
-   # Optional: Redis for caching (improves performance 10-100x for cached queries)
+   # Optional: Redis for caching
    REDIS_URL=redis://localhost:6379
    ```
 
@@ -32,68 +30,68 @@ Express backend that is being migrated from MongoDB to PostgreSQL + Prisma to po
    sudo apt install redis-server -y
    ```
 
-5. Generate the Prisma client (after editing `prisma/schema.prisma`):
+5. Generate the Prisma client:
    ```bash
    npm run prisma:generate
    ```
 
-6. Run local migrations once PostgreSQL is configured:
+6. Run migrations:
    ```bash
    npm run prisma:migrate
    ```
 
 7. Start the API:
    ```bash
-   # Development with nodemon (auto-starts Redis if installed)
-   npm run dev
-
-   # Development without Redis auto-start
-   npm run dev:no-redis
-
-   # Production build
-   npm start
+   npm run dev          # Development (auto-starts Redis if available)
+   npm run dev:no-redis # Development without Redis
+   npm start            # Production
    ```
 
-## 📂 Key Directories
+## Directory Structure
 
 ```
 apps/backend/
-├── config/        # Temporary MongoDB connector (to be removed after migration)
-├── lib/           # Prisma client singleton
-├── middleware/    # Auth, RBAC, validation, rate limiting
-├── models/        # Legacy Mongoose models (being ported to Prisma)
-├── routes/        # Express routers
-├── scripts/       # CLI utilities (e.g., admin seeding)
-├── server.js      # Express bootstrap & Prisma connection
-└── .env.example   # Backend environment template
+├── src/
+│   ├── api/          # 36 Express route modules
+│   ├── services/     # Business logic layer
+│   ├── middleware/    # Auth, RBAC, validation, rate limiting
+│   ├── schemas/      # Zod validation schemas
+│   ├── realtime/     # Socket.io event handlers
+│   ├── jobs/         # Scheduled cron jobs
+│   ├── templates/    # Handlebars email templates
+│   ├── scripts/      # CLI utilities
+│   ├── lib/          # Prisma client singleton
+│   ├── constants/    # Shared constants
+│   └── utils/        # Helpers
+├── assets/           # Fonts and static files for PDF generation
+├── server.js         # Express bootstrap & Prisma connection
+├── Dockerfile        # Production container
+└── dev-start.sh      # Dev startup script
 ```
 
-## 🚧 Migration Status
+## API Modules
 
-- ✅ Prisma client wired into the API bootstrap
-- ✅ Initial PostgreSQL schema defined in `prisma/schema.prisma`
-- 🔄 Legacy MongoDB collections still in use until route/service migration is complete
-- 🔜 Replace Mongoose models/routes with Prisma-powered services and add Socket.io realtime layer
+auth, users, organizations, clients, appointments, assets, resources, invoices, payments, billing, chat, notifications, push notifications, loyalty, tasks, personal todos, leave requests, time tracking, analytics, audit logs, search, exports, email templates, settings, locations, services, website, contact, integrations, webhooks, pricing, support, super admin, two-factor auth.
 
-## 🤖 Scripts
+## Scripts
 
-- `npm run dev` – start dev server (auto-starts Redis if installed)
-- `npm run dev:no-redis` – start dev server without Redis auto-start
-- `npm start` – start production server
-- `npm run prisma:generate` – regenerate Prisma client
-- `npm run prisma:migrate` – apply development migrations
-- `npm run prisma:deploy` – apply migrations in production environments
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server (auto-starts Redis if available) |
+| `npm run dev:no-redis` | Dev server without Redis |
+| `npm start` | Production server |
+| `npm run prisma:generate` | Regenerate Prisma client |
+| `npm run prisma:migrate` | Apply dev migrations |
+| `npm run prisma:deploy` | Apply migrations in production |
+| `npm test` | Run tests with Jest |
 
-## ⚡ Performance Features
+## Performance
 
-- **Database Indexes**: 18 strategic indexes for 5-10x faster queries
-- **Optimized Queries**: Reduced data transfer by 40-60%
-- **Redis Caching** (optional): 10-100x faster for cached queries
-  - User data cached for 5 minutes
-  - Company settings cached for 30 minutes
-  - Automatic cache invalidation on updates
-  - App works perfectly without Redis
+- Strategic database indexes for optimized queries
+- Redis caching (optional): user data (5 min TTL), company settings (30 min TTL), automatic invalidation on updates
+- Rate limiting per route with express-rate-limit (Redis-backed when available)
+- App works fully without Redis
 
 ---
 
-Private – ViperX Internal Use Only.
+Private — ForjaIt Internal Use Only.
