@@ -26,6 +26,7 @@ import {
   getActiveAddons,
   purchaseAddon,
   verifyCheckout,
+  verifyAddonCheckout,
 } from '../services/billingService';
 import {
   PLAN_NAMES,
@@ -278,16 +279,19 @@ export default function BillingSettings() {
     }
   };
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
-
   // Handle redirect status from Stripe Checkout (use ref to prevent duplicate toasts)
   const handledStatusRef = useRef(null);
   useEffect(() => {
     const checkoutStatus = searchParams.get('status');
     const sessionId = searchParams.get('session_id');
-    if (!checkoutStatus || handledStatusRef.current === checkoutStatus) return;
+
+    // No checkout redirect — just load data normally
+    if (!checkoutStatus) {
+      fetchAll();
+      return;
+    }
+
+    if (handledStatusRef.current === checkoutStatus) return;
     handledStatusRef.current = checkoutStatus;
 
     // Clean up URL params immediately to prevent re-triggers
@@ -324,11 +328,19 @@ export default function BillingSettings() {
         description: 'Pachetul suplimentar a fost activat cu succes.',
         type: 'success',
       });
-      const timer = setTimeout(async () => {
+      const verifyAddon = async () => {
+        try {
+          if (sessionId) {
+            await verifyAddonCheckout(sessionId);
+          }
+        } catch {
+          // Webhook may have already handled it — not critical
+        }
         await fetchAll();
         refreshAuthSession().catch(() => {});
-      }, 2000);
-      return () => clearTimeout(timer);
+      };
+      verifyAddon();
+      return;
     }
     if (checkoutStatus === 'cancelled') {
       showToast({
@@ -336,6 +348,7 @@ export default function BillingSettings() {
         description: 'Sesiunea de plata a fost anulata.',
         type: 'warning',
       });
+      fetchAll();
     }
   }, [searchParams]);
 

@@ -151,6 +151,25 @@ router.post(
 );
 
 /**
+ * POST /api/billing/addons/verify
+ * Verify a completed addon checkout session and activate the addon.
+ * Safety net for when the webhook is delayed or fails.
+ * Body: { sessionId: string }
+ */
+router.post(
+  '/addons/verify',
+  asyncHandler(async (req, res) => {
+    const { sessionId } = req.body;
+    if (!sessionId) {
+      return errorResponse(res, 400, 'sessionId is required');
+    }
+
+    const addon = await addonService.verifyAddonCheckout(sessionId, req.user.organizationId);
+    return ok(res, addon, 'Add-on verified and activated');
+  })
+);
+
+/**
  * POST /api/billing/verify-checkout
  * Verify a completed Stripe Checkout session and sync the subscription.
  * Called by the frontend after redirect from Stripe to ensure the org

@@ -68,6 +68,15 @@ export const verifyCheckout = async (sessionId) => {
 };
 
 /**
+ * Verify a completed addon checkout session and activate the addon.
+ * @param {string} sessionId - Stripe Checkout session ID from redirect URL
+ */
+export const verifyAddonCheckout = async (sessionId) => {
+  const response = await API.post('/billing/addons/verify', { sessionId });
+  return response.data?.data || response.data;
+};
+
+/**
  * Purchase an add-on pack — creates checkout and redirects
  */
 export const purchaseAddon = async (addonType) => {

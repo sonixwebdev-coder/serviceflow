@@ -47,7 +47,7 @@ const createAddonCheckout = async (organization, addonType) => {
       addonType,
       organizationId: organization.id,
     },
-    success_url: `${frontendUrl}/settings/billing?status=addon_success`,
+    success_url: `${frontendUrl}/settings/billing?session_id={CHECKOUT_SESSION_ID}&status=addon_success`,
     cancel_url: `${frontendUrl}/settings/billing?status=cancelled`,
   });
 
@@ -75,6 +75,17 @@ const handleAddonPayment = async (session) => {
     return;
   }
 
+  const paymentId = session.payment_intent || session.id;
+
+  // Idempotency: skip if addon was already created (e.g. by verify-addon endpoint)
+  const existing = await prisma.quotaAddon.findFirst({
+    where: { stripePaymentId: paymentId },
+  });
+  if (existing) {
+    logger.info('[ADDON] Addon already exists for payment, skipping', { paymentId, addonType });
+    return;
+  }
+
   // Calculate expiry: end of current month for appointments, null for clients
   let expiresAt = null;
   if (!pack.permanent) {
@@ -89,7 +100,7 @@ const handleAddonPayment = async (session) => {
       resource: pack.resource,
       amount: pack.amount,
       expiresAt,
-      stripePaymentId: session.payment_intent || session.id,
+      stripePaymentId: paymentId,
     },
   });
 
@@ -100,6 +111,89 @@ const handleAddonPayment = async (session) => {
     resource: pack.resource,
     expiresAt,
   });
+};
+
+/**
+ * Verify a completed addon checkout session and activate the addon.
+ * Safety net for when the webhook is delayed or fails.
+ */
+const verifyAddonCheckout = async (sessionId, organizationId) => {
+  const stripe = await getStripe();
+  if (!stripe) {
+    throw new AppError('Sistemul de plata nu este configurat', 503);
+  }
+
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId);
+  } catch (err) {
+    logger.warn('[ADDON] verify: failed to retrieve session', { sessionId, error: err.message });
+    throw new AppError('Sesiunea de plata este invalida', 400);
+  }
+
+  // Verify this is an addon payment session belonging to this org
+  if (session.mode !== 'payment' || !session.metadata?.addonType) {
+    throw new AppError('Aceasta sesiune nu este o achizitie de pachet suplimentar', 400);
+  }
+
+  if (session.metadata.organizationId !== organizationId) {
+    throw new AppError('Sesiunea nu apartine acestei organizatii', 403);
+  }
+
+  if (session.payment_status !== 'paid') {
+    throw new AppError('Plata nu a fost finalizata', 400);
+  }
+
+  // Check if addon was already created (by webhook or previous verify call)
+  const paymentId = session.payment_intent || session.id;
+  const existing = await prisma.quotaAddon.findFirst({
+    where: { stripePaymentId: paymentId },
+  });
+
+  if (existing) {
+    logger.debug('[ADDON] verify: addon already exists', { sessionId, paymentId });
+    return existing;
+  }
+
+  // Store stripeCustomerId if needed
+  if (session.customer) {
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: { stripeCustomerId: session.customer },
+    });
+  }
+
+  // Create the addon (same logic as handleAddonPayment)
+  const settings = await getSettings();
+  const pack = getAddonPack(session.metadata.addonType, settings);
+  if (!pack) {
+    throw new AppError('Tipul de pachet suplimentar este invalid', 400);
+  }
+
+  let expiresAt = null;
+  if (!pack.permanent) {
+    const now = new Date();
+    expiresAt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  }
+
+  const addon = await prisma.quotaAddon.create({
+    data: {
+      organizationId,
+      type: session.metadata.addonType,
+      resource: pack.resource,
+      amount: pack.amount,
+      expiresAt,
+      stripePaymentId: paymentId,
+    },
+  });
+
+  logger.info('[ADDON] verify: add-on pack activated via verify', {
+    organizationId,
+    addonType: session.metadata.addonType,
+    amount: pack.amount,
+  });
+
+  return addon;
 };
 
 /**
@@ -127,6 +221,7 @@ const getAvailableAddons = async () => {
 module.exports = {
   createAddonCheckout,
   handleAddonPayment,
+  verifyAddonCheckout,
   getActiveAddons,
   getAvailableAddons,
 };
