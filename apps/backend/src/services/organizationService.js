@@ -6,6 +6,7 @@ const { ensureRole } = require('./roleService');
 const { ACTIVITY_SECTORS, isValidSector } = require('../constants/activitySectors');
 const { sendCrmWelcomeEmail } = require('./email/emailService');
 const { getAllPlanLimits } = require('../utils/planLimits');
+const { validateCuiChecksum, validateVatNumber } = require('./vatValidationService');
 const logger = require('../utils/logger');
 
 const createOrganization = async ({
@@ -48,6 +49,48 @@ const createOrganization = async ({
       'Organization slug must be lowercase alphanumeric with hyphens only',
       400
     );
+  }
+
+  // Validate entity type
+  if (entityType && !['SRL', 'PFA'].includes(entityType)) {
+    throw new AppError('Tipul entitatii trebuie sa fie SRL sau PFA', 400);
+  }
+
+  // Enforce VAT validation for SRL/PFA entities (defense-in-depth)
+  if (vatNumber) {
+    const checksumResult = validateCuiChecksum(vatNumber);
+    if (!checksumResult.valid) {
+      throw new AppError(checksumResult.error, 400);
+    }
+
+    // Also verify against ANAF/VIES to prevent made-up CUIs that pass checksum
+    try {
+      await validateVatNumber(vatNumber);
+    } catch (vatErr) {
+      // Only block if the service says the CUI is invalid (not if the service is down)
+      if (vatErr.status !== 503) {
+        throw new AppError(
+          vatErr.message || 'CUI-ul nu a putut fi verificat. Incercati din nou.',
+          400
+        );
+      }
+      // If ANAF/VIES are both down (503), allow signup with checksum-valid CUI
+      // The CUI was already checksum-validated above
+      logger.warn(`VAT services unavailable during signup for CUI ${vatNumber} — allowing checksum-valid CUI`);
+    }
+  } else {
+    throw new AppError('CUI-ul este obligatoriu', 400);
+  }
+
+  // Validate email format (defense-in-depth)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new AppError('Adresa de email a administratorului nu este valida', 400);
+  }
+
+  // Validate company email if provided
+  if (companyEmail && !emailRegex.test(companyEmail)) {
+    throw new AppError('Adresa de email a companiei nu este valida', 400);
   }
 
   // Hash password

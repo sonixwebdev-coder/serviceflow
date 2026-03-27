@@ -156,11 +156,18 @@ const Signup = () => {
     }
   };
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const PHONE_REGEX = /^(\+?4?0?\s?)?(2\d{2}|3\d{2}|7\d{2})\s?\d{3}\s?\d{3,4}$/;
+
   const validateStep = (step) => {
     switch (step) {
       case 0:
         if (!formData.organizationName.trim()) {
           setError('Numele organizatiei este obligatoriu');
+          return false;
+        }
+        if (formData.organizationName.trim().length < 2) {
+          setError('Numele organizatiei trebuie sa aiba minim 2 caractere');
           return false;
         }
         if (!formData.slug.trim()) {
@@ -189,6 +196,14 @@ const Signup = () => {
           setError('Email-ul este obligatoriu');
           return false;
         }
+        if (!EMAIL_REGEX.test(formData.email.trim())) {
+          setError('Adresa de email nu este valida');
+          return false;
+        }
+        if (formData.phoneNumber && !PHONE_REGEX.test(formData.phoneNumber.replace(/\s+/g, ''))) {
+          setError('Numarul de telefon nu este valid (format RO, ex: 0712345678)');
+          return false;
+        }
         if (formData.password.length < 8) {
           setError('Parola trebuie sa aiba minim 8 caractere');
           return false;
@@ -211,8 +226,16 @@ const Signup = () => {
       case 3: {
         const errs = {};
         if (!companyData.companyAddress.trim()) errs.companyAddress = 'Adresa este obligatorie';
-        if (!companyData.companyEmail.trim()) errs.companyEmail = 'Email-ul este obligatoriu';
-        if (!companyData.companyPhone.trim()) errs.companyPhone = 'Telefonul este obligatoriu';
+        if (!companyData.companyEmail.trim()) {
+          errs.companyEmail = 'Email-ul este obligatoriu';
+        } else if (!EMAIL_REGEX.test(companyData.companyEmail.trim())) {
+          errs.companyEmail = 'Adresa de email nu este valida';
+        }
+        if (!companyData.companyPhone.trim()) {
+          errs.companyPhone = 'Telefonul este obligatoriu';
+        } else if (!PHONE_REGEX.test(companyData.companyPhone.replace(/\s+/g, ''))) {
+          errs.companyPhone = 'Numarul de telefon nu este valid (format RO, ex: 0712345678)';
+        }
         if (!companyData.vatNumber.trim()) {
           errs.vatNumber = 'CUI-ul este obligatoriu';
         } else if (vatValidation.status !== 'valid') {

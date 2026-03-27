@@ -19,9 +19,9 @@ const orgListQuery = paginationSchema.extend({
 const orgUpdate = z.object({
   status: z.enum(['ACTIVE', 'SUSPENDED', 'TRIAL', 'CANCELLED', 'PAYMENT_REQUIRED']).optional(),
   plan: z.enum(['FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE']).optional(),
-  maxUsers: z.coerce.number().int().min(1).max(10000).optional(),
-  maxClients: z.coerce.number().int().min(1).max(100000).optional(),
-  maxAppointments: z.coerce.number().int().min(1).max(1000000).optional(),
+  maxUsers: z.coerce.number().int().min(0).max(10000).optional(),
+  maxClients: z.coerce.number().int().min(0).max(100000).optional(),
+  maxAppointments: z.coerce.number().int().min(0).max(1000000).optional(),
 }).strict();
 
 // ─── Billing ─────────────────────────────────────────────────────────────────

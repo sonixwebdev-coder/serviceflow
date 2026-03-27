@@ -77,27 +77,29 @@ export default function PlatformSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+      <div className="flex items-center justify-center py-20">
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
       </div>
     );
   }
 
+  const inputClass = 'w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors';
+
   const secretField = (label, key) => (
     <div key={key}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
       <div className="relative">
         <input
           type={showSecrets[key] ? 'text' : 'password'}
           value={form[key] || ''}
           onChange={(e) => handleChange(key, e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+          className={`${inputClass} pr-10`}
           placeholder="sk_live_..."
         />
         <button
           type="button"
           onClick={() => toggleSecret(key)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
         >
           {showSecrets[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
@@ -106,25 +108,20 @@ export default function PlatformSettings() {
   );
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Setari Platforma</h1>
-        <p className="text-sm text-gray-500 mt-1">Configurare credentiale Stripe si preturi abonamente.</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {/* Stripe Credentials */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Credentiale Stripe</h2>
+        <section className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Credentiale Stripe</h2>
           <div className="grid grid-cols-1 gap-4">
             {secretField('Secret Key', 'stripeSecretKey')}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Publishable Key</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Publishable Key</label>
               <input
                 type="text"
                 value={form.stripePublishableKey || ''}
                 onChange={(e) => handleChange('stripePublishableKey', e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                className={inputClass}
                 placeholder="pk_live_..."
               />
             </div>
@@ -133,22 +130,22 @@ export default function PlatformSettings() {
         </section>
 
         {/* Price IDs */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Price IDs Stripe</h2>
+        <section className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Price IDs Stripe</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {PLANS.map((plan) =>
               INTERVALS.map((interval) => {
                 const key = `price${plan}${interval}`;
                 return (
                   <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">
                       {plan} - {interval}
                     </label>
                     <input
                       type="text"
                       value={form[key] || ''}
                       onChange={(e) => handleChange(key, e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      className={inputClass}
                       placeholder="price_..."
                     />
                   </div>
@@ -159,9 +156,9 @@ export default function PlatformSettings() {
         </section>
 
         {/* Display Prices */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Preturi afisate (RON / luna)</h2>
-          <p className="text-sm text-gray-500 mb-4">
+        <section className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Preturi afisate (RON / luna)</h2>
+          <p className="text-[11px] text-gray-400 mb-4">
             Toate preturile se introduc ca pret pe luna. Pentru abonamentele anuale, pretul afisat va fi inmultit automat cu 12 pentru totalul anual.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -170,7 +167,7 @@ export default function PlatformSettings() {
                 const key = `displayPrice${plan}${interval}`;
                 return (
                   <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">
                       {plan} - {interval === 'Annual' ? 'Anual (pret/luna)' : 'Lunar'}
                     </label>
                     <input
@@ -179,7 +176,7 @@ export default function PlatformSettings() {
                       step="0.01"
                       value={form[key] ?? ''}
                       onChange={(e) => handleChange(key, e.target.value ? Number(e.target.value) : '')}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                      className={inputClass}
                       placeholder="0.00"
                     />
                   </div>
@@ -190,12 +187,12 @@ export default function PlatformSettings() {
         </section>
 
         {/* Addon Packs */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Pachete suplimentare</h2>
+        <section className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Pachete suplimentare</h2>
 
           {/* Price IDs */}
-          <h3 className="text-sm font-medium text-gray-900 mb-2">Price IDs Stripe</h3>
-          <p className="text-sm text-gray-500 mb-3">
+          <h3 className="text-xs font-medium text-gray-900 mb-1.5">Price IDs Stripe</h3>
+          <p className="text-[11px] text-gray-400 mb-3">
             Daca este configurat un Price ID, acesta va fi folosit in checkout. Altfel se creeaza pretul inline.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -206,14 +203,14 @@ export default function PlatformSettings() {
               { key: 'addonPriceIdAppointments500', label: '+500 Programari' },
             ].map(({ key, label }) => (
               <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
                   {label}
                 </label>
                 <input
                   type="text"
                   value={form[key] || ''}
                   onChange={(e) => handleChange(key, e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                  className={inputClass}
                   placeholder="price_..."
                 />
               </div>
@@ -221,8 +218,8 @@ export default function PlatformSettings() {
           </div>
 
           {/* Fallback prices */}
-          <h3 className="text-sm font-medium text-gray-900 mb-2">Preturi fallback (bani)</h3>
-          <p className="text-sm text-gray-500 mb-3">
+          <h3 className="text-xs font-medium text-gray-900 mb-1.5">Preturi fallback (bani)</h3>
+          <p className="text-[11px] text-gray-400 mb-3">
             Folosite doar cand nu exista un Price ID configurat. 1 RON = 100 bani.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -233,7 +230,7 @@ export default function PlatformSettings() {
               { key: 'addonPriceAppointments500', label: '+500 Programari', defaultPrice: 1900 },
             ].map(({ key, label, defaultPrice }) => (
               <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
                   {label}
                 </label>
                 <input
@@ -242,7 +239,7 @@ export default function PlatformSettings() {
                   step="1"
                   value={form[key] ?? ''}
                   onChange={(e) => handleChange(key, e.target.value ? Number(e.target.value) : '')}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                  className={inputClass}
                   placeholder={`implicit: ${defaultPrice} (${defaultPrice / 100} RON)`}
                 />
               </div>
@@ -251,17 +248,17 @@ export default function PlatformSettings() {
         </section>
 
         {/* Trial Days */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Perioada de trial</h2>
+        <section className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Perioada de trial</h2>
           <div className="max-w-xs">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Zile trial</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Zile trial</label>
             <input
               type="number"
               min="0"
               max="365"
               value={form.trialDays ?? 14}
               onChange={(e) => handleChange('trialDays', Number(e.target.value))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              className={inputClass}
             />
           </div>
         </section>
@@ -271,7 +268,7 @@ export default function PlatformSettings() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-all hover:shadow"
           >
             {saving ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -284,10 +281,10 @@ export default function PlatformSettings() {
       </form>
 
       {/* Password Change */}
-      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Schimbare parola</h2>
+      <section className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">Schimbare parola</h2>
         {passwordError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {passwordError}
           </div>
         )}
@@ -319,39 +316,39 @@ export default function PlatformSettings() {
           className="space-y-4 max-w-md"
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Parola curenta</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Parola curenta</label>
             <input
               type="password"
               required
               value={passwordForm.currentPassword}
               onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Parola noua</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Parola noua</label>
             <input
               type="password"
               required
               value={passwordForm.newPassword}
               onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              className={inputClass}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmare parola noua</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Confirmare parola noua</label>
             <input
               type="password"
               required
               value={passwordForm.confirmPassword}
               onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              className={inputClass}
             />
           </div>
           <button
             type="submit"
             disabled={changingPassword}
-            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 disabled:opacity-50 transition-all hover:shadow"
           >
             {changingPassword ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

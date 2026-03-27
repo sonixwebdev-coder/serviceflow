@@ -101,6 +101,7 @@ router.get(
         id: true, name: true, slug: true, plan: true, status: true,
         activitySector: true, maxUsers: true, maxClients: true, maxAppointments: true,
         stripeCustomerId: true, subscriptionId: true, subscriptionEndsAt: true,
+        trialEndsAt: true, trialUsed: true,
         planOverride: true, planOverrideBy: true, planOverrideAt: true, planOverrideReason: true,
         createdAt: true, updatedAt: true,
         _count: {
