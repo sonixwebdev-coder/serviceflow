@@ -55,7 +55,7 @@ model Organization {
   loyaltyProgram       LoyaltyProgram?
   supportTickets       SupportTicket[]
   quotaAddons          QuotaAddon[]
-  companySettings      CompanySetting[]
+  profile              OrganizationProfile?
 
   @@index([slug])
   @@index([status])
@@ -714,16 +714,35 @@ model InvoiceLineItem {
   @@index([order])
 }
 
-model CompanySetting {
-  id             String       @id @default(cuid())
-  name           String
-  value          Json
-  organizationId String?      @map("organization_id")
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+model OrganizationProfile {
+  id                 String       @id @default(cuid())
+  organizationId     String       @unique @map("organization_id")
+  companyName        String?      @map("company_name")
+  legalName          String?      @map("legal_name")
+  address            String?
+  email              String?
+  phone              String?
+  website            String?
+  logoUrl            String?      @map("logo_url")
+  vatNumber          String?      @map("vat_number")
+  registrationNumber String?      @map("registration_number")
+  bankName           String?      @map("bank_name")
+  iban               String?
+  swift              String?
+  contactPerson      String?      @map("contact_person")
+  footerNote         String?      @map("footer_note")
+  gdprNote           String?      @map("gdpr_note")
+  additionalNote     String?      @map("additional_note")
+  rampCount          Int          @default(4) @map("ramp_count")
+  tvaEnabled         Boolean      @default(false) @map("tva_enabled")
+  tvaPercentage      Float        @default(19) @map("tva_percentage")
+  entityType         String?      @map("entity_type")
+  cnp                String?
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([organizationId, name])
+  @@map("OrganizationProfile")
 }
 
 model Schedule {

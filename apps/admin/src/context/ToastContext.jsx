@@ -78,7 +78,7 @@ export const ToastProvider = ({ children }) => {
                     <p className="text-sm font-semibold">{toast.title}</p>
                   )}
                   {toast.description && (
-                    <p className="mt-0.5 text-[13px] opacity-80">{toast.description}</p>
+                    <p className="mt-0.5 text-[13px] opacity-80 whitespace-pre-line">{toast.description}</p>
                   )}
                 </div>
                 <button

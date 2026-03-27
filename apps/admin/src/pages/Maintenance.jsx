@@ -27,6 +27,50 @@ function StatCard({ icon: Icon, label, value, sub }) {
   );
 }
 
+function formatCleanupResults(data) {
+  if (!data || typeof data !== 'object') return 'Niciun rezultat.';
+
+  const parts = [];
+
+  if (data.sessions) {
+    const s = data.sessions;
+    const total = (s.refreshTokens || 0) + (s.clientSessions || 0) + (s.clientRefreshTokens || 0) + (s.typingIndicators || 0);
+    if (total > 0) {
+      parts.push(`Sesiuni: ${total} sterse`);
+    } else {
+      parts.push('Sesiuni: nimic de curatat');
+    }
+  }
+
+  if (data.retention) {
+    const r = data.retention;
+    const total = (r.notifications || 0) + (r.auditLogs || 0) + (r.emailLogs || 0) +
+      (r.chatMessages || 0) + (r.chatAttachments || 0) + (r.messages || 0) + (r.messageAttachments || 0);
+    const orgInfo = r.orgsProcessed ? ` (${r.orgsProcessed} org.)` : '';
+    if (total > 0) {
+      parts.push(`Retentie${orgInfo}: ${total} inregistrari sterse`);
+    } else {
+      parts.push(`Retentie${orgInfo}: nimic de curatat`);
+    }
+  }
+
+  if (data.systemLogs) {
+    const count = data.systemLogs.systemLogs || 0;
+    parts.push(count > 0 ? `Loguri sistem: ${count} sterse` : 'Loguri sistem: nimic de curatat');
+  }
+
+  if (data.orphans) {
+    const o = data.orphans;
+    if (o.filesDeleted > 0) {
+      parts.push(`Fisiere orfane: ${o.filesDeleted} sterse (${formatBytes(o.bytesFreed)})`);
+    } else {
+      parts.push('Fisiere orfane: nimic de curatat');
+    }
+  }
+
+  return parts.length > 0 ? parts.join('\n') : 'Nimic de curatat.';
+}
+
 function CleanupButton({ label, type, mutation, showToast }) {
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +80,14 @@ function CleanupButton({ label, type, mutation, showToast }) {
       { type },
       {
         onSuccess: (data) => {
-          showToast({ title: 'Cleanup finalizat', description: JSON.stringify(data, null, 2).slice(0, 200), type: 'success' });
+          const description = formatCleanupResults(data);
+          const hasDeleted = description.includes('sterse');
+          showToast({
+            title: hasDeleted ? 'Cleanup finalizat' : 'Cleanup finalizat — totul e curat',
+            description,
+            type: hasDeleted ? 'success' : 'info',
+            duration: 8000,
+          });
           setLoading(false);
         },
         onError: (err) => {

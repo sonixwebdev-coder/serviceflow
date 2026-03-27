@@ -210,32 +210,20 @@ const createOrganization = async ({
       },
     });
 
-    // Store company profile fields if provided (from signup with VAT validation)
-    const companyFields = {
-      companyName: organizationName,
-      ...(vatNumber && { vatNumber }),
-      ...(companyAddress && { address: companyAddress }),
-      ...(companyEmail && { email: companyEmail }),
-      ...(companyPhone && { phone: companyPhone }),
-      ...(entityType && { entityType }),
-      ...(registrationNumber && { registrationNumber }),
-      ...(cnp && { cnp }),
-    };
-
-    const settingEntries = Object.entries(companyFields).filter(([, v]) => v != null && v !== '');
-    if (settingEntries.length > 0) {
-      await Promise.all(
-        settingEntries.map(([key, value]) =>
-          tx.companySetting.create({
-            data: {
-              name: key,
-              value: { value },
-              organizationId: organization.id,
-            },
-          })
-        )
-      );
-    }
+    // Create organization profile with company details from signup
+    await tx.organizationProfile.create({
+      data: {
+        organizationId: organization.id,
+        companyName: organizationName,
+        ...(vatNumber && { vatNumber }),
+        ...(companyAddress && { address: companyAddress }),
+        ...(companyEmail && { email: companyEmail }),
+        ...(companyPhone && { phone: companyPhone }),
+        ...(entityType && { entityType }),
+        ...(registrationNumber && { registrationNumber }),
+        ...(cnp && { cnp }),
+      },
+    });
   });
   } catch (error) {
     if (error.code === 'P2002') {

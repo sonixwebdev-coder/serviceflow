@@ -10,7 +10,7 @@ const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
 const { ok, created } = require('../utils/http');
 const { getCompanySettings, updateCompanySettings } = require('../services/companySettingService');
-const { validateVatNumber, validateCuiChecksum } = require('../services/vatValidationService');
+const { validateVatNumber } = require('../services/vatValidationService');
 const { AppError } = require('../utils/errors');
 
 const router = express.Router();
@@ -48,28 +48,30 @@ const logoUpload = multer({
   },
 });
 
+// Locked fields (set at signup): vatNumber, companyName, entityType — never accepted on PUT
+const PHONE_REGEX = /^(\+?4?0\s?)?(2\d{2}|3\d{2}|7\d{2})\s?\d{3}\s?\d{3,4}$/;
+const IBAN_REGEX = /^RO\d{2}[A-Z0-9]{22}$/i;
+const SWIFT_REGEX = /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/i;
+
 const companySettingsSchema = z.object({
-  companyName: z.string().max(120).optional(),
-  legalName: z.string().max(160).optional(),
-  address: z.string().max(320).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().max(60).optional(),
-  website: z.string().url().optional(),
-  logoUrl: z.string().max(500).nullable().optional(),
-  entityType: z.enum(['SRL', 'PFA']).optional(),
-  cnp: z.string().max(13).optional(),
-  vatNumber: z.string().max(60).optional(),
-  registrationNumber: z.string().max(60).optional(),
-  bankName: z.string().max(120).optional(),
-  iban: z.string().max(40).optional(),
-  swift: z.string().max(20).optional(),
-  contactPerson: z.string().max(120).optional(),
-  rampCount: z.number().int().min(1).optional(),
-  tvaEnabled: z.boolean().optional(),
-  tvaPercentage: z.number().min(0).max(100).optional(),
-  footerNote: z.string().max(500).optional(),
-  gdprNote: z.string().max(1200).optional(),
-  additionalNote: z.string().max(1200).optional(),
+  legalName:          z.string().max(160).optional().or(z.literal('')),
+  address:            z.string().max(500).optional().or(z.literal('')),
+  email:              z.string().email('Adresa de email nu este valida').optional().or(z.literal('')),
+  phone:              z.string().max(30).regex(PHONE_REGEX, 'Numarul de telefon nu este valid').optional().or(z.literal('')),
+  contactPerson:      z.string().max(120).optional().or(z.literal('')),
+  website:            z.string().url('URL-ul nu este valid').optional().or(z.literal('')),
+  logoUrl:            z.string().max(500).nullable().optional(),
+  bankName:           z.string().max(120).optional().or(z.literal('')),
+  iban:               z.string().max(34).regex(IBAN_REGEX, 'IBAN-ul nu este valid (format: RO49AAAA1234...)').optional().or(z.literal('')),
+  swift:              z.string().max(11).regex(SWIFT_REGEX, 'Codul SWIFT/BIC nu este valid').optional().or(z.literal('')),
+  registrationNumber: z.string().max(60).optional().or(z.literal('')),
+  cnp:                z.string().max(13).regex(/^(\d{13})?$/, 'CNP-ul trebuie sa aiba 13 cifre').optional().or(z.literal('')),
+  rampCount:          z.number().int().min(1).max(999).optional(),
+  tvaEnabled:         z.boolean().optional(),
+  tvaPercentage:      z.number().min(0).max(100).optional(),
+  footerNote:         z.string().max(500).optional().or(z.literal('')),
+  gdprNote:           z.string().max(1200).optional().or(z.literal('')),
+  additionalNote:     z.string().max(1200).optional().or(z.literal('')),
 });
 
 router.get(
@@ -128,17 +130,6 @@ router.put(
   authorize({ roles: ['admin'] }),
   validate(companySettingsSchema),
   asyncHandler(async (req, res) => {
-    // Backend VAT checksum validation (fast, no external dependency)
-    if (req.body.vatNumber) {
-      const stripped = req.body.vatNumber.trim().toUpperCase().replace(/^RO/, '').trim();
-      if (stripped.length > 0) {
-        const checksumResult = validateCuiChecksum(stripped);
-        if (!checksumResult.valid) {
-          throw new AppError(checksumResult.error, 400);
-        }
-      }
-    }
-
     const settings = await updateCompanySettings(req.body, req.user);
     return ok(res, settings, 'Company settings updated');
   })

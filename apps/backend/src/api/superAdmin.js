@@ -1026,7 +1026,12 @@ router.post(
     const results = {};
 
     if (type === 'sessions' || type === 'all') {
-      results.sessions = await cleanupService.cleanupExpiredSessions();
+      const [sessions, systemLogs] = await Promise.all([
+        cleanupService.cleanupExpiredSessions(),
+        cleanupService.cleanupSystemLogs(),
+      ]);
+      results.sessions = sessions;
+      results.systemLogs = systemLogs;
     }
 
     if (type === 'retention' || type === 'all') {

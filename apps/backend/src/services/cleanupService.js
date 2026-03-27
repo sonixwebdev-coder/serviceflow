@@ -32,15 +32,28 @@ async function cleanupExpiredSessions() {
   const now = new Date();
   const stats = {};
 
-  const [refreshTokens, clientSessions, clientRefreshTokens] = await Promise.all([
+  // Revoked tokens grace period: keep for 1 day after revocation (for audit purposes),
+  // then delete regardless of expiresAt — these will never be used again.
+  const revokedGraceCutoff = new Date();
+  revokedGraceCutoff.setDate(revokedGraceCutoff.getDate() - 1);
+
+  const [
+    expiredRefreshTokens,
+    revokedRefreshTokens,
+    expiredClientSessions,
+    expiredClientRefreshTokens,
+    revokedClientRefreshTokens,
+  ] = await Promise.all([
     batchDelete(prisma.refreshToken, { expiresAt: { lt: now } }),
+    batchDelete(prisma.refreshToken, { revokedAt: { lt: revokedGraceCutoff } }),
     batchDelete(prisma.clientSession, { expiresAt: { lt: now } }),
     batchDelete(prisma.clientRefreshToken, { expiresAt: { lt: now } }),
+    batchDelete(prisma.clientRefreshToken, { revokedAt: { lt: revokedGraceCutoff } }),
   ]);
 
-  stats.refreshTokens = refreshTokens;
-  stats.clientSessions = clientSessions;
-  stats.clientRefreshTokens = clientRefreshTokens;
+  stats.refreshTokens = expiredRefreshTokens + revokedRefreshTokens;
+  stats.clientSessions = expiredClientSessions;
+  stats.clientRefreshTokens = expiredClientRefreshTokens + revokedClientRefreshTokens;
 
   // Clean up old typing indicators (older than 1 day)
   const typingCutoff = new Date();
@@ -49,6 +62,17 @@ async function cleanupExpiredSessions() {
   stats.typingIndicators = typing;
 
   return stats;
+}
+
+/**
+ * Clean up global system logs (no organizationId — not covered by per-org retention).
+ * Keeps logs for 90 days regardless of plan.
+ */
+async function cleanupSystemLogs() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const deleted = await batchDelete(prisma.systemLog, { createdAt: { lt: cutoff } });
+  return { systemLogs: deleted };
 }
 
 /**
@@ -365,6 +389,7 @@ async function getDirectorySize(dirPath) {
 
 module.exports = {
   cleanupExpiredSessions,
+  cleanupSystemLogs,
   cleanupOrganization,
   getIdleAccounts,
   cleanupOrphanFiles,

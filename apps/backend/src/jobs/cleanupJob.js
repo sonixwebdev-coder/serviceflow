@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const prisma = require('../../lib/prisma');
 const {
   cleanupExpiredSessions,
+  cleanupSystemLogs,
   cleanupOrganization,
   cleanupOrphanFiles,
   getIdleAccounts,
@@ -20,17 +21,13 @@ function scheduleDailyCleanup() {
     if (running.daily) return;
     running.daily = true;
     try {
-      const sessionStats = await cleanupExpiredSessions();
+      const [sessionStats, sysLogStats] = await Promise.all([
+        cleanupExpiredSessions(),
+        cleanupSystemLogs(),
+      ]);
       logger.info('[Cleanup] Daily sessions cleanup', sessionStats);
-
-      // Delete system logs older than 90 days globally
-      const logsCutoff = new Date();
-      logsCutoff.setDate(logsCutoff.getDate() - 90);
-      const sysLogs = await prisma.systemLog.deleteMany({
-        where: { createdAt: { lt: logsCutoff } },
-      });
-      if (sysLogs.count > 0) {
-        logger.info(`[Cleanup] Deleted ${sysLogs.count} old system logs`);
+      if (sysLogStats.systemLogs > 0) {
+        logger.info(`[Cleanup] Deleted ${sysLogStats.systemLogs} old system logs`);
       }
     } catch (err) {
       logger.error('[Cleanup] Daily cleanup failed:', err.message);

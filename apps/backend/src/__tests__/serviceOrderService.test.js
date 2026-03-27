@@ -13,8 +13,8 @@ jest.mock('../../lib/prisma', () => ({
     upsert: jest.fn(),
     update: jest.fn(),
   },
-  companySetting: {
-    findMany: jest.fn(),
+  organizationProfile: {
+    findUnique: jest.fn(),
     upsert: jest.fn(),
   },
 }));
