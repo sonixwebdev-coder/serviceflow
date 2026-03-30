@@ -154,7 +154,7 @@ const getServices = async (prisma, organizationId) => {
  * @returns {Array} Updated services array
  */
 const updateServices = async (prisma, organizationId, services) => {
-  // Atomic JSON key update — avoids read-modify-write race condition
+  // Atomic JSON key update - avoids read-modify-write race condition
   const affected = await prisma.$executeRaw`
     UPDATE "Organization"
     SET settings = jsonb_set(COALESCE(settings, '{}'), ARRAY['services'], ${JSON.stringify(services)}::jsonb)
@@ -176,7 +176,7 @@ const updateServices = async (prisma, organizationId, services) => {
  * @returns {Object} Updated settings
  */
 const updateDescription = async (prisma, organizationId, description) => {
-  // Atomic JSON key update — avoids read-modify-write race condition
+  // Atomic JSON key update - avoids read-modify-write race condition
   const affected = await prisma.$executeRaw`
     UPDATE "Organization"
     SET settings = jsonb_set(COALESCE(settings, '{}'), ARRAY['description'], ${JSON.stringify(description)}::jsonb)

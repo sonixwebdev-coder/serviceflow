@@ -96,7 +96,7 @@ const delPattern = async (pattern) => {
   }
 };
 
-// In-flight request deduplication — prevents thundering herd on simultaneous cache misses
+// In-flight request deduplication - prevents thundering herd on simultaneous cache misses
 const inFlight = new Map();
 
 /**

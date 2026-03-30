@@ -192,7 +192,7 @@ router.post(
   })
 );
 
-// POST /organizations/:id/grant-plan — Grant plan override
+// POST /organizations/:id/grant-plan - Grant plan override
 router.post(
   '/organizations/:id/grant-plan',
   validate(grantPlanSchema, 'body'),
@@ -228,7 +228,7 @@ router.post(
   })
 );
 
-// POST /organizations/:id/revoke-override — Revoke plan override
+// POST /organizations/:id/revoke-override - Revoke plan override
 router.post(
   '/organizations/:id/revoke-override',
   validate(revokePlanOverrideSchema, 'body'),
@@ -1017,7 +1017,7 @@ router.delete(
 
 // ─── Maintenance ─────────────────────────────────────────────────────────────
 
-// POST /maintenance/cleanup — Run manual cleanup
+// POST /maintenance/cleanup - Run manual cleanup
 router.post(
   '/maintenance/cleanup',
   validate(manualCleanupSchema, 'body'),
@@ -1071,7 +1071,7 @@ router.post(
   })
 );
 
-// GET /maintenance/stats — Storage and record stats
+// GET /maintenance/stats - Storage and record stats
 router.get(
   '/maintenance/stats',
   asyncHandler(async (req, res) => {

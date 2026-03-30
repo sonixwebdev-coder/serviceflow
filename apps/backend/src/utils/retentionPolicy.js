@@ -13,7 +13,7 @@ const RETENTION_DAYS = {
 };
 
 /**
- * Entity types that represent financial data — never deleted from audit logs.
+ * Entity types that represent financial data - never deleted from audit logs.
  */
 const FINANCIAL_AUDIT_ENTITY_TYPES = ['Invoice', 'Payment', 'ServiceOrder'];
 

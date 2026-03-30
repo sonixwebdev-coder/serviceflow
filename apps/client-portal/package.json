@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 5174",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender-seo.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

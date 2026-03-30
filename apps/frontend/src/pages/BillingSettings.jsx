@@ -227,7 +227,7 @@ function PlanComparisonTable({ currentPlan }) {
                       {included ? (
                         <CheckCircle className="mx-auto h-4 w-4 text-green-500" />
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-gray-300">-</span>
                       )}
                     </td>
                   );
@@ -285,7 +285,7 @@ export default function BillingSettings() {
     const checkoutStatus = searchParams.get('status');
     const sessionId = searchParams.get('session_id');
 
-    // No checkout redirect — just load data normally
+    // No checkout redirect - just load data normally
     if (!checkoutStatus) {
       fetchAll();
       return;
@@ -334,7 +334,7 @@ export default function BillingSettings() {
             await verifyAddonCheckout(sessionId);
           }
         } catch {
-          // Webhook may have already handled it — not critical
+          // Webhook may have already handled it - not critical
         }
         await fetchAll();
         refreshAuthSession().catch(() => {});
@@ -440,7 +440,7 @@ export default function BillingSettings() {
           <div>
             <p className="text-sm font-semibold text-green-800">Plan acordat de administrator</p>
             <p className="mt-1 text-sm text-green-700">
-              Nu este necesara plata — planul a fost acordat manual.
+              Nu este necesara plata - planul a fost acordat manual.
               {status.planOverrideReason && <> Motiv: {status.planOverrideReason}</>}
             </p>
           </div>
@@ -486,7 +486,7 @@ export default function BillingSettings() {
             </div>
           </div>
 
-          {/* Manage subscription button — only when there's an active Stripe subscription */}
+          {/* Manage subscription button - only when there's an active Stripe subscription */}
           {status.subscriptionId && (
             <button
               onClick={handleManageSubscription}
@@ -549,7 +549,7 @@ export default function BillingSettings() {
         </div>
       </div>
 
-      {/* Usage meters — use quota API data when available, fall back to billing status */}
+      {/* Usage meters - use quota API data when available, fall back to billing status */}
       <div>
         <h3 className="mb-3 text-sm font-semibold text-gray-900">Utilizare curenta</h3>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -642,7 +642,7 @@ export default function BillingSettings() {
         </div>
       )}
 
-      {/* Upgrade section — hidden when plan override is active */}
+      {/* Upgrade section - hidden when plan override is active */}
       {!status.planOverride && (status.plan !== 'ENTERPRISE' || !status.subscriptionId) && (
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between">
@@ -705,7 +705,7 @@ export default function BillingSettings() {
       {/* Plan comparison table */}
       <PlanComparisonTable currentPlan={status.plan} />
 
-      {/* Already on a paid plan with Stripe — manage via Stripe portal */}
+      {/* Already on a paid plan with Stripe - manage via Stripe portal */}
       {!status.planOverride && status.plan !== 'FREE' && status.subscriptionId && (
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-600">
           <p>
@@ -722,7 +722,7 @@ export default function BillingSettings() {
         </div>
       )}
 
-      {/* Paid plan but no Stripe subscription — explain */}
+      {/* Paid plan but no Stripe subscription - explain */}
       {!status.planOverride && status.plan !== 'FREE' && !status.subscriptionId && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-center text-sm text-blue-700">
           <p>

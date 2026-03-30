@@ -10,7 +10,7 @@ export const useClients = (params) => {
   return useQuery({
     queryKey: ['clients', params],
     queryFn: () => fetchClients(params),
-    staleTime: 30000, // 30s — consistent with useClientSearch
+    staleTime: 30000, // 30s - consistent with useClientSearch
   });
 };
 

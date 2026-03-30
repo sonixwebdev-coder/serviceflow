@@ -110,7 +110,7 @@ const useLocationStore = create(
         return locations.length > 1;
       },
 
-      // Reset transient state on logout — preserves userLocationMap
+      // Reset transient state on logout - preserves userLocationMap
       reset: () => {
         // Save current location to map before clearing
         const { _activeUserId, currentLocationId, userLocationMap } = get();

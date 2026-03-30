@@ -553,7 +553,7 @@ const upsertServiceOrder = async (prisma, appointmentId, payload, options = {}) 
     const mapped = mapServiceOrder(orderWithLatestAppointment);
     const action = existing ? 'updated' : 'created';
 
-    // Generate PDF asynchronously — don't block the response on PDF generation
+    // Generate PDF asynchronously - don't block the response on PDF generation
     mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
     persistPdfForOrder({

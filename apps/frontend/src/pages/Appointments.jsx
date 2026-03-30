@@ -422,7 +422,7 @@ const Appointments = () => {
   const updateMutation = useUpdateAppointment();
   const createInvoiceMutation = useCreateInvoice();
 
-  // Loyalty discount info — fetch whenever an appointment is selected (used for invoice creation and payment modal)
+  // Loyalty discount info - fetch whenever an appointment is selected (used for invoice creation and payment modal)
   const { data: loyaltyAccount } = useClientLoyalty(selectedAppointment?.clientId ?? null);
   const { data: loyaltyProgram } = useLoyaltyProgram();
 
@@ -3005,7 +3005,7 @@ useEffect(() => {
                           {createInvoiceMutation.isPending ? 'Se creează...' : 'Creează Factură'}
                         </button>
                       </div>
-                      {/* Loyalty discount toggle — only shown when client has an active tier discount */}
+                      {/* Loyalty discount toggle - only shown when client has an active tier discount */}
                       {getLoyaltyDiscountPercent() > 0 && (
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                           <input

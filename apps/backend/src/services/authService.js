@@ -7,7 +7,7 @@ const { sendCrmPasswordResetEmail } = require('./email/emailService');
 const cache = require('../utils/cache');
 const logger = require('../utils/logger');
 
-/** Reusable role include — only fetches fields mapAuthUser actually uses */
+/** Reusable role include - only fetches fields mapAuthUser actually uses */
 const authRoleInclude = {
   roles: { include: { role: { select: { id: true, key: true, name: true } } } },
 };

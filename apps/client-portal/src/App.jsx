@@ -64,7 +64,7 @@ function App() {
       <BrowserRouter>
         <PrivacyNotice />
         <Routes>
-          {/* Smart home — landing or redirect to dashboard */}
+          {/* Smart home - landing or redirect to dashboard */}
           <Route path="/" element={<SmartHome />} />
 
           {/* Public routes */}

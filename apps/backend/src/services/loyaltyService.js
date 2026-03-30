@@ -64,9 +64,9 @@ const getOrCreateAccount = async (prisma, clientId, programId) => {
     wasCreated = true;
   } catch (err) {
     if (err.code === 'P2002') {
-      // Another concurrent request created the account first — fetch it
+      // Another concurrent request created the account first - fetch it
       account = await prisma.loyaltyAccount.findUnique({ where: { clientId } });
-      if (!account) throw err; // unexpected — re-throw
+      if (!account) throw err; // unexpected - re-throw
       return account;
     }
     throw err;

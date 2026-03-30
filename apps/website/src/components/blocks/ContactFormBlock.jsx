@@ -97,7 +97,7 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Header — full width above columns */}
+      {/* Header - full width above columns */}
       {(title || subtitle) && (
         <div className="text-center mb-10">
           {title && <h2 className="text-3xl font-bold text-gray-900 mb-3">{title}</h2>}
@@ -106,7 +106,7 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
       )}
 
       <div className={`grid gap-10 ${hasContactInfo ? 'lg:grid-cols-5' : 'lg:grid-cols-1 max-w-2xl mx-auto'}`}>
-        {/* Form — takes more space */}
+        {/* Form - takes more space */}
         <div className={hasContactInfo ? 'lg:col-span-3' : ''}>
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100">

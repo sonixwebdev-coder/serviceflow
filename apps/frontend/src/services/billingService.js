@@ -77,7 +77,7 @@ export const verifyAddonCheckout = async (sessionId) => {
 };
 
 /**
- * Purchase an add-on pack — creates checkout and redirects
+ * Purchase an add-on pack - creates checkout and redirects
  */
 export const purchaseAddon = async (addonType) => {
   const response = await API.post('/billing/addons/checkout', { addonType });

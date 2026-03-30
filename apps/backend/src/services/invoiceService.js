@@ -742,7 +742,7 @@ const createInvoice = async (prisma, payload, options = {}) => {
 
   mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
-  // Generate PDF asynchronously — don't block the response
+  // Generate PDF asynchronously - don't block the response
   persistPdfForInvoice({
     mappedInvoice: mapped,
     relativePath: relativePdfPath,
@@ -930,7 +930,7 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
   const mapped = mapInvoice(invoice);
   mapped.pdfUrl = `/files/${relativePdfPath.replace(/\\/g, '/')}`;
 
-  // Generate PDF asynchronously — don't block the response
+  // Generate PDF asynchronously - don't block the response
   persistPdfForInvoice({
     mappedInvoice: mapped,
     relativePath: relativePdfPath,

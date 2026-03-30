@@ -243,7 +243,7 @@ const CompanySettings = () => {
         }
       }
 
-      // Only send editable fields — locked fields (vatNumber, companyName, entityType) are excluded
+      // Only send editable fields - locked fields (vatNumber, companyName, entityType) are excluded
       const payload = {
         legalName:          formState.legalName,
         address:            formState.address,
@@ -336,7 +336,7 @@ const CompanySettings = () => {
             </div>
           </div>
 
-          {/* Identity fields — locked */}
+          {/* Identity fields - locked */}
           <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-gray-900">Date de identificare</h2>
@@ -397,7 +397,7 @@ const CompanySettings = () => {
             </div>
           )}
 
-          {/* Company Details — editable */}
+          {/* Company Details - editable */}
           <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Detalii contact si facturare</h2>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">

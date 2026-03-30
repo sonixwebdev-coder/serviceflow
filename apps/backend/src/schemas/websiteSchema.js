@@ -9,7 +9,7 @@ const stripHtml = (str) => (str ? str.replace(/<[^>]*>/g, '').trim() : str);
 const optionalString = (maxLength) =>
   z.string().max(maxLength).optional().transform((val) => (val === '' ? undefined : val));
 
-// Safe URL validator: only allows http(s), mailto, tel — rejects javascript:, data:, vbscript:
+// Safe URL validator: only allows http(s), mailto, tel - rejects javascript:, data:, vbscript:
 const isSafeUrl = (urlString) => {
   if (!urlString) return true;
   // Relative paths and anchors are allowed

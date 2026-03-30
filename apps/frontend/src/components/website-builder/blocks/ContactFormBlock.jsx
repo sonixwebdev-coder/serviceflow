@@ -63,7 +63,7 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
       onClick={onClick}
     >
       <div className={cn('mx-auto', maxWidthClasses[maxWidth])}>
-        {/* Header — full width */}
+        {/* Header - full width */}
         {(title || subtitle) && (
           <div className="text-center mb-10">
             {title && (

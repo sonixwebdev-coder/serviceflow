@@ -154,7 +154,7 @@ async function validateVatAnaf(vatNumber) {
       signal: controller.signal,
     });
 
-    // ANAF returns 200 when found, 404 when not found — both have valid JSON bodies
+    // ANAF returns 200 when found, 404 when not found - both have valid JSON bodies
     const text = await response.text();
     try {
       data = JSON.parse(text);
@@ -275,7 +275,7 @@ async function validateVatNumber(vatNumber) {
     address: validationResult.address,
   };
 
-  // Cache only valid results (don't cache failures — user may have mistyped)
+  // Cache only valid results (don't cache failures - user may have mistyped)
   await cache.set(cacheKey, result, VAT_CACHE_TTL);
 
   return result;

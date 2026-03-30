@@ -331,7 +331,7 @@ const refreshClientSession = async (prisma, { token, userAgent, ipAddress }) => 
   const accessToken = signAccessToken(payload);
   const { token: newRefreshToken, expiresAt } = generateRefreshToken();
 
-  // Atomic token rotation — revoke old + create new in single transaction
+  // Atomic token rotation - revoke old + create new in single transaction
   await prisma.$transaction([
     prisma.clientRefreshToken.update({
       where: { id: stored.id },

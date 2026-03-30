@@ -11,7 +11,7 @@ const prisma = require('../../lib/prisma');
 
 const router = express.Router();
 
-/** Reusable role include — same as authService */
+/** Reusable role include - same as authService */
 const authRoleInclude = {
   roles: { include: { role: { select: { id: true, key: true, name: true } } } },
 };
@@ -27,13 +27,13 @@ router.get('/status', authenticate, asyncHandler(async (req, res) => {
   return ok(res, { enabled: user?.twoFactorEnabled || false });
 }));
 
-// POST /auth/2fa/setup — returns QR code + secret
+// POST /auth/2fa/setup - returns QR code + secret
 router.post('/setup', authenticate, asyncHandler(async (req, res) => {
   const result = await twoFactorService.generateSetup(req.user.id);
   return ok(res, result);
 }));
 
-// POST /auth/2fa/verify-setup — enables 2FA after verifying code
+// POST /auth/2fa/verify-setup - enables 2FA after verifying code
 router.post('/verify-setup', authenticate, asyncHandler(async (req, res) => {
   const { code } = req.body;
   if (!code) throw new AppError('Codul este obligatoriu', 400);
@@ -41,7 +41,7 @@ router.post('/verify-setup', authenticate, asyncHandler(async (req, res) => {
   return ok(res, result, '2FA activat cu succes');
 }));
 
-// POST /auth/2fa/disable — disables 2FA (requires password + TOTP)
+// POST /auth/2fa/disable - disables 2FA (requires password + TOTP)
 router.post('/disable', authenticate, asyncHandler(async (req, res) => {
   const { password, code } = req.body;
   if (!password || !code) throw new AppError('Parola si codul sunt obligatorii', 400);
@@ -51,7 +51,7 @@ router.post('/disable', authenticate, asyncHandler(async (req, res) => {
 
 // --- Unauthenticated login-time route ---
 
-// POST /auth/2fa/verify — verifies TOTP during login, returns access+refresh tokens
+// POST /auth/2fa/verify - verifies TOTP during login, returns access+refresh tokens
 router.post('/verify', asyncHandler(async (req, res) => {
   const { tempToken, code } = req.body;
   if (!tempToken || !code) throw new AppError('Token-ul temporar si codul sunt obligatorii', 400);

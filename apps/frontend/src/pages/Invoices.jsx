@@ -1058,7 +1058,7 @@ const Invoices = () => {
                     </div>
 
                     {isEditing ? (
-                      /* Edit mode — unchanged hardware/labor split form */
+                      /* Edit mode - unchanged hardware/labor split form */
                       <div className="space-y-3">
                         {editForm.lineItems.map((item, index) => {
                           const hwTotal = (Number(item.hardwareQuantity) || 0) * (Number(item.hardwarePrice) || 0);
@@ -1090,9 +1090,9 @@ const Invoices = () => {
                                       placeholder="Descriere opțională"
                                     />
                                   </div>
-                                  {/* Hardware + Labor split — same layout as service orders */}
+                                  {/* Hardware + Labor split - same layout as service orders */}
                                   <div className={`grid gap-3 ${hasAssets ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                                    {/* Hardware — only for orgs that use assets */}
+                                    {/* Hardware - only for orgs that use assets */}
                                     {hasAssets && (
                                       <div className="rounded-lg border border-blue-200 bg-white p-2.5">
                                         <h4 className="mb-2 text-xs font-semibold text-blue-900">Piese / Materiale</h4>
@@ -1181,7 +1181,7 @@ const Invoices = () => {
                         )}
                       </div>
                     ) : (
-                      /* View mode — card-based list */
+                      /* View mode - card-based list */
                       <div className="space-y-2">
                         {selectedInvoice.lineItems?.map((item) => {
                           const hwAmt  = (item.hardwareQuantity || 0) * (item.hardwarePrice || 0);
@@ -1233,7 +1233,7 @@ const Invoices = () => {
                           {formatCurrency(isEditing && calculatedTotals ? calculatedTotals.subtotal : selectedInvoice.subtotal)}
                         </span>
                       </div>
-                      {/* Loyalty discount — always show when editing if client has a tier or invoice already has one */}
+                      {/* Loyalty discount - always show when editing if client has a tier or invoice already has one */}
                       {isEditing && (selectedInvoice.loyaltyDiscount > 0 || loyaltyDiscountPercent > 0) && (
                         <div className="flex items-center justify-between">
                           <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -1350,7 +1350,7 @@ const Invoices = () => {
                     </div>
                   </div>
 
-                  {/* ── Notes — always visible ── */}
+                  {/* ── Notes - always visible ── */}
                   <div className="rounded-lg border border-gray-200 bg-white p-4">
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Observații</h3>
                     {isEditing ? (

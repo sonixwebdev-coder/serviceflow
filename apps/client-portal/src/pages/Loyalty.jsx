@@ -348,7 +348,7 @@ export default function Loyalty() {
           )}
           {validationResult && (
             <p className="text-sm text-green-600 mt-2">
-              Cod valid — recomandat de <span className="font-medium">{validationResult.referrerName}</span>
+              Cod valid - recomandat de <span className="font-medium">{validationResult.referrerName}</span>
             </p>
           )}
         </div>

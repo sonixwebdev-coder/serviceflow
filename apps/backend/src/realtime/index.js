@@ -84,7 +84,7 @@ const createSocketServer = (httpServer) => {
         return next();
       }
 
-      // CRM user authentication — re-validate against DB (cached to avoid a DB hit on every reconnect)
+      // CRM user authentication - re-validate against DB (cached to avoid a DB hit on every reconnect)
       const dbUser = await cache.wrap(
         `socket:user:${payload.sub}`,
         () => prisma.user.findUnique({
@@ -215,7 +215,7 @@ const createSocketServer = (httpServer) => {
         const user = await getSocketUser();
         if (!user) return;
 
-        // Broadcast immediately — DB persistence is fire-and-forget
+        // Broadcast immediately - DB persistence is fire-and-forget
         broadcastTyping(socket.user.organizationId, channelId, user, true);
         startTyping(prisma, channelId, socket.user.id).catch((err) =>
           logger.debug('Typing persist error (non-critical)', err.message)
@@ -233,7 +233,7 @@ const createSocketServer = (httpServer) => {
         const user = await getSocketUser();
         if (!user) return;
 
-        // Broadcast immediately — DB persistence is fire-and-forget
+        // Broadcast immediately - DB persistence is fire-and-forget
         broadcastTyping(socket.user.organizationId, channelId, user, false);
         stopTyping(prisma, channelId, socket.user.id).catch((err) =>
           logger.debug('Typing persist error (non-critical)', err.message)

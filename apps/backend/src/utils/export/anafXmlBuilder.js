@@ -107,7 +107,7 @@ function buildCustomerParty(client) {
   };
 
   if (isBusiness) {
-    // Business client — VAT scheme + legal entity with J-number
+    // Business client - VAT scheme + legal entity with J-number
     party['cac:PartyTaxScheme'] = {
       'cbc:CompanyID': vat.raw || '',
       'cac:TaxScheme': { 'cbc:ID': 'VAT' },
@@ -117,7 +117,7 @@ function buildCustomerParty(client) {
       ...(client.registrationNumber ? { 'cbc:CompanyID': client.registrationNumber } : {}),
     };
   } else {
-    // Individual (PF) — no VAT scheme, just legal entity with name
+    // Individual (PF) - no VAT scheme, just legal entity with name
     party['cac:PartyLegalEntity'] = {
       'cbc:RegistrationName': displayName,
     };
@@ -228,7 +228,7 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
         'cac:AccountingCustomerParty': buildCustomerParty(clientData),
         'cac:PaymentMeans': paymentMeans,
 
-        // Document-level allowance (loyalty discount) — BT-92 / BG-20
+        // Document-level allowance (loyalty discount) - BT-92 / BG-20
         ...(loyaltyDiscount > 0 ? {
           'cac:AllowanceCharge': {
             'cbc:ChargeIndicator': 'false',
@@ -295,7 +295,7 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
           },
         },
 
-        // Invoice lines — xml2js renders arrays as repeated <cac:InvoiceLine> elements
+        // Invoice lines - xml2js renders arrays as repeated <cac:InvoiceLine> elements
         'cac:InvoiceLine': lines,
       },
     };

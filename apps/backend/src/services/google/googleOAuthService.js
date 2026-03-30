@@ -9,7 +9,7 @@ const ENCRYPTION_KEY = process.env.GOOGLE_ENCRYPTION_KEY || process.env.ENCRYPTI
 /**
  * Encrypt sensitive data using AES-256-GCM with per-record random salt.
  * Format: salt:iv:authTag:ciphertext (4 parts)
- * Legacy format (no salt): iv:authTag:ciphertext (3 parts) — still supported for decryption
+ * Legacy format (no salt): iv:authTag:ciphertext (3 parts) - still supported for decryption
  */
 const encrypt = (text) => {
   if (!ENCRYPTION_KEY) {
@@ -45,7 +45,7 @@ const decrypt = (encryptedText) => {
       authTagHex = parts[2];
       encrypted = parts[3];
     } else if (parts.length === 3) {
-      // Legacy format with static salt — backwards compatible
+      // Legacy format with static salt - backwards compatible
       saltBuf = Buffer.from('salt');
       ivHex = parts[0];
       authTagHex = parts[1];

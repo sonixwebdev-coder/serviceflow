@@ -62,7 +62,7 @@ const createCheckoutSession = async (org, plan, interval = 'monthly') => {
 
   const customerId = await getOrCreateStripeCustomer(org);
 
-  // Platform-managed trial — never use Stripe trial_period_days
+  // Platform-managed trial - never use Stripe trial_period_days
   const sessionParams = {
     customer: customerId,
     mode: 'subscription',
@@ -104,7 +104,7 @@ const cancelPreviousSubscription = async (previousSubId, newSubId) => {
       });
     }
   } catch (err) {
-    // Log but don't throw — the new subscription is already active
+    // Log but don't throw - the new subscription is already active
     logger.warn('cancelPreviousSubscription: failed to cancel old subscription', {
       previousSubId,
       error: err.message,
@@ -251,7 +251,7 @@ const syncSubscription = async (stripeSubscription) => {
   const previousSubscriptionId = org?.subscriptionId;
 
   // Guard: if the org already has a different subscription and this one is being
-  // cancelled/unpaid, skip — it's an old subscription being cleaned up after upgrade/downgrade.
+  // cancelled/unpaid, skip - it's an old subscription being cleaned up after upgrade/downgrade.
   if (
     org?.subscriptionId &&
     org.subscriptionId !== stripeSubscription.id &&
@@ -343,7 +343,7 @@ const syncSubscription = async (stripeSubscription) => {
 };
 
 /**
- * Handle subscription deletion — downgrade to FREE
+ * Handle subscription deletion - downgrade to FREE
  */
 const handleSubscriptionDeleted = async (stripeSubscription) => {
   const orgId = stripeSubscription.metadata?.organizationId;
@@ -377,7 +377,7 @@ const handleSubscriptionDeleted = async (stripeSubscription) => {
       status: 'PAYMENT_REQUIRED',
       subscriptionId: null,
       subscriptionEndsAt: new Date(),
-      // Keep current plan/limits frozen — org retains data but cannot access it
+      // Keep current plan/limits frozen - org retains data but cannot access it
     },
   });
 
@@ -392,7 +392,7 @@ const handleSubscriptionDeleted = async (stripeSubscription) => {
 };
 
 /**
- * Handle failed payment — suspend after final retry
+ * Handle failed payment - suspend after final retry
  */
 const handlePaymentFailed = async (invoice) => {
   if (!invoice.subscription) return;

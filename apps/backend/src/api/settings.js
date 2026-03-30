@@ -48,7 +48,7 @@ const logoUpload = multer({
   },
 });
 
-// Locked fields (set at signup): vatNumber, companyName, entityType — never accepted on PUT
+// Locked fields (set at signup): vatNumber, companyName, entityType - never accepted on PUT
 const PHONE_REGEX = /^(\+?4?0\s?)?(2\d{2}|3\d{2}|7\d{2})\s?\d{3}\s?\d{3,4}$/;
 const IBAN_REGEX = /^RO\d{2}[A-Z0-9]{22}$/i;
 const SWIFT_REGEX = /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/i;
@@ -135,7 +135,7 @@ router.put(
   })
 );
 
-// VAT validation rate limiter — 10 requests per 15 minutes per user
+// VAT validation rate limiter - 10 requests per 15 minutes per user
 const { getRedisClient } = require('../lib/redis');
 const { RedisStore } = require('rate-limit-redis');
 

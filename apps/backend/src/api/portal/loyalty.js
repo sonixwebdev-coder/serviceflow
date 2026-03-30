@@ -110,7 +110,7 @@ router.post(
       return res.json({ valid: false, error: 'Nu poti folosi propriul cod de referral' });
     }
 
-    // Reject cross-organization codes — don't reveal they exist
+    // Reject cross-organization codes - don't reveal they exist
     if (account.client.organizationId !== req.client.organizationId) {
       return res.json({ valid: false, error: 'Cod de referral invalid' });
     }

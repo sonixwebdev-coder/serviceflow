@@ -182,7 +182,7 @@ router.post(
           return res.status(403).json({ error: 'Conturile super admin nu pot folosi formularul public de inregistrare' });
         }
       } catch {
-        // Invalid/expired token — proceed with signup as a public user
+        // Invalid/expired token - proceed with signup as a public user
       }
     }
 

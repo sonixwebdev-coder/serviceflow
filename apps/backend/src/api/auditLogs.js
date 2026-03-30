@@ -11,7 +11,7 @@ const {
 
 const router = express.Router();
 
-// Restrict audit log routes — only admins and managers
+// Restrict audit log routes - only admins and managers
 router.use(authenticate, authorize({ permissions: ['audit:read'] }));
 
 /**

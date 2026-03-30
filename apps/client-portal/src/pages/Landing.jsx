@@ -127,19 +127,19 @@ export default function Landing() {
     name: 'ForjaIt Portal',
     applicationCategory: 'LifestyleApplication',
     operatingSystem: 'Web',
-    description: 'Portal de programari online — gaseste furnizori de servicii, programeaza in 30 de secunde si gestioneaza totul dintr-un singur loc.',
+    description: 'Portal de programari online - gaseste furnizori de servicii, programeaza in 30 de secunde si gestioneaza totul dintr-un singur loc.',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'RON', description: 'Gratuit pentru clienti' },
   };
 
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="ForjaIt — Programeaza-te online in 30 de secunde | Fara telefon"
+        title="ForjaIt - Programeaza-te online in 30 de secunde | Fara telefon"
         description="Gaseste furnizori de servicii, programeaza online si tine evidenta programarilor si facturilor intr-un singur loc. 100% gratuit."
         canonical="https://portal.forja.it.com/"
         og={{
-          title: 'ForjaIt — Programeaza-te in 30 de secunde, fara telefon',
-          description: 'Alegi serviciul, alegi ora, confirmi. Programari, facturi si comunicare — totul intr-un singur portal gratuit.',
+          title: 'ForjaIt - Programeaza-te in 30 de secunde, fara telefon',
+          description: 'Alegi serviciul, alegi ora, confirmi. Programari, facturi si comunicare - totul intr-un singur portal gratuit.',
           url: 'https://portal.forja.it.com/',
         }}
         schema={seoSchema}
@@ -409,7 +409,7 @@ export default function Landing() {
             <div className="sm:col-span-2 lg:col-span-1">
               <Logo className="text-lg text-gray-900" />
               <p className="mt-3 text-sm text-gray-500 leading-relaxed max-w-xs">
-                Programeaza-te online in 30 de secunde. Gaseste furnizori, comunica direct, tine evidenta facturilor — totul gratuit.
+                Programeaza-te online in 30 de secunde. Gaseste furnizori, comunica direct, tine evidenta facturilor - totul gratuit.
               </p>
             </div>
             <div>

@@ -98,7 +98,7 @@ router.post(
         const remainingTtl = Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
         await cache.blacklistToken(accessToken, remainingTtl);
       } catch {
-        // Token already expired or invalid — no need to blacklist
+        // Token already expired or invalid - no need to blacklist
       }
     }
 

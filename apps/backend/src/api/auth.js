@@ -32,7 +32,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const auth = await loginUser(req.body);
 
-    // If 2FA is required, don't issue tokens — return temp token for 2FA verification
+    // If 2FA is required, don't issue tokens - return temp token for 2FA verification
     if (auth.requiresTwoFactor) {
       return ok(res, { requiresTwoFactor: true, tempToken: auth.tempToken }, '2FA required');
     }

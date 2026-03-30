@@ -7,7 +7,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="Politica de Confidentialitate — ForjaIt"
+        title="Politica de Confidentialitate - ForjaIt"
         description="Politica de confidentialitate ForjaIt. Cum colectam, stocam si protejam datele tale personale. Conform GDPR si Legii nr. 190/2018."
         canonical="https://app.forja.it.com/privacy"
       />

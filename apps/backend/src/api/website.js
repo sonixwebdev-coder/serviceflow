@@ -269,7 +269,7 @@ router.post(
 
 /**
  * POST /api/website/:websiteId/pages/bulk
- * Bulk upsert pages — validates plan limits upfront (used by template application)
+ * Bulk upsert pages - validates plan limits upfront (used by template application)
  */
 router.post(
   '/:websiteId/pages/bulk',

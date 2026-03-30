@@ -564,7 +564,7 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Not enabled — show activate button */}
+        {/* Not enabled - show activate button */}
         {!twoFAStatus?.enabled && twoFAState === 'idle' && (
           <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
             <div className="flex items-center justify-between">
@@ -600,7 +600,7 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Setup — show QR code */}
+        {/* Setup - show QR code */}
         {twoFAState === 'setup' && qrData && (
           <div className="space-y-4">
             <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-700">
@@ -716,7 +716,7 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Enabled state — show disable option */}
+        {/* Enabled state - show disable option */}
         {twoFAStatus?.enabled && twoFAState === 'idle' && (
           <div className="space-y-4">
             <div className="rounded-lg bg-green-50 border border-green-200 p-4">

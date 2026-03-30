@@ -1,6 +1,6 @@
 const { ACTIVITY_SECTORS, getSectorConfig } = require('../constants/activitySectors');
 
-// Shared base query — excludes suspended/cancelled orgs
+// Shared base query - excludes suspended/cancelled orgs
 // NOTE: publicListing opt-out check is done in JS because Prisma's NOT
 // with JSON path filters fails when the key doesn't exist in the JSON object.
 const BASE_WHERE = {

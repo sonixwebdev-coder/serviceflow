@@ -1,6 +1,13 @@
+import SEOHead from '@/components/landing/SEOHead';
+
 export default function Privacy() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <SEOHead
+        title="Politica de Confidentialitate - ForjaIt"
+        description="Afla cum ForjaIt colecteaza, prelucreaza si protejeaza datele tale personale. Conformitate GDPR, criptare si drepturi de acces."
+        canonical="https://portal.forja.it.com/privacy"
+      />
       <div className="mb-10">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Legal</p>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Politica de Confidentialitate</h1>
@@ -38,10 +45,10 @@ export default function Privacy() {
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">3. Temeiul Legal</h2>
           <p>Prelucrarea datelor personale se bazeaza pe:</p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li>Executarea contractului — pentru furnizarea serviciilor platformei</li>
-            <li>Consimtamant — pentru comunicari de marketing (optional)</li>
-            <li>Interes legitim — pentru imbunatatirea si securizarea platformei</li>
-            <li>Obligatie legala — pentru conformitate fiscala si contabila</li>
+            <li>Executarea contractului - pentru furnizarea serviciilor platformei</li>
+            <li>Consimtamant - pentru comunicari de marketing (optional)</li>
+            <li>Interes legitim - pentru imbunatatirea si securizarea platformei</li>
+            <li>Obligatie legala - pentru conformitate fiscala si contabila</li>
           </ul>
         </section>
 
@@ -58,12 +65,12 @@ export default function Privacy() {
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Drepturile Dumneavoastra</h2>
           <p>Conform Regulamentului GDPR, aveti urmatoarele drepturi:</p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li><strong>Dreptul de acces</strong> — puteti solicita o copie a datelor personale prelucrate</li>
-            <li><strong>Dreptul la rectificare</strong> — puteti solicita corectarea datelor inexacte</li>
-            <li><strong>Dreptul la stergere</strong> — puteti solicita stergerea datelor personale</li>
-            <li><strong>Dreptul la portabilitate</strong> — puteti solicita transferul datelor catre alt operator</li>
-            <li><strong>Dreptul la opozitie</strong> — va puteti opune prelucrarii in anumite situatii</li>
-            <li><strong>Dreptul la restrictionarea prelucrarii</strong> — puteti solicita limitarea prelucrarii</li>
+            <li><strong>Dreptul de acces</strong> - puteti solicita o copie a datelor personale prelucrate</li>
+            <li><strong>Dreptul la rectificare</strong> - puteti solicita corectarea datelor inexacte</li>
+            <li><strong>Dreptul la stergere</strong> - puteti solicita stergerea datelor personale</li>
+            <li><strong>Dreptul la portabilitate</strong> - puteti solicita transferul datelor catre alt operator</li>
+            <li><strong>Dreptul la opozitie</strong> - va puteti opune prelucrarii in anumite situatii</li>
+            <li><strong>Dreptul la restrictionarea prelucrarii</strong> - puteti solicita limitarea prelucrarii</li>
           </ul>
           <p className="mt-3">
             Pentru exercitarea acestor drepturi, va rugam sa ne contactati la adresa:{' '}

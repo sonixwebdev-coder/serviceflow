@@ -17,7 +17,7 @@ const pricingLimiter = rateLimit({
 
 /**
  * GET /api/pricing
- * Public endpoint — no authentication required.
+ * Public endpoint - no authentication required.
  * Returns display prices configured by the super admin.
  * Only includes non-null values so the frontend knows to use fallbacks for the rest.
  */

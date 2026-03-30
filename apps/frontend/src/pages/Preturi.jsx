@@ -49,11 +49,11 @@ export default function Preturi() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="Preturi ForjaIt — Planuri de la 0 RON/luna | Fara contract"
+        title="Preturi ForjaIt - Planuri de la 0 RON/luna | Fara contract"
         description="Planuri flexibile pentru orice afacere de servicii. Starter 99 RON/luna, Professional 249 RON/luna. 14 zile gratuit, fara card de credit."
         canonical="https://app.forja.it.com/pricing"
         og={{
-          title: 'Preturi ForjaIt — Costa mai putin decat un client pierdut',
+          title: 'Preturi ForjaIt - Costa mai putin decat un client pierdut',
           description: 'Planuri de la 0 RON/luna. 14 zile gratuit pe orice plan. Fara contract, fara penalizari.',
           url: 'https://app.forja.it.com/pricing',
         }}

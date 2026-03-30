@@ -23,7 +23,7 @@ export default function PublicFooter() {
           <div className="sm:col-span-2 lg:col-span-1">
             <Logo className="text-lg text-gray-900" />
             <p className="mt-3 text-sm leading-relaxed text-gray-500 max-w-xs">
-              Clientii se programeaza singuri, tu te ocupi de business. Programari, CRM, facturare si website — o singura platforma.
+              Clientii se programeaza singuri, tu te ocupi de business. Programari, CRM, facturare si website - o singura platforma.
             </p>
           </div>
 

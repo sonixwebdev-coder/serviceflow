@@ -13,7 +13,7 @@ const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
  * Generate a new TOTP setup for a user (secret + QR code).
- * Does NOT enable 2FA — the user must verify a code first.
+ * Does NOT enable 2FA - the user must verify a code first.
  */
 async function generateSetup(userId) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, twoFactorEnabled: true } });
@@ -142,7 +142,7 @@ async function verifyToken(userId, token) {
     }
   }
 
-  // Invalid code — increment failed attempts and potentially lock account
+  // Invalid code - increment failed attempts and potentially lock account
   const attempts = (user.twoFactorFailedAttempts || 0) + 1;
   const updateData = { twoFactorFailedAttempts: attempts };
 

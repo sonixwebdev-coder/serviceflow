@@ -89,7 +89,7 @@ const DashboardLayout = ({ children }) => {
 
   const navigation = useMemo(() => {
     // Build CRM children based on features
-    // Appointments first — most frequently used in daily operations
+    // Appointments first - most frequently used in daily operations
     const crmChildren = [
       { name: 'Programari', href: '/crm/appointments', icon: CalendarDays, roles: [] },
       { name: 'Clienti', href: '/crm/clients', icon: UserCircle, roles: [] },

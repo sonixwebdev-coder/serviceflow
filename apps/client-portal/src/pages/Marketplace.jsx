@@ -153,7 +153,7 @@ export default function Marketplace({ basePath = '/marketplace' }) {
       )}
 
       <div className={isPortal ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
-        {/* Browse by Category — always visible */}
+        {/* Browse by Category - always visible */}
         <section className="mb-10">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-gray-900">

@@ -5,6 +5,7 @@ import { getSectorList } from '../constants/activitySectors';
 import { useAuthStore } from '../state/useAuthStore';
 import { Car, Scissors, Wrench, Smartphone, Check, ArrowLeft, ArrowRight, Building2, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { SIGNUP_PLANS } from '../constants/plans';
+import SEOHead from '../components/landing/SEOHead';
 
 const STEPS = [
   { id: 'organization', title: 'Organizatie', description: 'Detalii organizatie' },
@@ -804,6 +805,11 @@ const Signup = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50/80">
+      <SEOHead
+        title="Inregistrare - Creeaza cont ForjaIt gratuit | 14 zile trial"
+        description="Creeaza cont gratuit ForjaIt in 2 minute. Programari online, CRM, facturare si website builder. 14 zile trial pe orice plan, fara card de credit."
+        canonical="https://app.forja.it.com/signup"
+      />
       {/* Header */}
       <header className="border-b border-gray-200/60 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">

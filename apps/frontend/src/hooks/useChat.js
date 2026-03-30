@@ -181,7 +181,7 @@ export function useMessages(channelId, options = {}) {
       return res.data.data;
     },
     enabled: !!channelId,
-    staleTime: 30000, // 30s — real-time socket updates keep data fresh
+    staleTime: 30000, // 30s - real-time socket updates keep data fresh
   });
 }
 

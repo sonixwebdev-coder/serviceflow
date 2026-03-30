@@ -7,7 +7,7 @@ import { queryClient } from '../lib/queryClient';
 import useLocationStore from '../state/useLocationStore';
 import { verifyTwoFactorLogin } from '../services/userService';
 
-// Marketing pages where token refresh is unnecessary — skip to avoid 401 noise
+// Marketing pages where token refresh is unnecessary - skip to avoid 401 noise
 const NO_REFRESH_PATHS = ['/', '/terms', '/privacy', '/pricing'];
 
 /**
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
         });
     } else {
-      // No stored user or on a public page — skip refresh
+      // No stored user or on a public page - skip refresh
       setLoading(false);
     }
   }, [hydrate, clear]);
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
       const currentUserId = useAuthStore.getState().user?.id;
 
       if (!e.newValue) {
-        // Another tab logged out — clear this tab too
+        // Another tab logged out - clear this tab too
         clear();
         queryClient.clear();
         navigate('/login');
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const newUser = JSON.parse(e.newValue);
         if (newUser.id && newUser.id !== currentUserId) {
-          // Different user logged in on another tab — reload to sync session
+          // Different user logged in on another tab - reload to sync session
           window.location.reload();
         }
       } catch {

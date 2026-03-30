@@ -11,11 +11,11 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const isAdmin = hasRole(USER_ROLES.ADMIN);
   const isPaymentRequired = user?.orgStatus === 'PAYMENT_REQUIRED';
 
-  // Skip onboarding check entirely when payment is required — avoids unnecessary API calls
+  // Skip onboarding check entirely when payment is required - avoids unnecessary API calls
   const { isOnboardingCompleted, isLoading: isOnboardingLoading } = useOnboardingStatus();
   const needsOnboardingCheck = isAdmin && !isPaymentRequired;
 
-  // Single unified loading state — covers both auth hydration and onboarding check
+  // Single unified loading state - covers both auth hydration and onboarding check
   const isInitializing =
     loading ||
     (isAuthenticated && needsOnboardingCheck && location.pathname !== '/onboarding' && isOnboardingLoading);

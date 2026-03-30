@@ -30,7 +30,7 @@ export const useMyLocations = (options = {}) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Sync with store — on first load per user, restore persisted location
+  // Sync with store - on first load per user, restore persisted location
   useEffect(() => {
     if (query.data) {
       if (user?.id && restoredRef.current !== user.id) {

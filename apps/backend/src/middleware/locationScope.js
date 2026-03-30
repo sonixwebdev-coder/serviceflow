@@ -63,7 +63,7 @@ const getLocationData = async (req) => {
       where: { userId: req.user.id },
       select: { locationId: true, isPrimary: true },
     }),
-    cache.TTL.MEDIUM // 5 minutes — invalidate via cache.del(`user:locations:${userId}`) on assignment changes
+    cache.TTL.MEDIUM // 5 minutes - invalidate via cache.del(`user:locations:${userId}`) on assignment changes
   );
 
   // Extract location IDs

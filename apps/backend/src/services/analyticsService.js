@@ -815,7 +815,7 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
       _count: { id: true },
     }),
 
-    // Revenue per location via appointment join — aggregate per appointment locationId
+    // Revenue per location via appointment join - aggregate per appointment locationId
     prisma.invoice.groupBy({
       by: ['appointmentId'],
       where: {

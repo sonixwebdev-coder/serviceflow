@@ -7,7 +7,7 @@ export default function TermsAndConditions() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="Termeni si Conditii — ForjaIt"
+        title="Termeni si Conditii - ForjaIt"
         description="Termenii si conditiile de utilizare a platformei ForjaIt. Informatii despre drepturi, obligatii si politicile de utilizare."
         canonical="https://app.forja.it.com/terms"
       />

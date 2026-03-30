@@ -1,6 +1,13 @@
+import SEOHead from '@/components/landing/SEOHead';
+
 export default function Terms() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <SEOHead
+        title="Termeni si Conditii - ForjaIt"
+        description="Termenii si conditiile de utilizare a platformei ForjaIt. Drepturi, obligatii si reguli pentru utilizarea serviciului de programari online."
+        canonical="https://portal.forja.it.com/terms"
+      />
       <div className="mb-10">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Legal</p>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Termeni si Conditii</h1>

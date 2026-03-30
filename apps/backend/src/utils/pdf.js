@@ -369,7 +369,7 @@ const drawLineItemsTable = (context, lineItems, fonts, pdfDoc, totals = null, pa
       borderColor,
       borderWidth: 1,
     });
-    drawRow(rowY - rowHeight, ['—', '—', '—', '—'], fonts.regular, textColor);
+    drawRow(rowY - rowHeight, ['-', '-', '-', '-'], fonts.regular, textColor);
     rowY -= rowHeight;
   } else {
     lineItems.forEach((item, index) => {
@@ -393,15 +393,15 @@ const drawLineItemsTable = (context, lineItems, fonts, pdfDoc, totals = null, pa
       // Format quantity × price for hardware and labor
       const hardwareText = hardwarePrice > 0
         ? `${hardwareQty} ${item.hardwareUnit || ''} x ${formatCurrency(hardwarePrice)}`.trim()
-        : '—';
+        : '-';
       const laborText = laborPrice > 0
         ? `${laborQty} ${item.laborUnit || ''} x ${formatCurrency(laborPrice)}`.trim()
-        : '—';
+        : '-';
 
       drawRow(
         rowY - rowHeight,
         [
-          sanitizeForPdf(item.name || '—'),
+          sanitizeForPdf(item.name || '-'),
           hardwareText,
           laborText,
           formatCurrency(item.totalPrice),

@@ -35,7 +35,7 @@ export default function Invoices() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch {
-      // silent — user can retry
+      // silent - user can retry
     } finally {
       setDownloadingId(null);
     }

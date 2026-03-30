@@ -130,7 +130,7 @@ const updateCompanySettings = async (payload, currentUser) => {
     return acc;
   }, {});
 
-  // Strip locked fields — set at signup, not updatable via settings
+  // Strip locked fields - set at signup, not updatable via settings
   const LOCKED_FIELDS = ['vatNumber', 'companyName', 'entityType'];
   LOCKED_FIELDS.forEach((key) => delete updates[key]);
 

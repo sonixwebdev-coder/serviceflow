@@ -5,7 +5,7 @@ const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
 const { ok } = require('../utils/http');
 
-// Restrict loyalty routes — technicians cannot access
+// Restrict loyalty routes - technicians cannot access
 router.use(authenticate, authorize({ permissions: ['loyalty:read'] }));
 const prisma = require('../../lib/prisma');
 const loyaltyService = require('../services/loyaltyService');

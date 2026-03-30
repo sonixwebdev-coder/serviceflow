@@ -61,7 +61,7 @@ const listNotifications = async (prisma, userId, { isRead } = {}) => {
       ...(typeof isRead === 'boolean' ? { isRead } : {}),
     },
     orderBy: { createdAt: 'desc' },
-    take: 100, // Safety limit — UI paginates or shows recent only
+    take: 100, // Safety limit - UI paginates or shows recent only
     include: {
       recipient: {
         select: {

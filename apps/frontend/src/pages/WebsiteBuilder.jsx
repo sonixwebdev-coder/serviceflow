@@ -321,7 +321,7 @@ const WebsiteBuilder = () => {
   const handleApplyTemplate = async (template) => {
     setIsApplyingTemplate(true);
     try {
-      // Bulk upsert pages FIRST — validates plan limits upfront before any changes
+      // Bulk upsert pages FIRST - validates plan limits upfront before any changes
       if (template.pages?.length) {
         await bulkUpsertPages(
           website.id,
@@ -1021,7 +1021,7 @@ const WebsiteBuilder = () => {
         </div>
       )}
 
-      {/* Floating Helper Widget — only when website exists */}
+      {/* Floating Helper Widget - only when website exists */}
       {hasWebsite && (
         <FloatingHelperWidget
           selectedBlockType={blocks.find((b) => b.id === selectedBlockId)?.type || null}

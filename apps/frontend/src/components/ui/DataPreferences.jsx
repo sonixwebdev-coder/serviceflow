@@ -65,21 +65,21 @@ export default function DataPreferences() {
             <div>
               <p className="font-semibold text-gray-700">Cookie-uri strict necesare (nu necesita consimtamant):</p>
               <ul className="mt-1 list-disc pl-4 space-y-0.5">
-                <li><span className="font-medium">Sesiune de autentificare</span> — cookie httpOnly pentru mentinerea sesiunii</li>
-                <li><span className="font-medium">Protectie CSRF</span> — token pentru securitatea formularelor</li>
+                <li><span className="font-medium">Sesiune de autentificare</span> - cookie httpOnly pentru mentinerea sesiunii</li>
+                <li><span className="font-medium">Protectie CSRF</span> - token pentru securitatea formularelor</li>
               </ul>
             </div>
             <div>
               <p className="font-semibold text-gray-700">Date stocate local (localStorage):</p>
               <ul className="mt-1 list-disc pl-4 space-y-0.5">
-                <li><span className="font-medium">Preferinte utilizator</span> — tema, limba, setari interfata</li>
-                <li><span className="font-medium">Consimtamant cookie</span> — alegerea ta de pe acest banner</li>
+                <li><span className="font-medium">Preferinte utilizator</span> - tema, limba, setari interfata</li>
+                <li><span className="font-medium">Consimtamant cookie</span> - alegerea ta de pe acest banner</li>
               </ul>
             </div>
             <div>
               <p className="font-semibold text-gray-700">Cookie-uri optionale de analiza (necesita consimtamant):</p>
               <ul className="mt-1 list-disc pl-4 space-y-0.5">
-                <li><span className="font-medium">Analiza utilizare</span> — date anonimizate despre navigare pentru imbunatatirea platformei</li>
+                <li><span className="font-medium">Analiza utilizare</span> - date anonimizate despre navigare pentru imbunatatirea platformei</li>
               </ul>
             </div>
             <p className="text-gray-500 pt-1 border-t border-gray-200">

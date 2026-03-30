@@ -219,7 +219,7 @@ export default function BusinessLanding() {
       name: 'ForjaIt',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',
-      description: 'Platforma de management pentru afaceri de servicii din Romania — programari online, CRM, facturare, website builder si portal clienti.',
+      description: 'Platforma de management pentru afaceri de servicii din Romania - programari online, CRM, facturare, website builder si portal clienti.',
       offers: { '@type': 'AggregateOffer', priceCurrency: 'RON', lowPrice: '0', highPrice: '499', offerCount: '4' },
     },
     {
@@ -236,12 +236,12 @@ export default function BusinessLanding() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="ForjaIt — Clientii se programeaza singuri | Programari, CRM, Facturare"
+        title="ForjaIt - Clientii se programeaza singuri | Programari, CRM, Facturare"
         description="O singura platforma care inlocuieste agenda, Excel-ul si WhatsApp-ul. Programari online, CRM, facturare, website builder si portal clienti. 14 zile gratuit."
         canonical="https://app.forja.it.com/"
         og={{
-          title: 'ForjaIt — Clientii se programeaza singuri. Tu te ocupi de business.',
-          description: 'Programari online, CRM, facturare si website — o singura platforma pentru afaceri de servicii. 14 zile gratuit.',
+          title: 'ForjaIt - Clientii se programeaza singuri. Tu te ocupi de business.',
+          description: 'Programari online, CRM, facturare si website - o singura platforma pentru afaceri de servicii. 14 zile gratuit.',
           url: 'https://app.forja.it.com/',
         }}
         schema={seoSchema}

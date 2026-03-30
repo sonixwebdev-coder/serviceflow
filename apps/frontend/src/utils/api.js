@@ -157,7 +157,7 @@ API.interceptors.response.use(
       }
     }
 
-    // Handle 402 Payment Required — update orgStatus so ProtectedRoute handles the redirect
+    // Handle 402 Payment Required - update orgStatus so ProtectedRoute handles the redirect
     if (response.status === 402) {
       const { user, setSession, accessToken } = useAuthStore.getState();
       if (user && user.orgStatus !== 'PAYMENT_REQUIRED') {

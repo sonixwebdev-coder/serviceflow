@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Clock, Send, Loader2, CheckCircle } from 'lucide-react';
 import api from '@/utils/api';
+import SEOHead from '@/components/landing/SEOHead';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -29,6 +30,11 @@ export default function Contact() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <SEOHead
+        title="Contact - ForjaIt"
+        description="Ai o intrebare sau nevoie de ajutor? Trimite-ne un mesaj si iti raspundem in cel mai scurt timp."
+        canonical="https://portal.forja.it.com/contact"
+      />
       <div className="mb-10">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Suport</p>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Contact</h1>

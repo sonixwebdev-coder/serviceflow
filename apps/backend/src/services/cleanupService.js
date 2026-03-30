@@ -33,7 +33,7 @@ async function cleanupExpiredSessions() {
   const stats = {};
 
   // Revoked tokens grace period: keep for 1 day after revocation (for audit purposes),
-  // then delete regardless of expiresAt — these will never be used again.
+  // then delete regardless of expiresAt - these will never be used again.
   const revokedGraceCutoff = new Date();
   revokedGraceCutoff.setDate(revokedGraceCutoff.getDate() - 1);
 
@@ -65,7 +65,7 @@ async function cleanupExpiredSessions() {
 }
 
 /**
- * Clean up global system logs (no organizationId — not covered by per-org retention).
+ * Clean up global system logs (no organizationId - not covered by per-org retention).
  * Keeps logs for 90 days regardless of plan.
  */
 async function cleanupSystemLogs() {
@@ -113,7 +113,7 @@ async function cleanupOrganization(orgId) {
     });
   }
 
-  // 4. Chat messages — soft-delete old messages, delete attachments
+  // 4. Chat messages - soft-delete old messages, delete attachments
   const chatCutoff = getCutoffDate('chat', plan);
   if (chatCutoff) {
     // Find org channels

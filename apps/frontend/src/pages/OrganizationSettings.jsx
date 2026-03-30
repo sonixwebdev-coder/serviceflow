@@ -97,7 +97,7 @@ const OrganizationSettings = () => {
     },
   });
 
-  // Google Calendar hooks — status returns ALL configs for the user
+  // Google Calendar hooks - status returns ALL configs for the user
   const {
     data: gcalStatus,
     isLoading: gcalStatusLoading,

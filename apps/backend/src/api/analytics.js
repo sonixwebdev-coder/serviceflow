@@ -5,7 +5,7 @@ const authorize = require('../middleware/authorize');
 const asyncHandler = require('../middleware/asyncHandler');
 const analyticsService = require('../services/analyticsService');
 
-// Restrict all analytics routes — technicians cannot access reports
+// Restrict all analytics routes - technicians cannot access reports
 router.use(authenticate, authorize({ permissions: ['analytics:read'] }));
 
 // Validate and cap date range to 1 year max
