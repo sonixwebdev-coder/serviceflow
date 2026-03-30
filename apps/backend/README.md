@@ -94,4 +94,4 @@ auth, users, organizations, clients, appointments, assets, resources, invoices, 
 
 ---
 
-Private — ForjaIt Internal Use Only.
+Private - ForjaIt Internal Use Only.

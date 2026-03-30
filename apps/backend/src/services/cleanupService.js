@@ -158,7 +158,7 @@ async function cleanupOrganization(orgId) {
         // Soft-delete messages
         const msgResult = await prisma.chatMessage.updateMany({
           where: { id: { in: messageIds } },
-          data: { isDeleted: true, deletedAt: new Date(), body: '[Mesaj sters — politica de retentie]' },
+          data: { isDeleted: true, deletedAt: new Date(), body: '[Mesaj sters - politica de retentie]' },
         });
         stats.chatMessages = msgResult.count;
       }

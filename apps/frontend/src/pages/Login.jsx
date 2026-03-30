@@ -66,7 +66,7 @@ const Login = () => {
       {/* Header */}
       <header className="border-b border-gray-200/60 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/business" className="text-lg font-bold tracking-tight text-gray-900">
+          <Link to="/" className="text-lg font-bold tracking-tight text-gray-900">
             ForjaIt
           </Link>
           <div className="flex items-center gap-4">
@@ -83,7 +83,7 @@ const Login = () => {
       {/* Main */}
       <div className="flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-8 shadow-sm">
             {!twoFactorRequired ? (
               <>
                 <div className="text-center mb-6">
@@ -110,7 +110,7 @@ const Login = () => {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="ion.popescu@example.com"
                       disabled={loading}
                     />
@@ -123,7 +123,7 @@ const Login = () => {
                       </label>
                       <Link
                         to="/forgot-password"
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                        className="text-sm font-medium text-primary hover:text-primary-800 transition-colors"
                       >
                         Ai uitat parola?
                       </Link>
@@ -134,7 +134,7 @@ const Login = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="Parola ta"
                       disabled={loading}
                     />
@@ -143,7 +143,7 @@ const Login = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Conectare...' : 'Conectare'}
                   </button>
@@ -152,7 +152,7 @@ const Login = () => {
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-500">
                     Nu ai un cont?{' '}
-                    <Link to="/signup" className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                    <Link to="/signup" className="font-semibold text-primary hover:text-primary-800 transition-colors">
                       Creeaza cont gratuit
                     </Link>
                   </p>
@@ -161,8 +161,8 @@ const Login = () => {
             ) : (
               <>
                 <div className="text-center mb-6">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
-                    <ShieldCheck className="h-6 w-6 text-blue-600" />
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50">
+                    <ShieldCheck className="h-6 w-6 text-primary" />
                   </div>
                   <h1 className="text-2xl font-bold tracking-tight text-gray-900">Verificare 2FA</h1>
                   <p className="mt-2 text-sm text-gray-500">
@@ -190,7 +190,7 @@ const Login = () => {
                       required
                       value={twoFactorCode}
                       onChange={(e) => setTwoFactorCode(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm text-center tracking-widest transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm text-center tracking-widest transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                       placeholder="000000"
                       maxLength={10}
                       disabled={loading}
@@ -203,7 +203,7 @@ const Login = () => {
                   <button
                     type="submit"
                     disabled={loading || !twoFactorCode.trim()}
-                    className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Verificare...' : 'Verifica'}
                   </button>

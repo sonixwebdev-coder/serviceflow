@@ -8,7 +8,7 @@ import useLocationStore from '../state/useLocationStore';
 import { verifyTwoFactorLogin } from '../services/userService';
 
 // Marketing pages where token refresh is unnecessary — skip to avoid 401 noise
-const NO_REFRESH_PATHS = ['/business', '/terms', '/privacy', '/pricing'];
+const NO_REFRESH_PATHS = ['/', '/terms', '/privacy', '/pricing'];
 
 /**
  * Cache only minimal, non-sensitive user fields in localStorage.

@@ -1,4 +1,4 @@
-# ForjaHost — Enhanced Platform Specification
+# ForjaHost - Enhanced Platform Specification
 
 A self-hosted PaaS for deploying, managing, and scaling web projects on bare-metal or VPS infrastructure. No cloud vendor dependency. Single admin operator with API key support for CI/CD automation.
 
@@ -15,7 +15,7 @@ A self-hosted PaaS for deploying, managing, and scaling web projects on bare-met
 - Security-first design: Docker socket proxy, 2FA, audit logging, encrypted secrets, network isolation
 - Reliability-first design: deploy locking, build queue, automatic cleanup, health monitoring
 - CI/CD integration via scoped, rotatable API keys
-- Dashboard-only notifications (no email/webhook — in-app alerts and activity feed)
+- Dashboard-only notifications (no email/webhook - in-app alerts and activity feed)
 - Web terminal for container shell access
 - Monorepo support with custom build contexts
 
@@ -97,9 +97,9 @@ A "project" = one GitHub repo with one or more environments.
 - Drain → stop accepting new deploys, finish in-progress ones
 
 **Monorepo support:**
-- `buildContext` — subdirectory within the repo to use as Docker build context (default: `.`)
-- `dockerfilePath` — path to Dockerfile relative to repo root (default: `Dockerfile`)
-- `buildArgs` — JSON object of build-time arguments passed to `docker build --build-arg`
+- `buildContext` - subdirectory within the repo to use as Docker build context (default: `.`)
+- `dockerfilePath` - path to Dockerfile relative to repo root (default: `Dockerfile`)
+- `buildArgs` - JSON object of build-time arguments passed to `docker build --build-arg`
 - Example: repo `myorg/monorepo`, project uses `buildContext: "apps/api"`, `dockerfilePath: "apps/api/Dockerfile"`
 
 ### 3.2 Build System
@@ -107,9 +107,9 @@ A "project" = one GitHub repo with one or more environments.
 Turns a Git repo into a Docker image.
 
 **Build pipeline:**
-1. Check deploy lock — if another deploy is running for this project+env, queue this one
+1. Check deploy lock - if another deploy is running for this project+env, queue this one
 2. Acquire deploy lock
-3. Clone repo (specific branch + commit) — `.git` directory is excluded from build context
+3. Clone repo (specific branch + commit) - `.git` directory is excluded from build context
 4. Detect build strategy:
    - `Dockerfile` present at `dockerfilePath` → use it
    - `package.json` → Node buildpack (detect Vite/Next/Express)
@@ -123,10 +123,10 @@ Turns a Git repo into a Docker image.
 8. Release deploy lock
 
 **Build strategies:**
-- `dockerfile` — use project's own Dockerfile
-- `node-static` — npm ci → npm run build → nginx (SPAs)
-- `node-server` — npm ci → node server.js (APIs)
-- `static` — copy files into nginx
+- `dockerfile` - use project's own Dockerfile
+- `node-static` - npm ci → npm run build → nginx (SPAs)
+- `node-server` - npm ci → node server.js (APIs)
+- `static` - copy files into nginx
 
 **Build cache:**
 - Mount a persistent Docker volume for npm/node_modules cache
@@ -163,7 +163,7 @@ Manages running containers for each project environment.
 **Container management:**
 - Each project+env gets a dedicated Docker network (`fh-net-{slug}-{env}`)
 - Containers connect to their database/redis on the same network
-- Resource limits per container (CPU, memory) — configurable per project
+- Resource limits per container (CPU, memory) - configurable per project
 - Auto-restart on crash (Docker restart policy: `unless-stopped`)
 - Containers also join `traefik-public` network for reverse proxy routing
 - No cross-project network communication (network isolation)
@@ -255,12 +255,12 @@ const verifyWebhookSignature = (payload, signature, secret) => {
 };
 ```
 
-**Important:** Raw body must be preserved before JSON middleware — webhook route is mounted before `express.json()`.
+**Important:** Raw body must be preserved before JSON middleware - webhook route is mounted before `express.json()`.
 
 **Manual deploys:**
 - Pick any branch/commit from dashboard → trigger build
 
-**GitHub App (later — Phase 8):**
+**GitHub App (later - Phase 8):**
 - Install on org level
 - Auto-discover repos
 - PR preview environments (deploy PR branch, tear down on merge)
@@ -274,7 +274,7 @@ const verifyWebhookSignature = (payload, signature, secret) => {
 
 **Encryption:**
 - All env var values encrypted at rest using AES-256-GCM
-- Encryption key (`ENCRYPTION_KEY`) stored OUTSIDE the database — as an environment variable or a file on disk
+- Encryption key (`ENCRYPTION_KEY`) stored OUTSIDE the database - as an environment variable or a file on disk
 - The key is a 32-byte hex string (64 characters)
 - Key rotation supported: re-encrypt all values with new key, track `encryptionKeyVersion` per value
 
@@ -308,7 +308,7 @@ function decrypt(encoded, keyHex) {
 
 **Never expose the raw Docker socket** to Traefik or the API process.
 
-- Traefik gets a read-only proxy: `CONTAINERS=1, NETWORKS=1, SERVICES=1, TASKS=1` — everything else denied
+- Traefik gets a read-only proxy: `CONTAINERS=1, NETWORKS=1, SERVICES=1, TASKS=1` - everything else denied
 - API gets a separate proxy: `CONTAINERS=1, IMAGES=1, NETWORKS=1, VOLUMES=1, BUILD=1, EXEC=1, POST=1`
 - Socket proxy network is `internal: true` (no external access)
 
@@ -359,7 +359,7 @@ Every state-changing action logged to immutable `audit_logs` table (reuses Servi
 - Project containers + their databases share this network
 - Project containers also join `traefik-public` (for Traefik routing)
 - No project can reach another project's network
-- Platform DB/Redis are on `forjahost-internal` — not accessible from project containers
+- Platform DB/Redis are on `forjahost-internal` - not accessible from project containers
 
 ### 4.8 Rate Limiting
 
@@ -490,7 +490,7 @@ On platform startup:
 
 - Frontend: xterm.js terminal component
 - Backend: WebSocket endpoint `/api/projects/:id/terminal/:env`
-- Uses `dockerode.container.exec()` — starts `/bin/sh` or `/bin/bash`
+- Uses `dockerode.container.exec()` - starts `/bin/sh` or `/bin/bash`
 - Every terminal session audit logged (start, end, project, env)
 - 30-minute idle timeout, max 3 concurrent sessions per project
 
@@ -511,9 +511,9 @@ Per-project cron jobs managed from dashboard.
 
 ### 6.3 Drain Mode
 
-**Global:** `PUT /api/settings { drainMode: true }` — queues all incoming deploy requests, existing deploys complete. Dashboard banner shown.
+**Global:** `PUT /api/settings { drainMode: true }` - queues all incoming deploy requests, existing deploys complete. Dashboard banner shown.
 
-**Per-project:** `PUT /api/projects/:id { drainMode: true }` — same but scoped to one project.
+**Per-project:** `PUT /api/projects/:id { drainMode: true }` - same but scoped to one project.
 
 ### 6.4 Monorepo Support
 
@@ -1120,130 +1120,130 @@ model PlatformSettings {
 
 ### Authentication
 ```
-POST   /api/auth/login                           — login (username + password)
-POST   /api/auth/totp/verify                     — verify TOTP code (after login)
-POST   /api/auth/refresh                         — refresh access token
-POST   /api/auth/logout                          — logout (blacklist token)
-GET    /api/csrf-token                           — get CSRF token
-POST   /api/auth/totp/setup                      — generate TOTP secret + QR
-POST   /api/auth/totp/enable                     — verify + enable 2FA
-POST   /api/auth/totp/disable                    — disable 2FA
-GET    /api/auth/totp/backup-codes               — regenerate backup codes
+POST   /api/auth/login                           - login (username + password)
+POST   /api/auth/totp/verify                     - verify TOTP code (after login)
+POST   /api/auth/refresh                         - refresh access token
+POST   /api/auth/logout                          - logout (blacklist token)
+GET    /api/csrf-token                           - get CSRF token
+POST   /api/auth/totp/setup                      - generate TOTP secret + QR
+POST   /api/auth/totp/enable                     - verify + enable 2FA
+POST   /api/auth/totp/disable                    - disable 2FA
+GET    /api/auth/totp/backup-codes               - regenerate backup codes
 ```
 
 ### API Keys
 ```
-GET    /api/api-keys                             — list keys
-POST   /api/api-keys                             — create key (plaintext shown once)
-DELETE /api/api-keys/:id                         — revoke key
+GET    /api/api-keys                             - list keys
+POST   /api/api-keys                             - create key (plaintext shown once)
+DELETE /api/api-keys/:id                         - revoke key
 ```
 
 ### Projects
 ```
-GET    /api/projects                             — list projects
-POST   /api/projects                             — create project
-GET    /api/projects/:id                         — project details
-PUT    /api/projects/:id                         — update settings
-DELETE /api/projects/:id                         — delete project + resources
+GET    /api/projects                             - list projects
+POST   /api/projects                             - create project
+GET    /api/projects/:id                         - project details
+PUT    /api/projects/:id                         - update settings
+DELETE /api/projects/:id                         - delete project + resources
 ```
 
 ### Deploys
 ```
-POST   /api/projects/:id/deploy/:env             — trigger deploy
-GET    /api/projects/:id/deploys                  — deploy history (paginated)
-GET    /api/projects/:id/deploys/:deployId        — deploy detail + log
-POST   /api/projects/:id/deploys/:deployId/rollback  — rollback
-POST   /api/projects/:id/deploys/:deployId/cancel    — cancel queued deploy
-GET    /api/projects/:id/deploys/queue            — current queue
+POST   /api/projects/:id/deploy/:env             - trigger deploy
+GET    /api/projects/:id/deploys                  - deploy history (paginated)
+GET    /api/projects/:id/deploys/:deployId        - deploy detail + log
+POST   /api/projects/:id/deploys/:deployId/rollback  - rollback
+POST   /api/projects/:id/deploys/:deployId/cancel    - cancel queued deploy
+GET    /api/projects/:id/deploys/queue            - current queue
 ```
 
 ### Domains
 ```
-GET    /api/projects/:id/domains                  — list domains
-POST   /api/projects/:id/domains                  — add domain
-DELETE /api/projects/:id/domains/:domainId        — remove domain
+GET    /api/projects/:id/domains                  - list domains
+POST   /api/projects/:id/domains                  - add domain
+DELETE /api/projects/:id/domains/:domainId        - remove domain
 ```
 
 ### Databases
 ```
-GET    /api/projects/:id/databases                — list databases
-POST   /api/projects/:id/databases                — provision DB
-DELETE /api/projects/:id/databases/:dbId           — delete database
-POST   /api/projects/:id/databases/:dbId/backup    — trigger backup
-GET    /api/projects/:id/databases/:dbId/backups    — list backups
-POST   /api/projects/:id/databases/:dbId/backups/:backupId/restore  — restore
+GET    /api/projects/:id/databases                - list databases
+POST   /api/projects/:id/databases                - provision DB
+DELETE /api/projects/:id/databases/:dbId           - delete database
+POST   /api/projects/:id/databases/:dbId/backup    - trigger backup
+GET    /api/projects/:id/databases/:dbId/backups    - list backups
+POST   /api/projects/:id/databases/:dbId/backups/:backupId/restore  - restore
 ```
 
 ### Storage
 ```
-GET    /api/projects/:id/storage                  — list volumes
-POST   /api/projects/:id/storage                  — create volume
-DELETE /api/projects/:id/storage/:volId            — delete volume
+GET    /api/projects/:id/storage                  - list volumes
+POST   /api/projects/:id/storage                  - create volume
+DELETE /api/projects/:id/storage/:volId            - delete volume
 ```
 
 ### Environment Variables
 ```
-GET    /api/projects/:id/env/:env                 — list (values masked for secrets)
-PUT    /api/projects/:id/env/:env                 — bulk update
+GET    /api/projects/:id/env/:env                 - list (values masked for secrets)
+PUT    /api/projects/:id/env/:env                 - bulk update
 ```
 
 ### Logs & Streaming
 ```
-WS     /api/projects/:id/logs/:env/stream         — live container logs
-WS     /api/projects/:id/deploys/:deployId/stream  — build log stream
-GET    /api/projects/:id/logs/:env                — historical logs (paginated)
+WS     /api/projects/:id/logs/:env/stream         - live container logs
+WS     /api/projects/:id/deploys/:deployId/stream  - build log stream
+GET    /api/projects/:id/logs/:env                - historical logs (paginated)
 ```
 
 ### Terminal
 ```
-WS     /api/projects/:id/terminal/:env            — web terminal (xterm.js)
+WS     /api/projects/:id/terminal/:env            - web terminal (xterm.js)
 ```
 
 ### Container Stats
 ```
-GET    /api/projects/:id/stats/:env               — current snapshot
-WS     /api/projects/:id/stats/:env/stream        — live stats
+GET    /api/projects/:id/stats/:env               - current snapshot
+WS     /api/projects/:id/stats/:env/stream        - live stats
 ```
 
 ### Cron Jobs
 ```
-GET    /api/projects/:id/cron-jobs                — list
-POST   /api/projects/:id/cron-jobs                — create
-PUT    /api/projects/:id/cron-jobs/:cronId         — update
-DELETE /api/projects/:id/cron-jobs/:cronId         — delete
-POST   /api/projects/:id/cron-jobs/:cronId/run     — trigger manual run
-GET    /api/projects/:id/cron-jobs/:cronId/runs    — run history
+GET    /api/projects/:id/cron-jobs                - list
+POST   /api/projects/:id/cron-jobs                - create
+PUT    /api/projects/:id/cron-jobs/:cronId         - update
+DELETE /api/projects/:id/cron-jobs/:cronId         - delete
+POST   /api/projects/:id/cron-jobs/:cronId/run     - trigger manual run
+GET    /api/projects/:id/cron-jobs/:cronId/runs    - run history
 ```
 
 ### Alerts
 ```
-GET    /api/alerts                                — list (filterable)
-POST   /api/alerts/:id/acknowledge                — acknowledge
-POST   /api/alerts/acknowledge-all                — acknowledge all
+GET    /api/alerts                                - list (filterable)
+POST   /api/alerts/:id/acknowledge                - acknowledge
+POST   /api/alerts/acknowledge-all                - acknowledge all
 ```
 
 ### Audit Log & Activity
 ```
-GET    /api/audit-log                             — list (filterable, paginated)
-GET    /api/activity                              — global activity feed
-GET    /api/projects/:id/activity                 — project activity
+GET    /api/audit-log                             - list (filterable, paginated)
+GET    /api/activity                              - global activity feed
+GET    /api/projects/:id/activity                 - project activity
 ```
 
 ### Server Health
 ```
-GET    /api/server-health                         — host CPU/RAM/disk
-GET    /api/server-health/docker                  — Docker info
+GET    /api/server-health                         - host CPU/RAM/disk
+GET    /api/server-health/docker                  - Docker info
 ```
 
 ### Settings
 ```
-GET    /api/settings                              — platform settings
-PUT    /api/settings                              — update (drain mode, etc.)
+GET    /api/settings                              - platform settings
+PUT    /api/settings                              - update (drain mode, etc.)
 ```
 
 ### GitHub
 ```
-POST   /api/github/webhook                        — push events (raw body, signature verified)
+POST   /api/github/webhook                        - push events (raw body, signature verified)
 ```
 
 ---
@@ -1456,13 +1456,13 @@ networks:
 
 ## 15. Implementation Phases
 
-### Phase 1 — Foundation + Security (Weeks 1-3)
+### Phase 1 - Foundation + Security (Weeks 1-3)
 
 1. Project scaffolding (API + dashboard, Vite + Tailwind + TanStack Query)
 2. PostgreSQL schema + Prisma migrations (full schema from day one)
 3. Platform Redis setup
 4. Auth: bcrypt + JWT (15min access) + httpOnly refresh cookie + token blacklist
-5. TOTP 2FA (otplib, QR, backup codes) — enforced by default
+5. TOTP 2FA (otplib, QR, backup codes) - enforced by default
 6. CSRF protection (csrf-csrf, double-submit cookie)
 7. Security headers (Helmet)
 8. Rate limiting (login: 5/15min, global: 120/min)
@@ -1471,12 +1471,12 @@ networks:
 11. Audit log service
 12. Docker socket proxy setup
 13. Docker client wrapper (dockerode via socket proxy)
-14. `secretService.js` — AES-256-GCM
+14. `secretService.js` - AES-256-GCM
 15. Deploy locking service
 16. Build queue service
 17. Stale deploy recovery on startup
 
-### Phase 2 — Core Deploy Pipeline (Weeks 3-5)
+### Phase 2 - Core Deploy Pipeline (Weeks 3-5)
 
 18. Build service (clone → docker build → tag, BuildKit --secret, .git exclusion)
 19. Deploy service (zero-downtime swap, health check, graceful shutdown)
@@ -1490,7 +1490,7 @@ networks:
 27. Migration command execution
 28. Mid-build failure cleanup
 
-### Phase 3 — Networking & Domains (Weeks 5-6)
+### Phase 3 - Networking & Domains (Weeks 5-6)
 
 29. Traefik setup with Docker provider (via socket proxy)
 30. Security headers middleware (Traefik file provider)
@@ -1501,7 +1501,7 @@ networks:
 35. SSL expiry monitoring
 36. Traefik crash recovery
 
-### Phase 4 — Databases, Storage & Backups (Weeks 6-8)
+### Phase 4 - Databases, Storage & Backups (Weeks 6-8)
 
 37. Database provisioning (Postgres + Redis on project network)
 38. Auto-inject connection strings
@@ -1511,7 +1511,7 @@ networks:
 42. Storage volume management
 43. Disk space management (image GC, nightly prune, alerts)
 
-### Phase 5 — GitHub Integration & API Keys (Weeks 8-9)
+### Phase 5 - GitHub Integration & API Keys (Weeks 8-9)
 
 44. GitHub webhook receiver (raw body, HMAC-SHA256 verification)
 45. Auto-deploy on push
@@ -1520,7 +1520,7 @@ networks:
 48. API keys (create, revoke, scoped, hashed)
 49. API key auth in deploy endpoint
 
-### Phase 6 — Monitoring, Terminal & Advanced (Weeks 9-12)
+### Phase 6 - Monitoring, Terminal & Advanced (Weeks 9-12)
 
 50. Live log streaming
 51. Container stats charts
@@ -1534,7 +1534,7 @@ networks:
 59. Orphan reconciliation
 60. Build log size management
 
-### Phase 7 — Hardening & Ops (Weeks 12-13)
+### Phase 7 - Hardening & Ops (Weeks 12-13)
 
 61. `install.sh` server setup script
 62. `re-encrypt.sh` key rotation
@@ -1542,7 +1542,7 @@ networks:
 64. Comprehensive error handling
 65. Security checklist verification
 
-### Phase 8 — Future (unscheduled)
+### Phase 8 - Future (unscheduled)
 
 66. PR preview environments (requires GitHub App)
 67. Multi-node support (Docker Swarm)
@@ -1637,7 +1637,7 @@ networks:
 
 ### 17.2 Handle Disk Full
 1. `df -h /var/forjahost` and `docker system df`
-2. If >95%, drain mode auto-enabled — confirm at `/settings`
+2. If >95%, drain mode auto-enabled - confirm at `/settings`
 3. `docker image prune -af` to remove unused images
 4. Reduce `IMAGE_RETENTION_COUNT` to 2
 5. `docker builder prune --keep-storage=5GB -f`
@@ -1653,8 +1653,8 @@ networks:
 5. Verify env var decryption from dashboard
 
 ### 17.4 Recover from Traefik Crash
-1. `docker ps -f name=traefik` — check status
-2. `docker logs traefik --tail 100` — check errors
+1. `docker ps -f name=traefik` - check status
+2. `docker logs traefik --tail 100` - check errors
 3. `docker restart traefik` (restart policy should auto-recover)
 4. Verify acme.json volume: `docker volume inspect traefik-certs`
 5. If acme.json corrupted: remove it, restart (certs re-issued)
@@ -1677,7 +1677,7 @@ networks:
 ### 17.7 Restore a Database
 1. `/projects/:id/databases` → select database → "Backups"
 2. Pick backup (prefer `verificationStatus: passed`)
-3. Click "Restore" — stops DB, decrypts, restores, restarts
+3. Click "Restore" - stops DB, decrypts, restores, restarts
 4. Verify application works
 
 ### 17.8 Revoke Compromised API Key

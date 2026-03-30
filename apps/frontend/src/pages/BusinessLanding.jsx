@@ -1,11 +1,8 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
-  Menu,
-  X,
-  Check,
-  ChevronDown,
   ArrowRight,
+  Check,
   Users,
   Calendar,
   FileText,
@@ -18,507 +15,178 @@ import {
   Smartphone,
   CalendarCheck,
   Receipt,
-  Mail,
-  Building2,
+  Shield,
+  Zap,
   Bell,
-  Send,
-  Loader2,
+  Mail,
+  BarChart3,
+  Sparkles,
+  Clock,
+  TrendingUp,
 } from 'lucide-react';
-import API from '../utils/api';
-
-// ---------------------------------------------------------------------------
-// FAQ Accordion Item
-// ---------------------------------------------------------------------------
-function FAQItem({ question, answer }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="border-b border-gray-200">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-5 text-left"
-      >
-        <span className="text-base font-medium text-gray-900">{question}</span>
-        <ChevronDown
-          className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-        />
-      </button>
-      <div
-        className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-40 pb-5' : 'max-h-0'}`}
-      >
-        <p className="text-sm leading-relaxed text-gray-600">{answer}</p>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Contact Form
-// ---------------------------------------------------------------------------
-function ContactForm() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
-  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
-  const [errorMsg, setErrorMsg] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus('sending');
-    setErrorMsg('');
-    try {
-      await API.post('/contact', form);
-      setStatus('sent');
-      setForm({ name: '', email: '', subject: '', message: '' });
-    } catch (err) {
-      setStatus('error');
-      const data = err.response?.data;
-      const msg = data?.errors?.length
-        ? data.errors.map(e => e.message).join('. ')
-        : data?.message || 'Eroare la trimiterea mesajului. Incercati din nou.';
-      setErrorMsg(msg);
-    }
-  };
-
-  if (status === 'sent') {
-    return (
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
-        <Check className="mx-auto h-10 w-10 text-green-600 mb-3" />
-        <h3 className="text-lg font-semibold text-gray-900">Mesaj trimis!</h3>
-        <p className="mt-2 text-sm text-gray-600">Va vom raspunde in cel mai scurt timp.</p>
-        <button
-          onClick={() => setStatus('idle')}
-          className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-800"
-        >
-          Trimite alt mesaj
-        </button>
-      </div>
-    );
-  }
-
-  const inputCls = 'w-full rounded-lg border border-gray-300 bg-gray-50/50 px-3 py-2 text-sm transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none';
-
-  return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Contacteaza-ne</h3>
-      {status === 'error' && (
-        <p className="text-sm text-red-600">{errorMsg}</p>
-      )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <input
-          type="text"
-          placeholder="Nume *"
-          required
-          minLength={2}
-          maxLength={100}
-          value={form.name}
-          onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
-          className={inputCls}
-        />
-        <input
-          type="email"
-          placeholder="Email *"
-          required
-          value={form.email}
-          onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))}
-          className={inputCls}
-        />
-      </div>
-      <input
-        type="text"
-        placeholder="Subiect *"
-        required
-        minLength={3}
-        maxLength={200}
-        value={form.subject}
-        onChange={(e) => setForm(p => ({ ...p, subject: e.target.value }))}
-        className={inputCls}
-      />
-      <div>
-        <textarea
-          placeholder="Descrie cat mai detaliat cererea ta * (minim 10 caractere)"
-          required
-          minLength={10}
-          maxLength={2000}
-          rows={4}
-          value={form.message}
-          onChange={(e) => setForm(p => ({ ...p, message: e.target.value }))}
-          className={inputCls + ' resize-none'}
-        />
-        <p className="mt-1 text-xs text-gray-400">{form.message.length}/2000 caractere (minim 10)</p>
-      </div>
-      <button
-        type="submit"
-        disabled={status === 'sending'}
-        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
-      >
-        {status === 'sending' ? (
-          <><Loader2 className="h-4 w-4 animate-spin" /> Se trimite...</>
-        ) : (
-          <><Send className="h-4 w-4" /> Trimite mesajul</>
-        )}
-      </button>
-    </form>
-  );
-}
+import { motion } from 'framer-motion';
+import { CLIENT_PORTAL_URL } from '../config/urls';
+import PublicHeader from '../components/landing/PublicHeader';
+import PublicFooter from '../components/landing/PublicFooter';
+import SectionHeading from '../components/landing/SectionHeading';
+import AnimatedSection, { StaggerContainer, StaggerItem } from '../components/landing/AnimatedSection';
+import FAQAccordion from '../components/landing/FAQAccordion';
+import GridBackground from '../components/landing/GridBackground';
+import ContactForm from '../components/landing/ContactForm';
+import SEOHead from '../components/landing/SEOHead';
 
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
-const PAIN_POINTS = [
-  {
-    title: 'Telefonul suna. Tu esti ocupat.',
-    text: 'Clientul suna la 8 dimineata pentru o programare. Tu esti deja la un client. La 12, cand revii, a sunat concurenta.',
-  },
-  {
-    title: 'Programarile sunt in cap, pe foi, pe WhatsApp.',
-    text: 'Confuzia nu e o strategie. Un client uitat inseamna o recenzie proasta si bani pierduti.',
-  },
-  {
-    title: 'Facturile se trimit cand iti aduci aminte.',
-    text: 'Si cand iti aduci aminte, clientul a uitat deja. Fiecare zi de intarziere e un risc.',
-  },
-];
-
-const SOLUTIONS = [
-  {
-    num: '01',
-    title: 'Clientii se programeaza singuri.',
-    text: 'Portal de programari online, disponibil 24/7. Clientul alege data, ora si serviciul fara telefon, fara asteptare.',
-  },
-  {
-    num: '02',
-    title: 'Totul intr-un singur loc.',
-    text: 'Clienti, programari, facturi, mesaje, echipa. Un singur dashboard, zero haos.',
-  },
-  {
-    num: '03',
-    title: 'Cresti fara sa angajezi un receptioner.',
-    text: 'Automatizarile fac treaba: notificari automate, remindere, facturi generate la un click.',
-  },
-];
-
 const FEATURES = [
   {
     pill: 'CRM',
-    pillColor: 'bg-blue-100 text-blue-700',
-    title: 'Cunoaste-ti clientii',
-    desc: 'Baza de date completa, cu istoric programari, facturi si comunicare. Fiecare client are propriul profil.',
-    bullets: [
-      'Profil client cu istoric complet',
-      'Import si export date',
-      'Cautare si filtrare avansata',
-      'Note si etichete personalizate',
-    ],
+    title: 'Stii totul despre fiecare client',
+    desc: 'Cand a venit ultima data, ce a platit, ce i-ai spus. Fara sa cauti in mesaje sau pe hartii.',
+    bullets: ['Profil client cu istoric complet', 'Import rapid din Excel sau CSV', 'Cautare si filtrare in 2 secunde', 'Note si etichete personalizate'],
     icon: Users,
-    iconColor: 'text-blue-600',
-    mockAccent: 'border-blue-200',
   },
   {
     pill: 'Programari',
-    pillColor: 'bg-green-100 text-green-700',
-    title: 'Programari care merg pe pilot automat',
-    desc: 'Calendar inteligent, configurabil pe locatii si angajati. Clientii aleg singuri din intervalele disponibile.',
-    bullets: [
-      'Programari online 24/7',
-      'Calendar multi-locatie',
-      'Notificari si remindere automate',
-      'Gestionare statusuri (in asteptare, confirmat, finalizat)',
-    ],
+    title: 'Clientii se programeaza singuri, 24/7',
+    desc: 'Calendar inteligent pe locatii si angajati. Clientul alege ora, primeste confirmare, tu primesti notificare. Zero telefoane.',
+    bullets: ['Portal de programari non-stop', 'Calendar multi-locatie si multi-angajat', 'Remindere automate (SMS + email)', 'Statusuri: confirmat, in lucru, finalizat'],
     icon: Calendar,
-    iconColor: 'text-green-600',
-    mockAccent: 'border-green-200',
   },
   {
     pill: 'Facturare',
-    pillColor: 'bg-amber-100 text-amber-700',
-    title: 'Facturi profesionale, trimise la timp',
-    desc: 'Genereaza facturi direct din programare, trimite-le clientului si urmareste plata totul din aceeasi platforma.',
-    bullets: [
-      'Generare facturi dintr-un click',
-      'Tracking plati',
-      'Notificari automate catre client',
-      'Export pentru contabilitate',
-    ],
+    title: 'Factura gata in 3 secunde',
+    desc: 'Se genereaza direct din programare cu datele clientului completate. O trimiti, o urmaresti, o incasezi - din acelasi ecran.',
+    bullets: ['Un click: programare → factura', 'Tracking plati si restante', 'Reminder automat daca nu plateste', 'Export pentru contabilitate'],
     icon: FileText,
-    iconColor: 'text-amber-600',
-    mockAccent: 'border-amber-200',
   },
   {
     pill: 'Website',
-    pillColor: 'bg-purple-100 text-purple-700',
-    title: 'Site-ul tau, fara developer',
-    desc: 'Builder drag & drop cu blocuri pre-construite. Lanseaza un site profesional in sub o ora.',
-    bullets: [
-      'Template-uri pe industrie',
-      'Blocuri: hero, servicii, echipa, testimoniale, galerie, FAQ',
-      'SEO optimizat',
-      'Formular de contact si leads',
-    ],
+    title: 'Site profesional, fara developer',
+    desc: 'Drag & drop. Alegi template-ul, schimbi textele, publici. In sub o ora ai un site mai bun decat 90% din competitie.',
+    bullets: ['Template-uri testate pe industrie', 'Blocuri: hero, servicii, echipa, galerie, FAQ', 'SEO optimizat automat', 'Formular de contact integrat cu CRM-ul'],
     icon: Globe,
-    iconColor: 'text-purple-600',
-    mockAccent: 'border-purple-200',
   },
   {
     pill: 'Comunicare',
-    pillColor: 'bg-pink-100 text-pink-700',
-    title: 'Conversatii, nu email-uri pierdute',
-    desc: 'Chat integrat cu clientii, notificari in timp real, push notifications pe mobil.',
-    bullets: [
-      'Chat in-app cu clientii',
-      'Notificari push',
-      'Mesaje, poze, documente',
-      'Istoric complet al conversatiilor',
-    ],
+    title: 'Vorbesti cu clientii fara WhatsApp',
+    desc: 'Chat integrat in portal. Clientul iti scrie, tu primesti notificare instant. Totul salvat, nimic pierdut.',
+    bullets: ['Chat in-app cu clientii', 'Push notifications in timp real', 'Trimite mesaje, poze, documente', 'Istoric complet al conversatiilor'],
     icon: MessageCircle,
-    iconColor: 'text-pink-600',
-    mockAccent: 'border-pink-200',
   },
   {
     pill: 'Echipa',
-    pillColor: 'bg-teal-100 text-teal-700',
-    title: 'Echipa organizata, fara micro-management',
-    desc: 'Gestioneaza angajatii, task-urile, pontajul si concediile totul centralizat.',
-    bullets: [
-      'Management angajati cu roluri',
-      'Task-uri si todos',
-      'Time tracking',
-      'Cereri de concediu',
-    ],
+    title: 'Echipa stie ce are de facut',
+    desc: 'Task-uri, pontaj, concedii, roluri - nu mai pierzi 30 de minute pe zi cu "cine face ce azi?".',
+    bullets: ['Angajati cu roluri si permisiuni', 'Task-uri si to-do-uri zilnice', 'Time tracking per proiect', 'Cereri de concediu cu aprobare'],
     icon: UserCog,
-    iconColor: 'text-teal-600',
-    mockAccent: 'border-teal-200',
   },
 ];
 
 const SECTORS = [
-  {
-    key: 'auto',
-    label: 'Auto',
-    desc: 'Service auto, ITP, vulcanizare, spalatorie',
-    icon: Car,
-    accent: 'border-blue-500',
-    bg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-  },
-  {
-    key: 'beauty',
-    label: 'Beauty',
-    desc: 'Salon, frizerie, cosmetica, manichiura',
-    icon: Scissors,
-    accent: 'border-pink-500',
-    bg: 'bg-pink-50',
-    iconColor: 'text-pink-600',
-  },
-  {
-    key: 'digital',
-    label: 'Servicii Digitale',
-    desc: 'Web development, design grafic, marketing digital, consultanta IT',
-    icon: Globe,
-    accent: 'border-indigo-500',
-    bg: 'bg-indigo-50',
-    iconColor: 'text-indigo-600',
-  },
-  {
-    key: 'home',
-    label: 'Home Services',
-    desc: 'Instalatii, electrician, HVAC, reparatii',
-    icon: Wrench,
-    accent: 'border-amber-500',
-    bg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
-  },
-  {
-    key: 'it',
-    label: 'IT & Electronice',
-    desc: 'Reparatii telefoane, PC, laptop, electronice',
-    icon: Smartphone,
-    accent: 'border-green-500',
-    bg: 'bg-green-50',
-    iconColor: 'text-green-600',
-  },
+  { key: 'auto', label: 'Auto', desc: 'Service, ITP, vulcanizare, detailing, spalatorie', icon: Car },
+  { key: 'beauty', label: 'Beauty & Wellness', desc: 'Salon, frizerie, cosmetica, manichiura, spa', icon: Scissors },
+  { key: 'digital', label: 'Servicii Digitale', desc: 'Agentii web, design, marketing, consultanta', icon: Globe },
+  { key: 'home', label: 'Home Services', desc: 'Instalatii, electrician, HVAC, curatenie', icon: Wrench },
+  { key: 'it', label: 'IT & Electronice', desc: 'Reparatii telefoane, PC, laptop, GSM', icon: Smartphone },
 ];
 
 const FAQ_ITEMS = [
-  {
-    q: 'Cat costa ForjaIt?',
-    a: 'Toate planurile includ 14 zile de proba gratuita fara card bancar. Planul Starter porneste de la 99 RON/luna pentru echipe mici (5 utilizatori, 500 clienti). Professional la 249 RON/luna acopera majoritatea afacerilor (15 utilizatori, 2.000 clienti), iar Enterprise la 499 RON/luna ofera resurse nelimitate.',
-  },
-  {
-    q: 'Cat dureaza configurarea?',
-    a: 'Contul se creeaza in mai putin de 5 minute. Parcurgi un wizard in care adaugi datele firmei (cu verificare CUI automata), locatia principala si serviciile oferite. Dupa aceea esti gata sa primesti programari si sa gestionezi clientii.',
-  },
-  {
-    q: 'Pot folosi platforma pe telefon?',
-    a: 'Da. Interfata este complet responsiva si functioneaza pe orice dispozitiv — telefon, tableta sau desktop. Primesti notificari in timp real pentru programari noi, mesaje de la clienti si actualizari de status.',
-  },
-  {
-    q: 'Clientii mei trebuie sa isi faca cont?',
-    a: 'Nu este obligatoriu. Clientii pot programa direct din marketplace-ul ForjaIt sau de pe site-ul tau, fara sa isi creeze un cont. Daca doresc, pot accesa portalul clientilor pentru a-si vedea istoricul programarilor, a comunica prin chat si a primi notificari.',
-  },
-  {
-    q: 'Ce tipuri de afaceri poate gestiona ForjaIt?',
-    a: 'Platforma este configurabila pe domenii: service auto, saloane de infrumusetare, ateliere de reparatii, servicii digitale, IT & electronice, home services si multe altele. Terminologia, tipurile de active si fluxurile se adapteaza automat in functie de domeniul ales.',
-  },
-  {
-    q: 'Pot genera facturi si devize din platforma?',
-    a: 'Da. ForjaIt include un sistem complet de facturare cu generare automata de PDF-uri, numerotare configurabila, suport pentru TVA si note personalizate. Devizele (fise de lucru) pot fi create direct din programari cu detalii de manopera si piese.',
-  },
-  {
-    q: 'Pot sa imi construiesc un website cu ForjaIt?',
-    a: 'Da. Website builder-ul inclus ofera blocuri pre-construite (hero, servicii, echipa, testimoniale, galerie, FAQ, contact) si template-uri pe industrie. Poti lansa un site profesional optimizat SEO in mai putin de o ora.',
-  },
-  {
-    q: 'Datele mele sunt in siguranta?',
-    a: 'Da. Toate comunicatiile sunt criptate prin HTTPS/TLS. Parolele sunt stocate folosind algoritmi de hashing securizati (bcrypt). Platforma include autentificare in doi factori (2FA), protectie CSRF, control al accesului bazat pe roluri (RBAC) si jurnalizarea tuturor actiunilor sensibile. Datele sunt stocate pe servere securizate in Uniunea Europeana cu backup-uri automate zilnice. Platforma este conforma GDPR si Legii nr. 190/2018.',
-  },
-  {
-    q: 'Cat timp sunt pastrate datele mele?',
-    a: 'Datele contului sunt pastrate pe durata utilizarii platformei plus 30 de zile dupa stergere. Documentele financiar-contabile (facturi, chitante) sunt pastrate 5 ani conform Legii contabilitatii nr. 82/1991, modificata prin Legea nr. 36/2023. Situatiile financiare anuale se pastreaza 10 ani. Jurnalele de activitate se sterg automat dupa 12 luni. La stergerea contului, datele fara obligatie legala de pastrare sunt eliminate in 30 de zile.',
-  },
-  {
-    q: 'Pot anula abonamentul oricand?',
-    a: 'Da. Nu exista contract pe termen lung. Poti anula sau schimba planul oricand din setarile contului. Datele tale raman disponibile pana la expirarea perioadei platite.',
-  },
+  { q: 'Cat costa si merita investitia?', a: 'Starter: 99 RON/luna (5 utilizatori). Professional: 249 RON/luna (15 utilizatori). Enterprise: 399 RON/luna (nelimitat). E mai putin decat costul unui singur client pierdut pe luna. Toate planurile includ 14 zile gratuit, fara card.' },
+  { q: 'Cat dureaza pana sunt operational?', a: 'Sub 5 minute. Parcurgi un wizard rapid: datele firmei (cu verificare CUI automata), locatia, serviciile - si esti gata sa primesti programari. Nu ai nevoie de cunostinte tehnice.' },
+  { q: 'Pot folosi platforma de pe telefon?', a: 'Da, 100%. Interfata e construita mobile-first. Primesti notificari push pentru programari noi, mesaje si plati - exact ca un mesaj pe WhatsApp, dar organizat.' },
+  { q: 'Clientii mei trebuie sa isi faca cont?', a: 'Nu. Pot programa direct din marketplace sau de pe site-ul tau, fara cont. Optional, isi pot crea un cont gratuit pentru a-si vedea istoricul si a comunica direct cu tine.' },
+  { q: 'Nu am site. Asta e o problema?', a: 'Nu. ForjaIt include un website builder drag & drop. Alegi un template pentru industria ta, schimbi textele, publici. In sub o ora ai un site profesional cu SEO inclus.' },
+  { q: 'Daca nu imi place, pot anula?', a: 'Oricand, dintr-un singur click din setari. Fara contracte, fara penalizari, fara intrebari. Exporti datele tale si gata.' },
+  { q: 'Ce tipuri de afaceri functioneaza cel mai bine?', a: 'Orice afacere bazata pe programari si servicii: service auto, saloane, ateliere reparatii, agentii digitale, servicii la domiciliu. Platforma se adapteaza automat pe domeniu - terminologie, fluxuri, template-uri.' },
+  { q: 'Datele clientilor mei sunt in siguranta?', a: 'Da. Criptare HTTPS/TLS, parole bcrypt, 2FA optional, protectie CSRF. Servere in UE cu backup zilnic. Conform GDPR si Legii nr. 190/2018. Datele sunt ale tale - le exporti oricand.' },
 ];
 
 // ---------------------------------------------------------------------------
-// Feature mock UI cards (Tailwind-only, no images)
+// Mock UI cards for feature section
 // ---------------------------------------------------------------------------
 function MockCRM() {
   return (
-    <div className="rounded-xl border border-blue-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-          <Users className="h-4 w-4 text-blue-600" />
-        </div>
-        <div>
-          <div className="text-sm font-medium text-gray-900">Andrei Popescu</div>
-          <div className="text-xs text-gray-400">12 programari · 3 facturi</div>
-        </div>
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-200/50">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-primary-50 flex items-center justify-center"><Users className="h-5 w-5 text-primary" /></div>
+        <div><div className="text-sm font-semibold text-gray-900">Andrei Popescu</div><div className="text-xs text-gray-400">12 programari · 3 facturi</div></div>
       </div>
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-500">Ultima vizita</span>
-          <span className="text-gray-700">3 feb 2026</span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-500">Total</span>
-          <span className="font-medium text-gray-900">1,250 RON</span>
-        </div>
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs"><span className="text-gray-500">Ultima vizita</span><span className="text-gray-700 font-medium">3 feb 2026</span></div>
+        <div className="flex justify-between text-xs"><span className="text-gray-500">Total incasat</span><span className="font-semibold text-gray-900">1,250 RON</span></div>
       </div>
     </div>
   );
 }
-
 function MockCalendar() {
   return (
-    <div className="rounded-xl border border-green-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-900">Februarie 2026</span>
-        <Calendar className="h-4 w-4 text-green-600" />
-      </div>
-      <div className="space-y-1.5">
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-200/50">
+      <div className="mb-4 flex items-center justify-between"><span className="text-sm font-semibold text-gray-900">Februarie 2026</span><Calendar className="h-4 w-4 text-primary" /></div>
+      <div className="space-y-2">
         {[
-          { time: '09:00', name: 'Maria I.', status: 'Confirmat', color: 'bg-green-100 text-green-700' },
-          { time: '11:30', name: 'Vlad P.', status: 'In asteptare', color: 'bg-amber-100 text-amber-700' },
-          { time: '14:00', name: 'Elena R.', status: 'Confirmat', color: 'bg-green-100 text-green-700' },
+          { time: '09:00', name: 'Maria I.', status: 'Confirmat', color: 'bg-emerald-50 text-emerald-700' },
+          { time: '11:30', name: 'Vlad P.', status: 'In asteptare', color: 'bg-amber-50 text-amber-700' },
+          { time: '14:00', name: 'Elena R.', status: 'Confirmat', color: 'bg-emerald-50 text-emerald-700' },
         ].map((apt) => (
           <div key={apt.time} className="flex items-center justify-between text-xs">
-            <span className="text-gray-500 w-10">{apt.time}</span>
+            <span className="text-gray-400 w-12 font-medium">{apt.time}</span>
             <span className="text-gray-700 flex-1">{apt.name}</span>
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${apt.color}`}>
-              {apt.status}
-            </span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${apt.color}`}>{apt.status}</span>
           </div>
         ))}
       </div>
     </div>
   );
 }
-
 function MockInvoice() {
   return (
-    <div className="rounded-xl border border-amber-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-900">Factura #0042</span>
-        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700">Platita</span>
-      </div>
-      <div className="space-y-1.5 text-xs">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Client</span>
-          <span className="text-gray-700">Andrei P.</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-500">Suma</span>
-          <span className="font-medium text-gray-900">350 RON</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-500">Data</span>
-          <span className="text-gray-700">5 feb 2026</span>
-        </div>
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-200/50">
+      <div className="mb-4 flex items-center justify-between"><span className="text-sm font-semibold text-gray-900">Factura #0042</span><span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700">Platita</span></div>
+      <div className="space-y-2 text-xs">
+        <div className="flex justify-between"><span className="text-gray-500">Client</span><span className="text-gray-700">Andrei P.</span></div>
+        <div className="flex justify-between"><span className="text-gray-500">Suma</span><span className="font-semibold text-gray-900">350 RON</span></div>
+        <div className="flex justify-between"><span className="text-gray-500">Data</span><span className="text-gray-700">5 feb 2026</span></div>
       </div>
     </div>
   );
 }
-
 function MockWebsite() {
   return (
-    <div className="rounded-xl border border-purple-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <Globe className="h-4 w-4 text-purple-600" />
-        <span className="text-sm font-medium text-gray-900">autoservice.ro</span>
-      </div>
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-200/50">
+      <div className="mb-4 flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /><span className="text-sm font-semibold text-gray-900">autoservice.ro</span></div>
       <div className="space-y-2">
-        <div className="h-16 rounded-lg bg-purple-50 flex items-center justify-center text-[10px] text-purple-400 font-medium">Hero Block</div>
-        <div className="grid grid-cols-3 gap-1.5">
-          <div className="h-8 rounded bg-gray-50"></div>
-          <div className="h-8 rounded bg-gray-50"></div>
-          <div className="h-8 rounded bg-gray-50"></div>
-        </div>
+        <div className="h-16 rounded-xl bg-primary-50 flex items-center justify-center text-[10px] text-primary/60 font-semibold">Hero Block</div>
+        <div className="grid grid-cols-3 gap-1.5"><div className="h-8 rounded-lg bg-gray-50" /><div className="h-8 rounded-lg bg-gray-50" /><div className="h-8 rounded-lg bg-gray-50" /></div>
       </div>
     </div>
   );
 }
-
 function MockChat() {
   return (
-    <div className="rounded-xl border border-pink-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <MessageCircle className="h-4 w-4 text-pink-600" />
-        <span className="text-sm font-medium text-gray-900">Conversatie</span>
-      </div>
-      <div className="space-y-2">
-        <div className="flex justify-end">
-          <div className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] text-white max-w-[80%]">
-            Buna, la ce ora pot veni maine?
-          </div>
-        </div>
-        <div className="flex justify-start">
-          <div className="rounded-lg bg-gray-100 px-3 py-1.5 text-[11px] text-gray-700 max-w-[80%]">
-            Avem loc la 10:00 sau 14:30.
-          </div>
-        </div>
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-200/50">
+      <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-4 w-4 text-primary" /><span className="text-sm font-semibold text-gray-900">Conversatie</span></div>
+      <div className="space-y-2.5">
+        <div className="flex justify-end"><div className="rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-[11px] text-white max-w-[80%]">Buna, la ce ora pot veni maine?</div></div>
+        <div className="flex justify-start"><div className="rounded-2xl rounded-bl-md bg-gray-100 px-3.5 py-2 text-[11px] text-gray-700 max-w-[80%]">Avem loc la 10:00 sau 14:30.</div></div>
       </div>
     </div>
   );
 }
-
 function MockTeam() {
   return (
-    <div className="rounded-xl border border-teal-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-900">Echipa</span>
-        <UserCog className="h-4 w-4 text-teal-600" />
-      </div>
-      <div className="space-y-2">
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-200/50">
+      <div className="mb-4 flex items-center justify-between"><span className="text-sm font-semibold text-gray-900">Echipa</span><UserCog className="h-4 w-4 text-primary" /></div>
+      <div className="space-y-2.5">
         {[
           { name: 'Alex M.', role: 'Technician', active: true },
           { name: 'Dana V.', role: 'Receptie', active: true },
           { name: 'Mihai C.', role: 'Technician', active: false },
         ].map((m) => (
           <div key={m.name} className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${m.active ? 'bg-green-500' : 'bg-gray-300'}`} />
-              <span className="text-gray-700">{m.name}</span>
+            <div className="flex items-center gap-2.5">
+              <div className={`h-2 w-2 rounded-full ${m.active ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+              <span className="text-gray-700 font-medium">{m.name}</span>
             </div>
             <span className="text-gray-400">{m.role}</span>
           </div>
@@ -527,482 +195,423 @@ function MockTeam() {
     </div>
   );
 }
-
 const FEATURE_MOCKS = [MockCRM, MockCalendar, MockInvoice, MockWebsite, MockChat, MockTeam];
 
 // ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 export default function BusinessLanding() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
-  const scrollTo = (id) => {
-    setMobileMenuOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Handle hash-based scroll when navigating from another page (e.g. /pricing -> /#features)
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  }, [location.hash]);
+
+  const seoSchema = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'ForjaIt',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description: 'Platforma de management pentru afaceri de servicii din Romania — programari online, CRM, facturare, website builder si portal clienti.',
+      offers: { '@type': 'AggregateOffer', priceCurrency: 'RON', lowPrice: '0', highPrice: '499', offerCount: '4' },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQ_ITEMS.map((item) => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ================================================================ */}
-      {/* 1. STICKY HEADER                                                 */}
-      {/* ================================================================ */}
-      <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/business" className="text-lg font-bold tracking-tight text-gray-900">
-            ForjaIt
-          </Link>
+      <SEOHead
+        title="ForjaIt — Clientii se programeaza singuri | Programari, CRM, Facturare"
+        description="O singura platforma care inlocuieste agenda, Excel-ul si WhatsApp-ul. Programari online, CRM, facturare, website builder si portal clienti. 14 zile gratuit."
+        canonical="https://app.forja.it.com/"
+        og={{
+          title: 'ForjaIt — Clientii se programeaza singuri. Tu te ocupi de business.',
+          description: 'Programari online, CRM, facturare si website — o singura platforma pentru afaceri de servicii. 14 zile gratuit.',
+          url: 'https://app.forja.it.com/',
+        }}
+        schema={seoSchema}
+      />
+      <PublicHeader />
 
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">
-            <button onClick={() => scrollTo('features')} className="hover:text-gray-900 transition-colors">
-              Functionalitati
-            </button>
-            <button onClick={() => scrollTo('sectors')} className="hover:text-gray-900 transition-colors">
-              Sectoare
-            </button>
-            <Link to="/pricing" className="hover:text-gray-900 transition-colors">
-              Preturi
-            </Link>
-            <button onClick={() => scrollTo('contact')} className="hover:text-gray-900 transition-colors">
-              Contact
-            </button>
-          </nav>
+      {/* ── Hero ───────────────────────────────────────────────── */}
+      <section className="relative bg-slate-950 text-white overflow-hidden">
+        <GridBackground />
 
-          <div className="hidden items-center gap-4 md:flex">
-            <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              Autentificare
-            </Link>
-            <Link
-              to="/signup"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-36">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
             >
-              Incearca gratuit
-            </Link>
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden">
-            <nav className="flex flex-col gap-3 text-sm font-medium text-gray-600">
-              <button onClick={() => scrollTo('features')} className="text-left py-2 hover:text-gray-900">
-                Functionalitati
-              </button>
-              <button onClick={() => scrollTo('sectors')} className="text-left py-2 hover:text-gray-900">
-                Sectoare
-              </button>
-              <Link to="/pricing" className="py-2 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>
-                Preturi
-              </Link>
-              <button onClick={() => scrollTo('contact')} className="text-left py-2 hover:text-gray-900">
-                Contact
-              </button>
-              <hr className="border-gray-100" />
-              <Link to="/login" className="py-2 hover:text-gray-900">
-                Autentificare
-              </Link>
-              <Link
-                to="/signup"
-                className="rounded-lg bg-blue-600 px-4 py-2.5 text-center text-sm font-semibold text-white"
-              >
-                Incearca gratuit
-              </Link>
-            </nav>
-          </div>
-        )}
-      </header>
-
-      {/* ================================================================ */}
-      {/* 2. HERO                                                          */}
-      {/* ================================================================ */}
-      <section className="py-20 sm:py-28">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:items-center">
-          {/* Left – text */}
-          <div>
-            <span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-              Pentru afaceri de servicii
-            </span>
-            <h1 className="mt-6 text-4xl font-extrabold leading-[1.1] tracking-tight text-gray-900 sm:text-5xl">
-              Clientii tai merita o experienta mai buna.
-              <span className="block mt-1 font-semibold text-gray-400">Si tu, la fel.</span>
-            </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-gray-500">
-              ForjaIt este platforma completa care iti organizeaza programarile, clientii,
-              echipa si facturile ca tu sa te concentrezi pe ceea ce faci cel mai bine.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                to="/signup"
-                className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
-              >
-                Incearca gratuit
-              </Link>
-            </div>
-            <p className="mt-4 text-xs text-gray-400">
-              Fara card de credit · Configurare in 5 minute · Anuleaza oricand
-            </p>
-          </div>
-
-          {/* Right – card stack visual */}
-          <div className="relative hidden lg:block h-[380px]">
-            {/* Notification card */}
-            <div className="absolute left-0 top-0 w-64 rounded-xl border border-gray-200 bg-white p-4 shadow-lg -rotate-3">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <Bell className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-900">Programare noua</div>
-                  <div className="text-[10px] text-gray-400">Acum 2 minute</div>
-                </div>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.08] border border-white/10 text-xs font-medium text-slate-300 mb-8">
+                <Sparkles className="h-3.5 w-3.5 text-accent" />
+                Construit pentru service-uri, saloane si ateliere din Romania
               </div>
-              <p className="text-[11px] text-gray-500">Maria I. a programat o vizita pentru maine la 10:00.</p>
-            </div>
-
-            {/* Calendar mini-preview */}
-            <div className="absolute left-32 top-24 w-56 rounded-xl border border-gray-200 bg-white p-4 shadow-lg rotate-2">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-gray-900">Azi - 9 feb</span>
-                <CalendarCheck className="h-4 w-4 text-blue-600" />
-              </div>
-              <div className="space-y-1.5">
-                {['09:00 - Andrei P.', '11:30 - Elena R.', '14:00 - Vlad M.'].map((line) => (
-                  <div key={line} className="flex items-center gap-2 text-[11px]">
-                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                    <span className="text-gray-600">{line}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Message preview */}
-            <div className="absolute right-0 top-48 w-60 rounded-xl border border-gray-200 bg-white p-4 shadow-lg -rotate-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Mail className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-900">Mesaj nou</div>
-                  <div className="text-[10px] text-gray-400">Vlad M.</div>
-                </div>
-              </div>
-              <p className="text-[11px] text-gray-500">
-                Buna ziua, am o intrebare legata de factura din ianuarie.
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight leading-[1.1]">
+                Clientii se programeaza singuri.
+                <span className="block mt-2 bg-gradient-to-r from-primary-400 to-accent bg-clip-text text-transparent">Tu te ocupi de business.</span>
+              </h1>
+              <p className="mt-6 text-lg text-slate-400 leading-relaxed max-w-lg">
+                O singura platforma care iti inlocuieste agenda, Excel-ul, WhatsApp-ul si facturile de mana si iti economiseste 10+ ore pe saptamana.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link to="/signup" className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-semibold text-white hover:bg-primary-500 transition-all shadow-lg shadow-primary/30">
+                  Activeaza cont gratuit <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link to="/pricing" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3.5 text-sm font-medium text-slate-300 hover:bg-white/10 transition-colors">
+                  Vezi preturile
+                </Link>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" />14 zile gratuit, fara card</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" />Gata in 5 minute</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" />Fara contract pe termen lung</span>
+              </div>
+            </motion.div>
 
-      {/* ================================================================ */}
-      {/* 3. PROBLEM AGITATION — "Suna cunoscut?"                          */}
-      {/* ================================================================ */}
-      <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Suna cunoscut?</h2>
-          <div className="mt-10 space-y-6">
-            {PAIN_POINTS.map((p) => (
-              <div
-                key={p.title}
-                className="rounded-lg border-l-4 border-amber-400 bg-white py-5 pl-6 pr-5 shadow-sm"
+            {/* Floating cards */}
+            <motion.div
+              className="relative hidden lg:block h-[400px]"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+            >
+              <motion.div
+                className="absolute left-0 top-0 w-64"
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <h3 className="text-base font-bold text-gray-900">{p.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-gray-600">{p.text}</p>
-              </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 shadow-2xl -rotate-3">
+                  <div className="flex items-center gap-3 mb-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center"><Bell className="h-4 w-4 text-primary-400" /></div>
+                    <div><div className="text-xs font-semibold text-white">Programare noua</div><div className="text-[10px] text-slate-500">Acum 2 minute</div></div>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">Maria I. a programat o vizita pentru maine la 10:00.</p>
+                </div>
+              </motion.div>
+              <motion.div
+                className="absolute left-28 top-28 w-56"
+                animate={{ y: [0, 6, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+              >
+                <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 shadow-2xl rotate-2">
+                  <div className="flex items-center justify-between mb-3"><span className="text-xs font-semibold text-white">Azi - 9 feb</span><CalendarCheck className="h-4 w-4 text-primary-400" /></div>
+                  <div className="space-y-1.5">
+                    {['09:00 - Andrei P.', '11:30 - Elena R.', '14:00 - Vlad M.'].map((line) => (
+                      <div key={line} className="flex items-center gap-2 text-[11px]"><div className="h-1.5 w-1.5 rounded-full bg-primary-400" /><span className="text-slate-400">{line}</span></div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+              <motion.div
+                className="absolute right-0 top-52 w-60"
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+              >
+                <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 shadow-2xl -rotate-1">
+                  <div className="flex items-center gap-3 mb-2.5">
+                    <div className="h-9 w-9 rounded-xl bg-accent/20 flex items-center justify-center"><Mail className="h-4 w-4 text-accent-400" /></div>
+                    <div><div className="text-xs font-semibold text-white">Mesaj nou</div><div className="text-[10px] text-slate-500">Vlad M.</div></div>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">Buna ziua, am o intrebare legata de factura din ianuarie.</p>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Trust strip ────────────────────────────────────────── */}
+      <section className="border-b border-gray-100 py-5 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
+            {[
+              { icon: Zap, text: 'Operational din prima zi' },
+              { icon: Shield, text: 'Date securizate in UE, conform GDPR' },
+              { icon: MessageCircle, text: 'Suport real inclus in orice plan' },
+              { icon: TrendingUp, text: 'Inlocuieste 5 unelte separate' },
+            ].map((item) => (
+              <span key={item.text} className="flex items-center gap-2">
+                <item.icon className="h-4 w-4 text-primary" />
+                {item.text}
+              </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ================================================================ */}
-      {/* 4. SOLUTION PIVOT                                                */}
-      {/* ================================================================ */}
-      <section className="py-20">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Cu ForjaIt, lucrurile stau altfel.
-          </h2>
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            {SOLUTIONS.map((s) => (
-              <div key={s.num} className="relative">
-                <span className="text-5xl font-extrabold text-blue-100">{s.num}</span>
-                <h3 className="mt-2 text-lg font-bold text-gray-900">{s.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">{s.text}</p>
-              </div>
+      {/* ── Problem ────────────────────────────────────────────── */}
+      <section className="py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <SectionHeading label="Te recunosti?" title="Asa pierzi bani in fiecare saptamana." subtitle="Fiecare client ratat, fiecare factura intarziata, fiecare programare pierduta te costa. Iata cum:" />
+          </AnimatedSection>
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6" stagger={0.1}>
+            {[
+              { title: 'Telefonul suna. Tu esti sub masina.', text: 'Clientul suna la 8 dimineata pentru o programare. Tu esti deja la un client. La 12, cand revii, a sunat concurenta. Asta se intampla de 3-4 ori pe zi.', icon: Clock },
+              { title: 'Programarile sunt pe WhatsApp si pe hartie.', text: 'Confuzia nu e o strategie. Un client uitat = o recenzie de 1 stea si 200+ RON pierduti. In fiecare luna.', icon: MessageCircle },
+              { title: 'Facturile se trimit cand iti aduci aminte.', text: 'Si cand iti aduci aminte, clientul a uitat deja. Media de intarziere la plata: 47 de zile. Cu automatizare: sub 7.', icon: FileText },
+            ].map((p) => (
+              <StaggerItem key={p.title}>
+                <div className="group rounded-2xl border border-gray-200 bg-white p-7 hover:border-red-200 hover:shadow-lg hover:shadow-red-50 transition-all h-full">
+                  <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center mb-4 group-hover:bg-red-100 transition-colors">
+                    <p.icon className="h-5 w-5 text-red-500" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">{p.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{p.text}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      {/* ================================================================ */}
-      {/* 5. FEATURES DEEP DIVE — "Ce primesti"                            */}
-      {/* ================================================================ */}
-      <section id="features" className="py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Ce primesti</h2>
-          <div className="mt-16 space-y-24">
+      {/* ── Solution ───────────────────────────────────────────── */}
+      <section className="py-24 lg:py-32 bg-gray-50/80">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <SectionHeading label="Dupa prima saptamana" title="Asa arata afacerea ta cu ForjaIt." />
+          </AnimatedSection>
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8" stagger={0.1}>
+            {[
+              { num: '01', title: 'Clientii se programeaza la 2 noaptea.', text: 'Portal de programari online, disponibil 24/7. Clientul alege singur ora, primeste confirmare instant. Tu nu ridici telefonul.', icon: CalendarCheck },
+              { num: '02', title: 'Un singur ecran, nu 5 aplicatii.', text: 'Clienti, programari, facturi, mesaje, echipa - totul in acelasi dashboard. Deschizi o singura aplicatie dimineata.', icon: BarChart3 },
+              { num: '03', title: 'Cresti fara angajat in plus.', text: 'Notificari automate, remindere pre-programare, facturi generate la un click. Ce facea un receptioner, acum face ForjaIt.', icon: TrendingUp },
+            ].map((s) => (
+              <StaggerItem key={s.num}>
+                <div className="group bg-white rounded-2xl border border-gray-200 p-7 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-50 transition-all h-full">
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-sm font-extrabold text-primary group-hover:bg-primary group-hover:text-white transition-colors">{s.num}</span>
+                    <s.icon className="h-5 w-5 text-primary/40" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">{s.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{s.text}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+          <AnimatedSection className="mt-12 text-center" delay={0.3}>
+            <Link to="/signup" className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25">
+              Vreau sa incerc gratuit <ArrowRight className="h-4 w-4" />
+            </Link>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── Features ───────────────────────────────────────────── */}
+      <section id="features" className="py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <SectionHeading
+              label="Ce primesti concret"
+              title="6 unelte. 1 platforma. 0 batai de cap."
+              subtitle="Fiecare modul este gandit sa iti reduca munca manuala si sa iti creasca numarul de clienti."
+            />
+          </AnimatedSection>
+          <div className="space-y-28">
             {FEATURES.map((feat, i) => {
               const Mock = FEATURE_MOCKS[i];
               const reversed = i % 2 === 1;
               return (
-                <div
-                  key={feat.pill}
-                  className={`flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16 ${reversed ? 'lg:flex-row-reverse' : ''}`}
-                >
-                  {/* Text */}
-                  <div className="flex-1">
-                    <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${feat.pillColor}`}>
-                      {feat.pill}
-                    </span>
-                    <h3 className="mt-4 text-2xl font-bold text-gray-900">{feat.title}</h3>
-                    <p className="mt-3 text-sm leading-relaxed text-gray-600">{feat.desc}</p>
-                    <ul className="mt-5 space-y-2.5">
-                      {feat.bullets.map((b) => (
-                        <li key={b} className="flex items-start gap-2 text-sm text-gray-700">
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-                          {b}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {/* Mock card */}
-                  <div className="flex-1 flex justify-center">
-                    <div className="w-full max-w-xs">
-                      <Mock />
+                <AnimatedSection key={feat.pill}>
+                  <div className={`flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-20 ${reversed ? 'lg:flex-row-reverse' : ''}`}>
+                    <div className="flex-1">
+                      <span className="inline-block rounded-lg border border-primary-100 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 mb-4">{feat.pill}</span>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">{feat.title}</h3>
+                      <p className="mt-4 text-base leading-relaxed text-gray-600">{feat.desc}</p>
+                      <ul className="mt-6 space-y-3">
+                        {feat.bullets.map((b) => (
+                          <li key={b} className="flex items-start gap-2.5 text-sm text-gray-700">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{b}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="flex-1 flex justify-center">
+                      <div className="w-full max-w-sm">
+                        <Mock />
+                      </div>
                     </div>
                   </div>
-                </div>
+                </AnimatedSection>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* ================================================================ */}
-      {/* 6. SECTORS — "Construit pentru industria ta"                      */}
-      {/* ================================================================ */}
-      <section id="sectors" className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Construit pentru industria ta
-          </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            Solutii adaptate pe domeniu, nu o platforma generica.
-          </p>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      {/* ── Sectors ────────────────────────────────────────────── */}
+      <section id="sectors" className="py-24 lg:py-32 bg-gray-50/80">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <SectionHeading label="Domenii" title="Nu e o platforma generica. E construita pe industria ta." subtitle="Terminologia, fluxurile si template-urile se adapteaza automat cand iti alegi domeniul." />
+          </AnimatedSection>
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5" stagger={0.06}>
             {SECTORS.map((s) => (
-              <div
-                key={s.key}
-                className={`rounded-xl border-t-4 ${s.accent} bg-white p-5 shadow-sm`}
-              >
-                <div className={`h-10 w-10 rounded-lg ${s.bg} flex items-center justify-center mb-3`}>
-                  <s.icon className={`h-5 w-5 ${s.iconColor}`} />
-                </div>
-                <h3 className="text-base font-bold text-gray-900">{s.label}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-gray-500">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* 7. CLIENT PORTAL PREVIEW                                         */}
-      {/* ================================================================ */}
-      <section className="py-20">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Si clientii tai primesc propriul portal
-          </h2>
-          <p className="mt-3 text-sm text-gray-500 max-w-xl mx-auto">
-            Fiecare client isi poate gestiona programarile, facturile si comunicarea direct din contul sau.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            {[
-              { label: 'Programari online', icon: CalendarCheck },
-              { label: 'Facturi', icon: Receipt },
-              { label: 'Mesaje', icon: MessageCircle },
-            ].map((pill) => (
-              <span
-                key={pill.label}
-                className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700"
-              >
-                <pill.icon className="h-3.5 w-3.5" />
-                {pill.label}
-              </span>
-            ))}
-          </div>
-
-          {/* Browser frame mock */}
-          <div className="mt-10 mx-auto max-w-lg">
-            <div className="rounded-t-xl border border-b-0 border-gray-200 bg-gray-50 px-4 py-2 flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <div className="h-2.5 w-2.5 rounded-full bg-red-300" />
-                <div className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-                <div className="h-2.5 w-2.5 rounded-full bg-green-300" />
-              </div>
-              <div className="flex-1 rounded bg-white border border-gray-200 px-3 py-1 text-[10px] text-gray-400 text-center">
-                portal.forja.it.com
-              </div>
-            </div>
-            <div className="rounded-b-xl border border-gray-200 bg-white p-5">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-gray-900">Programarile mele</span>
-                <span className="text-[10px] text-gray-400">3 active</span>
-              </div>
-              <div className="space-y-2.5">
-                {[
-                  { service: 'Schimb ulei', date: '10 feb, 09:00', status: 'Confirmat', color: 'bg-green-100 text-green-700' },
-                  { service: 'Revizie AC', date: '14 feb, 14:00', status: 'In asteptare', color: 'bg-amber-100 text-amber-700' },
-                  { service: 'Geometrie', date: '18 feb, 11:30', status: 'Confirmat', color: 'bg-green-100 text-green-700' },
-                ].map((apt) => (
-                  <div key={apt.service} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2.5">
-                    <div>
-                      <div className="text-xs font-medium text-gray-900">{apt.service}</div>
-                      <div className="text-[10px] text-gray-400">{apt.date}</div>
-                    </div>
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${apt.color}`}>
-                      {apt.status}
-                    </span>
+              <StaggerItem key={s.key}>
+                <div className="group rounded-2xl border border-gray-200 bg-white p-6 hover:border-primary-200 hover:shadow-lg hover:shadow-primary-50 transition-all h-full">
+                  <div className="h-11 w-11 rounded-xl bg-primary-50 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:scale-105 transition-all">
+                    <s.icon className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* 9. FAQ                                                           */}
-      {/* ================================================================ */}
-      <section className="py-20">
-        <div className="mx-auto max-w-2xl px-4 sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Intrebari frecvente</h2>
-          <div className="mt-10">
-            {FAQ_ITEMS.map((item) => (
-              <FAQItem key={item.q} question={item.q} answer={item.a} />
+                  <h3 className="text-base font-semibold text-gray-900">{s.label}</h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{s.desc}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
-      {/* ================================================================ */}
-      {/* 10. FINAL CTA                                                    */}
-      {/* ================================================================ */}
-      <section id="contact" className="border-t border-gray-100 py-20">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="grid gap-12 md:grid-cols-2">
-            {/* Left — CTA */}
-            <div className="flex flex-col justify-center text-center md:text-left">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900">Gata sa incerci?</h2>
-              <p className="mt-3 text-sm text-gray-500">
-                Creeaza contul in 30 de secunde. Fara card, fara obligatii.
-              </p>
-              <div className="mt-6">
-                <Link
-                  to="/signup"
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
-                >
-                  Incearca gratuit <ArrowRight className="h-4 w-4" />
-                </Link>
+      {/* ── Client Portal Preview ──────────────────────────────── */}
+      <section className="py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+          <AnimatedSection>
+            <SectionHeading
+              center
+              label="Portal clienti inclus"
+              title="Clientii tai nu te mai suna. Se descurca singuri."
+              subtitle="Fiecare client primeste un portal unde isi vede programarile, facturile si iti trimite mesaje - fara sa te deranjeze."
+            />
+            <div className="flex flex-wrap justify-center gap-2 -mt-8 mb-10">
+              {[
+                { label: 'Programari online', icon: CalendarCheck },
+                { label: 'Facturi', icon: Receipt },
+                { label: 'Mesaje', icon: MessageCircle },
+              ].map((pill) => (
+                <span key={pill.label} className="inline-flex items-center gap-1.5 rounded-lg border border-primary-100 bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-700">
+                  <pill.icon className="h-3.5 w-3.5" />{pill.label}
+                </span>
+              ))}
+            </div>
+          </AnimatedSection>
+          <AnimatedSection delay={0.15}>
+            <div className="mx-auto max-w-lg">
+              <div className="rounded-t-2xl border border-b-0 border-gray-200 bg-gray-50/80 px-4 py-2.5 flex items-center gap-2.5">
+                <div className="flex gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-red-300" /><div className="h-2.5 w-2.5 rounded-full bg-amber-300" /><div className="h-2.5 w-2.5 rounded-full bg-emerald-300" /></div>
+                <div className="flex-1 rounded-lg bg-white border border-gray-200 px-3 py-1 text-[10px] text-gray-400 text-center font-medium">
+                  {CLIENT_PORTAL_URL.replace(/^https?:\/\//, '')}
+                </div>
               </div>
-              <p className="mt-4 text-xs text-gray-400">
-                Sau scrie-ne folosind formularul de contact.
-              </p>
+              <div className="rounded-b-2xl border border-gray-200 bg-white p-6">
+                <div className="flex items-center justify-between mb-5"><span className="text-sm font-semibold text-gray-900">Programarile mele</span><span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">3 active</span></div>
+                <div className="space-y-3">
+                  {[
+                    { service: 'Schimb ulei', date: '10 feb, 09:00', status: 'Confirmat', color: 'bg-emerald-50 text-emerald-700' },
+                    { service: 'Revizie AC', date: '14 feb, 14:00', status: 'In asteptare', color: 'bg-amber-50 text-amber-700' },
+                    { service: 'Geometrie', date: '18 feb, 11:30', status: 'Confirmat', color: 'bg-emerald-50 text-emerald-700' },
+                  ].map((apt) => (
+                    <div key={apt.service} className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 hover:bg-gray-50/50 transition-colors">
+                      <div><div className="text-xs font-medium text-gray-900">{apt.service}</div><div className="text-[10px] text-gray-400 mt-0.5">{apt.date}</div></div>
+                      <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${apt.color}`}>{apt.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+          </AnimatedSection>
+        </div>
+      </section>
 
-            {/* Right — Contact Form */}
-            <ContactForm />
+      {/* ── Pricing Teaser ─────────────────────────────────────── */}
+      <section className="py-24 lg:py-32 bg-gray-50/80">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <SectionHeading center label="Preturi transparente" title="Costa mai putin decat o zi de munca pierduta." subtitle="Alege planul care se potriveste. Schimba sau anuleaza oricand - fara contracte, fara penalizari." />
+          </AnimatedSection>
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto" stagger={0.1}>
+            {[
+              { name: 'Starter', price: '99', desc: '5 utilizatori · 500 clienti', highlight: false },
+              { name: 'Profesional', price: '249', desc: '15 utilizatori · 2,000 clienti', highlight: true },
+              { name: 'Enterprise', price: '499', desc: 'Resurse nelimitate', highlight: false },
+            ].map((plan) => (
+              <StaggerItem key={plan.name}>
+                <div className={`rounded-2xl border p-7 text-center transition-all ${plan.highlight ? 'border-primary bg-white shadow-xl shadow-primary/10 ring-1 ring-primary' : 'border-gray-200 bg-white hover:shadow-lg'}`}>
+                  {plan.highlight && <span className="inline-block rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white mb-4">Popular</span>}
+                  <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+                  <div className="mt-3 flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-extrabold text-gray-900">{plan.price}</span>
+                    <span className="text-sm text-gray-500">RON/luna</span>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">{plan.desc}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+          <AnimatedSection className="mt-10 text-center" delay={0.3}>
+            <Link to="/pricing" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-700 transition-colors">
+              Vezi toate planurile si functiile incluse <ArrowRight className="h-4 w-4" />
+            </Link>
+            <p className="mt-3 text-xs text-gray-400">14 zile gratuit pe orice plan. Fara card de credit.</p>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── FAQ ────────────────────────────────────────────────── */}
+      <section className="py-24 lg:py-32">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <SectionHeading label="FAQ" title="Intrebari frecvente" />
+          </AnimatedSection>
+          <AnimatedSection delay={0.1}>
+            <FAQAccordion items={FAQ_ITEMS} />
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── CTA Banner ─────────────────────────────────────────── */}
+      <section className="relative bg-primary overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-24 text-center">
+          <AnimatedSection>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Incepe in 5 minute. Rezultate din prima zi.</h2>
+            <p className="mt-4 text-primary-100 text-lg max-w-lg mx-auto">Creezi contul, adaugi serviciile, si clientii se pot programa imediat. Fara configurari complicate.</p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link to="/signup" className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-primary hover:bg-primary-50 transition-colors shadow-lg">
+                Activeaza contul gratuit <ArrowRight className="h-4 w-4" />
+              </Link>
+              <button onClick={() => scrollTo('contact')} className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-medium text-white hover:bg-white/20 transition-colors">
+                Vreau o demonstratie
+              </button>
+            </div>
+            <p className="mt-5 text-sm text-primary-200">14 zile gratuit · Fara card de credit · Anuleaza oricand</p>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── Contact ────────────────────────────────────────────── */}
+      <section id="contact" className="py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
+            <AnimatedSection className="flex flex-col justify-center">
+              <SectionHeading label="Vorbeste cu noi" title="Ai intrebari? Iti raspundem in ore, nu in zile." subtitle="Scrie-ne orice nelamurire. Sau daca preferi, activeaza direct contul si testeaza singur - ai 14 zile gratuit." />
+              <Link to="/signup" className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25 self-start">
+                Incearca gratuit <ArrowRight className="h-4 w-4" />
+              </Link>
+            </AnimatedSection>
+            <AnimatedSection delay={0.15}>
+              <ContactForm />
+            </AnimatedSection>
           </div>
         </div>
       </section>
 
-      {/* ================================================================ */}
-      {/* 11. FOOTER                                                       */}
-      {/* ================================================================ */}
-      <footer className="border-t border-gray-200 bg-gray-50">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-          <div className="grid gap-8 sm:grid-cols-3">
-            {/* Col 1 */}
-            <div>
-              <span className="text-base font-bold text-gray-900">ForjaIt</span>
-              <p className="mt-2 text-xs leading-relaxed text-gray-500">
-                Platforma completa de management pentru afaceri de servicii. CRM, programari, facturare, website si comunicare totul intr-un singur loc.
-              </p>
-            </div>
-            {/* Col 2 */}
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Produs
-              </h4>
-              <ul className="mt-3 space-y-2 text-sm text-gray-600">
-                <li>
-                  <button onClick={() => scrollTo('features')} className="hover:text-gray-900 transition-colors">
-                    Functionalitati
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => scrollTo('sectors')} className="hover:text-gray-900 transition-colors">
-                    Sectoare
-                  </button>
-                </li>
-                <li>
-                  <Link to="/pricing" className="hover:text-gray-900 transition-colors">
-                    Preturi
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            {/* Col 3 */}
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Legal
-              </h4>
-              <ul className="mt-3 space-y-2 text-sm text-gray-600">
-                <li>
-                  <Link to="/terms" className="hover:text-gray-900 transition-colors">
-                    Termeni si Conditii
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/privacy" className="hover:text-gray-900 transition-colors">
-                    Confidentialitate
-                  </Link>
-                </li>
-                <li>
-                  <button onClick={() => scrollTo('contact')} className="hover:text-gray-900 transition-colors">
-                    Contact
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-10 border-t border-gray-200 pt-6">
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-4 text-xs text-gray-500">
-              <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
-                ANPC
-              </a>
-              <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
-                SAL
-              </a>
-              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
-                SOL
-              </a>
-            </div>
-            <p className="text-center text-xs text-gray-400">
-              &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

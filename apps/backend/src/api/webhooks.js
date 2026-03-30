@@ -46,7 +46,7 @@ router.post(
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || settings?.stripeWebhookSecret;
 
     if (!webhookSecret) {
-      logger.warn('Stripe webhook secret not configured — webhook ignored');
+      logger.warn('Stripe webhook secret not configured, webhook ignored');
       return res.status(400).json({ error: 'Webhook secret not configured' });
     }
 
@@ -266,7 +266,7 @@ async function handleWebhookEvent(event, stripe) {
             trialEndDate: trialEnd ? trialEnd.toLocaleDateString('ro-RO') : 'N/A',
           }).catch((err) => logger.error('[EMAIL] Trial ending email failed:', err.message));
         }
-        logger.info('Webhook: trial_will_end — notification sent', { orgId: trialOrgId });
+        logger.info('Webhook: trial_will_end, notification sent', { orgId: trialOrgId });
       }
       break;
     }

@@ -245,7 +245,7 @@ export default function OrganizationDetail() {
               {org.planOverrideAt && (
                 <> la {new Date(org.planOverrideAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}</>
               )}
-              {org.planOverrideReason && <> — {org.planOverrideReason}</>}
+              {org.planOverrideReason && <> - {org.planOverrideReason}</>}
             </p>
             <p className="mt-1 text-xs text-emerald-600/70">Webhook-urile Stripe nu vor modifica acest plan.</p>
           </div>
@@ -330,15 +330,15 @@ export default function OrganizationDetail() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-            <InfoField label="Sector Activitate" value={org.activitySector || '—'} />
+            <InfoField label="Sector Activitate" value={org.activitySector || '-'} />
             <InfoField label="Max Utilizatori" value={org.maxUsers} />
             <InfoField label="Max Clienti" value={org.maxClients} />
             <InfoField label="Max Programari" value={org.maxAppointments} />
-            <InfoField label="Trial Expira" value={org.trialEndsAt ? new Date(org.trialEndsAt).toLocaleDateString('ro-RO') : '—'} />
+            <InfoField label="Trial Expira" value={org.trialEndsAt ? new Date(org.trialEndsAt).toLocaleDateString('ro-RO') : '-'} />
             <InfoField label="Trial Folosit" value={org.trialUsed ? 'Da' : 'Nu'} />
-            <InfoField label="Stripe Customer" value={org.stripeCustomerId || '—'} mono />
-            <InfoField label="Subscription" value={org.subscriptionId || '—'} mono />
-            <InfoField label="Subscription Ends" value={org.subscriptionEndsAt ? new Date(org.subscriptionEndsAt).toLocaleDateString('ro-RO') : '—'} />
+            <InfoField label="Stripe Customer" value={org.stripeCustomerId || '-'} mono />
+            <InfoField label="Subscription" value={org.subscriptionId || '-'} mono />
+            <InfoField label="Subscription Ends" value={org.subscriptionEndsAt ? new Date(org.subscriptionEndsAt).toLocaleDateString('ro-RO') : '-'} />
             <InfoField label="Data Crearii" value={new Date(org.createdAt).toLocaleDateString('ro-RO')} />
           </div>
         )}

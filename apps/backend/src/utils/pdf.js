@@ -689,7 +689,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
     color: rgb(0.2, 0.2, 0.2),
   });
 
-  context.page.drawText(sanitizeForPdf(`Nr: ${serviceOrder.orderNumber || '—'}`), {
+  context.page.drawText(sanitizeForPdf(`Nr: ${serviceOrder.orderNumber || '-'}`), {
     x: rightBoxX + 10,
     y: rightBoxY + rightBoxHeight - 38,
     size: 10,
@@ -814,7 +814,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
   // ========================================
   ensureSpace(context, 70, pdfDoc); // Heading + 2 key-value pairs
   drawSectionHeading(context, 'DETALII PROGRAMARE', fonts, pdfDoc);
-  drawKeyValue(context, 'Titlu', serviceOrder.appointment?.title || '—', fonts, pdfDoc);
+  drawKeyValue(context, 'Titlu', serviceOrder.appointment?.title || '-', fonts, pdfDoc);
   drawKeyValue(
     context,
     'Programat',
@@ -908,7 +908,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
     const client = serviceOrder.appointment.client;
     if (client.type === 'SRL') {
       // Company client
-      context.page.drawText(sanitizeForPdf(client.companyName || '—'), {
+      context.page.drawText(sanitizeForPdf(client.companyName || '-'), {
         x: leftColX + 10,
         y: leftY,
         size: 10,
@@ -916,7 +916,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
         color: rgb(0.1, 0.1, 0.1),
       });
       leftY -= 14;
-      context.page.drawText(sanitizeForPdf(`CUI: ${client.vatNumber || '—'}`), {
+      context.page.drawText(sanitizeForPdf(`CUI: ${client.vatNumber || '-'}`), {
         x: leftColX + 10,
         y: leftY,
         size: 9,
@@ -924,7 +924,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
         color: rgb(0.3, 0.3, 0.3),
       });
       leftY -= 13;
-      context.page.drawText(sanitizeForPdf(`Reg: ${client.registrationNumber || '—'}`), {
+      context.page.drawText(sanitizeForPdf(`Reg: ${client.registrationNumber || '-'}`), {
         x: leftColX + 10,
         y: leftY,
         size: 9,
@@ -945,7 +945,7 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
     } else {
       // Individual client
       const fullName = `${client.firstName || ''} ${client.lastName || ''}`.trim();
-      context.page.drawText(sanitizeForPdf(fullName || client.contactName || '—'), {
+      context.page.drawText(sanitizeForPdf(fullName || client.contactName || '-'), {
         x: leftColX + 10,
         y: leftY,
         size: 10,
@@ -1443,15 +1443,15 @@ const buildServiceOrderPdf = async (serviceOrder, companyOverrides = {}) => {
 };
 
 const formatDate = (value) => {
-  if (!value) return '—';
+  if (!value) return '-';
   try {
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '—';
+    if (Number.isNaN(date.getTime())) return '-';
     return new Intl.DateTimeFormat('ro-RO', {
       dateStyle: 'medium',
     }).format(date);
   } catch (error) {
-    return '—';
+    return '-';
   }
 };
 
@@ -1605,7 +1605,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
     color: rgb(0.2, 0.2, 0.2),
   });
 
-  context.page.drawText(sanitizeForPdf(`Nr: ${invoice.invoiceNumber || '—'}`), {
+  context.page.drawText(sanitizeForPdf(`Nr: ${invoice.invoiceNumber || '-'}`), {
     x: rightBoxX + 10,
     y: rightBoxY + rightBoxHeight - 38,
     size: 10,
@@ -1670,7 +1670,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
   if (invoice.client) {
     const client = invoice.client;
     if (client.type === 'SRL') {
-      context.page.drawText(sanitizeForPdf(client.companyName || '—'), {
+      context.page.drawText(sanitizeForPdf(client.companyName || '-'), {
         x: context.margin + 10,
         y: clientY,
         size: 11,
@@ -1713,7 +1713,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
       }
     } else {
       const fullName = `${client.firstName || ''} ${client.lastName || ''}`.trim();
-      context.page.drawText(sanitizeForPdf(fullName || '—'), {
+      context.page.drawText(sanitizeForPdf(fullName || '-'), {
         x: context.margin + 10,
         y: clientY,
         size: 11,
@@ -1752,7 +1752,7 @@ const buildInvoicePdf = async (invoice, companyOverrides = {}) => {
   if (invoice.appointment) {
     drawSectionHeading(context, 'REFERINȚĂ PROGRAMARE', fonts, pdfDoc);
 
-    const apptText = `${invoice.appointment.title || '—'}`;
+    const apptText = `${invoice.appointment.title || '-'}`;
     context.page.drawText(sanitizeForPdf(apptText), {
       x: context.margin,
       y: context.cursor,

@@ -138,7 +138,7 @@ const Signup = () => {
     setVatValidation({ status: 'loading', message: '', data: null });
     try {
       const result = await validateVatPublic(companyData.vatNumber);
-      setVatValidation({ status: 'valid', message: `CUI valid — ${result.name}`, data: result });
+      setVatValidation({ status: 'valid', message: `CUI valid: ${result.name}`, data: result });
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Eroare la verificare';
       setVatValidation({ status: 'invalid', message: msg, data: null });
@@ -308,7 +308,7 @@ const Signup = () => {
   };
 
   const inputClasses =
-    'w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none';
+    'w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none';
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8">
@@ -316,18 +316,18 @@ const Signup = () => {
         <div key={step.id} className="flex items-center">
           <div className="flex flex-col items-center">
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all ${
+              className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-xs sm:text-sm font-semibold transition-all ${
                 index < currentStep
                   ? 'bg-green-500 text-white'
                   : index === currentStep
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-400'
               }`}
             >
               {index < currentStep ? <Check className="h-4 w-4" /> : index + 1}
             </div>
             <span
-              className={`mt-1.5 text-xs ${
+              className={`mt-1 text-[10px] sm:text-xs ${
                 index === currentStep ? 'font-medium text-gray-900' : 'text-gray-400'
               }`}
             >
@@ -336,7 +336,7 @@ const Signup = () => {
           </div>
           {index < STEPS.length - 1 && (
             <div
-              className={`mx-3 h-0.5 w-12 ${
+              className={`mx-1 sm:mx-3 h-0.5 w-6 sm:w-12 ${
                 index < currentStep ? 'bg-green-500' : 'bg-gray-200'
               }`}
             />
@@ -394,7 +394,7 @@ const Signup = () => {
           />
           {slugChecking && (
             <div className="absolute right-3 top-2.5">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           )}
         </div>
@@ -522,16 +522,16 @@ const Signup = () => {
               setFormData((prev) => ({ ...prev, acceptedTerms: e.target.checked }));
               setError('');
             }}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             disabled={loading}
           />
           <span className="text-sm text-gray-600">
             Am citit si accept{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:text-blue-800">
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:text-primary-800">
               Termenii si Conditiile
             </a>{' '}
             si{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:text-blue-800">
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:text-primary-800">
               Politica de Confidentialitate
             </a>
           </span>
@@ -559,20 +559,20 @@ const Signup = () => {
                 onClick={() => handleSectorSelect(sector.key)}
                 className={`rounded-xl border-2 p-4 text-left transition-all ${
                   isSelected
-                    ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                    ? 'border-primary bg-primary-50 ring-1 ring-primary'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={`rounded-lg p-2 ${
-                      isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
+                      isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'
                     }`}
                   >
                     <IconComponent className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className={`text-sm font-semibold ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
+                    <h3 className={`text-sm font-semibold ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}>
                       {sector.labelRo}
                     </h3>
                     <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">{sector.description}</p>
@@ -581,7 +581,7 @@ const Signup = () => {
                     </p>
                   </div>
                   {isSelected && (
-                    <div className="rounded-full bg-blue-600 p-0.5 text-white">
+                    <div className="rounded-full bg-primary p-0.5 text-white">
                       <Check className="h-3.5 w-3.5" />
                     </div>
                   )}
@@ -605,16 +605,16 @@ const Signup = () => {
                 onClick={() => setFormData((prev) => ({ ...prev, plan: plan.key }))}
                 className={`relative rounded-xl border-2 p-4 text-left transition-all ${
                   isSelected
-                    ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                    ? 'border-primary bg-primary-50 ring-1 ring-primary'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 {plan.recommended && (
-                  <span className="absolute -top-2.5 right-3 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                  <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
                     Recomandat
                   </span>
                 )}
-                <h4 className={`text-sm font-bold ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>{plan.name}</h4>
+                <h4 className={`text-sm font-bold ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}>{plan.name}</h4>
                 <div className="mt-1 flex items-baseline gap-1">
                   <span className="text-lg font-extrabold text-gray-900">{plan.price}</span>
                   <span className="text-xs text-gray-500">RON/luna</span>
@@ -622,7 +622,7 @@ const Signup = () => {
                 <p className="mt-1 text-xs text-gray-500">{plan.desc}</p>
                 {isSelected && (
                   <div className="absolute top-3 right-3">
-                    <Check className="h-4 w-4 text-blue-600" />
+                    <Check className="h-4 w-4 text-primary" />
                   </div>
                 )}
               </button>
@@ -692,7 +692,7 @@ const Signup = () => {
                   value={type}
                   checked={companyData.entityType === type}
                   onChange={() => handleCompanyChange('entityType', type)}
-                  className="h-4 w-4 text-blue-600"
+                  className="h-4 w-4 text-primary"
                   disabled={loading}
                 />
                 <span className="text-sm font-medium text-gray-700">{type}</span>
@@ -739,7 +739,7 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={handleApplyViesData}
-                  className="mt-1 text-xs text-blue-600 hover:underline"
+                  className="mt-1 text-xs text-primary hover:underline"
                 >
                   Completeaza automat numele si adresa
                 </button>
@@ -807,7 +807,7 @@ const Signup = () => {
       {/* Header */}
       <header className="border-b border-gray-200/60 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link to="/business" className="text-lg font-bold tracking-tight text-gray-900">
+          <Link to="/" className="text-lg font-bold tracking-tight text-gray-900">
             ForjaIt
           </Link>
           <div className="flex items-center gap-4">
@@ -825,13 +825,13 @@ const Signup = () => {
       <div className="flex flex-1 items-center justify-center px-4 py-10">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Creeaza contul organizatiei</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Incepe in 5 minute. Rezultate din prima zi.</h1>
             <p className="mt-2 text-sm text-gray-500">
-              14 zile gratuit pe orice plan. Fara card bancar.
+              14 zile gratuit pe orice plan. Fara card bancar. Fara obligatii.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-8 shadow-sm">
             {renderStepIndicator()}
 
             {error && (
@@ -863,7 +863,7 @@ const Signup = () => {
                     type="button"
                     onClick={handleNext}
                     disabled={loading || (currentStep === 0 && (slugChecking || !slugAvailable))}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Urmatorul
                     <ArrowRight className="h-4 w-4" />
@@ -872,7 +872,7 @@ const Signup = () => {
                   <button
                     type="submit"
                     disabled={loading || vatValidation.status !== 'valid'}
-                    className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Se creeaza...' : 'Creeaza Contul'}
                     {!loading && <Check className="h-4 w-4" />}
@@ -885,7 +885,7 @@ const Signup = () => {
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-500">
               Ai deja un cont?{' '}
-              <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+              <Link to="/login" className="font-semibold text-primary hover:text-primary-800 transition-colors">
                 Conecteaza-te
               </Link>
             </p>

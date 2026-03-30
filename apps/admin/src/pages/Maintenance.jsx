@@ -83,7 +83,7 @@ function CleanupButton({ label, type, mutation, showToast }) {
           const description = formatCleanupResults(data);
           const hasDeleted = description.includes('sterse');
           showToast({
-            title: hasDeleted ? 'Cleanup finalizat' : 'Cleanup finalizat — totul e curat',
+            title: hasDeleted ? 'Cleanup finalizat' : 'Cleanup finalizat totul e curat',
             description,
             type: hasDeleted ? 'success' : 'info',
             duration: 8000,

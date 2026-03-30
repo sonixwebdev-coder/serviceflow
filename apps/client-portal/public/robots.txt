@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /login
+Disallow: /forgot-password
+
+Sitemap: https://portal.forja.it.com/sitemap.xml

@@ -32,7 +32,7 @@ const createAddonCheckout = async (organization, addonType) => {
           product_data: {
             name: pack.label,
             description: pack.permanent
-              ? 'Pachet permanent — creste limita contului'
+              ? 'Pachet permanent care creste limita contului'
               : 'Pachet valabil luna curenta',
           },
         },

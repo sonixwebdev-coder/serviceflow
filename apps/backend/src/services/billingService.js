@@ -244,7 +244,7 @@ const syncSubscription = async (stripeSubscription) => {
     select: { planOverride: true, subscriptionId: true },
   });
   if (org?.planOverride) {
-    logger.info('syncSubscription: skipping — plan override active', { orgId });
+    logger.info('syncSubscription: skipping - plan override active', { orgId });
     return;
   }
 
@@ -355,7 +355,7 @@ const handleSubscriptionDeleted = async (stripeSubscription) => {
     select: { planOverride: true, subscriptionId: true },
   });
   if (org?.planOverride) {
-    logger.info('handleSubscriptionDeleted: skipping — plan override active', { orgId });
+    logger.info('handleSubscriptionDeleted: skipping - plan override active', { orgId });
     return;
   }
 
@@ -363,7 +363,7 @@ const handleSubscriptionDeleted = async (stripeSubscription) => {
   // this deletion is for an old subscription that was replaced during upgrade/downgrade.
   // Do NOT overwrite the new subscription data.
   if (org?.subscriptionId && org.subscriptionId !== stripeSubscription.id) {
-    logger.info('handleSubscriptionDeleted: skipping — org has a newer subscription', {
+    logger.info('handleSubscriptionDeleted: skipping - org has a newer subscription', {
       orgId,
       deletedSubId: stripeSubscription.id,
       currentSubId: org.subscriptionId,
@@ -407,7 +407,7 @@ const handlePaymentFailed = async (invoice) => {
 
   // Guard: do not suspend manually granted plans
   if (org.planOverride) {
-    logger.info('handlePaymentFailed: skipping — plan override active', { orgId: org.id });
+    logger.info('handlePaymentFailed: skipping - plan override active', { orgId: org.id });
     return;
   }
 

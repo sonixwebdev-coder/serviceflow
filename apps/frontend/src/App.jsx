@@ -18,13 +18,14 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import CreateFirstAdmin from './pages/CreateFirstAdmin';
 
-// Root redirect: landing page if not logged in, dashboard if logged in
-const RootRedirect = () => {
+
+// Root: landing page if not logged in, dashboard redirect if logged in
+const SmartHome = () => {
   const { loading, isAuthenticated } = useAuth();
   if (loading) return null;
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/business'} replace />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <BusinessLanding />;
 };
 
 // Public marketing pages (lazy-loaded - not part of main auth flow)
@@ -88,8 +89,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/create-admin" element={<CreateFirstAdmin />} />
-          <Route path="/business" element={<BusinessLanding />} />
+          <Route path="/business" element={<Navigate to="/" replace />} />
           <Route path="/terms" element={<TermeniConditii />} />
           <Route path="/privacy" element={<Confidentialitate />} />
           <Route path="/pricing" element={<Preturi />} />
@@ -414,8 +414,8 @@ function App() {
             }
           />
 
-          {/* Default redirect */}
-          <Route path="/" element={<RootRedirect />} />
+          {/* Landing / Dashboard redirect */}
+          <Route path="/" element={<SmartHome />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

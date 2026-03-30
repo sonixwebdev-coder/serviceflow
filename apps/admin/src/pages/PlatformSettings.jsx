@@ -166,7 +166,7 @@ export default function PlatformSettings() {
                     return (
                       <div key={key}>
                         <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                          {plan} — {interval === 'Annual' ? 'Anual' : 'Lunar'}
+                          {plan} - {interval === 'Annual' ? 'Anual' : 'Lunar'}
                         </label>
                         <input
                           type="text"
@@ -193,7 +193,7 @@ export default function PlatformSettings() {
                     return (
                       <div key={key}>
                         <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                          {plan} — {interval === 'Annual' ? 'Anual (pret/luna)' : 'Lunar'}
+                          {plan} - {interval === 'Annual' ? 'Anual (pret/luna)' : 'Lunar'}
                         </label>
                         <input
                           type="number"

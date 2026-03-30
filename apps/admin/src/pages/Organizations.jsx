@@ -114,7 +114,7 @@ export default function Organizations() {
                       <td className="whitespace-nowrap px-5 py-3.5">
                         <StatusBadge status={org.status} />
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 text-xs">{org.activitySector || '—'}</td>
+                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 text-xs">{org.activitySector || '-'}</td>
                       <td className="whitespace-nowrap px-5 py-3.5 text-gray-600 tabular-nums">{org._count?.users || 0}</td>
                       <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 text-xs">
                         {new Date(org.createdAt).toLocaleDateString('ro-RO')}

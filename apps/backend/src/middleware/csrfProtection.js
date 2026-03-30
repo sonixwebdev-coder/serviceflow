@@ -24,7 +24,7 @@ const logger = require('../utils/logger');
 const csrfSecret = process.env.CSRF_SECRET || require('crypto').randomBytes(32).toString('hex');
 
 if (!process.env.CSRF_SECRET) {
-  logger.warn('CSRF_SECRET not set in environment — using random secret (will invalidate on restart)');
+  logger.warn('CSRF_SECRET not set in environment - using random secret (will invalidate on restart)');
 }
 
 // Configure CSRF protection

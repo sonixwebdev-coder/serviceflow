@@ -61,36 +61,36 @@ const BLOCK_HELPERS = {
   hero: {
     tips: [
       'Foloseste o imagine de fundal de calitate inalta (min 1920x800px) pentru un impact vizual puternic.',
-      'Pastreaza titlul scurt si clar — max 8-10 cuvinte.',
+      'Pastreaza titlul scurt si clar - max 8-10 cuvinte.',
       'Adauga un buton de actiune (CTA) vizibil, de ex. "Programeaza acum" sau "Afla mai multe".',
       'Ajusteaza opacitatea overlay-ului pentru a asigura lizibilitatea textului pe imagine.',
     ],
   },
   text: {
     tips: [
-      'Scrie paragrafe scurte — max 3-4 randuri per paragraf pentru o citire usoara.',
+      'Scrie paragrafe scurte - max 3-4 randuri per paragraf pentru o citire usoara.',
       'Foloseste formatul "Titlu" pentru sectiuni importante si "Citat" pentru evidentierea unor idei.',
-      'Evita blocurile mari de text — alterna cu imagini sau spatii libere.',
+      'Evita blocurile mari de text - alterna cu imagini sau spatii libere.',
     ],
   },
   image: {
     tips: [
       'Foloseste imagini optimizate pentru web (JPEG/WebP, sub 500KB).',
-      'Completeaza intotdeauna textul alternativ (ALT) — ajuta la SEO si accesibilitate.',
+      'Completeaza intotdeauna textul alternativ (ALT) - ajuta la SEO si accesibilitate.',
       'Alege un aspect ratio consistent pe tot site-ul pentru un aspect profesional.',
     ],
   },
   button: {
     tips: [
       'Foloseste un text clar si orientat spre actiune: "Programeaza", "Contacteaza-ne", "Vezi oferta".',
-      'Limiteaza numarul de butoane pe pagina — prea multe optiuni pot deruta vizitatorii.',
-      'Stilul "Principal" atrage cel mai mult atentia — foloseste-l pentru actiunea principala.',
+      'Limiteaza numarul de butoane pe pagina - prea multe optiuni pot deruta vizitatorii.',
+      'Stilul "Principal" atrage cel mai mult atentia - foloseste-l pentru actiunea principala.',
     ],
   },
   'services-grid': {
     tips: [
       'Activeaza sincronizarea automata pentru a prelua serviciile direct din CRM.',
-      'Afiseaza preturile si durata pentru transparenta — clientii prefera sa stie de la inceput.',
+      'Afiseaza preturile si durata pentru transparenta - clientii prefera sa stie de la inceput.',
       'Foloseste 2-3 coloane pentru o vizualizare optima pe toate dispozitivele.',
       'Butonul de programare directa creste rata de conversie.',
     ],
@@ -98,7 +98,7 @@ const BLOCK_HELPERS = {
   'team-grid': {
     tips: [
       'Activeaza sincronizarea automata pentru a prelua echipa direct din CRM.',
-      'Adauga poze profesionale ale echipei — creeaza incredere.',
+      'Adauga poze profesionale ale echipei - creeaza incredere.',
       'Include un scurt subtitlu care prezinta valorile echipei.',
     ],
   },
@@ -113,7 +113,7 @@ const BLOCK_HELPERS = {
     tips: [
       'Mesajele trimise prin formular apar automat in sectiunea Leads din CRM.',
       'Personalizeaza mesajul de succes pentru a confirma vizitatorului ca a fost primit.',
-      'Pastreaza formularul simplu — doar campurile esentiale (nume, email, mesaj).',
+      'Pastreaza formularul simplu - doar campurile esentiale (nume, email, mesaj).',
       'Adauga un subtitlu prietenos, de ex. "Raspundem in max 24 de ore".',
     ],
     advanced: {
@@ -143,7 +143,7 @@ const BLOCK_HELPERS = {
       'Adauga minim 3 testimoniale pentru credibilitate.',
       'Include numele complet si rolul persoanei (ex: "Client fidel din 2020").',
       'Layout-ul carusel functioneaza cel mai bine pentru 4+ testimoniale.',
-      'Avatarele personalizate cresc increderea — solicita poze de la clienti.',
+      'Avatarele personalizate cresc increderea - solicita poze de la clienti.',
     ],
   },
   faq: {
@@ -169,15 +169,15 @@ const BLOCK_HELPERS = {
   },
   video: {
     tips: [
-      'Foloseste link-uri YouTube sau Vimeo — sunt suportate nativ.',
+      'Foloseste link-uri YouTube sau Vimeo - sunt suportate nativ.',
       'Un thumbnail personalizat atrage mai multe click-uri decat cel implicit.',
-      'Evita autoplay-ul — poate deranja vizitatorii, mai ales pe mobil.',
+      'Evita autoplay-ul - poate deranja vizitatorii, mai ales pe mobil.',
     ],
   },
   'pricing-table': {
     tips: [
       'Evidentiaza (featured) pachetul cel mai popular pentru a ghida alegerea.',
-      'Listeaza 3-4 pachete maxim — prea multe optiuni ingreuneaza decizia.',
+      'Listeaza 3-4 pachete maxim - prea multe optiuni ingreuneaza decizia.',
       'Include un buton de actiune clar pe fiecare pachet.',
       'Foloseste RON ca moneda si "luna" ca perioada pentru clienti romani.',
     ],
@@ -190,7 +190,7 @@ const BLOCK_HELPERS = {
   },
   divider: {
     tips: [
-      'Stilul "Linie" este cel mai comun — foloseste "Puncte" pentru un aspect mai creativ.',
+      'Stilul "Linie" este cel mai comun - foloseste "Puncte" pentru un aspect mai creativ.',
       'Stilul "Spatiu" adauga doar spatiu gol, fara element vizibil.',
     ],
   },

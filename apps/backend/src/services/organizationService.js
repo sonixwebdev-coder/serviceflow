@@ -76,7 +76,7 @@ const createOrganization = async ({
       }
       // If ANAF/VIES are both down (503), allow signup with checksum-valid CUI
       // The CUI was already checksum-validated above
-      logger.warn(`VAT services unavailable during signup for CUI ${vatNumber} — allowing checksum-valid CUI`);
+      logger.warn(`VAT services unavailable during signup for CUI ${vatNumber} - allowing checksum-valid CUI`);
     }
   } else {
     throw new AppError('CUI-ul este obligatoriu', 400);

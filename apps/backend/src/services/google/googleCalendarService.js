@@ -552,7 +552,7 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
 
           // Skip if quota exhausted
           if (remainingQuota !== Infinity && remainingQuota <= 0) {
-            logger.warn(`[GCAL] Skipping event "${event.summary}" — appointment quota exhausted`);
+            logger.warn(`[GCAL] Skipping event "${event.summary}" - appointment quota exhausted`);
             results.quotaLimited++;
             continue;
           }

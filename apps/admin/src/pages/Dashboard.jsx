@@ -29,7 +29,7 @@ function StatCard({ icon: Icon, label, value, subtitle, gradient }) {
         </div>
         <div>
           <p className="text-[13px] text-gray-500">{label}</p>
-          <p className="text-2xl font-bold tracking-tight text-gray-900">{value ?? '—'}</p>
+          <p className="text-2xl font-bold tracking-tight text-gray-900">{value ?? '-'}</p>
           {subtitle && <p className="text-[11px] text-gray-400">{subtitle}</p>}
         </div>
       </div>

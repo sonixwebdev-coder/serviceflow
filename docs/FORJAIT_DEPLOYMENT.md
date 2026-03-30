@@ -46,7 +46,7 @@ The backend gets a provisioned PostgreSQL + Redis database from ForjaHost. All f
 
 ## 2. Set Up a Separate Cloudflare Tunnel
 
-ForjaIt needs its **own** Cloudflare Tunnel — not the one ForjaHost uses. This keeps the two platforms fully independent.
+ForjaIt needs its **own** Cloudflare Tunnel - not the one ForjaHost uses. This keeps the two platforms fully independent.
 
 ### Step 1: Create the tunnel
 
@@ -97,7 +97,7 @@ ingress:
 EOF
 ```
 
-All hostnames route to `localhost:80` — that's where Traefik is listening. Traefik then routes to the correct container based on the `Host` header.
+All hostnames route to `localhost:80` - that's where Traefik is listening. Traefik then routes to the correct container based on the `Host` header.
 
 ### Step 4: Run the ForjaIt tunnel
 
@@ -125,13 +125,13 @@ nohup cloudflared tunnel --config ~/.cloudflared/serviceflow-config.yml run forj
 4. **Branch**: `main`
 5. **Buildpack**: `dockerfile`
 6. **Dockerfile Path**: `apps/backend/Dockerfile`
-7. **Build Context**: `.` (repo root — the Dockerfile copies `package.json`, `prisma/`, etc. from root)
+7. **Build Context**: `.` (repo root - the Dockerfile copies `package.json`, `prisma/`, etc. from root)
 
 ### Required changes to the Dockerfile
 
 The current backend Dockerfile (`apps/backend/Dockerfile`) hardcodes `EXPOSE 5000`. ForjaHost injects `PORT=3000`. You need to make the backend respect the `PORT` environment variable.
 
-**Option A — Change the Dockerfile** (recommended):
+**Option A - Change the Dockerfile** (recommended):
 
 ```dockerfile
 FROM node:20-slim AS base
@@ -167,7 +167,7 @@ EXPOSE 3000
 CMD ["node", "apps/backend/server.js"]
 ```
 
-**Option B — Use ForjaHost start command**:
+**Option B - Use ForjaHost start command**:
 
 Keep the Dockerfile as-is, but set the **Start Command** in ForjaHost project settings:
 
@@ -192,15 +192,15 @@ Each frontend app builds to a static nginx container. Create 4 ForjaHost project
 
 ### serviceflow-app (main frontend)
 
-| Setting | Value |
-|---------|-------|
-| Name | `serviceflow-app` |
-| GitHub URL | Same repo |
-| Buildpack | `dockerfile` |
-| Dockerfile Path | `apps/frontend/Dockerfile` |
-| Build Context | `.` (root — Dockerfile copies root package.json) |
-| Health Check | `http`, path `/`, status `200` |
-| Domain | `forja.it.com` |
+| Setting | Value                                            |
+|---------|--------------------------------------------------|
+| Name | `serviceflow-app`                                |
+| GitHub URL | Same repo                                        |
+| Buildpack | `dockerfile`                                     |
+| Dockerfile Path | `apps/frontend/Dockerfile`                       |
+| Build Context | `.` (root - Dockerfile copies root package.json) |
+| Health Check | `http`, path `/`, status `200`                   |
+| Domain | `forja.it.com`                                   |
 
 ### serviceflow-admin
 
@@ -229,7 +229,7 @@ Each frontend app builds to a static nginx container. Create 4 ForjaHost project
 | Build Context | `.` |
 | Domain | `www.forja.it.com` |
 
-> **Note**: The frontend Dockerfiles all reference `apps/frontend/nginx.conf` for the nginx config. This is shared across all SPAs — SPA routing (try_files), caching for `/assets`, and security headers.
+> **Note**: The frontend Dockerfiles all reference `apps/frontend/nginx.conf` for the nginx config. This is shared across all SPAs - SPA routing (try_files), caching for `/assets`, and security headers.
 
 ### Required changes to frontend apps
 
@@ -292,10 +292,10 @@ node prisma/seed.js
 
 ForjaIt stores files in two directories. **Both must persist across deploys.**
 
-| Directory (in container) | Contents |
-|---|---|
+| Directory (in container) | Contents                                                                                                                                                                                                                                       |
+|---|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `/app/apps/backend/storage` | Chat attachments (`storage/chat/{orgId}/{channelId}/files/`), voice messages (`storage/chat/{orgId}/{channelId}/voice/`), organization logos (`storage/logos/`), website images (`storage/website-images/{orgId}/`), generated invoices (PDFs) |
-| `/app/apps/backend/uploads` | Appointment message files and voice messages (`uploads/messages/`) — from both CRM and client portal routes |
+| `/app/apps/backend/uploads` | Appointment message files and voice messages (`uploads/messages/`) - from both CRM and client portal routes                                                                                                                                    |
 
 Create two **Storage Volumes** in the `serviceflow-api` project:
 
@@ -322,10 +322,10 @@ Set these in the `serviceflow-api` project (Environment Variables tab, Productio
 NODE_ENV=production
 PORT=3000
 
-# Database — auto-injected by ForjaHost when you provision PostgreSQL
+# Database - auto-injected by ForjaHost when you provision PostgreSQL
 # DATABASE_URL=... (auto-set)
 
-# Redis — auto-injected by ForjaHost when you provision Redis
+# Redis - auto-injected by ForjaHost when you provision Redis
 # REDIS_URL=... (auto-set)
 
 # Auth secrets (generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
@@ -333,7 +333,7 @@ JWT_SECRET=<64-char-hex>
 JWT_REFRESH_SECRET=<64-char-hex>
 CSRF_SECRET=<64-char-hex>
 
-# CORS — all frontend origins that can call the API
+# CORS - all frontend origins that can call the API
 CORS_ORIGINS=https://forja.it.com,https://portal.forja.it.com,https://admin.forja.it.com
 
 # Frontend URLs (for email links, redirects, etc.)
@@ -392,7 +392,7 @@ Stripe needs to send webhook events to your API. After deploying:
 4. Copy the **Webhook Signing Secret** (`whsec_...`)
 5. Set it as `STRIPE_WEBHOOK_SECRET` in ForjaHost env vars (mark as Secret)
 
-> **Important**: The Stripe webhook route is mounted before `express.json()` in server.js (it needs the raw body for signature verification). This works out of the box — no changes needed.
+> **Important**: The Stripe webhook route is mounted before `express.json()` in server.js (it needs the raw body for signature verification). This works out of the box - no changes needed.
 
 ---
 
@@ -406,7 +406,7 @@ ForjaIt has built-in background jobs that start automatically when the server bo
 | Notifications | Invoice overdue warnings, appointment reminders | Periodically |
 | Subscriptions | Trial expiry alerts, renewal reminders | Periodically |
 
-These run inside the backend container as `setInterval` timers — no external cron needed. They start on server boot and stop on graceful shutdown.
+These run inside the backend container as `setInterval` timers - no external cron needed. They start on server boot and stop on graceful shutdown.
 
 If you need additional scheduled tasks, use ForjaHost's cron jobs feature (Project > Cron Jobs tab).
 
@@ -418,7 +418,7 @@ ForjaIt uses Socket.io for real-time features (chat typing indicators, presence,
 
 ### Cloudflare Tunnel WebSocket support
 
-Cloudflare Tunnel supports WebSocket connections natively — no additional configuration needed. Socket.io will use WebSocket transport through the tunnel.
+Cloudflare Tunnel supports WebSocket connections natively - no additional configuration needed. Socket.io will use WebSocket transport through the tunnel.
 
 ### CORS configuration
 
@@ -491,7 +491,7 @@ If you need scheduled tasks beyond the built-in background jobs, create them via
 |------|----------|---------|---------|
 | DB Cleanup | `0 3 * * *` | `node -e "require('./src/jobs/cleanupJob').runOnce()"` | Daily cleanup at 3am |
 
-This is optional — the built-in `setInterval` jobs handle most tasks. Use ForjaHost cron jobs for tasks you want visibility into (dashboard shows run history, exit codes, output).
+This is optional - the built-in `setInterval` jobs handle most tasks. Use ForjaHost cron jobs for tasks you want visibility into (dashboard shows run history, exit codes, output).
 
 ---
 
@@ -562,19 +562,19 @@ These are the minimal changes required in the ForjaIt codebase to be ForjaHost-c
 
 ### 1. Backend must listen on PORT env var
 
-Already done — `server.js` line 325: `const PORT = process.env.PORT || 5000;`
+Already done - `server.js` line 325: `const PORT = process.env.PORT || 5000;`
 
 Just set `PORT=3000` in ForjaHost env vars (ForjaHost injects this automatically).
 
 ### 2. File storage path must be configurable
 
-Already done — `server.js` line 51: `const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname, 'storage');`
+Already done - `server.js` line 51: `const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname, 'storage');`
 
 Set `FILE_STORAGE_ROOT=/app/apps/backend/storage` in env vars.
 
 ### 3. CORS origins must be configurable
 
-Already done — `server.js` line 56: reads from `process.env.CORS_ORIGINS`.
+Already done - `server.js` line 56: reads from `process.env.CORS_ORIGINS`.
 
 ### 4. Frontend API URLs must use env vars
 

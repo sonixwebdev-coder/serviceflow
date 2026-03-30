@@ -18,17 +18,17 @@ const GENERAL_TIPS = [
   { icon: Palette, title: 'Branding consistent', description: 'Foloseste aceleasi culori si fonturi pe tot site-ul. Seteaza-le din Setari branding pentru uniformitate.' },
   { icon: Smartphone, title: 'Mobile-friendly', description: 'Previzualizeaza site-ul pe mobil. Toate blocurile se adapteaza automat, dar verifica textul si imaginile.' },
   { icon: MousePointerClick, title: 'Call-to-action clar', description: 'Fiecare pagina trebuie sa aiba un singur obiectiv clar: programare, contact, sau informare.' },
-  { icon: AlignLeft, title: 'Continut concis', description: 'Scrie texte scurte si la obiect. Vizitatorii scaneaza rapid — pune informatia importanta prima.' },
+  { icon: AlignLeft, title: 'Continut concis', description: 'Scrie texte scurte si la obiect. Vizitatorii scaneaza rapid - pune informatia importanta prima.' },
 ];
 
 const BLOCK_TIPS = {
   hero: [
     'Foloseste o imagine de fundal de calitate inalta (min 1920x800px).',
-    'Pastreaza titlul scurt — max 8-10 cuvinte.',
+    'Pastreaza titlul scurt - max 8-10 cuvinte.',
     'Adauga un buton CTA vizibil ("Programeaza acum").',
   ],
   text: [
-    'Scrie paragrafe scurte — max 3-4 randuri.',
+    'Scrie paragrafe scurte - max 3-4 randuri.',
     'Alterna cu imagini sau spatii libere.',
   ],
   image: [
@@ -46,7 +46,7 @@ const BLOCK_TIPS = {
   ],
   'contact-form': [
     'Mesajele ajung automat in sectiunea Leads.',
-    'Pastreaza formularul simplu — doar campuri esentiale.',
+    'Pastreaza formularul simplu - doar campuri esentiale.',
   ],
   'booking-widget': [
     'Se sincronizeaza automat cu calendarul CRM.',

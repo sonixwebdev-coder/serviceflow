@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 const useAuthStore = create((set, get) => ({
   user: JSON.parse(localStorage.getItem('sf_admin_user') || 'null'),
-  accessToken: null, // In-memory only — not persisted to localStorage
+  accessToken: null, // In-memory only - not persisted to localStorage
   isAuthenticated: false,
 
   login: ({ user, accessToken }) => {
@@ -23,7 +23,7 @@ const useAuthStore = create((set, get) => ({
 
   hydrate: () => {
     const user = JSON.parse(localStorage.getItem('sf_admin_user') || 'null');
-    // Token must be re-acquired via refresh — not persisted
+    // Token must be re-acquired via refresh - not persisted
     set({ user, accessToken: null, isAuthenticated: false });
   },
 }));

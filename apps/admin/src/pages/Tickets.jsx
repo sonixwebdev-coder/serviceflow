@@ -135,7 +135,7 @@ export default function Tickets() {
                     className="group cursor-pointer transition-colors hover:bg-primary-50/30"
                   >
                     <td className="px-5 py-3.5 font-medium text-gray-900 max-w-xs truncate">{ticket.subject}</td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs">{ticket.organization?.name || '—'}</td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">{ticket.organization?.name || '-'}</td>
                     <td className="px-5 py-3.5 text-gray-500 text-xs">{CATEGORY_LABELS[ticket.category]}</td>
                     <td className="px-5 py-3.5">
                       <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[ticket.status]}`}>

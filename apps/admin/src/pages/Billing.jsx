@@ -70,11 +70,11 @@ function OverviewTab() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <SummaryCard icon={Banknote} label="MRR" tooltip="Venit Lunar Recurent" value={overview ? `${overview.mrr.toLocaleString('ro-RO')} RON` : '—'} color="emerald" />
-        <SummaryCard icon={CreditCard} label="Abonamente active" value={overview?.activeSubscriptions ?? '—'} color="blue" />
-        <SummaryCard icon={Clock} label="Perioade de proba" value={overview?.trials ?? '—'} color="amber" />
-        <SummaryCard icon={AlertTriangle} label="Plata necesara" value={overview?.paymentRequired ?? '—'} color="orange" />
-        <SummaryCard icon={TrendingDown} label="Anulate" value={overview?.churned ?? '—'} color="red" />
+        <SummaryCard icon={Banknote} label="MRR" tooltip="Venit Lunar Recurent" value={overview ? `${overview.mrr.toLocaleString('ro-RO')} RON` : '-'} color="emerald" />
+        <SummaryCard icon={CreditCard} label="Abonamente active" value={overview?.activeSubscriptions ?? '-'} color="blue" />
+        <SummaryCard icon={Clock} label="Perioade de proba" value={overview?.trials ?? '-'} color="amber" />
+        <SummaryCard icon={AlertTriangle} label="Plata necesara" value={overview?.paymentRequired ?? '-'} color="orange" />
+        <SummaryCard icon={TrendingDown} label="Anulate" value={overview?.churned ?? '-'} color="red" />
       </div>
 
       {stats && (
@@ -261,7 +261,7 @@ function OrgTable({ data, isLoading, page, onPageChange, showActions, showTrialI
                 </td>
                 <td className="px-5 py-3.5"><StatusBadge status={org.status} /></td>
                 <td className="px-5 py-3.5 text-gray-500 text-xs">
-                  {org.billingInterval === 'year' ? 'Anual' : org.billingInterval === 'month' ? 'Lunar' : org.stripe?.interval || '—'}
+                  {org.billingInterval === 'year' ? 'Anual' : org.billingInterval === 'month' ? 'Lunar' : org.stripe?.interval || '-'}
                 </td>
                 {showTrialInfo && (
                   <td className="px-5 py-3.5">
@@ -269,19 +269,19 @@ function OrgTable({ data, isLoading, page, onPageChange, showActions, showTrialI
                       <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
                         {Math.max(0, Math.ceil((new Date(org.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24)))} zile
                       </span>
-                    ) : '—'}
+                    ) : '-'}
                   </td>
                 )}
-                <td className="px-5 py-3.5 text-xs text-gray-500">{org.stripe?.status || (org.subscriptionId ? 'N/A' : '—')}</td>
+                <td className="px-5 py-3.5 text-xs text-gray-500">{org.stripe?.status || (org.subscriptionId ? 'N/A' : '-')}</td>
                 <td className="px-5 py-3.5 text-sm font-medium tabular-nums text-gray-900">
-                  {org.stripe?.amount != null ? `${org.stripe.amount.toLocaleString('ro-RO')} RON` : '—'}
+                  {org.stripe?.amount != null ? `${org.stripe.amount.toLocaleString('ro-RO')} RON` : '-'}
                 </td>
                 <td className="px-5 py-3.5 text-xs text-gray-500">
                   {org.subscriptionStartedAt
                     ? new Date(org.subscriptionStartedAt).toLocaleDateString('ro-RO')
                     : org.createdAt
                     ? new Date(org.createdAt).toLocaleDateString('ro-RO')
-                    : '—'}
+                    : '-'}
                 </td>
                 {showActions && (
                   <td className="px-5 py-3.5">

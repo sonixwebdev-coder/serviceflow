@@ -47,7 +47,7 @@ const initRedis = () => {
 
     client.on('ready', () => {
       isRedisAvailable = true;
-      logger.info('Redis ready — caching re-enabled');
+      logger.info('Redis ready - caching re-enabled');
     });
 
     // Attempt to connect

@@ -401,7 +401,7 @@ export const autoServiceTemplate = {
           showBookButton: true,
         }),
         block('text', {
-          content: '<h3>De ce sa alegi service-ul nostru?</h3><ul><li><strong>Echipamente moderne</strong> — Diagnosticare computerizata de ultima generatie</li><li><strong>Piese de calitate</strong> — Folosim piese OEM si aftermarket premium</li><li><strong>Garantie</strong> — Oferim garantie pentru manopera si piese</li><li><strong>Transparenta</strong> — Esti informat la fiecare pas al reparatiei</li></ul>',
+          content: '<h3>De ce sa alegi service-ul nostru?</h3><ul><li><strong>Echipamente moderne</strong> - Diagnosticare computerizata de ultima generatie</li><li><strong>Piese de calitate</strong> - Folosim piese OEM si aftermarket premium</li><li><strong>Garantie</strong> - Oferim garantie pentru manopera si piese</li><li><strong>Transparenta</strong> - Esti informat la fiecare pas al reparatiei</li></ul>',
           format: 'prose',
         }, { maxWidth: 'md', padding: { top: 40, bottom: 60 }, backgroundColor: '#f9fafb' }),
       ],
@@ -568,7 +568,7 @@ export const autoPartsTemplate = {
           showPrices: true,
         }),
         block('text', {
-          content: '<h3>De ce sa cumperi de la noi?</h3><ul><li><strong>Stoc larg</strong> — Peste 50.000 de piese in stoc permanent</li><li><strong>Preturi competitive</strong> — Cele mai bune preturi de pe piata</li><li><strong>Livrare rapida</strong> — Expediem in aceeasi zi pentru comenzile pana la ora 14:00</li><li><strong>Consiliere gratuita</strong> — Te ajutam sa gasesti piesa potrivita</li></ul>',
+          content: '<h3>De ce sa cumperi de la noi?</h3><ul><li><strong>Stoc larg</strong> - Peste 50.000 de piese in stoc permanent</li><li><strong>Preturi competitive</strong> - Cele mai bune preturi de pe piata</li><li><strong>Livrare rapida</strong> - Expediem in aceeasi zi pentru comenzile pana la ora 14:00</li><li><strong>Consiliere gratuita</strong> - Te ajutam sa gasesti piesa potrivita</li></ul>',
           format: 'prose',
         }, { maxWidth: 'md', padding: { top: 40, bottom: 60 }, backgroundColor: '#f9fafb' }),
       ],
@@ -879,7 +879,7 @@ export const gsmRepairTemplate = {
       content: [
         block('hero', {
           title: 'Reparatii rapide pentru dispozitivele tale',
-          subtitle: 'iPhone, Samsung, Huawei, laptopuri — toate marcile, toate problemele',
+          subtitle: 'iPhone, Samsung, Huawei, laptopuri - toate marcile, toate problemele',
           backgroundImage: 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=1920',
           backgroundOverlay: 0.6,
           ctaText: 'Cere o oferta',
@@ -959,7 +959,7 @@ export const gsmRepairTemplate = {
             { question: 'Cat dureaza o reparatie de display?', answer: 'Inlocuirea display-ului dureaza intre 30-60 minute, in functie de modelul telefonului.' },
             { question: 'Pierd datele de pe telefon?', answer: 'In majoritatea cazurilor, datele sunt in siguranta. Recomandam totusi un backup inainte de reparatie.' },
             { question: 'Folositi piese originale?', answer: 'Da, oferim atat piese originale cat si compatibile de calitate premium, la alegerea clientului.' },
-            { question: 'Reparati si laptopuri?', answer: 'Da, reparam laptopuri de toate marcile — inlocuire display, tastatura, baterie, curatare si upgrade-uri.' },
+            { question: 'Reparati si laptopuri?', answer: 'Da, reparam laptopuri de toate marcile - inlocuire display, tastatura, baterie, curatare si upgrade-uri.' },
           ],
         }, { padding: { top: 60, bottom: 60 } }),
         block('divider', {}, { padding: { top: 10, bottom: 10 } }),
@@ -990,7 +990,7 @@ export const gsmRepairTemplate = {
       content: [
         block('hero', {
           title: 'Servicii si Preturi',
-          subtitle: 'Transparenta totala — stii exact cat costa inainte sa incepi',
+          subtitle: 'Transparenta totala - stii exact cat costa inainte sa incepi',
           backgroundImage: 'https://images.unsplash.com/photo-1530319067432-f2a729c03db5?w=1920',
           backgroundOverlay: 0.6,
           layout: 'centered',
@@ -1004,7 +1004,7 @@ export const gsmRepairTemplate = {
           showDuration: true,
         }),
         block('text', {
-          content: '<h3>De ce sa ne alegi pe noi?</h3><ul><li><strong>Experienta</strong> — Peste 5 ani si mii de dispozitive reparate</li><li><strong>Piese de calitate</strong> — Folosim doar piese originale sau premium</li><li><strong>Garantie</strong> — Oferim garantie pentru toate reparatiile</li><li><strong>Rapiditate</strong> — Cele mai multe reparatii in aceeasi zi</li></ul>',
+          content: '<h3>De ce sa ne alegi pe noi?</h3><ul><li><strong>Experienta</strong> - Peste 5 ani si mii de dispozitive reparate</li><li><strong>Piese de calitate</strong> - Folosim doar piese originale sau premium</li><li><strong>Garantie</strong> - Oferim garantie pentru toate reparatiile</li><li><strong>Rapiditate</strong> - Cele mai multe reparatii in aceeasi zi</li></ul>',
           format: 'prose',
         }, { maxWidth: 'md', padding: { top: 40, bottom: 60 }, backgroundColor: '#f9fafb' }),
       ],
@@ -1095,7 +1095,7 @@ export const homeServicesTemplate = {
       content: [
         block('hero', {
           title: 'Servicii profesionale la domiciliu',
-          subtitle: 'Instalatii, reparatii, mentenanta — venim la tine acasa',
+          subtitle: 'Instalatii, reparatii, mentenanta - venim la tine acasa',
           backgroundImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1920',
           backgroundOverlay: 0.5,
           ctaText: 'Cheama un specialist',
@@ -1496,7 +1496,7 @@ export const digitalServicesTemplate = {
       content: [
         block('hero', {
           title: 'Solutii digitale pentru afacerea ta',
-          subtitle: 'Web development, design, marketing digital si consultanta IT — totul sub un singur acoperis',
+          subtitle: 'Web development, design, marketing digital si consultanta IT - totul sub un singur acoperis',
           backgroundImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1920',
           backgroundOverlay: 0.55,
           ctaText: 'Solicita oferta',
@@ -1690,7 +1690,7 @@ export const digitalServicesTemplate = {
     secondaryColor: '#8b5cf6',
   },
   seoDefaults: {
-    title: 'Servicii digitale — Web Development & Marketing',
+    title: 'Servicii digitale - Web Development & Marketing',
     description: 'Agentie de servicii digitale: web development, design, marketing digital si consultanta IT. Solutii personalizate pentru afacerea ta.',
   },
 };

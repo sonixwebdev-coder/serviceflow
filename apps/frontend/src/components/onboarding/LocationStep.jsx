@@ -89,8 +89,8 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
   return (
     <div className="space-y-6">
       <div className="text-center mb-2">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
-          <MapPin className="w-6 h-6 text-blue-600" />
+        <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-50 rounded-full mb-3">
+          <MapPin className="w-6 h-6 text-primary" />
         </div>
         <h2 className="text-xl font-semibold text-gray-800">Prima locatie</h2>
         <p className="text-gray-500 text-sm mt-1">Adauga locatia principala a afacerii tale</p>

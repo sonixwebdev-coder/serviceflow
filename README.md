@@ -1,16 +1,16 @@
 # ForjaIt
 
-ForjaIt is a multi-tenant SaaS platform for managing service businesses. It provides CRM, appointment scheduling, invoicing, team management, a website builder, a client portal, a loyalty program, and real-time chat — all in one place. Built for the Romanian market with GDPR compliance, Romanian language UI, and ANPC/SAL/SOL integration.
+ForjaIt is a multi-tenant SaaS platform for managing service businesses. It provides CRM, appointment scheduling, invoicing, team management, a website builder, a client portal, a loyalty program, and real-time chat - all in one place. Built for the Romanian market with GDPR compliance, Romanian language UI, and ANPC/SAL/SOL integration.
 
 ## Project Layout
 
 ```
 apps/
-  frontend/       # Admin dashboard — React + Vite SPA (port 5173)
-  backend/        # REST API — Express + PostgreSQL/Prisma + Socket.io (port 5000)
-  website/        # Public website renderer for orgs — React + Vite (port 5175)
-  client-portal/  # Client-facing portal — React + Vite (port 5174)
-  admin/          # Platform super-admin panel — React + Vite (port 5176)
+  frontend/       # Admin dashboard - React + Vite SPA (port 5173)
+  backend/        # REST API - Express + PostgreSQL/Prisma + Socket.io (port 5000)
+  website/        # Public website renderer for orgs - React + Vite (port 5175)
+  client-portal/  # Client-facing portal - React + Vite (port 5174)
+  admin/          # Platform super-admin panel - React + Vite (port 5176)
 prisma/           # Shared Prisma schema & migrations
 scripts/          # Local orchestration (start-all.js)
 docs/             # Deployment & product notes
@@ -105,12 +105,12 @@ Platform-level management: organizations, billing, support tickets, contact mess
 
 The backend requires these environment variables (see `.env.example`):
 
-- `DATABASE_URL` — PostgreSQL connection string
-- `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` — JWT signing keys
-- `REDIS_URL` — (optional) Redis for caching
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — Stripe billing
-- `BREVO_API_KEY` — Transactional email
-- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` — Web push notifications
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` - JWT signing keys
+- `REDIS_URL` - (optional) Redis for caching
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` - Stripe billing
+- `BREVO_API_KEY` - Transactional email
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` - Web push notifications
 
 ## Compliance
 
@@ -121,4 +121,4 @@ The backend requires these environment variables (see `.env.example`):
 
 ---
 
-Private — ForjaIt Internal Use Only.
+Private - ForjaIt Internal Use Only.

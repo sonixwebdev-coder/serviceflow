@@ -194,12 +194,12 @@ function LogRow({ log, isExpanded, onToggle }) {
         </td>
         <td className="px-4 py-3 text-xs text-gray-600">{log.category}</td>
         <td className="px-4 py-3 max-w-xs truncate text-gray-900">{log.message}</td>
-        <td className="px-4 py-3 text-xs text-gray-500 font-mono">{log.path || '—'}</td>
-        <td className="px-4 py-3 text-xs text-gray-500">{log.method || '—'}</td>
+        <td className="px-4 py-3 text-xs text-gray-500 font-mono">{log.path || '-'}</td>
+        <td className="px-4 py-3 text-xs text-gray-500">{log.method || '-'}</td>
         <td className="px-4 py-3 text-xs tabular-nums text-gray-500">
-          {log.duration != null ? `${log.duration}ms` : '—'}
+          {log.duration != null ? `${log.duration}ms` : '-'}
         </td>
-        <td className="px-4 py-3 text-xs text-gray-500 font-mono">{log.ip || '—'}</td>
+        <td className="px-4 py-3 text-xs text-gray-500 font-mono">{log.ip || '-'}</td>
       </tr>
       {isExpanded && hasDetails && (
         <tr>

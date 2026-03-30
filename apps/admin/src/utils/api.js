@@ -104,7 +104,7 @@ export const fetchCsrfToken = async () => {
 };
 
 /**
- * Bootstrap auth on app load — attempt refresh via httpOnly cookie.
+ * Bootstrap auth on app load - attempt refresh via httpOnly cookie.
  * If successful, the admin is still logged in. Otherwise, redirect to login.
  */
 export const bootstrapAuth = async () => {

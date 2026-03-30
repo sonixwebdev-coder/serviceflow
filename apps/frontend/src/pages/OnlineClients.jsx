@@ -1096,11 +1096,11 @@ const OnlineClients = () => {
                         <>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Prenume</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.firstName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.firstName || '-'}</p>
                           </div>
                           <div>
                             <label className="text-xs font-medium text-gray-500">Nume</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.lastName || '—'}</p>
+                            <p className="text-sm text-gray-900 mt-1">{selectedClient.lastName || '-'}</p>
                           </div>
                         </>
                       )}
@@ -1108,14 +1108,14 @@ const OnlineClients = () => {
                         <label className="text-xs font-medium text-gray-500">Email</label>
                         <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
                           <Mail size={14} className="text-gray-400" />
-                          {selectedClient.email || '—'}
+                          {selectedClient.email || '-'}
                         </p>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500">Telefon</label>
                         <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
                           <Phone size={14} className="text-gray-400" />
-                          {selectedClient.phone || '—'}
+                          {selectedClient.phone || '-'}
                         </p>
                       </div>
                       <div className="col-span-2">

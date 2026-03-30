@@ -1,11 +1,13 @@
 export default function Terms() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Termeni si Conditii</h1>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="mb-10">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Legal</p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Termeni si Conditii</h1>
+        <p className="mt-3 text-sm text-gray-400">Ultima actualizare: 8 Martie 2026</p>
+      </div>
 
       <div className="prose prose-gray max-w-none space-y-6 text-gray-600 text-sm leading-relaxed">
-        <p>Ultima actualizare: 8 Martie 2026</p>
-
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">1. Utilizarea Platformei</h2>
           <p>
@@ -106,34 +108,19 @@ export default function Terms() {
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">10. Contact</h2>
           <p>
-            Pentru intrebari legate de acesti termeni, ne puteti contacta la adresa de email:
-            contact@forja.it.com
+            Pentru intrebari legate de acesti termeni, ne puteti contacta la adresa de email:{' '}
+            <a href="mailto:contact@forja.it.com" className="text-primary hover:underline">contact@forja.it.com</a>
           </p>
         </section>
       </div>
 
-      {/* ANPC */}
       <div className="mt-12 border-t border-gray-200 pt-8">
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
           Solutionarea alternativa a litigiilor
         </p>
-        <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-          <a
-            href="https://anpc.ro/ce-este-sal/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-900 transition-colors"
-          >
-            ANPC - SAL
-          </a>
-          <a
-            href="https://consumer-redress.ec.europa.eu/index_en"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-gray-900 transition-colors"
-          >
-            Platforma SOL (Online Dispute Resolution)
-          </a>
+        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+          <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 font-medium transition hover:bg-white hover:text-gray-700 hover:border-gray-300">ANPC - SAL</a>
+          <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 font-medium transition hover:bg-white hover:text-gray-700 hover:border-gray-300">Platforma SOL</a>
         </div>
       </div>
     </div>

@@ -53,8 +53,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary-600">Portal Client</h1>
-          <h2 className="mt-4 text-2xl font-semibold text-gray-900">Autentificare</h2>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary-600">Portal Client</h1>
+          <h2 className="mt-3 sm:mt-4 text-xl sm:text-2xl font-semibold text-gray-900">Autentificare</h2>
           <p className="mt-2 text-sm text-gray-500">
             Accesati contul pentru a vedea programarile si facturile
           </p>
@@ -69,7 +69,7 @@ export default function Login() {
           </div>
         )}
 
-        <div className="card p-8">
+        <div className="card p-5 sm:p-8">
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {loginMutation.isError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
