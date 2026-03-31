@@ -186,7 +186,7 @@ const Resources = () => {
               </label>
             </div>
 
-            <div className="md:col-span-2 flex gap-2">
+            <div className="md:col-span-2 flex flex-col sm:flex-row gap-2">
               <button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}

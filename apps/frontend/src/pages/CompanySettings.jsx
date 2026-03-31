@@ -295,11 +295,11 @@ const CompanySettings = () => {
           {/* Logo Upload */}
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Logo companie</h2>
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
               <div className="flex-shrink-0">
                 {logoPreview ? (
                   <div className="relative">
-                    <div className="h-32 w-32 overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50">
+                    <div className="h-28 w-28 sm:h-32 sm:w-32 overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50">
                       <img src={logoPreview} alt="Company logo" className="h-full w-full object-contain p-2" />
                     </div>
                     <button
@@ -313,7 +313,7 @@ const CompanySettings = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="h-32 w-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
+                  <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
                     <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -705,7 +705,7 @@ const CompanySettings = () => {
           </div>
 
           {/* Save bar */}
-          <div className="mt-6 flex items-center justify-between">
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="text-xs text-gray-500">
               {isDirty ? 'Ai modificari nesalvate.' : 'Toate modificarile sunt salvate.'}
             </div>

@@ -406,7 +406,7 @@ const Profile = () => {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={handleCancelProfile}
@@ -524,7 +524,7 @@ const Profile = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={handleCancelPassword}
@@ -670,7 +670,7 @@ const Profile = () => {
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700">
               Salveaza aceste coduri de recuperare intr-un loc sigur. Le poti folosi pentru a te conecta daca pierzi accesul la aplicatia de autentificare. Fiecare cod poate fi folosit o singura data.
             </div>
-            <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-sm mx-auto">
               {backupCodes.map((code, i) => (
                 <code key={i} className="bg-gray-100 rounded px-3 py-1.5 text-sm font-mono text-center text-gray-800">
                   {code}
@@ -769,7 +769,7 @@ const Profile = () => {
                 maxLength={6}
               />
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
               <button
                 type="button"
                 onClick={() => { setTwoFAState('idle'); setDisableForm({ password: '', code: '' }); }}

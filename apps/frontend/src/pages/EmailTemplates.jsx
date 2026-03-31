@@ -233,7 +233,7 @@ const EmailTemplates = () => {
           {selectedTemplate ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               {/* Editor Header */}
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">
                     {getTemplateInfo(selectedTemplate).label}
@@ -351,7 +351,7 @@ const EmailTemplates = () => {
                         <p className="text-xs text-blue-700 mb-3">
                           Click pe o variabila pentru a o insera in editor (in modul editare)
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {getTemplateInfo(selectedTemplate).variables.map((variable) => (
                             <button
                               key={variable.name}

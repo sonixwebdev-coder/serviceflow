@@ -644,8 +644,8 @@ export default function BillingSettings() {
 
       {/* Upgrade section - hidden when plan override is active */}
       {!status.planOverride && (status.plan !== 'ENTERPRISE' || !status.subscriptionId) && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <div className="flex items-center justify-between">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-blue-600" />
               <h3 className="text-base font-bold text-gray-900">Upgrade plan</h3>

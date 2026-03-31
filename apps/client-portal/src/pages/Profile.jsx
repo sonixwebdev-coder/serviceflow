@@ -274,7 +274,7 @@ export default function Profile() {
       {/* Assets tab - only shown for sectors with assets */}
       {activeTab === 'assets' && hasAssets && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle>{assetTerminology.plural}</CardTitle>
             <Button size="sm" onClick={openCreateModal}>
               <Plus className="h-4 w-4 mr-1" />
@@ -374,7 +374,7 @@ export default function Profile() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Producator
@@ -397,7 +397,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     An fabricatie
@@ -421,7 +421,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
                 <Button type="button" variant="secondary" onClick={closeAssetModal}>
                   Anuleaza
                 </Button>

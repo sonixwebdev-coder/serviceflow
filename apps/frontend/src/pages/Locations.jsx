@@ -257,8 +257,8 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 margin-top-zero">
-      <div className="relative w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 margin-top-zero">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg bg-white p-5 sm:p-6 shadow-xl">
         <button
           type="button"
           onClick={onClose}
@@ -282,7 +282,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Settings size={16} />
+            <Settings size={16} className="hidden sm:block" />
             General
           </button>
           <button
@@ -294,7 +294,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Clock size={16} />
+            <Clock size={16} className="hidden sm:block" />
             Program
           </button>
           <button
@@ -306,7 +306,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Banknote size={16} />
+            <Banknote size={16} className="hidden sm:block" />
             Preturi
           </button>
         </div>
@@ -314,7 +314,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {activeTab === 'general' && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     Nume locatie *
@@ -431,11 +431,11 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 return (
                   <div
                     key={key}
-                    className={`flex items-center gap-4 rounded-lg border p-3 ${
+                    className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-lg border p-3 ${
                       dayHours.isOpen ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'
                     }`}
                   >
-                    <label className="flex w-24 cursor-pointer items-center gap-2">
+                    <label className="flex w-full sm:w-24 cursor-pointer items-center gap-2">
                       <input
                         type="checkbox"
                         checked={dayHours.isOpen}
@@ -476,7 +476,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 Configureaza preturile implicite pentru aceasta locatie.
               </p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     Tarif manopera implicit (RON/ora)
@@ -805,7 +805,7 @@ const Locations = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Locatii</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -818,7 +818,7 @@ const Locations = () => {
             setModalLocation(null);
             setShowModal(true);
           }}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
         >
           <Plus size={18} />
           Adauga locatie

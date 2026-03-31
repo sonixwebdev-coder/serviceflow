@@ -585,7 +585,7 @@ const OrganizationSettings = () => {
 
       {/* Google Calendar Integration */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mt-6">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-500" />
             <div>
