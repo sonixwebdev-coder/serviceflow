@@ -38,7 +38,7 @@ export default function AppointmentMetrics({ data = [], byStatus = {}, isLoading
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2">
           {[1, 2, 3, 4, 5].map((i) => (
             <SkeletonBox key={i} className="h-16 rounded-lg" />
           ))}
@@ -59,7 +59,7 @@ export default function AppointmentMetrics({ data = [], byStatus = {}, isLoading
   return (
     <div className="space-y-4">
       {/* Status breakdown */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2">
         {[
           { key: 'PENDING', label: 'Asteptare', color: 'bg-yellow-100 text-yellow-700' },
           { key: 'PREZENTAT', label: 'Prezentat', color: 'bg-blue-100 text-blue-700' },
@@ -69,10 +69,10 @@ export default function AppointmentMetrics({ data = [], byStatus = {}, isLoading
         ].map((status) => (
           <div
             key={status.key}
-            className={`px-3 py-2 rounded-lg text-center ${status.color}`}
+            className={`px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-center ${status.color}`}
           >
-            <p className="text-lg font-bold">{byStatus[status.key] || 0}</p>
-            <p className="text-xs">{status.label}</p>
+            <p className="text-base sm:text-lg font-bold">{byStatus[status.key] || 0}</p>
+            <p className="text-[10px] sm:text-xs">{status.label}</p>
           </div>
         ))}
       </div>

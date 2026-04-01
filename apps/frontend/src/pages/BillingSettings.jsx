@@ -145,10 +145,81 @@ function PlanComparisonTable({ currentPlan }) {
   ];
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6">
+    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
       <h3 className="text-base font-bold text-gray-900 mb-1">Comparatie planuri</h3>
       <p className="text-sm text-gray-500 mb-5">Vezi ce include fiecare plan si alege cel potrivit pentru tine.</p>
-      <div className="overflow-x-auto">
+
+      {/* Mobile: Card layout */}
+      <div className="sm:hidden space-y-4">
+        {plans.map((plan) => {
+          const isCurrent = currentPlan === plan;
+          const isPopular = plan === 'PROFESSIONAL';
+          return (
+            <div
+              key={plan}
+              className={`rounded-lg border p-4 ${
+                isCurrent ? 'border-blue-300 bg-blue-50/50' : isPopular ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className={`text-sm font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900'}`}>
+                  {PLAN_NAMES[plan]}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {isPopular && (
+                    <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                      Popular
+                    </span>
+                  )}
+                  {isCurrent && (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                      Curent
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Quotas */}
+              <div className="space-y-2 mb-3">
+                {quotaRows.map(({ label, key, icon: Icon }) => {
+                  const val = PLAN_QUOTAS[plan][key];
+                  return (
+                    <div key={key} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <Icon className="h-3.5 w-3.5 text-gray-400" />
+                        <span>{label}</span>
+                      </div>
+                      <span className={`font-semibold ${val === -1 ? 'text-green-600' : 'text-gray-900'}`}>
+                        {val === -1 ? 'Nelimitat' : val.toLocaleString('ro-RO')}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Features */}
+              <div className="border-t border-gray-100 pt-3 space-y-1.5">
+                {allFeatures.map((feature) => {
+                  const included = PLAN_FEATURES_FLAT[plan].includes(feature);
+                  return (
+                    <div key={feature} className="flex items-center gap-2 text-sm">
+                      {included ? (
+                        <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                      ) : (
+                        <span className="h-3.5 w-3.5 text-center text-gray-300 shrink-0">-</span>
+                      )}
+                      <span className={included ? 'text-gray-700' : 'text-gray-400'}>{feature}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: Table layout */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr>
@@ -468,10 +539,10 @@ export default function BillingSettings() {
       )}
 
       {/* Current plan card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <div className="flex items-center justify-between">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 shrink-0">
               <CreditCard className="h-5 w-5 text-blue-600" />
             </div>
             <div>
@@ -491,7 +562,7 @@ export default function BillingSettings() {
             <button
               onClick={handleManageSubscription}
               disabled={actionLoading}
-              className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 w-full sm:w-auto"
             >
               <ExternalLink className="h-4 w-4" />
               Gestioneaza abonamentul

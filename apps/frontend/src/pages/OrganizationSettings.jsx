@@ -5,6 +5,8 @@ import { useTerminology } from '../context/TerminologyContext';
 import useToast from '../context/useToast';
 import API from '../utils/api';
 import useLocationStore from '../state/useLocationStore';
+import { fetchCurrentOrganization } from '../services/organizationService';
+import { CLIENT_PORTAL_URL } from '../config/urls';
 import {
   Save,
   Globe,
@@ -21,6 +23,8 @@ import {
   XCircle,
   AlertCircle,
   ExternalLink,
+  Copy,
+  Check,
 } from 'lucide-react';
 import TimePicker from '../components/ui/TimePicker';
 import {
@@ -50,6 +54,13 @@ const OrganizationSettings = () => {
   const [savingPublicListing, setSavingPublicListing] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [selectedCalendarId, setSelectedCalendarId] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  // Fetch org slug for booking link
+  const { data: orgData } = useQuery({
+    queryKey: ['current-organization'],
+    queryFn: fetchCurrentOrganization,
+  });
 
   // Current location from store
   const currentLocationId = useLocationStore((s) => s.currentLocationId);
@@ -557,17 +568,34 @@ const OrganizationSettings = () => {
           </div>
 
           {/* Portal URL Info */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-900">
-              <strong>Link portal public:</strong>
-            </p>
-            <p className="text-sm text-blue-800 mt-2 font-mono">
-              {window.location.origin.replace('3001', '3002')}/book/slug-organizatie
-            </p>
-            <p className="text-xs text-blue-700 mt-2">
-              Acest link poate fi distribuit clientilor noi pentru a face programari fara cont.
-            </p>
-          </div>
+          {orgData?.slug && (() => {
+            const bookingUrl = `${CLIENT_PORTAL_URL}/book/${orgData.slug}`;
+            const handleCopy = () => {
+              navigator.clipboard.writeText(bookingUrl);
+              setLinkCopied(true);
+              setTimeout(() => setLinkCopied(false), 2000);
+            };
+            return (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm font-semibold text-blue-900 mb-2">Link portal public:</p>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <code className="flex-1 text-sm text-blue-800 bg-white rounded-lg px-3 py-2 border border-blue-200 break-all">
+                    {bookingUrl}
+                  </code>
+                  <button
+                    onClick={handleCopy}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {linkCopied ? 'Copiat!' : 'Copiaza'}
+                  </button>
+                </div>
+                <p className="text-xs text-blue-700 mt-2">
+                  Acest link poate fi distribuit clientilor noi pentru a face programari fara cont.
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Actions */}
           <div className="flex justify-end pt-6 border-t border-gray-200">

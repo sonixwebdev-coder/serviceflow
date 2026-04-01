@@ -6,6 +6,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -132,9 +133,9 @@ function SortableWidget({ widget, isEditMode, children }) {
             <button
               {...attributes}
               {...listeners}
-              className="p-1 rounded hover:bg-gray-100 cursor-grab active:cursor-grabbing"
+              className="p-2.5 -m-1 rounded-lg hover:bg-gray-100 cursor-grab active:cursor-grabbing touch-none"
             >
-              <GripVertical className="h-4 w-4 text-gray-400" />
+              <GripVertical className="h-5 w-5 text-gray-400" />
             </button>
           )}
         </div>
@@ -207,11 +208,17 @@ const Dashboard = () => {
     });
   }, [widgets, isAdmin]);
 
-  // DnD sensors
+  // DnD sensors - TouchSensor with delay for mobile (press-and-hold to drag)
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 6,
       },
     }),
     useSensor(KeyboardSensor, {

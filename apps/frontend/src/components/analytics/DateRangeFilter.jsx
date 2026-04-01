@@ -39,14 +39,14 @@ export default function DateRangeFilter({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-2">
       {/* Preset buttons */}
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5 sm:gap-1">
         {PRESET_RANGES.map((preset) => (
           <button
             key={preset.value}
             onClick={() => handlePresetClick(preset)}
-            className={`px-3 py-1.5 text-sm rounded-lg border transition ${
+            className={`px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm rounded-lg border transition ${
               selectedPreset === preset.value
                 ? 'bg-primary text-white border-primary'
                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -59,7 +59,7 @@ export default function DateRangeFilter({
 
       {/* Custom date inputs */}
       {showCustom && (
-        <div className="flex items-center gap-2 ml-2">
+        <div className="flex items-center gap-2 sm:ml-2">
           <DatePicker
             value={startDate ? parseISO(startDate) : null}
             onChange={(date) => handleCustomChange('startDate', date ? format(date, 'yyyy-MM-dd') : '')}
