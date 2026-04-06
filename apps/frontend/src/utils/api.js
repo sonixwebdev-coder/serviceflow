@@ -215,7 +215,15 @@ export const getFileUrl = (filePath) => {
   }
   const baseUrl = getFileBaseUrl();
   // Ensure single slash between base URL and path
-  const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+  let normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+
+  // Paths stored as bare storage-relative paths (e.g. "chat/orgId/channelId/files/hash")
+  // need the /files/ URL prefix to reach the static file server.
+  // Paths already starting with /files/ or /uploads/ are already correct.
+  if (!normalizedPath.startsWith('/files/') && !normalizedPath.startsWith('/uploads/')) {
+    normalizedPath = `/files${normalizedPath}`;
+  }
+
   const url = `${baseUrl}${normalizedPath}`;
 
   // Public paths don't need auth token
