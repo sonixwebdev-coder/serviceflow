@@ -1281,48 +1281,52 @@ useEffect(() => {
       </div>
 
       {/* Calendar Card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm">
         {isLoading ? (
           <div className="py-10 text-center text-sm text-gray-500">Se incarca programarile...</div>
         ) : (
           <>
-            <Calendar
-              localizer={localizer}
-              events={calendarEvents}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: calendarView === 'month' ? 800 : 1000 }}
-              view={calendarView}
-              date={calendarDate}
-              onView={handleViewChange}
-              onNavigate={handleNavigate}
-              views={['month', 'week', 'day']}
-              onSelectSlot={handleSelectSlot}
-              onSelectEvent={handleSelectEvent}
-              selectable
-              popup
-              eventPropGetter={eventStyleGetter}
-              components={{
-                month: { event: MonthEvent },
-              }}
-              messages={calendarMessages}
-              culture="ro"
-              min={new Date(2024, 0, 1, 7, 0, 0)}
-              max={new Date(2024, 0, 1, 21, 0, 0)}
-              step={15}
-              timeslots={4}
-              formats={{
-                timeGutterFormat: 'HH:mm',
-                eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
-                  `${localizer.format(start, 'HH:mm', culture)} - ${localizer.format(end, 'HH:mm', culture)}`,
-                dayHeaderFormat: (date, culture, localizer) =>
-                  localizer.format(date, 'EEEE, dd MMM', culture),
-                dayRangeHeaderFormat: ({ start, end }, culture, localizer) =>
-                  `${localizer.format(start, 'dd MMM', culture)} - ${localizer.format(end, 'dd MMM yyyy', culture)}`,
-                monthHeaderFormat: (date, culture, localizer) =>
-                  localizer.format(date, 'MMMM yyyy', culture),
-              }}
-            />
+            <div className="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
+              <div style={{ minWidth: calendarView === 'day' ? 320 : 640 }}>
+                <Calendar
+                  localizer={localizer}
+                  events={calendarEvents}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: calendarView === 'month' ? 800 : 1000 }}
+                  view={calendarView}
+                  date={calendarDate}
+                  onView={handleViewChange}
+                  onNavigate={handleNavigate}
+                  views={['month', 'week', 'day']}
+                  onSelectSlot={handleSelectSlot}
+                  onSelectEvent={handleSelectEvent}
+                  selectable
+                  popup
+                  eventPropGetter={eventStyleGetter}
+                  components={{
+                    month: { event: MonthEvent },
+                  }}
+                  messages={calendarMessages}
+                  culture="ro"
+                  min={new Date(2024, 0, 1, 7, 0, 0)}
+                  max={new Date(2024, 0, 1, 21, 0, 0)}
+                  step={15}
+                  timeslots={4}
+                  formats={{
+                    timeGutterFormat: 'HH:mm',
+                    eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
+                      `${localizer.format(start, 'HH:mm', culture)} - ${localizer.format(end, 'HH:mm', culture)}`,
+                    dayHeaderFormat: (date, culture, localizer) =>
+                      localizer.format(date, 'EEEE, dd MMM', culture),
+                    dayRangeHeaderFormat: ({ start, end }, culture, localizer) =>
+                      `${localizer.format(start, 'dd MMM', culture)} - ${localizer.format(end, 'dd MMM yyyy', culture)}`,
+                    monthHeaderFormat: (date, culture, localizer) =>
+                      localizer.format(date, 'MMMM yyyy', culture),
+                  }}
+                />
+              </div>
+            </div>
             {calendarEvents.length === 0 && (
               <div className="empty-state">
                 <Clock className="empty-state-icon" />

@@ -32,12 +32,14 @@ const safeLinkUrl = () =>
   z.string().max(500).optional()
     .refine((val) => isSafeUrl(val), { message: 'Link-ul contine un protocol nepermis' });
 
-// Safe image URL: only http(s), blocks localhost and private IPs
+// Safe image URL: only http(s) or server-relative paths (uploaded files), blocks localhost and private IPs
 const safeImageUrl = () =>
-  z.string().optional().transform((val) => (val === '' ? undefined : val))
-    .pipe(z.string().url().optional())
+  z.string().optional()
+    .transform((val) => (val === '' ? undefined : val))
     .refine((val) => {
       if (!val) return true;
+      // Allow relative paths (uploaded files stored on the server)
+      if (val.startsWith('/')) return true;
       try {
         const url = new URL(val);
         if (!['http:', 'https:'].includes(url.protocol)) return false;

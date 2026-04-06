@@ -761,6 +761,53 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                       onCheckedChange={(v) => updateData('showLocations', v)}
                     />
                   </div>
+
+                  {/* Contact info values */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Informatii de contact</p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                        <input
+                          type="tel"
+                          value={block.data?.contactInfo?.phone || ''}
+                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, phone: e.target.value })}
+                          placeholder="+40 700 000 000"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={block.data?.contactInfo?.email || ''}
+                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, email: e.target.value })}
+                          placeholder="contact@firma.ro"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Adresa</label>
+                        <input
+                          type="text"
+                          value={block.data?.contactInfo?.address || ''}
+                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, address: e.target.value })}
+                          placeholder="Str. Exemplu, nr. 1, Cluj-Napoca"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
+                        <textarea
+                          value={block.data?.contactInfo?.schedule || ''}
+                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, schedule: e.target.value })}
+                          placeholder={"Luni - Vineri: 09:00 - 18:00\nSâmbătă: 10:00 - 14:00"}
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </>
               )}
 

@@ -5,6 +5,7 @@ const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
 const rateLimit = require('express-rate-limit');
 const { z } = require('zod');
+const cache = require('../utils/cache');
 const {
   createOrganization,
   getOrganizationById,
@@ -320,6 +321,10 @@ router.put(
       req.user.organizationId,
       req.body.services
     );
+
+    // Invalidate website CRM caches so the public website reflects changes immediately
+    await cache.del(`website:crm:${req.user.organizationId}:services`);
+    await cache.delPattern(`portal:crm:*:services`);
 
     await logFromRequest(req, {
       action: 'UPDATE',

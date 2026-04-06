@@ -29,7 +29,7 @@ const condenseBusinessHours = (operatingHours) => {
     .map((day) => {
       const hours = operatingHours[day];
       const isOpen = hours.isOpen !== false;
-      const label = isOpen ? `${hours.open || '09:00'} - ${hours.close || '17:00'}` : 'Inchis';
+      const label = isOpen ? `${hours.open || '09:00'} - ${hours.close || '18:00'}` : 'Inchis';
       return { day, dayName: DAY_NAMES[day], label, isOpen };
     });
 
@@ -138,6 +138,7 @@ export default function WebsiteLayout() {
   const navPages = allPages.filter((p) => !LEGAL_SLUGS.includes(p.slug));
   const legalPages = allPages.filter((p) => LEGAL_SLUGS.includes(p.slug));
   const primaryColor = branding?.primaryColor || '#2563eb';
+  const secondaryColor = branding?.secondaryColor;
   const primaryLocation = organization?.primaryLocation;
   const hasBooking = !!organization?.slug;
 
@@ -357,7 +358,7 @@ export default function WebsiteLayout() {
                 {/* About */}
                 {footerSettings.showAbout && (
                   <div>
-                    <h3 className="text-white font-semibold text-base mb-3">
+                    <h3 className="font-semibold text-base mb-3" style={{ color: secondaryColor || '#ffffff' }}>
                       {organization?.name}
                     </h3>
                     {seoDefaults?.description && (
@@ -371,7 +372,7 @@ export default function WebsiteLayout() {
                 {/* Quick Links */}
                 {footerSettings.showQuickLinks && (
                   <div>
-                    <h3 className="text-white font-semibold text-base mb-3">
+                    <h3 className="font-semibold text-base mb-3" style={{ color: secondaryColor || '#ffffff' }}>
                       Link-uri rapide
                     </h3>
                     <ul className={cn(
@@ -406,7 +407,7 @@ export default function WebsiteLayout() {
                 {/* Contact Info */}
                 {footerSettings.showContact && (
                   <div>
-                    <h3 className="text-white font-semibold text-base mb-3">
+                    <h3 className="font-semibold text-base mb-3" style={{ color: secondaryColor || '#ffffff' }}>
                       Contact
                     </h3>
                     <ul className="space-y-3">
@@ -441,7 +442,7 @@ export default function WebsiteLayout() {
                 {/* Business Hours */}
                 {footerSettings.showHours && (
                   <div>
-                    <h3 className="text-white font-semibold text-base mb-3">
+                    <h3 className="font-semibold text-base mb-3" style={{ color: secondaryColor || '#ffffff' }}>
                       Program
                     </h3>
                     {primaryLocation?.operatingHours ? (

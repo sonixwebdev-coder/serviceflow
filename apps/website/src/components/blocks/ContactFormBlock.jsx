@@ -57,7 +57,17 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    mutation.mutate(formData);
+
+    const standardKeys = new Set(['firstName', 'lastName', 'email', 'phone', 'message']);
+    const customFields = fields.filter((f) => !standardKeys.has(f.key) && formData[f.key]);
+
+    let message = formData.message || '';
+    if (customFields.length > 0) {
+      const extra = customFields.map((f) => `${f.label}: ${formData[f.key]}`).join('\n');
+      message = message ? `${message}\n\n---\n${extra}` : extra;
+    }
+
+    mutation.mutate({ ...formData, message });
   };
 
   const handleChange = (key, value) => {

@@ -100,7 +100,11 @@ export default function PricingTableBlock({ data, subdomain, branding }) {
 
               {showCta && (
                 <Link
-                  to={plan.ctaLink || `/${subdomain}/booking`}
+                  to={
+                    plan.ctaLink
+                      ? (plan.ctaLink.startsWith('/') ? `/${subdomain}${plan.ctaLink}` : plan.ctaLink)
+                      : `/${subdomain}/booking`
+                  }
                   className={cn(
                     'block w-full text-center py-3 px-4 rounded-lg font-medium transition-all',
                     plan.featured

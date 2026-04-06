@@ -37,20 +37,22 @@ export default function Billing() {
   return (
     <div className="space-y-5">
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl bg-gray-100/80 p-1">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-              tab === t.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex gap-1 rounded-xl bg-gray-100/80 p-1 min-w-max">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${
+                tab === t.key
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {tab === 'overview' && <OverviewTab />}
@@ -199,6 +201,7 @@ function FailedPaymentsTab() {
 
 function OrgTable({ data, isLoading, page, onPageChange, showActions, showTrialInfo }) {
   const [actionOrgId, setActionOrgId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const tableRef = useRef(null);
 
   useEffect(() => {
@@ -209,6 +212,15 @@ function OrgTable({ data, isLoading, page, onPageChange, showActions, showTrialI
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [actionOrgId]);
+
+  const openMenu = (orgId, buttonEl) => {
+    const rect = buttonEl.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.top + window.scrollY,
+      left: rect.right + window.scrollX,
+    });
+    setActionOrgId(orgId === actionOrgId ? null : orgId);
+  };
 
   if (isLoading) {
     return (
@@ -285,17 +297,15 @@ function OrgTable({ data, isLoading, page, onPageChange, showActions, showTrialI
                 </td>
                 {showActions && (
                   <td className="px-5 py-3.5">
-                    <div className="relative">
-                      <button
-                        onClick={() => setActionOrgId(actionOrgId === org.id ? null : org.id)}
-                        className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                      {actionOrgId === org.id && (
-                        <ActionMenu org={org} onClose={() => setActionOrgId(null)} />
-                      )}
-                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openMenu(org.id, e.currentTarget); }}
+                      className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                    {actionOrgId === org.id && (
+                      <ActionMenu org={org} position={menuPosition} onClose={() => setActionOrgId(null)} />
+                    )}
                   </td>
                 )}
               </tr>
@@ -330,7 +340,7 @@ function OrgTable({ data, isLoading, page, onPageChange, showActions, showTrialI
   );
 }
 
-function ActionMenu({ org, onClose }) {
+function ActionMenu({ org, position, onClose }) {
   const [trialDays, setTrialDays] = useState('');
   const [showTrialInput, setShowTrialInput] = useState(false);
   const extendTrial = useExtendTrial();
@@ -379,7 +389,11 @@ function ActionMenu({ org, onClose }) {
   };
 
   return (
-    <div className="animate-fade-in absolute right-0 bottom-full z-50 mb-1 w-60 rounded-xl border border-gray-200 bg-white py-1.5 shadow-xl">
+    <div
+      className="animate-fade-in fixed z-[9999] w-60 rounded-xl border border-gray-200 bg-white py-1.5 shadow-xl"
+      style={{ top: position.top, left: position.left, transform: 'translate(-100%, -100%)' }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       {(org.status === 'TRIAL' || org.status === 'PAYMENT_REQUIRED') && (
         showTrialInput ? (
           <div className="px-3 py-2.5 space-y-2">

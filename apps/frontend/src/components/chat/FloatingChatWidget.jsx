@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, ChevronLeft, Send, X, Maximize2, MessageCircle, Users, Hash, Clock, AlertCircle } from 'lucide-react';
+import { MessageSquare, ChevronLeft, Send, X, Maximize2, MessageCircle, Users, Hash, Clock, AlertCircle, FileText } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useChannels, useMessages, useSendMessage, useMarkAsRead } from '../../hooks/useChat';
 import useToast from '../../context/useToast';
+import { getFileUrl } from '../../utils/api';
 
 /**
  * Floating Chat Widget
@@ -523,9 +524,41 @@ export default function FloatingChatWidget() {
                                   : 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5 rounded-bl-md'
                               } ${isPending ? 'opacity-70' : ''}`}
                             >
-                              <p className="whitespace-pre-wrap break-words leading-relaxed">
-                                {message.body || 'Atașament'}
-                              </p>
+                              {message.body && (
+                                <p className="whitespace-pre-wrap break-words leading-relaxed">
+                                  {message.body}
+                                </p>
+                              )}
+                              {message.attachments?.map((attachment) => {
+                                const isImage = attachment.fileType?.startsWith('image/');
+                                const fullUrl = getFileUrl(attachment.fileUrl);
+                                if (isImage) {
+                                  return (
+                                    <a key={attachment.id} href={fullUrl} target="_blank" rel="noopener noreferrer">
+                                      <img
+                                        src={fullUrl}
+                                        alt={attachment.fileName}
+                                        className="mt-1 max-w-full max-h-[150px] rounded-lg object-cover"
+                                      />
+                                    </a>
+                                  );
+                                }
+                                return (
+                                  <a
+                                    key={attachment.id}
+                                    href={fullUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-1.5 mt-1 text-xs underline ${isOwn ? 'text-white/80' : 'text-gray-600'}`}
+                                  >
+                                    <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+                                    <span className="truncate max-w-[160px]">{attachment.fileName}</span>
+                                  </a>
+                                );
+                              })}
+                              {!message.body && !message.attachments?.length && (
+                                <p className="whitespace-pre-wrap break-words leading-relaxed opacity-70">Atașament</p>
+                              )}
                               <div className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${
                                 isOwn ? 'text-white/70' : 'text-gray-400'
                               }`}>

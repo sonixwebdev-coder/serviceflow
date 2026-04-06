@@ -33,6 +33,7 @@ import FloatingHelperWidget from '@/components/website-builder/FloatingHelperWid
 import { BrandingSettings, SeoSettings, PageSeoSettings, HeaderFooterSettings } from '@/components/website-builder/settings';
 import { TemplateSelector, getTemplateById, templates as allTemplates, getTemplatesBySector } from '@/components/website-builder/templates';
 import { createPage as createPageService, bulkUpsertPages, fetchPages as fetchPagesService } from '@/services/websiteService';
+import { updateCompanySettings } from '@/services/settingsService';
 import useToast from '@/context/useToast';
 import useAuth from '@/context/useAuth';
 
@@ -289,14 +290,26 @@ const WebsiteBuilder = () => {
 
   // Publish/unpublish website
   const handlePublish = async () => {
+    const isPublishing = !website.isPublished;
     try {
       await publishWebsite({
         websiteId: website.id,
-        isPublished: !website.isPublished,
+        isPublished: isPublishing,
       });
+      // When publishing, sync the website URL to company settings so it appears in the Settings page
+      if (isPublishing) {
+        const url = website?.url;
+        if (url) {
+          try {
+            await updateCompanySettings({ website: url });
+          } catch {
+            // Non-critical — don't block or show error for this
+          }
+        }
+      }
       refreshWebsite();
       showToast({
-        title: website.isPublished ? 'Website retras din publicare' : 'Website publicat cu succes!',
+        title: isPublishing ? 'Website publicat cu succes!' : 'Website retras din publicare',
         type: 'success',
       });
     } catch (error) {

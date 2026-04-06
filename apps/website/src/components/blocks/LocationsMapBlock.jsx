@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { MapPin, Phone, Mail, Clock, Navigation, ExternalLink } from 'lucide-react';
 import { websiteService } from '@/services/websiteService';
 
+const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
 const DAY_NAMES = {
   monday: 'Luni', tuesday: 'Marti', wednesday: 'Miercuri',
   thursday: 'Joi', friday: 'Vineri', saturday: 'Sambata', sunday: 'Duminica',
@@ -135,14 +137,17 @@ export default function LocationsMapBlock({ data, subdomain, branding }) {
                       <span className="text-sm font-medium text-gray-700">Program</span>
                     </div>
                     <div className="ml-6 space-y-1">
-                      {Object.entries(location.operatingHours).map(([day, hours]) => (
-                        <div key={day} className="flex justify-between text-sm">
-                          <span className="text-gray-500">{DAY_NAMES[day] || day}</span>
-                          <span className="text-gray-700">
-                            {hours.closed ? 'Inchis' : `${hours.open} - ${hours.close}`}
-                          </span>
-                        </div>
-                      ))}
+                      {DAY_ORDER.filter((day) => location.operatingHours[day]).map((day) => {
+                        const hours = location.operatingHours[day];
+                        return (
+                          <div key={day} className="flex justify-between text-sm">
+                            <span className="text-gray-500">{DAY_NAMES[day] || day}</span>
+                            <span className="text-gray-700">
+                              {hours.closed ? 'Inchis' : `${hours.open} - ${hours.close}`}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

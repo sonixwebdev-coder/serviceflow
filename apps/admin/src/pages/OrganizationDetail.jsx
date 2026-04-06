@@ -8,7 +8,6 @@ import {
 import { useExtendTrial } from '@/hooks/useBilling';
 import useToast from '@/context/useToast';
 
-const PLAN_OPTIONS = ['FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE'];
 const STATUS_OPTIONS = ['ACTIVE', 'TRIAL', 'SUSPENDED', 'CANCELLED'];
 const OVERRIDE_PLAN_OPTIONS = ['PROFESSIONAL', 'ENTERPRISE'];
 
@@ -34,7 +33,6 @@ export default function OrganizationDetail() {
   const startEditing = () => {
     setForm({
       status: org.status,
-      plan: org.plan,
       maxUsers: org.maxUsers,
       maxClients: org.maxClients,
       maxAppointments: org.maxAppointments,
@@ -46,7 +44,6 @@ export default function OrganizationDetail() {
     const payload = {
       id,
       status: form.status,
-      plan: form.plan,
       maxUsers: Number(form.maxUsers) || 0,
       maxClients: Number(form.maxClients) || 0,
       maxAppointments: Number(form.maxAppointments) || 0,
@@ -292,15 +289,6 @@ export default function OrganizationDetail() {
                 className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
               >
                 {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </FormField>
-            <FormField label="Plan">
-              <select
-                value={form.plan}
-                onChange={(e) => setForm({ ...form, plan: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
-              >
-                {PLAN_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </FormField>
             <FormField label="Max Utilizatori">

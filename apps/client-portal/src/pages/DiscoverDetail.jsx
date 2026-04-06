@@ -15,6 +15,8 @@ import { getSectorConfig } from '@/utils/sectors';
 import { formatCurrency, cn } from '@/lib/utils';
 import useToast from '@/context/useToast';
 
+const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
 const DAY_NAMES_RO = {
   monday: 'Luni', tuesday: 'Marti', wednesday: 'Miercuri',
   thursday: 'Joi', friday: 'Vineri', saturday: 'Sambata', sunday: 'Duminica',
@@ -189,14 +191,17 @@ export default function DiscoverDetail() {
                             <div className="mt-2 flex items-start gap-1.5 text-sm text-gray-500">
                               <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                               <div className="space-y-0.5">
-                                {Object.entries(loc.operatingHours).map(([day, hours]) => (
-                                  <div key={day}>
-                                    <span className="font-medium">{DAY_NAMES_RO[day] || day}:</span>{' '}
-                                    {(hours.closed === true || hours.isOpen === false)
-                                      ? 'Inchis'
-                                      : `${hours.open || hours.openTime} - ${hours.close || hours.closeTime}`}
-                                  </div>
-                                ))}
+                                {DAY_ORDER.filter((day) => loc.operatingHours[day]).map((day) => {
+                                  const hours = loc.operatingHours[day];
+                                  return (
+                                    <div key={day}>
+                                      <span className="font-medium">{DAY_NAMES_RO[day] || day}:</span>{' '}
+                                      {(hours.closed === true || hours.isOpen === false)
+                                        ? 'Inchis'
+                                        : `${hours.open || hours.openTime} - ${hours.close || hours.closeTime}`}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
