@@ -111,13 +111,13 @@ export default function OrganizationDetail() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <button onClick={() => navigate('/organizations')} className="mt-1 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+      <div className="flex items-start gap-3">
+        <button onClick={() => navigate('/organizations')} className="mt-1 flex-shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-900">{org.name}</h1>
+            <h1 className="text-xl font-bold text-gray-900 break-words">{org.name}</h1>
             <StatusBadge status={org.status} />
             <PlanBadge plan={org.plan} />
             {org.planOverride && (
@@ -126,42 +126,42 @@ export default function OrganizationDetail() {
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-sm text-gray-500 font-mono">/{org.slug}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {(org.status === 'TRIAL' || org.status === 'PAYMENT_REQUIRED') && (
-            <ActionBtn onClick={() => setShowTrialForm(!showTrialForm)} variant="blue" icon={CalendarPlus}>
-              Extinde Proba
-            </ActionBtn>
-          )}
-          {!org.planOverride && (
-            <ActionBtn onClick={() => setShowGrantForm(!showGrantForm)} variant="purple" icon={Shield}>
-              Acorda Plan
-            </ActionBtn>
-          )}
-          {org.planOverride && (
-            <ActionBtn onClick={handleRevoke} disabled={revokeMutation.isPending} variant="orange" icon={ShieldOff}>
-              Revocare Override
-            </ActionBtn>
-          )}
-          {org.status !== 'SUSPENDED' && (
-            <ActionBtn onClick={() => suspendMutation.mutate(id)} disabled={suspendMutation.isPending} variant="red" icon={Ban}>
-              Suspenda
-            </ActionBtn>
-          )}
-          {org.status === 'SUSPENDED' && (
-            <ActionBtn onClick={() => activateMutation.mutate(id)} disabled={activateMutation.isPending} variant="green" icon={CheckCircle}>
-              Activeaza
-            </ActionBtn>
-          )}
-          {!editing && (
-            <button
-              onClick={startEditing}
-              className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
-            >
-              Editeaza
-            </button>
-          )}
+          <p className="mt-0.5 text-sm text-gray-500 font-mono break-all">/{org.slug}</p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {(org.status === 'TRIAL' || org.status === 'PAYMENT_REQUIRED') && (
+              <ActionBtn onClick={() => setShowTrialForm(!showTrialForm)} variant="blue" icon={CalendarPlus}>
+                Extinde Proba
+              </ActionBtn>
+            )}
+            {!org.planOverride && (
+              <ActionBtn onClick={() => setShowGrantForm(!showGrantForm)} variant="purple" icon={Shield}>
+                Acorda Plan
+              </ActionBtn>
+            )}
+            {org.planOverride && (
+              <ActionBtn onClick={handleRevoke} disabled={revokeMutation.isPending} variant="orange" icon={ShieldOff}>
+                Revocare Override
+              </ActionBtn>
+            )}
+            {org.status !== 'SUSPENDED' && (
+              <ActionBtn onClick={() => suspendMutation.mutate(id)} disabled={suspendMutation.isPending} variant="red" icon={Ban}>
+                Suspenda
+              </ActionBtn>
+            )}
+            {org.status === 'SUSPENDED' && (
+              <ActionBtn onClick={() => activateMutation.mutate(id)} disabled={activateMutation.isPending} variant="green" icon={CheckCircle}>
+                Activeaza
+              </ActionBtn>
+            )}
+            {!editing && (
+              <button
+                onClick={startEditing}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
+              >
+                Editeaza
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
