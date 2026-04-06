@@ -104,6 +104,34 @@ const sendViaBrevo = async (to, subject, html, text) => {
   }
 };
 
+// ─── Retry Logic ─────────────────────────────────────────────────────────────
+
+const EMAIL_MAX_RETRIES = 3;
+const EMAIL_RETRY_BASE_DELAY_MS = 1000; // 1s → 2s between attempts
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Wrap a send function with retry + exponential backoff.
+ * Attempts: 1 (immediate), 2 (1s delay), 3 (2s delay).
+ */
+const sendWithRetry = async (sendFn, ...args) => {
+  let lastError;
+  for (let attempt = 1; attempt <= EMAIL_MAX_RETRIES; attempt++) {
+    try {
+      return await sendFn(...args);
+    } catch (err) {
+      lastError = err;
+      if (attempt < EMAIL_MAX_RETRIES) {
+        const delay = EMAIL_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+        logger.warn(`Email attempt ${attempt}/${EMAIL_MAX_RETRIES} failed, retrying in ${delay}ms`, { error: err.message });
+        await sleep(delay);
+      }
+    }
+  }
+  throw lastError;
+};
+
 /**
  * Send email via SMTP (nodemailer)
  */
@@ -171,7 +199,7 @@ const SYSTEM_TEMPLATES = {
       <p>Am primit o cerere de resetare a parolei pentru contul tau ForjaIt.</p>
       <div class="info">
         <p>Click pe butonul de mai jos pentru a-ti reseta parola:</p>
-        <a href="{{resetLink}}" class="button">Reseteaza Parola</a>
+        <a href="{{resetLink}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Reseteaza Parola</a>
         <p class="warning">Acest link expira in {{expiresIn}}.</p>
       </div>
       <p>Daca nu ai solicitat resetarea parolei, ignora acest email.</p>
@@ -215,7 +243,7 @@ const SYSTEM_TEMPLATES = {
       </div>
       <p>Pentru reactivare, te rugam sa ne contactezi sau sa actualizezi metoda de plata:</p>
       <div style="text-align: center;">
-        <a href="{{billingUrl}}" class="button">Gestioneaza Abonamentul</a>
+        <a href="{{billingUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Gestioneaza Abonamentul</a>
       </div>
     </div>
     <div class="footer">
@@ -257,7 +285,7 @@ const SYSTEM_TEMPLATES = {
       </div>
       <p>Autentifica-te pentru a-ti mentine contul activ:</p>
       <div style="text-align: center;">
-        <a href="{{loginUrl}}" class="button">Acceseaza ForjaIt</a>
+        <a href="{{loginUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Acceseaza ForjaIt</a>
       </div>
     </div>
     <div class="footer">
@@ -302,7 +330,7 @@ const SYSTEM_TEMPLATES = {
       </div>
       <p>Pentru a continua sa folosesti toate functiile, alege un plan de abonament:</p>
       <div style="text-align: center;">
-        <a href="{{billingUrl}}" class="button">Alege un Plan</a>
+        <a href="{{billingUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Alege un Plan</a>
       </div>
       <p style="margin-top: 15px; font-size: 13px; color: #6b7280;">Dupa expirare, contul va fi trecut pe planul gratuit cu functionalitati limitate.</p>
     </div>
@@ -347,7 +375,7 @@ const SYSTEM_TEMPLATES = {
       </div>
       <p>Acum ai acces la toate functiile incluse in planul tau. Poti gestiona abonamentul oricand:</p>
       <div style="text-align: center;">
-        <a href="{{billingUrl}}" class="button">Gestioneaza Abonamentul</a>
+        <a href="{{billingUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Gestioneaza Abonamentul</a>
       </div>
     </div>
     <div class="footer">
@@ -389,7 +417,7 @@ const SYSTEM_TEMPLATES = {
       </div>
       <p>Daca doresti sa reactivezi abonamentul, poti face asta oricand:</p>
       <div style="text-align: center;">
-        <a href="{{billingUrl}}" class="button">Reaboneaza-te</a>
+        <a href="{{billingUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Reaboneaza-te</a>
       </div>
     </div>
     <div class="footer">
@@ -469,7 +497,7 @@ const SYSTEM_TEMPLATES = {
         <p style="font-size: 13px; color: #6b7280;">Datele tale sunt in siguranta si vor fi disponibile dupa activarea abonamentului.</p>
       </div>
       <div style="text-align: center;">
-        <a href="{{billingUrl}}" class="button">Alege un Plan</a>
+        <a href="{{billingUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Alege un Plan</a>
       </div>
     </div>
     <div class="footer">
@@ -510,7 +538,7 @@ const SYSTEM_TEMPLATES = {
         <p style="font-size: 13px; color: #6b7280;">Daca plata nu este procesata in termen de 3 incercari, contul va fi suspendat.</p>
       </div>
       <div style="text-align: center;">
-        <a href="{{billingUrl}}" class="button">Actualizeaza Plata</a>
+        <a href="{{billingUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Actualizeaza Plata</a>
       </div>
     </div>
     <div class="footer">
@@ -552,7 +580,7 @@ const SYSTEM_TEMPLATES = {
       </div>
       <p>Poti accesa platforma folosind butonul de mai jos:</p>
       <div style="text-align: center;">
-        <a href="{{loginUrl}}" class="button">Acceseaza ForjaIt</a>
+        <a href="{{loginUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Acceseaza ForjaIt</a>
       </div>
       <p style="margin-top: 20px;">Daca ai intrebari sau ai nevoie de ajutor, echipa noastra de suport iti sta la dispozitie.</p>
     </div>
@@ -596,11 +624,11 @@ const sendSystemEmail = async (templateName, templateData, to) => {
     return { success: true, simulated: true };
   }
 
-  // Use Brevo if configured, otherwise fall back to SMTP
+  // Use Brevo if configured, otherwise fall back to SMTP (both with retry)
   if (brevoConfigured) {
-    await sendViaBrevo(to, subject, html);
+    await sendWithRetry(sendViaBrevo, to, subject, html);
   } else {
-    await sendViaSMTP(to, subject, html);
+    await sendWithRetry(sendViaSMTP, to, subject, html);
   }
 
   logger.info(`System email sent to ${to}: ${templateName}`);
@@ -840,7 +868,7 @@ const getDefaultTemplate = (templateName) => {
         <p><strong>Data scadenta:</strong> {{dueDate}}</p>
         <p class="amount">Total: {{total}} RON</p>
       </div>
-      {{#if pdfUrl}}<p><a href="{{pdfUrl}}" class="button">Descarca Factura</a></p>{{/if}}
+      {{#if pdfUrl}}<p><a href="{{pdfUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Descarca Factura</a></p>{{/if}}
     </div>
     <div class="footer">
       <p>{{companyName}}</p>
@@ -876,7 +904,7 @@ const getDefaultTemplate = (templateName) => {
       <p>Buna ziua, {{clientName}}!</p>
       <p>Iti multumim pentru inregistrare. Te rugam sa iti confirmi adresa de email apasand butonul de mai jos:</p>
       <p style="text-align: center;">
-        <a href="{{verificationLink}}" class="button">Confirma adresa de email</a>
+        <a href="{{verificationLink}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Confirma adresa de email</a>
       </p>
       <p style="margin-top: 20px; font-size: 13px; color: #6b7280;">Daca butonul nu functioneaza, copiaza si lipeste acest link in browser: <br><a href="{{verificationLink}}">{{verificationLink}}</a></p>
     </div>
@@ -992,7 +1020,7 @@ const getDefaultTemplate = (templateName) => {
       <p>Am primit o cerere de resetare a parolei pentru contul tau.</p>
       <div class="info">
         <p>Click pe butonul de mai jos pentru a-ti reseta parola:</p>
-        <a href="{{resetLink}}" class="button">Reseteaza Parola</a>
+        <a href="{{resetLink}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Reseteaza Parola</a>
         <p class="warning">Acest link expira in {{expiresIn}}.</p>
       </div>
       <p>Daca nu ai solicitat resetarea parolei, ignora acest email.</p>
@@ -1284,7 +1312,7 @@ const getDefaultTemplate = (templateName) => {
         {{#if assignedBy}}<p><strong>Asignat de:</strong> {{assignedBy}}</p>{{/if}}
       </div>
       <div style="text-align: center;">
-        <a href="{{taskUrl}}" class="button">Vezi Task-ul</a>
+        <a href="{{taskUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Vezi Task-ul</a>
       </div>
     </div>
     <div class="footer">
@@ -1456,11 +1484,11 @@ const sendEmail = async (prisma, {
       data: { status: 'SENDING' },
     });
 
-    // Use Brevo if configured, otherwise fall back to SMTP
+    // Use Brevo if configured, otherwise fall back to SMTP (both with retry)
     if (brevoConfigured) {
-      await sendViaBrevo(to, finalSubject, finalHtml, finalText);
+      await sendWithRetry(sendViaBrevo, to, finalSubject, finalHtml, finalText);
     } else {
-      await sendViaSMTP(to, finalSubject, finalHtml, finalText);
+      await sendWithRetry(sendViaSMTP, to, finalSubject, finalHtml, finalText);
     }
 
     // Update log with success
@@ -1474,14 +1502,14 @@ const sendEmail = async (prisma, {
 
     return updatedLog;
   } catch (error) {
-    logger.error(`Failed to send email to ${to}:`, error);
+    logger.error(`Failed to send email to ${to} after ${EMAIL_MAX_RETRIES} attempts:`, error);
 
     // Update log with failure
     const updatedLog = await prisma.emailLog.update({
       where: { id: emailLog.id },
       data: {
         status: 'FAILED',
-        errorMessage: error.message,
+        errorMessage: `Failed after ${EMAIL_MAX_RETRIES} attempts: ${error.message}`,
       },
     });
 
