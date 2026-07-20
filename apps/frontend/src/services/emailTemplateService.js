@@ -142,7 +142,7 @@ export const TEMPLATE_VARIABLES = {
       { name: 'companyPhone', description: 'Telefonul companiei' },
     ],
   },
-  'welcome': {
+  welcome: {
     label: 'Bun Venit',
     description: 'Trimis clientilor noi',
     variables: [

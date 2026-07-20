@@ -27,7 +27,7 @@ export function useUpdateTicket() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ticketService.updateTicket,
-    onSuccess: (_, variables) => {
+    onSuccess: (_) => {
       qc.invalidateQueries({ queryKey: ['tickets'] });
     },
   });

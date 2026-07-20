@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import useAuthStore from '@/state/useAuthStore';
 import { useLogin } from '@/hooks/useAuth';
+import { runtimeConfig } from '@/config/runtime';
 
 export default function Login({ loading }) {
   const { isAuthenticated, user } = useAuthStore();
@@ -47,7 +48,9 @@ export default function Login({ loading }) {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-xl font-bold text-white shadow-xl shadow-primary-500/25">
             F
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">ForjaIt Admin</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            {runtimeConfig.platformName} Admin
+          </h1>
           <p className="mt-1.5 text-sm text-gray-500">Super Admin Dashboard</p>
         </div>
 
@@ -66,7 +69,7 @@ export default function Login({ loading }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl border border-gray-800 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
-              placeholder="admin@forjait.com"
+              placeholder="admin@example.com"
             />
           </div>
 

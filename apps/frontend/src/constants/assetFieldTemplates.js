@@ -466,18 +466,20 @@ export const getVisibleFields = (assetType, assetFieldConfig) => {
   const template = getAssetFieldTemplate(assetType);
   const config = assetFieldConfig?.[assetType] || {};
 
-  const visibleFieldKeys = config.visibleFields || Object.keys(template.fields).filter(
-    key => template.fields[key].defaultVisible
-  );
+  const visibleFieldKeys =
+    config.visibleFields ||
+    Object.keys(template.fields).filter((key) => template.fields[key].defaultVisible);
 
-  return visibleFieldKeys.map(fieldKey => {
-    const field = template.fields[fieldKey];
-    if (!field) return null;
+  return visibleFieldKeys
+    .map((fieldKey) => {
+      const field = template.fields[fieldKey];
+      if (!field) return null;
 
-    return {
-      ...field,
-      label: config.fieldLabels?.[fieldKey] || field.defaultLabel,
-      required: config.requiredFields?.includes(fieldKey) || field.defaultRequired,
-    };
-  }).filter(Boolean);
+      return {
+        ...field,
+        label: config.fieldLabels?.[fieldKey] || field.defaultLabel,
+        required: config.requiredFields?.includes(fieldKey) || field.defaultRequired,
+      };
+    })
+    .filter(Boolean);
 };

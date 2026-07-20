@@ -82,13 +82,17 @@ const getOrCreateAccount = async (prisma, clientId, programId) => {
     // Auto-generate fidelityCardSerie if client doesn't have one
     if (clientData && !clientData.fidelityCardSerie) {
       const cardNumber = `FC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      await prisma.client.update({ where: { id: clientId }, data: { fidelityCardSerie: cardNumber } });
+      await prisma.client.update({
+        where: { id: clientId },
+        data: { fidelityCardSerie: cardNumber },
+      });
     }
 
     // Notify admins/managers about the new loyalty account
     if (clientData?.organizationId) {
       try {
-        const clientName = `${clientData.firstName || ''} ${clientData.lastName || ''}`.trim() || 'Client';
+        const clientName =
+          `${clientData.firstName || ''} ${clientData.lastName || ''}`.trim() || 'Client';
         const admins = await prisma.user.findMany({
           where: {
             organizationId: clientData.organizationId,
@@ -174,8 +178,14 @@ const recalculateTier = async (prisma, accountId) => {
     // Fire-and-forget tier upgrade email
     try {
       if (account.client?.email && account.client?.organizationId) {
-        const clientName = `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
-        const tierNames = { BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum' };
+        const clientName =
+          `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
+        const tierNames = {
+          BRONZE: 'Bronze',
+          SILVER: 'Silver',
+          GOLD: 'Gold',
+          PLATINUM: 'Platinum',
+        };
         await sendEmail(prisma, {
           to: account.client.email,
           template: 'loyalty-tier-upgrade',
@@ -375,7 +385,8 @@ const recordCompletedVisit = async (prisma, { clientId, appointmentId }) => {
       // Fire-and-forget reward notification email
       try {
         if (client.email) {
-          const clientName = `${client.firstName || ''} ${client.lastName || ''}`.trim() || 'Client';
+          const clientName =
+            `${client.firstName || ''} ${client.lastName || ''}`.trim() || 'Client';
           await sendEmail(prisma, {
             to: client.email,
             template: 'loyalty-reward-available',
@@ -605,12 +616,13 @@ const getClientLoyaltyDashboard = async (prisma, clientId) => {
       next: nextTier,
       nextThreshold,
       progressToNext,
-      discount: {
-        BRONZE: Number(program.bronzeDiscount),
-        SILVER: Number(program.silverDiscount),
-        GOLD: Number(program.goldDiscount),
-        PLATINUM: Number(program.platinumDiscount),
-      }[account.currentTier] || 0,
+      discount:
+        {
+          BRONZE: Number(program.bronzeDiscount),
+          SILVER: Number(program.silverDiscount),
+          GOLD: Number(program.goldDiscount),
+          PLATINUM: Number(program.platinumDiscount),
+        }[account.currentTier] || 0,
     },
     transactions: account.transactions,
     referrals: account.referrals.map((r) => ({
@@ -624,7 +636,11 @@ const getClientLoyaltyDashboard = async (prisma, clientId) => {
 /**
  * Get paginated transaction history
  */
-const getTransactionHistory = async (prisma, accountId, { page = 1, limit = 20, type, startDate, endDate } = {}) => {
+const getTransactionHistory = async (
+  prisma,
+  accountId,
+  { page = 1, limit = 20, type, startDate, endDate } = {}
+) => {
   const where = { accountId };
   if (type) where.type = type;
   if (startDate || endDate) {

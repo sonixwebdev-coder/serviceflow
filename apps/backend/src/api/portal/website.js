@@ -12,8 +12,9 @@ const {
   generateSitemapData,
   getApprovedReviews,
 } = require('../../services/websiteService');
+const { buildWebsiteUrl } = require('../../utils/websiteUrl');
 const { createLeadSchema, createReviewSchema } = require('../../schemas/websiteSchema');
-const { ok, created } = require('../../utils/http');
+const { ok } = require('../../utils/http');
 const cache = require('../../utils/cache');
 const prisma = require('../../../lib/prisma');
 
@@ -39,7 +40,6 @@ router.get(
     return ok(res, website);
   })
 );
-
 
 /**
  * GET /api/portal/website/:subdomain/page/:slug
@@ -177,7 +177,7 @@ router.get(
     const website = await getWebsiteBySubdomain(prisma, subdomain);
 
     // Generate sitemap data
-    const { urls, baseUrl } = await generateSitemapData(prisma, website.id);
+    const { urls } = await generateSitemapData(prisma, website.id);
 
     // Build XML
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -211,7 +211,7 @@ router.get(
     // First get the website to verify it exists and is published
     const website = await getWebsiteBySubdomain(prisma, subdomain);
 
-    const baseUrl = `https://${website.subdomain}.forja.it.com`;
+    const baseUrl = buildWebsiteUrl(website);
 
     const robotsTxt = `User-agent: *
 Allow: /

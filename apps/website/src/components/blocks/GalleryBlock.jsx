@@ -105,7 +105,10 @@ export default function GalleryBlock({ data }) {
           </button>
 
           <button
-            onClick={(e) => { e.stopPropagation(); prevImage(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              prevImage();
+            }}
             className="absolute left-4 text-white p-3 hover:bg-white/10 rounded-full transition-colors z-10"
           >
             <ChevronLeft className="h-8 w-8" />
@@ -119,7 +122,10 @@ export default function GalleryBlock({ data }) {
           />
 
           <button
-            onClick={(e) => { e.stopPropagation(); nextImage(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              nextImage();
+            }}
             className="absolute right-4 text-white p-3 hover:bg-white/10 rounded-full transition-colors z-10"
           >
             <ChevronRight className="h-8 w-8" />

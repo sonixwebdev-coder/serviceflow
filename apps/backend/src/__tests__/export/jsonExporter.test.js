@@ -34,7 +34,7 @@ describe('JSON Exporter - exportToJSON', () => {
     expect(parsed.metadata).toHaveProperty('exportDate');
     expect(parsed.metadata).toHaveProperty('entityType');
     expect(parsed.metadata).toHaveProperty('totalRecords', 2);
-    expect(parsed.metadata).toHaveProperty('generatedBy', 'ViperX CRM');
+    expect(parsed.metadata).toHaveProperty('generatedBy', 'ServiceFlow');
   });
 
   it('excludes metadata when includeMetadata=false', () => {
@@ -137,9 +137,7 @@ describe('JSON Exporter - exportToJSON', () => {
   });
 
   it('handles null and undefined values', () => {
-    const dataWithNulls = [
-      { id: 1, name: 'John', email: null, phone: undefined },
-    ];
+    const dataWithNulls = [{ id: 1, name: 'John', email: null, phone: undefined }];
 
     const buffer = exportToJSON(dataWithNulls);
     const jsonString = buffer.toString('utf8');
@@ -150,9 +148,7 @@ describe('JSON Exporter - exportToJSON', () => {
   });
 
   it('handles arrays in data', () => {
-    const dataWithArrays = [
-      { id: 1, tags: ['tag1', 'tag2', 'tag3'] },
-    ];
+    const dataWithArrays = [{ id: 1, tags: ['tag1', 'tag2', 'tag3'] }];
 
     const buffer = exportToJSON(dataWithArrays);
     const jsonString = buffer.toString('utf8');
@@ -162,9 +158,7 @@ describe('JSON Exporter - exportToJSON', () => {
   });
 
   it('handles boolean values', () => {
-    const dataWithBooleans = [
-      { id: 1, isActive: true, isDeleted: false },
-    ];
+    const dataWithBooleans = [{ id: 1, isActive: true, isDeleted: false }];
 
     const buffer = exportToJSON(dataWithBooleans);
     const jsonString = buffer.toString('utf8');
@@ -175,9 +169,7 @@ describe('JSON Exporter - exportToJSON', () => {
   });
 
   it('handles numeric zero', () => {
-    const dataWithZeros = [
-      { id: 0, count: 0, price: 0.0 },
-    ];
+    const dataWithZeros = [{ id: 0, count: 0, price: 0.0 }];
 
     const buffer = exportToJSON(dataWithZeros);
     const jsonString = buffer.toString('utf8');
@@ -188,10 +180,12 @@ describe('JSON Exporter - exportToJSON', () => {
   });
 
   it('handles large datasets', () => {
-    const largeData = Array(10000).fill(null).map((_, i) => ({
-      id: i,
-      name: `User ${i}`,
-    }));
+    const largeData = Array(10000)
+      .fill(null)
+      .map((_, i) => ({
+        id: i,
+        name: `User ${i}`,
+      }));
 
     const buffer = exportToJSON(largeData);
     expect(buffer).toBeInstanceOf(Buffer);
@@ -199,9 +193,7 @@ describe('JSON Exporter - exportToJSON', () => {
   });
 
   it('handles Romanian characters', () => {
-    const romanianData = [
-      { name: 'Ștefan Țăran', city: 'București' },
-    ];
+    const romanianData = [{ name: 'Ștefan Țăran', city: 'București' }];
 
     const buffer = exportToJSON(romanianData);
     const jsonString = buffer.toString('utf8');
@@ -212,9 +204,7 @@ describe('JSON Exporter - exportToJSON', () => {
   });
 
   it('handles special characters', () => {
-    const dataWithSpecial = [
-      { text: 'Line1\nLine2\tTab', quotes: 'Has "quotes"' },
-    ];
+    const dataWithSpecial = [{ text: 'Line1\nLine2\tTab', quotes: 'Has "quotes"' }];
 
     const buffer = exportToJSON(dataWithSpecial);
     const jsonString = buffer.toString('utf8');
@@ -227,9 +217,7 @@ describe('JSON Exporter - exportToJSON', () => {
 
 describe('JSON Exporter - exportEntityToJSON', () => {
   it('exports entity with metadata', () => {
-    const appointments = [
-      { id: 1, title: 'Revizie', status: 'completed' },
-    ];
+    const appointments = [{ id: 1, title: 'Revizie', status: 'completed' }];
 
     const buffer = exportEntityToJSON('appointments', appointments);
     const jsonString = buffer.toString('utf8');
@@ -240,9 +228,7 @@ describe('JSON Exporter - exportEntityToJSON', () => {
   });
 
   it('exports entity without metadata when specified', () => {
-    const invoices = [
-      { id: 1, invoiceNumber: 'INV-001' },
-    ];
+    const invoices = [{ id: 1, invoiceNumber: 'INV-001' }];
 
     const buffer = exportEntityToJSON('invoices', invoices, false);
     const jsonString = buffer.toString('utf8');
@@ -255,7 +241,7 @@ describe('JSON Exporter - exportEntityToJSON', () => {
   it('handles different entity types', () => {
     const entities = ['appointments', 'invoices', 'clients', 'users'];
 
-    entities.forEach(entityType => {
+    entities.forEach((entityType) => {
       const data = [{ id: 1, name: 'Test' }];
       const buffer = exportEntityToJSON(entityType, data);
       const jsonString = buffer.toString('utf8');
@@ -345,9 +331,7 @@ describe('JSON Exporter - exportMultipleEntitiesToJSON', () => {
   });
 
   it('pretty prints output', () => {
-    const entities = [
-      { name: 'test', data: [{ id: 1 }] },
-    ];
+    const entities = [{ name: 'test', data: [{ id: 1 }] }];
 
     const buffer = exportMultipleEntitiesToJSON(entities);
     const jsonString = buffer.toString('utf8');
@@ -357,16 +341,14 @@ describe('JSON Exporter - exportMultipleEntitiesToJSON', () => {
   });
 
   it('includes export date and generator', () => {
-    const entities = [
-      { name: 'test', data: [{ id: 1 }] },
-    ];
+    const entities = [{ name: 'test', data: [{ id: 1 }] }];
 
     const buffer = exportMultipleEntitiesToJSON(entities);
     const jsonString = buffer.toString('utf8');
     const parsed = JSON.parse(jsonString);
 
     expect(parsed.metadata.exportDate).toBeDefined();
-    expect(parsed.metadata.generatedBy).toBe('ViperX CRM');
+    expect(parsed.metadata.generatedBy).toBe('ServiceFlow');
   });
 
   it('handles many entities', () => {
@@ -459,9 +441,7 @@ describe('JSON Exporter - Edge Cases', () => {
   });
 
   it('generates valid UTF-8', () => {
-    const unicodeData = [
-      { emoji: '😀🎉', chinese: '你好', arabic: 'مرحبا' },
-    ];
+    const unicodeData = [{ emoji: '😀🎉', chinese: '你好', arabic: 'مرحبا' }];
 
     const buffer = exportToJSON(unicodeData);
     const jsonString = buffer.toString('utf8');

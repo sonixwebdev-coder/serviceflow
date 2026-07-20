@@ -4,7 +4,6 @@ const { broadcastTimeOff } = require('../realtime/events');
 const { createNotification } = require('./notificationService');
 const { sendLeaveRequestNotification } = require('./pushNotificationService');
 const { optimizedTimeOffIncludes } = require('../utils/optimizedIncludes');
-const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
 const logger = require('../utils/logger');
 
 const normalizeLeaveType = (value) => (value ? value.toUpperCase().replace(/-/g, '_') : undefined);
@@ -144,10 +143,12 @@ const createTimeOffRequest = async (prisma, payload, currentUser) => {
 
   // Send push notifications to admins and managers
   try {
-    const recipientIds = adminsAndManagers.map(admin => admin.id);
+    const recipientIds = adminsAndManagers.map((admin) => admin.id);
     await sendLeaveRequestNotification(request, 'created', recipientIds);
   } catch (pushError) {
-    logger.error('Failed to send push notifications for leave request creation', { error: pushError.message });
+    logger.error('Failed to send push notifications for leave request creation', {
+      error: pushError.message,
+    });
     // Don't fail if push notifications fail
   }
 
@@ -191,10 +192,7 @@ const approveTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes 
       status: 'APPROVED',
       OR: [
         {
-          AND: [
-            { startDate: { lte: end } },
-            { endDate: { gte: start } },
-          ],
+          AND: [{ startDate: { lte: end } }, { endDate: { gte: start } }],
         },
       ],
     },
@@ -212,7 +210,7 @@ const approveTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes 
   });
 
   // Get the roles of the current employee making the request
-  const currentEmployeeRoles = request.employee.roles?.map(r => r.role?.key) || [];
+  const currentEmployeeRoles = request.employee.roles?.map((r) => r.role?.key) || [];
   const isCurrentEmployeeTechnician = currentEmployeeRoles.includes('technician');
 
   // Check each day in the requested range
@@ -230,7 +228,7 @@ const approveTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes 
 
     // Count technicians on this day
     const techniciansOnDay = approvedOnDay.filter((req) => {
-      const roles = req.employee?.roles?.map(r => r.role?.key) || [];
+      const roles = req.employee?.roles?.map((r) => r.role?.key) || [];
       return roles.includes('technician');
     });
 
@@ -301,7 +299,9 @@ const approveTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes 
   try {
     await sendLeaveRequestNotification(updated, 'approved', [request.employeeId]);
   } catch (pushError) {
-    logger.error('Failed to send push notification for leave request approval', { error: pushError.message });
+    logger.error('Failed to send push notification for leave request approval', {
+      error: pushError.message,
+    });
     // Don't fail if push notifications fail
   }
 
@@ -384,7 +384,9 @@ const rejectTimeOffRequest = async (prisma, requestId, reviewer, { reviewNotes }
   try {
     await sendLeaveRequestNotification(updated, 'rejected', [request.employeeId]);
   } catch (pushError) {
-    logger.error('Failed to send push notification for leave request rejection', { error: pushError.message });
+    logger.error('Failed to send push notification for leave request rejection', {
+      error: pushError.message,
+    });
     // Don't fail if push notifications fail
   }
 
@@ -431,7 +433,7 @@ const createMedicalLeave = async (prisma, payload, adminUser) => {
       endDate: end,
       totalDays,
       reason,
-      isMedical: true,  // Mark as medical leave (hidden from employee)
+      isMedical: true, // Mark as medical leave (hidden from employee)
       status: 'APPROVED', // Auto-approve medical leaves
       reviewerId: adminUser.id,
       reviewedAt: new Date(),
@@ -460,12 +462,14 @@ const createMedicalLeave = async (prisma, payload, adminUser) => {
       },
       select: { id: true },
     });
-    const adminIds = adminUsers.map(admin => admin.id);
+    const adminIds = adminUsers.map((admin) => admin.id);
     if (adminIds.length > 0) {
       await sendLeaveRequestNotification(request, 'created', adminIds);
     }
   } catch (pushError) {
-    logger.error('Failed to send push notifications for medical leave creation', { error: pushError.message });
+    logger.error('Failed to send push notifications for medical leave creation', {
+      error: pushError.message,
+    });
     // Don't fail if push notifications fail
   }
 

@@ -4,10 +4,7 @@
  */
 
 const { PDFDocument } = require('pdf-lib');
-const {
-  exportToPDF,
-  exportEntityToPDF,
-} = require('../../utils/export/pdfExporter');
+const { exportToPDF, exportEntityToPDF } = require('../../utils/export/pdfExporter');
 
 describe('PDF Exporter - exportToPDF', () => {
   const mockData = [
@@ -62,21 +59,19 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('throws error for empty data array', async () => {
-    await expect(
-      exportToPDF([], { columns: mockColumns })
-    ).rejects.toThrow('Data must be a non-empty array');
+    await expect(exportToPDF([], { columns: mockColumns })).rejects.toThrow(
+      'Data must be a non-empty array'
+    );
   });
 
   it('throws error for non-array data', async () => {
-    await expect(
-      exportToPDF(null, { columns: mockColumns })
-    ).rejects.toThrow('Data must be a non-empty array');
+    await expect(exportToPDF(null, { columns: mockColumns })).rejects.toThrow(
+      'Data must be a non-empty array'
+    );
   });
 
   it('handles Romanian characters', async () => {
-    const romanianData = [
-      { name: 'Ștefan Țăran', city: 'București' },
-    ];
+    const romanianData = [{ name: 'Ștefan Țăran', city: 'București' }];
 
     const columns = [
       { header: 'Nume', key: 'name', width: 2 },
@@ -91,9 +86,7 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('handles null and undefined values', async () => {
-    const dataWithNulls = [
-      { id: 1, name: 'John', email: null, phone: undefined },
-    ];
+    const dataWithNulls = [{ id: 1, name: 'John', email: null, phone: undefined }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 1 },
@@ -107,9 +100,7 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('formats date columns', async () => {
-    const dateData = [
-      { id: 1, name: 'Test', createdAt: new Date('2024-01-15T10:30:00Z') },
-    ];
+    const dateData = [{ id: 1, name: 'Test', createdAt: new Date('2024-01-15T10:30:00Z') }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 1 },
@@ -122,9 +113,7 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('formats datetime columns', async () => {
-    const dateData = [
-      { id: 1, updatedAt: new Date('2024-01-15T10:30:00Z') },
-    ];
+    const dateData = [{ id: 1, updatedAt: new Date('2024-01-15T10:30:00Z') }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 1 },
@@ -136,9 +125,7 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('formats currency columns', async () => {
-    const currencyData = [
-      { id: 1, price: 100.50, total: 119.59 },
-    ];
+    const currencyData = [{ id: 1, price: 100.5, total: 119.59 }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 1 },
@@ -166,11 +153,13 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('handles large datasets with pagination', async () => {
-    const largeData = Array(100).fill(null).map((_, i) => ({
-      id: i,
-      name: `User ${i}`,
-      email: `user${i}@example.com`,
-    }));
+    const largeData = Array(100)
+      .fill(null)
+      .map((_, i) => ({
+        id: i,
+        name: `User ${i}`,
+        email: `user${i}@example.com`,
+      }));
 
     const buffer = await exportToPDF(largeData, { columns: mockColumns.slice(0, 3) });
     expect(buffer).toBeInstanceOf(Buffer);
@@ -182,9 +171,7 @@ describe('PDF Exporter - exportToPDF', () => {
 
   it('truncates very long text', async () => {
     const longText = 'A'.repeat(1000);
-    const dataWithLongText = [
-      { id: 1, description: longText },
-    ];
+    const dataWithLongText = [{ id: 1, description: longText }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 1 },
@@ -196,14 +183,6 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('handles nested values', async () => {
-    const nestedData = [
-      {
-        id: 1,
-        user: { name: 'John' },
-        contact: { email: 'john@example.com' },
-      },
-    ];
-
     const columns = [
       { header: 'ID', key: 'id', width: 1 },
       { header: 'Name', key: 'user.name', width: 2 },
@@ -211,9 +190,7 @@ describe('PDF Exporter - exportToPDF', () => {
     ];
 
     // Note: PDF exporter expects flattened data
-    const flattenedData = [
-      { id: 1, 'user.name': 'John', 'contact.email': 'john@example.com' },
-    ];
+    const flattenedData = [{ id: 1, 'user.name': 'John', 'contact.email': 'john@example.com' }];
 
     const buffer = await exportToPDF(flattenedData, { columns });
     expect(buffer).toBeInstanceOf(Buffer);
@@ -231,9 +208,7 @@ describe('PDF Exporter - exportToPDF', () => {
   });
 
   it('handles boolean values', async () => {
-    const booleanData = [
-      { id: 1, isActive: true, isDeleted: false },
-    ];
+    const booleanData = [{ id: 1, isActive: true, isDeleted: false }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 1 },
@@ -264,9 +239,7 @@ describe('PDF Exporter - exportEntityToPDF', () => {
   ];
 
   it('exports appointments with correct title', async () => {
-    const appointments = [
-      { id: 1, title: 'Revizie' },
-    ];
+    const appointments = [{ id: 1, title: 'Revizie' }];
 
     const buffer = await exportEntityToPDF('appointments', appointments, mockColumns);
     expect(buffer).toBeInstanceOf(Buffer);
@@ -276,54 +249,42 @@ describe('PDF Exporter - exportEntityToPDF', () => {
   });
 
   it('exports invoices with correct title', async () => {
-    const invoices = [
-      { id: 1, invoiceNumber: 'INV-001' },
-    ];
+    const invoices = [{ id: 1, invoiceNumber: 'INV-001' }];
 
     const buffer = await exportEntityToPDF('invoices', invoices, mockColumns);
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('exports clients with correct title', async () => {
-    const clients = [
-      { id: 1, name: 'John Doe' },
-    ];
+    const clients = [{ id: 1, name: 'John Doe' }];
 
     const buffer = await exportEntityToPDF('clients', clients, mockColumns);
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('exports users with correct title', async () => {
-    const users = [
-      { id: 1, name: 'John Doe' },
-    ];
+    const users = [{ id: 1, name: 'John Doe' }];
 
     const buffer = await exportEntityToPDF('users', users, mockColumns);
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('exports leave requests with correct title', async () => {
-    const requests = [
-      { id: 1, type: 'vacation' },
-    ];
+    const requests = [{ id: 1, type: 'vacation' }];
 
     const buffer = await exportEntityToPDF('leaveRequests', requests, mockColumns);
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('exports time tracking with correct title', async () => {
-    const entries = [
-      { id: 1, hours: 8 },
-    ];
+    const entries = [{ id: 1, hours: 8 }];
 
     const buffer = await exportEntityToPDF('timeTracking', entries, mockColumns);
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('exports tasks with correct title', async () => {
-    const tasks = [
-      { id: 1, title: 'Task 1' },
-    ];
+    const tasks = [{ id: 1, title: 'Task 1' }];
 
     const buffer = await exportEntityToPDF('tasks', tasks, mockColumns);
     expect(buffer).toBeInstanceOf(Buffer);
@@ -358,36 +319,28 @@ describe('PDF Exporter - Edge Cases', () => {
   });
 
   it('handles special characters', async () => {
-    const data = [
-      { id: 1, value: 'Special: @#$%^&*()' },
-    ];
+    const data = [{ id: 1, value: 'Special: @#$%^&*()' }];
 
     const buffer = await exportToPDF(data, { columns: mockColumns });
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('handles line breaks in text', async () => {
-    const data = [
-      { id: 1, value: 'Line1\nLine2\nLine3' },
-    ];
+    const data = [{ id: 1, value: 'Line1\nLine2\nLine3' }];
 
     const buffer = await exportToPDF(data, { columns: mockColumns });
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('handles tabs in text', async () => {
-    const data = [
-      { id: 1, value: 'Column1\tColumn2\tColumn3' },
-    ];
+    const data = [{ id: 1, value: 'Column1\tColumn2\tColumn3' }];
 
     const buffer = await exportToPDF(data, { columns: mockColumns });
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('handles Unicode emoji', async () => {
-    const data = [
-      { id: 1, value: '😀 🎉 ⭐' },
-    ];
+    const data = [{ id: 1, value: '😀 🎉 ⭐' }];
 
     const buffer = await exportToPDF(data, { columns: mockColumns });
     expect(buffer).toBeInstanceOf(Buffer);
@@ -396,26 +349,38 @@ describe('PDF Exporter - Edge Cases', () => {
   it('handles very wide tables', async () => {
     const wideData = [
       {
-        col1: 'A', col2: 'B', col3: 'C', col4: 'D', col5: 'E',
-        col6: 'F', col7: 'G', col8: 'H', col9: 'I', col10: 'J',
+        col1: 'A',
+        col2: 'B',
+        col3: 'C',
+        col4: 'D',
+        col5: 'E',
+        col6: 'F',
+        col7: 'G',
+        col8: 'H',
+        col9: 'I',
+        col10: 'J',
       },
     ];
 
-    const wideColumns = Array(10).fill(null).map((_, i) => ({
-      header: `Col${i + 1}`,
-      key: `col${i + 1}`,
-      width: 1,
-    }));
+    const wideColumns = Array(10)
+      .fill(null)
+      .map((_, i) => ({
+        header: `Col${i + 1}`,
+        key: `col${i + 1}`,
+        width: 1,
+      }));
 
     const buffer = await exportToPDF(wideData, { columns: wideColumns });
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('creates multiple pages for large datasets', async () => {
-    const largeData = Array(200).fill(null).map((_, i) => ({
-      id: i,
-      value: `Value ${i}`,
-    }));
+    const largeData = Array(200)
+      .fill(null)
+      .map((_, i) => ({
+        id: i,
+        value: `Value ${i}`,
+      }));
 
     const buffer = await exportToPDF(largeData, { columns: mockColumns });
     const pdfDoc = await PDFDocument.load(buffer);
@@ -459,6 +424,6 @@ describe('PDF Exporter - Metadata', () => {
   it('includes footer text', async () => {
     const buffer = await exportToPDF(mockData, { columns: mockColumns });
     expect(buffer).toBeInstanceOf(Buffer);
-    // The PDF should contain "Document generat automat de ViperX CRM"
+    // The PDF should contain "Document generat automat de ExampleCo CRM"
   });
 });

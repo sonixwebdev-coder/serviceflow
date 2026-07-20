@@ -8,10 +8,12 @@ const isSafeUrl = (url) => {
   try {
     const parsed = new URL(trimmed);
     return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol);
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 };
 
-export default function HeroBlock({ data, settings, subdomain, branding }) {
+export default function HeroBlock({ data, subdomain, branding }) {
   const {
     title,
     subtitle,
@@ -36,10 +38,7 @@ export default function HeroBlock({ data, settings, subdomain, branding }) {
 
   return (
     <div
-      className={cn(
-        'relative flex items-center',
-        heightClasses[height] || heightClasses.large
-      )}
+      className={cn('relative flex items-center', heightClasses[height] || heightClasses.large)}
       style={{
         backgroundImage: backgroundImage ? `url(${resolveFileUrl(backgroundImage)})` : undefined,
         backgroundSize: 'cover',
@@ -48,10 +47,7 @@ export default function HeroBlock({ data, settings, subdomain, branding }) {
     >
       {/* Overlay */}
       {backgroundImage && (
-        <div
-          className="absolute inset-0 bg-black"
-          style={{ opacity: backgroundOverlay }}
-        />
+        <div className="absolute inset-0 bg-black" style={{ opacity: backgroundOverlay }} />
       )}
 
       {/* Content */}
@@ -108,7 +104,11 @@ export default function HeroBlock({ data, settings, subdomain, branding }) {
               )}
               {secondaryCtaText && secondaryCtaLink && isSafeUrl(secondaryCtaLink) && (
                 <Link
-                  to={secondaryCtaLink.startsWith('/') ? `/${subdomain}${secondaryCtaLink}` : secondaryCtaLink}
+                  to={
+                    secondaryCtaLink.startsWith('/')
+                      ? `/${subdomain}${secondaryCtaLink}`
+                      : secondaryCtaLink
+                  }
                   className={cn(
                     'inline-flex items-center px-6 py-3 rounded-lg font-semibold transition-colors border-2',
                     backgroundImage

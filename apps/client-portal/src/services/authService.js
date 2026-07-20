@@ -41,7 +41,10 @@ export const authService = {
   },
 
   async changePassword(currentPassword, newPassword) {
-    const response = await api.post('/portal/auth/change-password', { currentPassword, newPassword });
+    const response = await api.post('/portal/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
     return response.data;
   },
 };

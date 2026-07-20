@@ -74,7 +74,9 @@ const decrypt = (encryptedText) => {
 const getOAuth2Client = () => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.API_BASE_URL}/api/integrations/google/callback`;
+  const redirectUri =
+    process.env.GOOGLE_REDIRECT_URI ||
+    `${process.env.API_BASE_URL}/api/integrations/google/callback`;
 
   if (!clientId || !clientSecret) {
     throw new Error('Google OAuth credentials not configured');
@@ -138,11 +140,12 @@ const storeCalendarConfig = async (prisma, userId, tokens, locationId = null) =>
 
   // Prisma doesn't support null in composite unique keys for upsert,
   // so manually find-then-create/update when locationId is null
-  const existing = resolvedLocationId === null
-    ? await prisma.googleCalendarConfig.findFirst({ where: { userId, locationId: null } })
-    : await prisma.googleCalendarConfig.findUnique({
-        where: { userId_locationId: { userId, locationId: resolvedLocationId } },
-      });
+  const existing =
+    resolvedLocationId === null
+      ? await prisma.googleCalendarConfig.findFirst({ where: { userId, locationId: null } })
+      : await prisma.googleCalendarConfig.findUnique({
+          where: { userId_locationId: { userId, locationId: resolvedLocationId } },
+        });
 
   if (existing) {
     return prisma.googleCalendarConfig.update({

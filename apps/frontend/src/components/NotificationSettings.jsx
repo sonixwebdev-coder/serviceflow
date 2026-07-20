@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, BellOff, Check, X, Loader2 } from 'lucide-react';
+import { Bell, BellOff, Loader2 } from 'lucide-react';
 import usePushNotifications from '../hooks/usePushNotifications';
 
 const NotificationSettings = () => {
@@ -8,7 +8,6 @@ const NotificationSettings = () => {
     loading,
     preferences,
     preferencesLoading,
-    preferencesFetching,
     subscribe,
     unsubscribe,
     updatePreferences,
@@ -66,7 +65,8 @@ const NotificationSettings = () => {
           <div>
             <h3 className="font-semibold text-yellow-900">Notificari Push Nesuportate</h3>
             <p className="text-sm text-yellow-700 mt-1">
-              Browser-ul tau nu suporta notificari push. Te rugam sa folosesti un browser modern precum Chrome, Firefox sau Edge.
+              Browser-ul tau nu suporta notificari push. Te rugam sa folosesti un browser modern
+              precum Chrome, Firefox sau Edge.
             </p>
           </div>
         </div>
@@ -97,7 +97,10 @@ const NotificationSettings = () => {
                 Pentru notificari push in Brave, activeaza urmatoarele setari:
               </p>
               <ul className="text-sm text-orange-800 mt-2 list-disc list-inside space-y-1">
-                <li>Mergi la <code className="bg-orange-100 px-1 rounded">brave://settings/privacy</code></li>
+                <li>
+                  Mergi la{' '}
+                  <code className="bg-orange-100 px-1 rounded">brave://settings/privacy</code>
+                </li>
                 <li>Activeaza "Use Google Services for Push Messaging"</li>
                 <li>Activeaza "Allow Google login buttons"</li>
                 <li>Reincarca pagina dupa modificari</li>
@@ -169,65 +172,92 @@ const NotificationSettings = () => {
             </div>
           ) : preferences ? (
             <>
-
-          <div className="space-y-4">
-            {/* Master Toggle */}
-            <div className="flex items-center justify-between py-3 border-b border-gray-200">
-              <div>
-                <h4 className="font-medium text-gray-900">Activeaza Toate Notificarile</h4>
-                <p className="text-sm text-gray-600">Buton principal pentru toate notificarile push</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={localPreferences.enablePushNotifications || false}
-                  onChange={(e) => handlePreferenceChange('enablePushNotifications', e.target.checked)}
-                  disabled={updatingPreferences}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-              </label>
-            </div>
-
-            {/* Individual Preferences */}
-            {localPreferences.enablePushNotifications && (
-              <div className="space-y-3 pl-4 border-l-2 border-gray-200">
-                {[
-                  { key: 'enableAppointments', label: 'Programari', description: 'Asignari noi, actualizari si mesaje' },
-                  { key: 'enableLeaveRequests', label: 'Cereri Concediu', description: 'Aprobare, respingere si cereri noi' },
-                  { key: 'enableTasks', label: 'Taskuri', description: 'Asignari task-uri si comentarii' },
-                  { key: 'enableReminders', label: 'Reminder-uri', description: 'Reminder-uri personale pentru todo-uri' },
-                  { key: 'enableMessages', label: 'Mesaje', description: 'Mesaje noi in programari' },
-                  { key: 'enablePayments', label: 'Plati', description: 'Actualizari si confirmari plati' },
-                ].map(({ key, label, description }) => (
-                  <div key={key} className="flex items-center justify-between py-2">
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-900">{label}</h5>
-                      <p className="text-xs text-gray-600">{description}</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={localPreferences[key] || false}
-                        onChange={(e) => handlePreferenceChange(key, e.target.checked)}
-                        disabled={updatingPreferences}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
+              <div className="space-y-4">
+                {/* Master Toggle */}
+                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Activeaza Toate Notificarile</h4>
+                    <p className="text-sm text-gray-600">
+                      Buton principal pentru toate notificarile push
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={localPreferences.enablePushNotifications || false}
+                      onChange={(e) =>
+                        handlePreferenceChange('enablePushNotifications', e.target.checked)
+                      }
+                      disabled={updatingPreferences}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
 
-          {updatingPreferences && (
-            <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Se salveaza preferintele...
-            </div>
-          )}
-          </>
+                {/* Individual Preferences */}
+                {localPreferences.enablePushNotifications && (
+                  <div className="space-y-3 pl-4 border-l-2 border-gray-200">
+                    {[
+                      {
+                        key: 'enableAppointments',
+                        label: 'Programari',
+                        description: 'Asignari noi, actualizari si mesaje',
+                      },
+                      {
+                        key: 'enableLeaveRequests',
+                        label: 'Cereri Concediu',
+                        description: 'Aprobare, respingere si cereri noi',
+                      },
+                      {
+                        key: 'enableTasks',
+                        label: 'Taskuri',
+                        description: 'Asignari task-uri si comentarii',
+                      },
+                      {
+                        key: 'enableReminders',
+                        label: 'Reminder-uri',
+                        description: 'Reminder-uri personale pentru todo-uri',
+                      },
+                      {
+                        key: 'enableMessages',
+                        label: 'Mesaje',
+                        description: 'Mesaje noi in programari',
+                      },
+                      {
+                        key: 'enablePayments',
+                        label: 'Plati',
+                        description: 'Actualizari si confirmari plati',
+                      },
+                    ].map(({ key, label, description }) => (
+                      <div key={key} className="flex items-center justify-between py-2">
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-900">{label}</h5>
+                          <p className="text-xs text-gray-600">{description}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={localPreferences[key] || false}
+                            onChange={(e) => handlePreferenceChange(key, e.target.checked)}
+                            disabled={updatingPreferences}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {updatingPreferences && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Se salveaza preferintele...
+                </div>
+              )}
+            </>
           ) : null}
         </div>
       )}

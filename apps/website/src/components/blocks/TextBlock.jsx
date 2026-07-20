@@ -3,8 +3,29 @@ import { cn } from '@/lib/utils';
 
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
-    'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'span', 'div', 'hr', 'sub', 'sup',
+    'p',
+    'br',
+    'strong',
+    'em',
+    'u',
+    's',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'a',
+    'img',
+    'span',
+    'div',
+    'hr',
+    'sub',
+    'sup',
   ],
   ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'rel'],
   ALLOW_DATA_ATTR: false,
@@ -28,7 +49,10 @@ export default function TextBlock({ data, settings }) {
   if (format === 'heading') {
     return (
       <div
-        className={cn('text-3xl md:text-4xl font-bold max-w-4xl mx-auto', alignmentClasses[alignment])}
+        className={cn(
+          'text-3xl md:text-4xl font-bold max-w-4xl mx-auto',
+          alignmentClasses[alignment]
+        )}
         style={textColor ? { color: textColor } : undefined}
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content, SANITIZE_CONFIG) }}
       />

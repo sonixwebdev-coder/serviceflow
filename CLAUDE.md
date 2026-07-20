@@ -1,1 +1,0 @@
-- while working with SPV api always ensure we follow the documentation we have in here https://static.anaf.ro/static/10/Anaf/Informatii_R/API/Oauth_procedura_inregistrare_aplicatii_portal_ANAF.pdf

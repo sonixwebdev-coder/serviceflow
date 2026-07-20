@@ -28,9 +28,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       <p className="text-sm font-medium text-gray-600 mb-1">
         {format(parseISO(label), 'd MMM yyyy', { locale: roDateLocale })}
       </p>
-      <p className="text-lg font-bold text-primary">
-        {formatCurrency(payload[0].value)}
-      </p>
+      <p className="text-lg font-bold text-primary">{formatCurrency(payload[0].value)}</p>
       <p className="text-xs text-gray-500">
         {payload[0].payload.count} {payload[0].payload.count === 1 ? 'plata' : 'plati'}
       </p>

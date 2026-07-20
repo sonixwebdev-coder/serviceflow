@@ -3,12 +3,14 @@ const request = require('supertest');
 const usersRouter = require('../api/users');
 const prisma = require('../../lib/prisma');
 const { verifyAccessToken } = require('../utils/token');
-const cache = require('../utils/cache');
 const bcrypt = require('bcryptjs');
 const errorHandler = require('../middleware/errorHandler');
 
 // Mock dependencies
 jest.mock('../../lib/prisma', () => ({
+  refreshToken: {
+    updateMany: jest.fn(),
+  },
   user: {
     findUnique: jest.fn(),
     update: jest.fn(),
@@ -25,6 +27,11 @@ jest.mock('bcryptjs', () => ({
 }));
 
 jest.mock('../utils/cache', () => ({
+  TTL: { SHORT: 60 },
+  isTokenBlacklisted: jest.fn().mockResolvedValue(false),
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue(true),
+  wrap: jest.fn(async (_key, loader) => loader()),
   del: jest.fn(),
   delPattern: jest.fn(),
   userWithRolesKey: jest.fn((userId) => `user:${userId}:roles`),
@@ -39,11 +46,12 @@ jest.mock('../utils/transform', () => ({
     email: user.email,
     phoneNumber: user.phoneNumber,
     role: user.roles?.[0]?.role?.key || null,
-    roles: user.roles?.map((r) => ({
-      id: r.roleId,
-      key: r.role?.key,
-      name: r.role?.name,
-    })) || [],
+    roles:
+      user.roles?.map((r) => ({
+        id: r.roleId,
+        key: r.role?.key,
+        name: r.role?.name,
+      })) || [],
     isActive: user.isActive,
     createdAt: user.createdAt,
   })),
@@ -53,6 +61,10 @@ jest.mock('../utils/transform', () => ({
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
+  app.use((req, res, next) => {
+    req.tenantPrisma = prisma;
+    next();
+  });
   app.use('/api/users', usersRouter);
   app.use(errorHandler);
   return app;
@@ -69,6 +81,8 @@ describe('Profile API Endpoints', () => {
     phoneNumber: '+40712345678',
     password: 'hashed_password',
     isActive: true,
+    organizationId: 'org-123',
+    organization: { status: 'ACTIVE', trialEndsAt: null },
     createdAt: new Date('2025-01-01T00:00:00Z'),
     roles: [
       {
@@ -83,10 +97,14 @@ describe('Profile API Endpoints', () => {
     ],
   };
 
+  const validationMessages = (response) =>
+    (response.body.errors || []).map((error) => error.message);
+
   beforeEach(() => {
     app = createTestApp();
     jest.clearAllMocks();
     process.env.HASH_SALT_ROUNDS = '10';
+    verifyAccessToken.mockReturnValue({ sub: mockUser.id, type: 'crm' });
   });
 
   describe('GET /api/users/profile', () => {
@@ -113,9 +131,7 @@ describe('Profile API Endpoints', () => {
     });
 
     it('returns 401 when no authentication token provided', async () => {
-      const response = await request(app)
-        .get('/api/users/profile')
-        .expect(401);
+      const response = await request(app).get('/api/users/profile').expect(401);
 
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('No authentication token');
@@ -177,8 +193,7 @@ describe('Profile API Endpoints', () => {
       verifyAccessToken.mockReturnValue({ sub: mockUser.id });
       prisma.user.findUnique
         .mockResolvedValueOnce(mockUser) // For authentication
-        .mockResolvedValueOnce(null) // For email uniqueness check
-        .mockResolvedValueOnce({ ...mockUser, ...updates }); // For getCurrentUser in service
+        .mockResolvedValueOnce(null); // For email uniqueness check
       prisma.user.update.mockResolvedValue({
         ...mockUser,
         ...updates,
@@ -234,7 +249,8 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('validation');
+      expect(response.body.message).toBe('Validation failed');
+      expect(validationMessages(response)).toContain('First name is required');
     });
 
     it('returns 400 when validation fails - invalid email', async () => {
@@ -252,7 +268,8 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('validation');
+      expect(response.body.message).toBe('Validation failed');
+      expect(validationMessages(response)).toContain('Invalid email format');
     });
 
     it('returns 400 when validation fails - phoneNumber too short', async () => {
@@ -283,7 +300,9 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('At least one field must be provided');
+      expect(validationMessages(response)).toContain(
+        'At least one field must be provided for update'
+      );
     });
 
     it('returns 409 when email is already taken', async () => {
@@ -314,10 +333,7 @@ describe('Profile API Endpoints', () => {
         firstName: 'Jane',
       };
 
-      const response = await request(app)
-        .put('/api/users/profile')
-        .send(updates)
-        .expect(401);
+      const response = await request(app).put('/api/users/profile').send(updates).expect(401);
 
       expect(response.body.success).toBe(false);
     });
@@ -337,7 +353,7 @@ describe('Profile API Endpoints', () => {
         // role and isActive should remain unchanged
       });
 
-      const response = await request(app)
+      await request(app)
         .put('/api/users/profile')
         .set('Authorization', 'Bearer valid_token')
         .send(updates)
@@ -434,7 +450,8 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('validation');
+      expect(response.body.message).toBe('Validation failed');
+      expect(validationMessages(response)).toContain('Current password is required');
     });
 
     it('returns 400 when validation fails - newPassword too short', async () => {
@@ -453,7 +470,7 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('at least 8 characters');
+      expect(validationMessages(response)).toContain('New password must be at least 8 characters');
     });
 
     it('returns 400 when validation fails - missing lowercase letter', async () => {
@@ -472,7 +489,9 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('lowercase letter');
+      expect(validationMessages(response)).toContain(
+        'Password must contain at least one lowercase letter'
+      );
     });
 
     it('returns 400 when validation fails - missing uppercase letter', async () => {
@@ -491,7 +510,9 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('uppercase letter');
+      expect(validationMessages(response)).toContain(
+        'Password must contain at least one uppercase letter'
+      );
     });
 
     it('returns 400 when validation fails - missing number', async () => {
@@ -510,7 +531,7 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('number');
+      expect(validationMessages(response)).toContain('Password must contain at least one number');
     });
 
     it('returns 400 when new password is same as current password', async () => {
@@ -529,7 +550,9 @@ describe('Profile API Endpoints', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('must be different');
+      expect(validationMessages(response)).toContain(
+        'New password must be different from current password'
+      );
     });
 
     it('returns 401 when not authenticated', async () => {

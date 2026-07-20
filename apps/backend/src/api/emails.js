@@ -4,6 +4,7 @@ const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
 const asyncHandler = require('../middleware/asyncHandler');
 const emailService = require('../services/email/emailService');
+const { getPlatformConfig } = require('../config/platform');
 
 /**
  * GET /api/emails/logs
@@ -91,7 +92,8 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
-    const { to, subject, html, text, template, templateData, recipientType, recipientId } = req.body;
+    const { to, subject, html, text, template, templateData, recipientType, recipientId } =
+      req.body;
 
     if (!to) {
       return res.status(400).json({ error: 'Recipient email is required' });
@@ -143,7 +145,7 @@ router.post(
       issueDate: new Date().toLocaleDateString('ro-RO'),
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('ro-RO'),
       total: '500.00',
-      companyName: 'ForjaIt Test',
+      companyName: getPlatformConfig().name,
       companyPhone: '0721 123 456',
     };
 

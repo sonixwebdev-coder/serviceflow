@@ -93,7 +93,7 @@ export const PLAN_FEATURES = {
     { text: 'Widget programari publice', included: true },
     { text: 'Facturare de baza (20 / luna)', included: true },
     { text: 'Notificari email', included: true },
-    { text: 'Website cu branding ForjaIt', included: true },
+    { text: 'Website cu branding-ul platformei', included: true },
     { text: 'Chat cu clientii', included: false },
     { text: 'Portal clienti', included: false },
     { text: 'Management echipa', included: false },
@@ -124,7 +124,7 @@ export const PLAN_FEATURES = {
     { text: 'Task-uri si todos', included: true },
     { text: 'Website builder complet (15 blocuri)', included: true },
     { text: 'Domeniu custom', included: true },
-    { text: 'Stergere branding ForjaIt', included: true },
+    { text: 'Stergere branding platforma', included: true },
     { text: 'Comenzi de lucru + PDF', included: true },
     { text: 'Analytics avansat', included: true },
     { text: 'Export CSV / Excel / PDF / JSON', included: true },
@@ -144,11 +144,7 @@ export const PLAN_FEATURES = {
 // Flat feature lists (for BillingSettings comparison table)
 // ---------------------------------------------------------------------------
 export const PLAN_FEATURES_FLAT = {
-  FREE: [
-    'Gestionare programari',
-    'Gestionare clienti',
-    'Portal clienti',
-  ],
+  FREE: ['Gestionare programari', 'Gestionare clienti', 'Portal clienti'],
   STARTER: [
     'Gestionare programari',
     'Gestionare clienti',
@@ -240,7 +236,23 @@ export const PLAN_TIERS = [
 // Signup plan cards (subset used in signup flow)
 // ---------------------------------------------------------------------------
 export const SIGNUP_PLANS = [
-  { key: 'STARTER', name: PLAN_NAMES.STARTER, price: PLAN_PRICES.STARTER.monthly, desc: '5 utilizatori, 500 clienti' },
-  { key: 'PROFESSIONAL', name: PLAN_NAMES.PROFESSIONAL, price: PLAN_PRICES.PROFESSIONAL.monthly, desc: '15 utilizatori, 2.000 clienti', recommended: true },
-  { key: 'ENTERPRISE', name: PLAN_NAMES.ENTERPRISE, price: PLAN_PRICES.ENTERPRISE.monthly, desc: 'Nelimitat' },
+  {
+    key: 'STARTER',
+    name: PLAN_NAMES.STARTER,
+    price: PLAN_PRICES.STARTER.monthly,
+    desc: '5 utilizatori, 500 clienti',
+  },
+  {
+    key: 'PROFESSIONAL',
+    name: PLAN_NAMES.PROFESSIONAL,
+    price: PLAN_PRICES.PROFESSIONAL.monthly,
+    desc: '15 utilizatori, 2.000 clienti',
+    recommended: true,
+  },
+  {
+    key: 'ENTERPRISE',
+    name: PLAN_NAMES.ENTERPRISE,
+    price: PLAN_PRICES.ENTERPRISE.monthly,
+    desc: 'Nelimitat',
+  },
 ];

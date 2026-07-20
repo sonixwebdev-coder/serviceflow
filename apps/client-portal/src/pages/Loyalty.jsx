@@ -1,15 +1,54 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Gift, Trophy, Star, Copy, Check, ArrowUpRight, ArrowDownRight, Users, UserPlus } from 'lucide-react';
-import { useLoyaltyDashboard, useLoyaltyTransactions, useLoyaltyReferral, useApplyReferral } from '@/hooks/useLoyalty';
+import {
+  Gift,
+  Trophy,
+  Star,
+  Copy,
+  Check,
+  ArrowUpRight,
+  ArrowDownRight,
+  Users,
+  UserPlus,
+} from 'lucide-react';
+import {
+  useLoyaltyDashboard,
+  useLoyaltyTransactions,
+  useLoyaltyReferral,
+  useApplyReferral,
+} from '@/hooks/useLoyalty';
 import { loyaltyService } from '@/services/loyaltyService';
 import { QRCodeSVG } from 'qrcode.react';
 
 const TIER_CONFIG = {
-  BRONZE: { label: 'Bronze', bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-300', ring: 'text-amber-500' },
-  SILVER: { label: 'Silver', bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300', ring: 'text-gray-400' },
-  GOLD: { label: 'Gold', bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-400', ring: 'text-yellow-500' },
-  PLATINUM: { label: 'Platinum', bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300', ring: 'text-indigo-500' },
+  BRONZE: {
+    label: 'Bronze',
+    bg: 'bg-amber-100',
+    text: 'text-amber-800',
+    border: 'border-amber-300',
+    ring: 'text-amber-500',
+  },
+  SILVER: {
+    label: 'Silver',
+    bg: 'bg-gray-100',
+    text: 'text-gray-700',
+    border: 'border-gray-300',
+    ring: 'text-gray-400',
+  },
+  GOLD: {
+    label: 'Gold',
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    border: 'border-yellow-400',
+    ring: 'text-yellow-500',
+  },
+  PLATINUM: {
+    label: 'Platinum',
+    bg: 'bg-indigo-100',
+    text: 'text-indigo-800',
+    border: 'border-indigo-300',
+    ring: 'text-indigo-500',
+  },
 };
 
 const TX_LABELS = {
@@ -31,7 +70,9 @@ function TierProgressRing({ currentTier, lifetimePoints, thresholds }) {
   if (!nextTier) {
     return (
       <div className="flex flex-col items-center">
-        <div className={`relative w-28 h-28 rounded-full border-4 ${config.border} flex items-center justify-center`}>
+        <div
+          className={`relative w-28 h-28 rounded-full border-4 ${config.border} flex items-center justify-center`}
+        >
           <Trophy className={`h-10 w-10 ${config.ring}`} />
         </div>
         <p className="text-sm text-gray-500 mt-2">Nivel maxim!</p>
@@ -39,7 +80,8 @@ function TierProgressRing({ currentTier, lifetimePoints, thresholds }) {
     );
   }
 
-  const nextThreshold = thresholds?.[nextTier.toLowerCase() + 'Threshold'] || thresholds?.[nextTier] || 1;
+  const nextThreshold =
+    thresholds?.[nextTier.toLowerCase() + 'Threshold'] || thresholds?.[nextTier] || 1;
   const progress = Math.min(100, Math.round((lifetimePoints / nextThreshold) * 100));
   const remaining = Math.max(0, nextThreshold - lifetimePoints);
 
@@ -54,7 +96,10 @@ function TierProgressRing({ currentTier, lifetimePoints, thresholds }) {
         <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
           <circle cx="60" cy="60" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="8" />
           <circle
-            cx="60" cy="60" r={radius} fill="none"
+            cx="60"
+            cy="60"
+            r={radius}
+            fill="none"
             stroke="currentColor"
             className={config.ring}
             strokeWidth="8"
@@ -85,13 +130,17 @@ export default function Loyalty() {
   const [applySuccess, setApplySuccess] = useState('');
 
   const { data: dashboardData, isLoading: dashLoading } = useLoyaltyDashboard();
-  const { data: txData, isLoading: txLoading } = useLoyaltyTransactions({ page: txPage, limit: 10 });
+  const { data: txData, isLoading: txLoading } = useLoyaltyTransactions({
+    page: txPage,
+    limit: 10,
+  });
   const { data: referralData } = useLoyaltyReferral();
   const applyMutation = useApplyReferral();
+  const referralCode = searchParams.get('code');
 
   // Pre-fill from URL param and auto-validate
   useEffect(() => {
-    const code = searchParams.get('code');
+    const code = referralCode;
     if (code) {
       setReferralInput(code);
       setSearchParams({}, { replace: true });
@@ -113,7 +162,7 @@ export default function Loyalty() {
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [referralCode, setSearchParams]);
 
   const dashboard = dashboardData?.data || dashboardData;
   const account = dashboard?.account;
@@ -206,7 +255,9 @@ export default function Loyalty() {
           />
           <div className="flex-1 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-              <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${tierConfig.bg} ${tierConfig.text} ${tierConfig.border}`}>
+              <span
+                className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold ${tierConfig.bg} ${tierConfig.text} ${tierConfig.border}`}
+              >
                 {tierConfig.label}
               </span>
             </div>
@@ -267,7 +318,8 @@ export default function Loyalty() {
             </div>
             {referral?.referralCount > 0 && (
               <p className="text-sm text-gray-500 mt-2">
-                {referral.referralCount} {referral.referralCount === 1 ? 'persoana recomandata' : 'persoane recomandate'}
+                {referral.referralCount}{' '}
+                {referral.referralCount === 1 ? 'persoana recomandata' : 'persoane recomandate'}
               </p>
             )}
           </div>
@@ -278,7 +330,10 @@ export default function Loyalty() {
           <div className="rounded-xl border border-gray-200 bg-white p-5 flex flex-col items-center">
             <h3 className="text-base font-semibold text-gray-900 mb-3">Card QR</h3>
             <div className="bg-white p-3 rounded-xl border border-gray-100">
-              <QRCodeSVG value={`${window.location.origin}/loyalty?code=${account.referralCode}`} size={140} />
+              <QRCodeSVG
+                value={`${window.location.origin}/loyalty?code=${account.referralCode}`}
+                size={140}
+              />
             </div>
             <p className="text-xs text-gray-500 mt-2">Scanati pentru identificare</p>
           </div>
@@ -343,12 +398,11 @@ export default function Loyalty() {
               </button>
             )}
           </div>
-          {validationError && (
-            <p className="text-sm text-red-600 mt-2">{validationError}</p>
-          )}
+          {validationError && <p className="text-sm text-red-600 mt-2">{validationError}</p>}
           {validationResult && (
             <p className="text-sm text-green-600 mt-2">
-              Cod valid - recomandat de <span className="font-medium">{validationResult.referrerName}</span>
+              Cod valid - recomandat de{' '}
+              <span className="font-medium">{validationResult.referrerName}</span>
             </p>
           )}
         </div>
@@ -368,24 +422,32 @@ export default function Loyalty() {
             {transactions?.items?.map((tx) => (
               <div key={tx.id} className="flex items-center justify-between px-5 py-3">
                 <div className="flex items-center gap-3">
-                  <div className={`rounded-full p-1.5 ${tx.points > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                    {tx.points > 0
-                      ? <ArrowUpRight className="h-4 w-4 text-green-600" />
-                      : <ArrowDownRight className="h-4 w-4 text-red-600" />
-                    }
+                  <div
+                    className={`rounded-full p-1.5 ${tx.points > 0 ? 'bg-green-100' : 'bg-red-100'}`}
+                  >
+                    {tx.points > 0 ? (
+                      <ArrowUpRight className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4 text-red-600" />
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       {TX_LABELS[tx.type] || tx.type}
                     </p>
                     {tx.description && (
-                      <p className="text-xs text-gray-500 truncate max-w-[200px]">{tx.description}</p>
+                      <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                        {tx.description}
+                      </p>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-sm font-semibold ${tx.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {tx.points > 0 ? '+' : ''}{tx.points}
+                  <p
+                    className={`text-sm font-semibold ${tx.points > 0 ? 'text-green-600' : 'text-red-600'}`}
+                  >
+                    {tx.points > 0 ? '+' : ''}
+                    {tx.points}
                   </p>
                   <p className="text-xs text-gray-400">
                     {new Date(tx.createdAt).toLocaleDateString('ro-RO')}

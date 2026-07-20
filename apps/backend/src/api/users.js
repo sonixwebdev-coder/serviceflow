@@ -118,7 +118,12 @@ router.put(
   authorize({ roles: ['admin', 'manager'] }),
   validate(updateUserSchema),
   asyncHandler(async (req, res) => {
-    const user = await updateUser(req.tenantPrisma, req.params.userId, req.body, req.user.organizationId);
+    const user = await updateUser(
+      req.tenantPrisma,
+      req.params.userId,
+      req.body,
+      req.user.organizationId
+    );
     await cache.del(`auth:${req.params.userId}`);
 
     await logFromRequest(req, {
@@ -139,7 +144,10 @@ router.patch(
   authorize({ roles: ['admin'] }),
   validate(updateUserStatusSchema),
   asyncHandler(async (req, res) => {
-    const user = await updateUserStatus(req.tenantPrisma, { userId: req.params.userId, isActive: req.body.isActive });
+    const user = await updateUserStatus(req.tenantPrisma, {
+      userId: req.params.userId,
+      isActive: req.body.isActive,
+    });
     await cache.del(`auth:${req.params.userId}`);
 
     await logFromRequest(req, {

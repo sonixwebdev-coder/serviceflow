@@ -1,12 +1,5 @@
 import { cn } from '@/lib/utils';
-import {
-  ArrowUp,
-  ArrowDown,
-  Copy,
-  Trash2,
-  Settings,
-  GripVertical,
-} from 'lucide-react';
+import { ArrowUp, ArrowDown, Copy, Trash2, Settings, GripVertical } from 'lucide-react';
 
 const BlockToolbar = ({
   onMoveUp,

@@ -189,8 +189,6 @@ export function useMessages(channelId, options = {}) {
  * Send a message
  */
 export function useSendMessage(channelId) {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (messageData) => {
       const res = await API.post(`/chat/channels/${channelId}/messages`, messageData);
@@ -207,8 +205,6 @@ export function useSendMessage(channelId) {
  * Update a message
  */
 export function useUpdateMessage() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ messageId, body }) => {
       const res = await API.patch(`/chat/messages/${messageId}`, { body });
@@ -224,8 +220,6 @@ export function useUpdateMessage() {
  * Delete a message
  */
 export function useDeleteMessage() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (messageId) => {
       const res = await API.delete(`/chat/messages/${messageId}`);

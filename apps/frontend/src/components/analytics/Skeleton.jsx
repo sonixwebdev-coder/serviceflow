@@ -28,10 +28,7 @@ export const ChartSkeleton = ({ height = 300 }) => (
     <div className="flex-1 flex items-end gap-2 px-4 pt-8">
       {[40, 65, 45, 80, 55, 70, 50, 85, 60, 75, 45, 90].map((h, i) => (
         <div key={i} className="flex-1 flex flex-col justify-end">
-          <SkeletonBox
-            className="w-full rounded-t"
-            style={{ height: `${h}%` }}
-          />
+          <SkeletonBox className="w-full rounded-t" style={{ height: `${h}%` }} />
         </div>
       ))}
     </div>

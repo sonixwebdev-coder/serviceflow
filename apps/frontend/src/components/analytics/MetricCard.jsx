@@ -64,14 +64,10 @@ export default function MetricCard({
                 {change > 0 ? '+' : ''}
                 {change.toFixed(1)}%
               </span>
-              {changeLabel && (
-                <span className="text-sm text-gray-500">{changeLabel}</span>
-              )}
+              {changeLabel && <span className="text-sm text-gray-500">{changeLabel}</span>}
             </div>
           )}
-          {subtitle && (
-            <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
-          )}
+          {subtitle && <p className="mt-2 text-sm text-gray-500">{subtitle}</p>}
         </div>
         {Icon && (
           <div className={`p-2 sm:p-3 rounded-lg ${iconBg} flex-shrink-0`}>

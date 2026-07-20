@@ -1,10 +1,7 @@
 import { cn } from '@/lib/utils';
 
 const DividerBlock = ({ data, settings, isEditing = false, onClick }) => {
-  const {
-    style = 'line',
-    thickness = 'thin',
-  } = data || {};
+  const { style = 'line', thickness = 'thin' } = data || {};
 
   const {
     backgroundColor = 'transparent',
@@ -40,9 +37,7 @@ const DividerBlock = ({ data, settings, isEditing = false, onClick }) => {
       onClick={onClick}
     >
       <div className={cn('mx-auto', maxWidthClasses[maxWidth])}>
-        {style === 'line' && (
-          <hr className={cn('border-gray-200', thicknessClasses[thickness])} />
-        )}
+        {style === 'line' && <hr className={cn('border-gray-200', thicknessClasses[thickness])} />}
 
         {style === 'dots' && (
           <div className="flex justify-center gap-2">

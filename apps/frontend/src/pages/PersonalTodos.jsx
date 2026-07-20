@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, parseISO, differenceInDays, isToday, isPast } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import ReactDatePicker from 'react-datepicker';
@@ -40,16 +40,20 @@ const PRIORITY_META = {
   [PRIORITY.HIGH]: { label: 'Ridicata', class: 'bg-orange-100 text-orange-700 border-orange-300' },
   [PRIORITY.URGENT]: { label: 'Urgenta', class: 'bg-red-100 text-red-700 border-red-300' },
   // Lowercase format (new backend format)
-  'low': { label: 'Scazuta', class: 'bg-gray-100 text-gray-700 border-gray-300' },
-  'medium': { label: 'Medie', class: 'bg-blue-100 text-blue-700 border-blue-300' },
-  'high': { label: 'Ridicata', class: 'bg-orange-100 text-orange-700 border-orange-300' },
-  'urgent': { label: 'Urgenta', class: 'bg-red-100 text-red-700 border-red-300' },
+  low: { label: 'Scazuta', class: 'bg-gray-100 text-gray-700 border-gray-300' },
+  medium: { label: 'Medie', class: 'bg-blue-100 text-blue-700 border-blue-300' },
+  high: { label: 'Ridicata', class: 'bg-orange-100 text-orange-700 border-orange-300' },
+  urgent: { label: 'Urgenta', class: 'bg-red-100 text-red-700 border-red-300' },
 };
 
 // Helper function to safely get priority metadata
 const getPriorityMeta = (priority) => {
   if (!priority) return PRIORITY_META[PRIORITY.MEDIUM]; // Default fallback
-  return PRIORITY_META[priority] || PRIORITY_META[priority.toUpperCase()] || PRIORITY_META[PRIORITY.MEDIUM];
+  return (
+    PRIORITY_META[priority] ||
+    PRIORITY_META[priority.toUpperCase()] ||
+    PRIORITY_META[PRIORITY.MEDIUM]
+  );
 };
 
 const defaultTodoForm = {
@@ -163,7 +167,7 @@ const PersonalTodos = () => {
   }, [completionFilter, priorityFilter]);
 
   // Fetch todos
-  const { data: todos = [], isLoading, error, refetch } = usePersonalTodos(apiFilters);
+  const { data: todos = [], isLoading, error } = usePersonalTodos(apiFilters);
 
   // Mutations
   const createMutation = useCreatePersonalTodo();
@@ -186,10 +190,11 @@ const PersonalTodos = () => {
           return new Date(a.dueDate) - new Date(b.dueDate);
         });
         break;
-      case 'priority':
+      case 'priority': {
         const priorityOrder = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
         sorted.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
         break;
+      }
       case 'createdAt':
         sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         break;
@@ -207,10 +212,7 @@ const PersonalTodos = () => {
     const completed = todos.filter((t) => t.isCompleted).length;
     const overdue = todos.filter(
       (t) =>
-        !t.isCompleted &&
-        t.dueDate &&
-        isPast(parseISO(t.dueDate)) &&
-        !isToday(parseISO(t.dueDate))
+        !t.isCompleted && t.dueDate && isPast(parseISO(t.dueDate)) && !isToday(parseISO(t.dueDate))
     ).length;
 
     return { total, active, completed, overdue };
@@ -394,9 +396,7 @@ const PersonalTodos = () => {
   if (error) {
     return (
       <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-        <p className="text-sm text-red-600">
-          Eroare la incarcarea todo-urilor: {error.message}
-        </p>
+        <p className="text-sm text-red-600">Eroare la incarcarea todo-urilor: {error.message}</p>
       </div>
     );
   }
@@ -451,9 +451,7 @@ const PersonalTodos = () => {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {/* Completion filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
               value={completionFilter}
               onChange={(e) => setCompletionFilter(e.target.value)}
@@ -467,9 +465,7 @@ const PersonalTodos = () => {
 
           {/* Priority filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Prioritate
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prioritate</label>
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
@@ -485,9 +481,7 @@ const PersonalTodos = () => {
 
           {/* Sort by */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sorteaza dupa
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sorteaza dupa</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -522,8 +516,8 @@ const PersonalTodos = () => {
             {completionFilter === 'completed'
               ? 'Nicio todo finalizata'
               : completionFilter === 'active'
-              ? 'Felicitari! Nicio todo activa'
-              : 'Nicio todo momentan'}
+                ? 'Felicitari! Nicio todo activa'
+                : 'Nicio todo momentan'}
           </h3>
           <p className="mt-2 text-sm text-gray-500">
             {completionFilter === 'active'
@@ -579,9 +573,7 @@ const PersonalTodos = () => {
                       <div className="flex-1">
                         <h3
                           className={`text-base font-semibold ${
-                            todo.isCompleted
-                              ? 'line-through text-gray-400'
-                              : 'text-gray-900'
+                            todo.isCompleted ? 'line-through text-gray-400' : 'text-gray-900'
                           }`}
                         >
                           {todo.title}
@@ -658,7 +650,7 @@ const PersonalTodos = () => {
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          style={{ margin: 0}}
+          style={{ margin: 0 }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               closeModal();
@@ -694,9 +686,7 @@ const PersonalTodos = () => {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Ex: Pregateste raportul zilnic"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  {todoForm.title.length}/200 caractere
-                </p>
+                <p className="mt-1 text-xs text-gray-500">{todoForm.title.length}/200 caractere</p>
               </div>
 
               {/* Description */}
@@ -720,9 +710,7 @@ const PersonalTodos = () => {
 
               {/* Priority */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Prioritate
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prioritate</label>
                 <select
                   name="priority"
                   value={todoForm.priority}
@@ -782,14 +770,14 @@ const PersonalTodos = () => {
                   disabled={createMutation.isPending || updateMutation.isPending}
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {(createMutation.isPending || updateMutation.isPending) ? (
+                  {createMutation.isPending || updateMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : null}
                   {createMutation.isPending || updateMutation.isPending
                     ? 'Se salveaza...'
                     : editingTodo
-                    ? 'Actualizeaza'
-                    : 'Adauga'}
+                      ? 'Actualizeaza'
+                      : 'Adauga'}
                 </button>
               </div>
             </form>
@@ -834,9 +822,7 @@ const PersonalTodos = () => {
                 disabled={deleteMutation.isPending}
                 className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deleteMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : null}
+                {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {deleteMutation.isPending ? 'Se sterge...' : 'Sterge'}
               </button>
             </div>

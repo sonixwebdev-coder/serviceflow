@@ -19,16 +19,19 @@ const logger = require('../utils/logger');
  * @param {string} params.ipAddress - IP address of the request
  * @param {string} params.organizationId - Organization ID for tenant scoping
  */
-const logAction = async (prisma, {
-  actorId,
-  action,
-  entityType,
-  entityId,
-  description,
-  metadata = null,
-  ipAddress = null,
-  organizationId,
-}) => {
+const logAction = async (
+  prisma,
+  {
+    actorId,
+    action,
+    entityType,
+    entityId,
+    description,
+    metadata = null,
+    ipAddress = null,
+    organizationId,
+  }
+) => {
   try {
     const auditLog = await prisma.auditLog.create({
       data: {
@@ -71,16 +74,10 @@ const logAction = async (prisma, {
  * @param {PrismaClient} prisma - Tenant-scoped Prisma client
  * @param {Object} filters - Filter parameters
  */
-const listAuditLogs = async (prisma, {
-  entityType,
-  entityId,
-  actorId,
-  action,
-  dateFrom,
-  dateTo,
-  page = 1,
-  limit = 50,
-} = {}) => {
+const listAuditLogs = async (
+  prisma,
+  { entityType, entityId, actorId, action, dateFrom, dateTo, page = 1, limit = 50 } = {}
+) => {
   const take = Math.min(limit, 100);
   const skip = (page - 1) * take;
 

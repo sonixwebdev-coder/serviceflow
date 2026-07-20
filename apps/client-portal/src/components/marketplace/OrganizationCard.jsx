@@ -7,22 +7,25 @@ export default function OrganizationCard({ org, basePath = '/marketplace' }) {
   const SectorIcon = sector?.icon;
 
   return (
-    <Link
-      to={`${basePath}/${org.slug}`}
-      className="group block h-full"
-    >
+    <Link to={`${basePath}/${org.slug}`} className="group block h-full">
       <div className="relative h-full bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-gray-300 hover:-translate-y-0.5">
         {/* Colored top accent bar */}
-        <div className={`h-1.5 bg-gradient-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`} />
+        <div
+          className={`h-1.5 bg-gradient-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}
+        />
 
         <div className="p-5">
           {/* Sector icon + badge row */}
           <div className="flex items-start justify-between mb-4">
-            <div className={`h-11 w-11 rounded-xl ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center`}>
+            <div
+              className={`h-11 w-11 rounded-xl ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center`}
+            >
               {SectorIcon && <SectorIcon className={`h-5 w-5 ${sector.iconColor}`} />}
             </div>
             {sector && (
-              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${sector.bgClass}`}>
+              <span
+                className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${sector.bgClass}`}
+              >
                 {sector.label}
               </span>
             )}
@@ -35,9 +38,7 @@ export default function OrganizationCard({ org, basePath = '/marketplace' }) {
 
           {/* Description */}
           {org.description && (
-            <p className="mt-2 text-sm text-gray-500 line-clamp-2">
-              {org.description}
-            </p>
+            <p className="mt-2 text-sm text-gray-500 line-clamp-2">{org.description}</p>
           )}
 
           {/* Info row */}

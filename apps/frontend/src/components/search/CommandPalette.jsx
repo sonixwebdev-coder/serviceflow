@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -14,7 +14,6 @@ import {
   Activity,
   ArrowRight,
   Command,
-  Clock,
   UserPlus,
   CalendarPlus,
   FilePlus,
@@ -69,21 +68,75 @@ const TYPE_COLORS = {
 };
 
 const QUICK_ACTIONS = [
-  { id: 'new-appointment', type: 'action', title: 'Programare noua', icon: 'calendar-plus', url: '/crm/appointments?action=create' },
-  { id: 'new-client', type: 'action', title: 'Client nou', icon: 'user-plus', url: '/crm/clients?action=create' },
-  { id: 'new-task', type: 'action', title: 'Task nou', icon: 'clipboard-plus', url: '/tasks?action=create' },
-  { id: 'new-invoice', type: 'action', title: 'Factura noua', icon: 'file-plus', url: '/crm/invoices?action=create' },
+  {
+    id: 'new-appointment',
+    type: 'action',
+    title: 'Programare noua',
+    icon: 'calendar-plus',
+    url: '/crm/appointments?action=create',
+  },
+  {
+    id: 'new-client',
+    type: 'action',
+    title: 'Client nou',
+    icon: 'user-plus',
+    url: '/crm/clients?action=create',
+  },
+  {
+    id: 'new-task',
+    type: 'action',
+    title: 'Task nou',
+    icon: 'clipboard-plus',
+    url: '/tasks?action=create',
+  },
+  {
+    id: 'new-invoice',
+    type: 'action',
+    title: 'Factura noua',
+    icon: 'file-plus',
+    url: '/crm/invoices?action=create',
+  },
 ];
 
 const NAVIGATION = [
-  { id: 'nav-dashboard', type: 'navigation', title: 'Tablou de bord', icon: 'layout-dashboard', url: '/dashboard' },
+  {
+    id: 'nav-dashboard',
+    type: 'navigation',
+    title: 'Tablou de bord',
+    icon: 'layout-dashboard',
+    url: '/dashboard',
+  },
   { id: 'nav-clients', type: 'navigation', title: 'Clienti', icon: 'users', url: '/crm/clients' },
-  { id: 'nav-appointments', type: 'navigation', title: 'Programari', icon: 'calendar', url: '/crm/appointments' },
-  { id: 'nav-invoices', type: 'navigation', title: 'Facturi', icon: 'file-text', url: '/crm/invoices' },
+  {
+    id: 'nav-appointments',
+    type: 'navigation',
+    title: 'Programari',
+    icon: 'calendar',
+    url: '/crm/appointments',
+  },
+  {
+    id: 'nav-invoices',
+    type: 'navigation',
+    title: 'Facturi',
+    icon: 'file-text',
+    url: '/crm/invoices',
+  },
   { id: 'nav-tasks', type: 'navigation', title: 'Task-uri', icon: 'clipboard-list', url: '/tasks' },
   { id: 'nav-chat', type: 'navigation', title: 'Chat', icon: 'message-square', url: '/chat' },
-  { id: 'nav-analytics', type: 'navigation', title: 'Statistici', icon: 'bar-chart', url: '/analytics' },
-  { id: 'nav-activity', type: 'navigation', title: 'Activitate', icon: 'activity', url: '/activity' },
+  {
+    id: 'nav-analytics',
+    type: 'navigation',
+    title: 'Statistici',
+    icon: 'bar-chart',
+    url: '/analytics',
+  },
+  {
+    id: 'nav-activity',
+    type: 'navigation',
+    title: 'Activitate',
+    icon: 'activity',
+    url: '/activity',
+  },
 ];
 
 export default function CommandPalette() {
@@ -182,6 +235,20 @@ export default function CommandPalette() {
     }
   }, [selectedIndex]);
 
+  // Handle item selection
+  const handleSelect = useCallback(
+    (item) => {
+      if (item.url) {
+        if (['client', 'appointment', 'task', 'invoice', 'user'].includes(item.type)) {
+          addRecentSearch(item);
+        }
+        navigate(item.url);
+        closePalette();
+      }
+    },
+    [addRecentSearch, closePalette, navigate]
+  );
+
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (e) => {
@@ -202,20 +269,8 @@ export default function CommandPalette() {
         closePalette();
       }
     },
-    [items, selectedIndex, moveSelectionDown, moveSelectionUp, closePalette]
+    [items, selectedIndex, moveSelectionDown, moveSelectionUp, closePalette, handleSelect]
   );
-
-  // Handle item selection
-  const handleSelect = (item) => {
-    if (item.url) {
-      // Add to recent searches if it's a search result
-      if (['client', 'appointment', 'task', 'invoice', 'user'].includes(item.type)) {
-        addRecentSearch(item);
-      }
-      navigate(item.url);
-      closePalette();
-    }
-  };
 
   // Close on overlay click
   const handleOverlayClick = (e) => {
@@ -271,10 +326,7 @@ export default function CommandPalette() {
             <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded">
               ESC
             </kbd>
-            <button
-              onClick={closePalette}
-              className="p-1 hover:bg-gray-100 rounded-lg transition"
-            >
+            <button onClick={closePalette} className="p-1 hover:bg-gray-100 rounded-lg transition">
               <X className="h-5 w-5 text-gray-400" />
             </button>
           </div>

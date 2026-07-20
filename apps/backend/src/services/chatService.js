@@ -60,7 +60,10 @@ async function createChannel(prisma, data, currentUser) {
         type,
         createdById: currentUser.id,
         organizationId: currentUser.organizationId,
-        metadata: type === 'DIRECT' || type === 'GROUP' ? { participantIds: [currentUser.id, ...memberIds] } : null,
+        metadata:
+          type === 'DIRECT' || type === 'GROUP'
+            ? { participantIds: [currentUser.id, ...memberIds] }
+            : null,
       },
     });
 
@@ -489,7 +492,10 @@ async function leaveChannel(prisma, channelId, currentUser) {
   }
 
   if (member.role === 'OWNER') {
-    throw new AppError('Channel owner cannot leave. Transfer ownership or archive the channel.', 400);
+    throw new AppError(
+      'Channel owner cannot leave. Transfer ownership or archive the channel.',
+      400
+    );
   }
 
   await prisma.chatMember.delete({
@@ -658,7 +664,11 @@ async function ensureChannelAccess(prisma, channelId, currentUser) {
   }
 
   // For LOCATION channels, check if user is assigned to that location
-  if (channel.type === 'LOCATION' && channel.locationId && channel.organizationId === currentUser.organizationId) {
+  if (
+    channel.type === 'LOCATION' &&
+    channel.locationId &&
+    channel.organizationId === currentUser.organizationId
+  ) {
     const userLocation = await globalPrisma.userLocation.findFirst({
       where: {
         userId: currentUser.id,

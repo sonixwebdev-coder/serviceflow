@@ -18,7 +18,10 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   // Single unified loading state - covers both auth hydration and onboarding check
   const isInitializing =
     loading ||
-    (isAuthenticated && needsOnboardingCheck && location.pathname !== '/onboarding' && isOnboardingLoading);
+    (isAuthenticated &&
+      needsOnboardingCheck &&
+      location.pathname !== '/onboarding' &&
+      isOnboardingLoading);
 
   if (isInitializing) {
     return (
@@ -49,7 +52,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   // PAYMENT_REQUIRED: only allow billing and company settings (checked BEFORE onboarding)
   if (isPaymentRequired) {
-    const isAllowed = PAYMENT_REQUIRED_ALLOWED.some(p => location.pathname.startsWith(p));
+    const isAllowed = PAYMENT_REQUIRED_ALLOWED.some((p) => location.pathname.startsWith(p));
     if (!isAllowed) {
       return <Navigate to="/settings/billing" replace />;
     }

@@ -10,18 +10,38 @@ export const STATUS_FILTERS = [
 ];
 
 export const STATUS_META = {
-  PENDING: { label: 'In asteptare', badgeClass: 'border border-yellow-400 bg-yellow-50 text-yellow-800', calendarClass: 'status-pending' },
-  PREZENTAT: { label: 'Prezentat', badgeClass: 'border border-blue-400 bg-blue-50 text-blue-900', calendarClass: 'status-prezentat' },
-  IN_PROGRESS: { label: 'In desfasurare', badgeClass: 'border border-amber-400 bg-amber-50 text-amber-900', calendarClass: 'status-in-progress' },
-  COMPLETED: { label: 'Finalizata', badgeClass: 'border border-emerald-400 bg-emerald-50 text-emerald-900', calendarClass: 'status-completed' },
-  CANCELLED: { label: 'Anulata', badgeClass: 'border border-red-400 bg-red-50 text-red-800', calendarClass: 'status-cancelled' },
+  PENDING: {
+    label: 'In asteptare',
+    badgeClass: 'border border-yellow-400 bg-yellow-50 text-yellow-800',
+    calendarClass: 'status-pending',
+  },
+  PREZENTAT: {
+    label: 'Prezentat',
+    badgeClass: 'border border-blue-400 bg-blue-50 text-blue-900',
+    calendarClass: 'status-prezentat',
+  },
+  IN_PROGRESS: {
+    label: 'In desfasurare',
+    badgeClass: 'border border-amber-400 bg-amber-50 text-amber-900',
+    calendarClass: 'status-in-progress',
+  },
+  COMPLETED: {
+    label: 'Finalizata',
+    badgeClass: 'border border-emerald-400 bg-emerald-50 text-emerald-900',
+    calendarClass: 'status-completed',
+  },
+  CANCELLED: {
+    label: 'Anulata',
+    badgeClass: 'border border-red-400 bg-red-50 text-red-800',
+    calendarClass: 'status-cancelled',
+  },
 };
 
 export const STATUS_LABELS = {
   pending: STATUS_META.PENDING.label,
   prezentat: STATUS_META.PREZENTAT.label,
   'in-progress': STATUS_META.IN_PROGRESS.label,
-  'in_progress': STATUS_META.IN_PROGRESS.label,
+  in_progress: STATUS_META.IN_PROGRESS.label,
   completed: STATUS_META.COMPLETED.label,
   cancelled: STATUS_META.CANCELLED.label,
 };
@@ -29,9 +49,21 @@ export const STATUS_LABELS = {
 export const STATUS_SEQUENCE = ['PENDING', 'PREZENTAT', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
 export const PAYMENT_STATUS_META = {
-  UNPAID: { label: 'Neplatit', badgeClass: 'bg-gray-100 text-gray-800 border border-gray-300', icon: Clock },
-  PARTIAL: { label: 'Partial platit', badgeClass: 'bg-yellow-100 text-yellow-800 border border-yellow-300', icon: AlertCircle },
-  PAID: { label: 'Platit complet', badgeClass: 'bg-green-100 text-green-800 border border-green-300', icon: CheckCircle2 },
+  UNPAID: {
+    label: 'Neplatit',
+    badgeClass: 'bg-gray-100 text-gray-800 border border-gray-300',
+    icon: Clock,
+  },
+  PARTIAL: {
+    label: 'Partial platit',
+    badgeClass: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+    icon: AlertCircle,
+  },
+  PAID: {
+    label: 'Platit complet',
+    badgeClass: 'bg-green-100 text-green-800 border border-green-300',
+    icon: CheckCircle2,
+  },
 };
 
 export const STATUS_DOT_COLORS = {
@@ -100,26 +132,44 @@ export const defaultAssetForm = {
 
 export const createDefaultOrderDraft = () => ({
   notes: '',
-  lineItems: [{ name: '', description: '', hardwareQuantity: 1, laborQuantity: 1, hardwarePrice: 0, laborPrice: 0, hardwareUnit: '', laborUnit: '' }],
+  lineItems: [
+    {
+      name: '',
+      description: '',
+      hardwareQuantity: 1,
+      laborQuantity: 1,
+      hardwarePrice: 0,
+      laborPrice: 0,
+      hardwareUnit: '',
+      laborUnit: '',
+    },
+  ],
 });
 
 export const getStatusMeta = (value) => {
   if (!value) {
-    return { label: 'Necunoscut', badgeClass: 'border border-gray-200 bg-gray-100 text-gray-600', calendarClass: 'status-unknown' };
+    return {
+      label: 'Necunoscut',
+      badgeClass: 'border border-gray-200 bg-gray-100 text-gray-600',
+      calendarClass: 'status-unknown',
+    };
   }
   const normalized = value.toString().toUpperCase().replace(/-/g, '_');
-  return STATUS_META[normalized] || {
-    label: value,
-    badgeClass: 'border border-gray-200 bg-gray-100 text-gray-600',
-    calendarClass: 'status-unknown',
-  };
+  return (
+    STATUS_META[normalized] || {
+      label: value,
+      badgeClass: 'border border-gray-200 bg-gray-100 text-gray-600',
+      calendarClass: 'status-unknown',
+    }
+  );
 };
 
 export const getPaymentStatusMeta = (status) => {
   return PAYMENT_STATUS_META[status] || PAYMENT_STATUS_META.UNPAID;
 };
 
-export const normalizeRoleKey = (value) => (typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '');
+export const normalizeRoleKey = (value) =>
+  typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '';
 
 export const extractRoleKeys = (person) => {
   const keys = new Set();
@@ -145,5 +195,8 @@ export const combineDateAndTime = (date, time) => {
   return result;
 };
 
-export const currencyFormatter = new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' });
+export const currencyFormatter = new Intl.NumberFormat('ro-RO', {
+  style: 'currency',
+  currency: 'RON',
+});
 export const numberFormatter = new Intl.NumberFormat('ro-RO');

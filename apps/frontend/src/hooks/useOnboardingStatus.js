@@ -38,11 +38,16 @@ export const useOnboardingStatus = () => {
     return hasLocations || hasServices;
   };
 
-  const isOnboardingCompleted = !enabled
-    || orgQuery.data?.settings?.onboardingCompleted === true
-    || (orgQuery.isSuccess && hasExistingSetup());
+  const isOnboardingCompleted =
+    !enabled ||
+    orgQuery.data?.settings?.onboardingCompleted === true ||
+    (orgQuery.isSuccess && hasExistingSetup());
 
-  const isLoading = enabled && (orgQuery.isLoading || (!orgQuery.data?.settings?.onboardingCompleted && (locationsQuery.isLoading || servicesQuery.isLoading)));
+  const isLoading =
+    enabled &&
+    (orgQuery.isLoading ||
+      (!orgQuery.data?.settings?.onboardingCompleted &&
+        (locationsQuery.isLoading || servicesQuery.isLoading)));
 
   const markCompletedMutation = useMutation({
     mutationFn: async () => {

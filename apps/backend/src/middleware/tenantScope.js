@@ -23,7 +23,7 @@ const tenantScope = (req, res, next) => {
       _tenantPrisma = value;
     },
     enumerable: true,
-    configurable: true
+    configurable: true,
   });
 
   next();

@@ -257,7 +257,8 @@ const appointmentCountKey = (userId, date) => `appointments:count:${userId}:${da
  * @param {string} number - VAT number without prefix
  * @returns {string} Cache key
  */
-const vatKey = (countryCode, number) => `vat:${countryCode.toUpperCase()}:${String(number).replace(/\s/g, '')}`;
+const vatKey = (countryCode, number) =>
+  `vat:${countryCode.toUpperCase()}:${String(number).replace(/\s/g, '')}`;
 
 module.exports = {
   TTL,

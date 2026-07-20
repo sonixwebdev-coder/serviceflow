@@ -28,10 +28,7 @@ export default function TimePicker({
   const [hh, mm] = (value || '00:00').split(':').map(Number);
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const minutes = Array.from(
-    { length: Math.floor(60 / minuteStep) },
-    (_, i) => i * minuteStep
-  );
+  const minutes = Array.from({ length: Math.floor(60 / minuteStep) }, (_, i) => i * minuteStep);
 
   const pad = (n) => String(n).padStart(2, '0');
 
@@ -98,7 +95,9 @@ export default function TimePicker({
         )}
       >
         <Clock className="h-4 w-4 text-gray-400" />
-        <span className="tabular-nums tracking-wide">{pad(hh)}:{pad(mm)}</span>
+        <span className="tabular-nums tracking-wide">
+          {pad(hh)}:{pad(mm)}
+        </span>
       </button>
 
       {/* Dropdown */}
@@ -200,7 +199,20 @@ export default function TimePicker({
           {/* Quick-select footer */}
           <div className="border-t border-gray-100 px-2 py-1.5 flex gap-1">
             {[
-              { label: 'Acum', action: () => { const now = new Date(); emit(now.getHours(), minutes.reduce((prev, curr) => Math.abs(curr - now.getMinutes()) < Math.abs(prev - now.getMinutes()) ? curr : prev)); } },
+              {
+                label: 'Acum',
+                action: () => {
+                  const now = new Date();
+                  emit(
+                    now.getHours(),
+                    minutes.reduce((prev, curr) =>
+                      Math.abs(curr - now.getMinutes()) < Math.abs(prev - now.getMinutes())
+                        ? curr
+                        : prev
+                    )
+                  );
+                },
+              },
               { label: '09:00', action: () => emit(9, 0) },
               { label: '12:00', action: () => emit(12, 0) },
               { label: '18:00', action: () => emit(18, 0) },
@@ -208,7 +220,10 @@ export default function TimePicker({
               <button
                 key={preset.label}
                 type="button"
-                onClick={() => { preset.action(); setIsOpen(false); }}
+                onClick={() => {
+                  preset.action();
+                  setIsOpen(false);
+                }}
                 className="flex-1 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
               >
                 {preset.label}

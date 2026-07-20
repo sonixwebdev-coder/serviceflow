@@ -1,6 +1,8 @@
+import { lazy } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/state/useAuthStore';
-import Landing from './Landing';
+
+const Landing = lazy(() => import('./Landing'));
 
 export default function SmartHome() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -20,7 +22,9 @@ export default function SmartHome() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={code ? `/loyalty?code=${encodeURIComponent(code)}` : '/dashboard'} replace />;
+    return (
+      <Navigate to={code ? `/loyalty?code=${encodeURIComponent(code)}` : '/dashboard'} replace />
+    );
   }
 
   // If there's a referral code but user is not logged in, redirect to login with code

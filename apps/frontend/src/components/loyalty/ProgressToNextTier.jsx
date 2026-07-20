@@ -14,11 +14,7 @@ export default function ProgressToNextTier({ currentTier, lifetimePoints, thresh
   const nextTier = currentIndex < tierOrder.length - 1 ? tierOrder[currentIndex + 1] : null;
 
   if (!nextTier) {
-    return (
-      <div className="text-sm text-indigo-600 font-medium">
-        Nivel maxim atins!
-      </div>
-    );
+    return <div className="text-sm text-indigo-600 font-medium">Nivel maxim atins!</div>;
   }
 
   const nextThreshold = thresholds[nextTier.toLowerCase() + 'Threshold'] || thresholds[nextTier];

@@ -36,9 +36,12 @@ export default function PaymentCard({ data, isLoading }) {
     return 'text-gray-500 bg-gray-100';
   };
 
-  const progressPercent = previousPeriodAmount > 0
-    ? Math.min((totalAmount / previousPeriodAmount) * 100, 150)
-    : totalAmount > 0 ? 100 : 0;
+  const progressPercent =
+    previousPeriodAmount > 0
+      ? Math.min((totalAmount / previousPeriodAmount) * 100, 150)
+      : totalAmount > 0
+        ? 100
+        : 0;
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-5 relative overflow-hidden h-full">
@@ -48,9 +51,7 @@ export default function PaymentCard({ data, isLoading }) {
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <p className="text-sm font-medium text-blue-800">Plati perioada selectata</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">
-              {formatCurrency(totalAmount)}
-            </p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(totalAmount)}</p>
           </div>
           <div className="p-3 bg-blue-100 rounded-xl">
             <CreditCard className="h-6 w-6 text-blue-600" />
@@ -59,14 +60,15 @@ export default function PaymentCard({ data, isLoading }) {
 
         <div className="flex items-center gap-2 mb-3">
           {changePercent !== null && changePercent !== undefined && (
-            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${getTrendColor()}`}>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${getTrendColor()}`}
+            >
               {getTrendIcon()}
-              {changePercent > 0 ? '+' : ''}{changePercent.toFixed(1)}%
+              {changePercent > 0 ? '+' : ''}
+              {changePercent.toFixed(1)}%
             </span>
           )}
-          <span className="text-sm text-gray-600">
-            vs. perioada anterioara
-          </span>
+          <span className="text-sm text-gray-600">vs. perioada anterioara</span>
         </div>
 
         {previousPeriodAmount > 0 && (
@@ -94,7 +96,9 @@ export default function PaymentCard({ data, isLoading }) {
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <span>Anterior:</span>
-            <span className="font-medium text-gray-700">{formatCurrency(previousPeriodAmount)}</span>
+            <span className="font-medium text-gray-700">
+              {formatCurrency(previousPeriodAmount)}
+            </span>
           </div>
         </div>
       </div>

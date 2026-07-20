@@ -1,36 +1,76 @@
 {
-  "name": "forja-crm",
+  "name": "serviceflow",
   "private": true,
   "version": "1.0.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "workspaces": [
     "apps/frontend",
     "apps/backend",
     "apps/client-portal",
-    "apps/admin"
+    "apps/admin",
+    "apps/website",
+    "packages/*"
   ],
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "npm": ">=11.0.0 <12"
+  },
+  "packageManager": "npm@11.16.0",
   "scripts": {
     "dev": "node scripts/start-all.js",
     "dev:frontend": "npm run dev --workspace apps/frontend",
     "dev:backend": "npm run dev --workspace apps/backend",
     "dev:portal": "npm run dev --workspace apps/client-portal",
-    "build": "npm run build --workspace apps/frontend",
+    "dev:admin": "npm run dev --workspace apps/admin",
+    "dev:website": "npm run dev --workspace apps/website",
+    "build": "npm run build --workspaces --if-present",
+    "build:frontend": "npm run build --workspace apps/frontend",
     "build:portal": "npm run build --workspace apps/client-portal",
-    "lint": "npm run lint --workspace apps/frontend",
-    "install:all": "npm install --workspaces",
+    "build:admin": "npm run build --workspace apps/admin",
+    "build:website": "npm run build --workspace apps/website",
+    "lint": "eslint apps packages scripts prisma --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:tooling": "node --test scripts/*.test.js",
+    "test": "npm run test:tooling && npm run test --workspaces --if-present",
+    "test:integration": "node scripts/run-integration-tests.js",
+    "prisma:validate": "prisma validate --schema prisma/schema.prisma",
+    "env:check": "node scripts/check-env-example.js",
+    "docs:check": "node scripts/check-doc-links.js",
+    "openapi:sync": "node scripts/sync-openapi-routes.js",
+    "openapi:validate": "node scripts/validate-openapi.js",
+    "modules:check": "node scripts/check-module-size.js",
+    "bundle:check": "node scripts/check-bundle-size.js",
+    "audit": "npm audit --audit-level=moderate",
+    "release:sbom": "node scripts/generate-release-inventory.js --sbom-only",
+    "release:licenses": "node scripts/generate-release-inventory.js --licenses-only",
+    "release:inventory": "node scripts/generate-release-inventory.js",
+    "check": "npm run env:check && npm run docs:check && npm run openapi:validate && npm run modules:check && npm run format:check && npm run lint && npm run prisma:validate && npm run test && npm run build && npm run bundle:check",
+    "install:all": "npm install --workspaces --include-workspace-root",
     "db:seed": "node prisma/seed.js"
   },
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
-  "dependencies": {
-    "ioredis": "^5.8.2",
-    "web-push": "^3.6.7"
-  },
   "devDependencies": {
-    "@prisma/client": "^6.19.0",
-    "i": "^0.3.7",
-    "npm": "^11.6.0",
-    "prisma": "^6.19.0"
+    "@eslint/js": "^9.36.0",
+    "@prisma/client": "6.19.3",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.2",
+    "prisma": "6.19.3"
+  },
+  "overrides": {
+    "exceljs": {
+      "unzipper": "0.12.5",
+      "uuid": "11.1.1"
+    }
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.1": true,
+    "prisma@6.19.3": true
   }
 }

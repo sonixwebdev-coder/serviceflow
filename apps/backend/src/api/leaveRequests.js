@@ -12,7 +12,11 @@ const {
   rejectTimeOffRequest,
   createMedicalLeave,
 } = require('../services/timeOffService');
-const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
+const {
+  logFromRequest,
+  ENTITY_TYPES,
+  getActionDescription,
+} = require('../services/auditLogService');
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -63,7 +67,11 @@ router.post(
       entityType: ENTITY_TYPES.TIME_OFF,
       entityId: request.id,
       description: getActionDescription('CREATE', ENTITY_TYPES.TIME_OFF, req.body.leaveType),
-      metadata: { leaveType: req.body.leaveType, startDate: req.body.startDate, endDate: req.body.endDate },
+      metadata: {
+        leaveType: req.body.leaveType,
+        startDate: req.body.startDate,
+        endDate: req.body.endDate,
+      },
     });
 
     return created(res, request, 'Leave request submitted');
@@ -76,7 +84,12 @@ router.put(
   authorize({ roles: ['admin'] }),
   validate(reviewSchema),
   asyncHandler(async (req, res) => {
-    const request = await approveTimeOffRequest(req.tenantPrisma, req.params.requestId, req.user, req.body || {});
+    const request = await approveTimeOffRequest(
+      req.tenantPrisma,
+      req.params.requestId,
+      req.user,
+      req.body || {}
+    );
 
     await logFromRequest(req, {
       action: 'APPROVE',
@@ -96,7 +109,12 @@ router.put(
   authorize({ roles: ['admin'] }),
   validate(reviewSchema),
   asyncHandler(async (req, res) => {
-    const request = await rejectTimeOffRequest(req.tenantPrisma, req.params.requestId, req.user, req.body || {});
+    const request = await rejectTimeOffRequest(
+      req.tenantPrisma,
+      req.params.requestId,
+      req.user,
+      req.body || {}
+    );
 
     await logFromRequest(req, {
       action: 'REJECT',
@@ -124,7 +142,11 @@ router.post(
       entityType: ENTITY_TYPES.TIME_OFF,
       entityId: request.id,
       description: `Creat concediu medical pentru angajat`,
-      metadata: { employeeId: req.body.employeeId, startDate: req.body.startDate, endDate: req.body.endDate },
+      metadata: {
+        employeeId: req.body.employeeId,
+        startDate: req.body.startDate,
+        endDate: req.body.endDate,
+      },
     });
 
     return created(res, request, 'Medical leave created');

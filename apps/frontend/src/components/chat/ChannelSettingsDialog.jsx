@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import confirm from '../../utils/confirm';
 import { X, Settings, Edit2, LogOut, Archive, Bell, BellOff } from 'lucide-react';
-import { useUpdateChannel, useLeaveChannel, useArchiveChannel, useChannel } from '../../hooks/useChat';
+import {
+  useUpdateChannel,
+  useLeaveChannel,
+  useArchiveChannel,
+  useChannel,
+} from '../../hooks/useChat';
 import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
 import useToast from '../../context/useToast';
@@ -73,7 +78,8 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
       console.error('Failed to update channel:', error);
       showToast({
         title: 'Eroare',
-        description: error?.message || 'Nu s-au putut actualiza setările. Te rugăm să încerci din nou.',
+        description:
+          error?.message || 'Nu s-au putut actualiza setările. Te rugăm să încerci din nou.',
         type: 'error',
       });
     } finally {
@@ -82,7 +88,15 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
   };
 
   const handleLeave = async () => {
-    if (!await confirm({ title: 'Paraseste canal', text: 'Esti sigur ca vrei sa parasesti acest canal?', confirmText: 'Paraseste', danger: true })) return;
+    if (
+      !(await confirm({
+        title: 'Paraseste canal',
+        text: 'Esti sigur ca vrei sa parasesti acest canal?',
+        confirmText: 'Paraseste',
+        danger: true,
+      }))
+    )
+      return;
 
     setIsUpdating(true);
 
@@ -111,7 +125,15 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
   };
 
   const handleArchive = async () => {
-    if (!await confirm({ title: 'Arhiveaza canal', text: 'Esti sigur ca vrei sa arhivezi acest canal? Aceasta actiune nu poate fi anulata.', confirmText: 'Arhiveaza', danger: true })) return;
+    if (
+      !(await confirm({
+        title: 'Arhiveaza canal',
+        text: 'Esti sigur ca vrei sa arhivezi acest canal? Aceasta actiune nu poate fi anulata.',
+        confirmText: 'Arhiveaza',
+        danger: true,
+      }))
+    )
+      return;
 
     setIsUpdating(true);
 
@@ -244,9 +266,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
                 {channel.description && (
                   <p className="mt-1 text-sm text-gray-500">{channel.description}</p>
                 )}
-                <p className="mt-2 text-xs text-gray-400">
-                  {channel.members?.length || 0} membri
-                </p>
+                <p className="mt-2 text-xs text-gray-400">{channel.members?.length || 0} membri</p>
               </div>
             )}
           </div>

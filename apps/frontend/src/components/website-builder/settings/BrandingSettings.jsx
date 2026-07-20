@@ -33,7 +33,8 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
   };
 
   const hasChanges =
-    JSON.stringify(localBranding) !== JSON.stringify({
+    JSON.stringify(localBranding) !==
+    JSON.stringify({
       primaryColor: branding.primaryColor || '#3b82f6',
       secondaryColor: branding.secondaryColor || '#6366f1',
       fontFamily: branding.fontFamily || 'system-ui, sans-serif',
@@ -56,7 +57,9 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Culoare principala</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Culoare principala
+            </label>
             <div className="flex gap-2 mt-1">
               <input
                 type="color"
@@ -78,7 +81,9 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Culoare secundara</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Culoare secundara
+            </label>
             <div className="flex gap-2 mt-1">
               <input
                 type="color"
@@ -127,9 +132,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
             <Type className="h-5 w-5" />
             Tipografie
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Alegeti fontul principal pentru website
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Alegeti fontul principal pentru website</p>
         </div>
         <div className="p-6 space-y-4">
           <div>
@@ -140,11 +143,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {fontOptions.map((font) => (
-                <option
-                  key={font.value}
-                  value={font.value}
-                  style={{ fontFamily: font.value }}
-                >
+                <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
                   {font.label}
                 </option>
               ))}
@@ -160,7 +159,8 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
             >
               <p className="text-2xl font-bold mb-2">Titlu de exemplu</p>
               <p className="text-base">
-                Acesta este un paragraf de exemplu pentru a vedea cum arata fontul selectat in context.
+                Acesta este un paragraf de exemplu pentru a vedea cum arata fontul selectat in
+                context.
               </p>
             </div>
           </div>
@@ -174,9 +174,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
             <Image className="h-5 w-5" />
             Logo & Favicon
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            Incarcati logo-ul si favicon-ul website-ului
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Incarcati logo-ul si favicon-ul website-ului</p>
         </div>
         <div className="p-6 space-y-5">
           <ImageUploadField

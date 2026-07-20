@@ -25,9 +25,7 @@ const LocationSwitchingOverlay = () => {
           </div>
         </div>
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Se schimba locatia
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900">Se schimba locatia</h3>
           {currentLocation && (
             <p className="mt-1 text-sm text-gray-600">
               Se incarca datele pentru <span className="font-medium">{currentLocation.name}</span>
@@ -35,9 +33,18 @@ const LocationSwitchingOverlay = () => {
           )}
         </div>
         <div className="flex gap-1">
-          <div className="h-2 w-2 animate-bounce rounded-full bg-orange-400" style={{ animationDelay: '0ms' }} />
-          <div className="h-2 w-2 animate-bounce rounded-full bg-orange-400" style={{ animationDelay: '150ms' }} />
-          <div className="h-2 w-2 animate-bounce rounded-full bg-orange-400" style={{ animationDelay: '300ms' }} />
+          <div
+            className="h-2 w-2 animate-bounce rounded-full bg-orange-400"
+            style={{ animationDelay: '0ms' }}
+          />
+          <div
+            className="h-2 w-2 animate-bounce rounded-full bg-orange-400"
+            style={{ animationDelay: '150ms' }}
+          />
+          <div
+            className="h-2 w-2 animate-bounce rounded-full bg-orange-400"
+            style={{ animationDelay: '300ms' }}
+          />
         </div>
       </div>
     </div>

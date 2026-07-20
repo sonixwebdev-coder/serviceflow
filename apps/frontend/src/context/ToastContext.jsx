@@ -17,29 +17,35 @@ export const ToastProvider = ({ children }) => {
     }
   }, []);
 
-  const showToast = useCallback(({ title, description, type = 'info', duration = 4000 } = {}) => {
-    toastCounter += 1;
-    const id = toastCounter;
-    setToasts((current) => [
-      ...current,
-      {
-        id,
-        title,
-        description,
-        type,
+  const showToast = useCallback(
+    ({ title, description, type = 'info', duration = 4000 } = {}) => {
+      toastCounter += 1;
+      const id = toastCounter;
+      setToasts((current) => [
+        ...current,
+        {
+          id,
+          title,
+          description,
+          type,
+        },
+      ]);
+
+      if (duration > 0) {
+        const timer = setTimeout(() => removeToast(id), duration);
+        timers.current.set(id, timer);
       }
-    ]);
+    },
+    [removeToast]
+  );
 
-    if (duration > 0) {
-      const timer = setTimeout(() => removeToast(id), duration);
-      timers.current.set(id, timer);
-    }
-  }, [removeToast]);
-
-  useEffect(() => () => {
-    timers.current.forEach((timer) => clearTimeout(timer));
-    timers.current.clear();
-  }, []);
+  useEffect(
+    () => () => {
+      timers.current.forEach((timer) => clearTimeout(timer));
+      timers.current.clear();
+    },
+    []
+  );
 
   const value = useMemo(() => ({ showToast, removeToast }), [removeToast, showToast]);
 
@@ -61,9 +67,7 @@ export const ToastProvider = ({ children }) => {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                {toast.title && (
-                  <p className="text-sm font-semibold">{toast.title}</p>
-                )}
+                {toast.title && <p className="text-sm font-semibold">{toast.title}</p>}
                 {toast.description && (
                   <p className="mt-1 text-sm opacity-90">{toast.description}</p>
                 )}

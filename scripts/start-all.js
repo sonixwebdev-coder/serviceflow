@@ -1,129 +1,73 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = path.resolve(scriptDirectory, '..');
+const environmentFile = path.join(repositoryRoot, '.env');
+const children = [];
 
-console.log('🚀 Starting Forja...\n');
+const applications = [
+  ['Backend API', 'dev:backend', 5000],
+  ['CRM', 'dev:frontend', 5173],
+  ['Client portal', 'dev:portal', 5174],
+  ['Website renderer', 'dev:website', 5175],
+  ['Platform admin', 'dev:admin', 5176],
+];
 
-// Check if .env file exists
-function checkEnvFile() {
-    const envPath = path.join(__dirname, '../apps/backend/.env');
-    if (!fs.existsSync(envPath)) {
-        console.log('⚠️  Warning: backend/.env file not found');
-        console.log('💡 Copy apps/backend/.env.example to apps/backend/.env and configure DATABASE_URL for PostgreSQL\n');
-        return false;
-    }
-    return true;
-}
-
-function runCommand(label, command, args, options = {}) {
-    return new Promise((resolve, reject) => {
-        console.log(`${label} ${command} ${args.join(' ')}\n`);
-        const child = spawn(command, args, {
-            stdio: 'inherit',
-            shell: true,
-            ...options
-        });
-
-        child.on('error', reject);
-        child.on('exit', (code) => {
-            if (code === 0) {
-                resolve();
-            } else {
-                reject(new Error(`${command} exited with code ${code}`));
-            }
-        });
+const run = (args, options = {}) =>
+  new Promise((resolve, reject) => {
+    const child = spawn('npm', args, {
+      cwd: repositoryRoot,
+      stdio: 'inherit',
+      ...options,
     });
-}
-
-async function preparePrisma() {
-    const backendDir = path.join(__dirname, '../apps/backend');
-
-    try {
-        await runCommand('🧬 Generating Prisma client →', 'npm', ['run', 'prisma:generate'], { cwd: backendDir });
-    } catch (error) {
-        console.error('❌ Failed to generate Prisma client.', error.message);
-        console.log('   Ensure DATABASE_URL is configured in apps/backend/.env and run npm run prisma:generate manually.\n');
-    }
-
-    // Note: Migrations are NOT run automatically on dev start
-    // Run migrations manually with: npm run prisma:migrate
-    console.log('💡 Tip: Run migrations manually with "npm run prisma:migrate" if needed\n');
-}
-
-function startBackend() {
-    console.log('🔵 Starting Backend API on port 5000...');
-    const backend = spawn('npm', ['run', 'dev'], {
-        cwd: path.join(__dirname, '../apps/backend'),
-        stdio: 'inherit',
-        shell: true
+    child.once('error', reject);
+    child.once('exit', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`npm ${args.join(' ')} exited with code ${code}`));
     });
+  });
 
-    backend.on('error', (error) => {
-        console.error('❌ Backend error:', error);
-    });
+const startApplication = ([label, script, port]) => {
+  console.log(`Starting ${label} on port ${port}`);
+  const child = spawn('npm', ['run', script], {
+    cwd: repositoryRoot,
+    stdio: 'inherit',
+  });
+  child.once('error', (error) => console.error(`${label} failed to start:`, error));
+  children.push(child);
+};
 
-    return backend;
-}
+const shutdown = () => {
+  for (const child of children) {
+    if (!child.killed) child.kill('SIGTERM');
+  }
+};
 
-function startFrontend() {
-    console.log('🟢 Starting Frontend on port 5173...\n');
-    const frontend = spawn('npm', ['run', 'dev'], {
-        cwd: path.join(__dirname, '../apps/frontend'),
-        stdio: 'inherit',
-        shell: true
-    });
+const main = async () => {
+  if (!fs.existsSync(environmentFile)) {
+    console.error('Missing .env. Copy .env.example to .env and replace the example secrets.');
+    process.exitCode = 1;
+    return;
+  }
 
-    frontend.on('error', (error) => {
-        console.error('❌ Frontend error:', error);
-    });
+  await run(['run', 'prisma:generate', '--workspace', 'apps/backend']);
+  console.log(
+    'Database migrations are not automatic. Run the backend prisma:migrate command when needed.'
+  );
 
-    return frontend;
-}
+  for (const application of applications) startApplication(application);
 
-function startAdmin() {
-    console.log('🟣 Starting Admin on port 5176...\n');
-    const admin = spawn('npm', ['run', 'dev'], {
-        cwd: path.join(__dirname, '../apps/admin'),
-        stdio: 'inherit',
-        shell: true
-    });
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
+};
 
-    admin.on('error', (error) => {
-        console.error('❌ Admin error:', error);
-    });
-
-    return admin;
-}
-
-async function main() {
-    if (!checkEnvFile()) {
-        console.log('⚠️  Please set up backend/.env before starting\n');
-    }
-
-    await preparePrisma();
-
-    const backend = startBackend();
-
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    const frontend = startFrontend();
-    const admin = startAdmin();
-
-    const cleanup = () => {
-      console.log('\n\n🛑 Stopping all services...');
-        backend.kill('SIGTERM');
-        frontend.kill('SIGTERM');
-        admin.kill('SIGTERM');
-    };
-
-    process.on('SIGINT', cleanup);
-    process.on('SIGTERM', cleanup);
-}
-
-main();
+main().catch((error) => {
+  console.error(error.message);
+  shutdown();
+  process.exitCode = 1;
+});

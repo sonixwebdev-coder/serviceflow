@@ -32,7 +32,7 @@ const getLocationStatus = (operatingHours) => {
   if (!raw) return null;
 
   // Normalize: handle both backend { open, close, closed } and frontend { isOpen, openTime, closeTime }
-  const isOpen = 'closed' in raw ? !raw.closed : (raw.isOpen !== false);
+  const isOpen = 'closed' in raw ? !raw.closed : raw.isOpen !== false;
   const openTime = raw.open || raw.openTime;
   const closeTime = raw.close || raw.closeTime;
 
@@ -123,9 +123,7 @@ const LocationCard = ({ location, onEdit, onDelete, onManageUsers }) => {
         <div className="mt-3">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-              status.isOpen
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-600'
+              status.isOpen ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
             }`}
           >
             <span
@@ -330,9 +328,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Adresa
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Adresa</label>
                   <input
                     type="text"
                     value={formData.address}
@@ -343,9 +339,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Oras
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Oras</label>
                   <input
                     type="text"
                     value={formData.city}
@@ -356,9 +350,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Judet
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Judet</label>
                   <input
                     type="text"
                     value={formData.county}
@@ -369,9 +361,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Telefon
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Telefon</label>
                   <input
                     type="tel"
                     value={formData.phone}
@@ -382,9 +372,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
                   <input
                     type="email"
                     value={formData.email}
@@ -442,7 +430,9 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                         onChange={(e) => updateOperatingHours(key, 'isOpen', e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                       />
-                      <span className={`text-sm font-medium ${dayHours.isOpen ? 'text-gray-900' : 'text-gray-400'}`}>
+                      <span
+                        className={`text-sm font-medium ${dayHours.isOpen ? 'text-gray-900' : 'text-gray-400'}`}
+                      >
                         {label}
                       </span>
                     </label>
@@ -461,9 +451,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                       </div>
                     )}
 
-                    {!dayHours.isOpen && (
-                      <span className="text-sm text-gray-400">Inchis</span>
-                    )}
+                    {!dayHours.isOpen && <span className="text-sm text-gray-400">Inchis</span>}
                   </div>
                 );
               })}
@@ -544,10 +532,10 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     <p className="font-medium">Exemplu de calcul:</p>
                     <p className="mt-1">
                       Daca tariful manopera este{' '}
-                      <strong>{formData.settings?.pricing?.defaultLaborRate || 100} RON/ora</strong> si
-                      multiplicatorul este{' '}
-                      <strong>{formData.settings?.pricing?.pricingMultiplier || 1.0}</strong>, pretul final
-                      pentru o ora de manopera va fi{' '}
+                      <strong>{formData.settings?.pricing?.defaultLaborRate || 100} RON/ora</strong>{' '}
+                      si multiplicatorul este{' '}
+                      <strong>{formData.settings?.pricing?.pricingMultiplier || 1.0}</strong>,
+                      pretul final pentru o ora de manopera va fi{' '}
                       <strong>
                         {(
                           (formData.settings?.pricing?.defaultLaborRate || 100) *
@@ -645,9 +633,7 @@ const UserAssignmentModal = ({ location, onClose }) => {
           <X size={20} />
         </button>
 
-        <h2 className="mb-2 text-xl font-semibold text-gray-900">
-          Utilizatori - {location?.name}
-        </h2>
+        <h2 className="mb-2 text-xl font-semibold text-gray-900">Utilizatori - {location?.name}</h2>
         <p className="mb-4 text-sm text-gray-500">
           Selecteaza utilizatorii care au acces la aceasta locatie.
         </p>
@@ -695,9 +681,7 @@ const UserAssignmentModal = ({ location, onClose }) => {
                   </div>
                   <div
                     className={`flex h-5 w-5 items-center justify-center rounded border ${
-                      isAssigned
-                        ? 'border-primary bg-primary text-white'
-                        : 'border-gray-300'
+                      isAssigned ? 'border-primary bg-primary text-white' : 'border-gray-300'
                     }`}
                   >
                     {isAssigned && <Check size={12} />}
@@ -725,7 +709,7 @@ const UserAssignmentModal = ({ location, onClose }) => {
 const Locations = () => {
   const { showToast } = useToast();
   const { locations, loading, error, refresh } = useLocations();
-  const { createLocation, updateLocation, deleteLocation, isCreating, isUpdating, isDeleting } =
+  const { createLocation, updateLocation, deleteLocation, isCreating, isUpdating } =
     useLocationMutations();
 
   const [modalLocation, setModalLocation] = useState(null);
@@ -774,7 +758,14 @@ const Locations = () => {
   };
 
   const handleDelete = async (locationId) => {
-    if (!await confirm({ title: 'Sterge locatie', text: 'Esti sigur ca vrei sa stergi aceasta locatie?', confirmText: 'Sterge', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Sterge locatie',
+        text: 'Esti sigur ca vrei sa stergi aceasta locatie?',
+        confirmText: 'Sterge',
+        danger: true,
+      }))
+    ) {
       return;
     }
 
@@ -808,9 +799,7 @@ const Locations = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Locatii</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Gestioneaza locatiile organizatiei tale
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Gestioneaza locatiile organizatiei tale</p>
         </div>
         <button
           type="button"
@@ -825,9 +814,7 @@ const Locations = () => {
         </button>
       </div>
 
-      {error && (
-        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>
-      )}
+      {error && <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

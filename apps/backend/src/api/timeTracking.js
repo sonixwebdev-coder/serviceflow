@@ -41,7 +41,10 @@ router.get(
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
     const locationFilter = await req.getLocationFilter({ includeNull: true });
-    const entries = await listTimeEntries(req.tenantPrisma, req.query, req.user, { paginate, locationFilter });
+    const entries = await listTimeEntries(req.tenantPrisma, req.query, req.user, {
+      paginate,
+      locationFilter,
+    });
     return ok(res, entries);
   })
 );
@@ -52,10 +55,14 @@ router.post(
   validate(clockInSchema),
   asyncHandler(async (req, res) => {
     const locationContext = await req.getLocationContext();
-    const entry = await clockIn(req.tenantPrisma, {
-      ...req.body,
-      locationId: locationContext.currentLocationId,
-    }, req.user);
+    const entry = await clockIn(
+      req.tenantPrisma,
+      {
+        ...req.body,
+        locationId: locationContext.currentLocationId,
+      },
+      req.user
+    );
 
     await logFromRequest(req, {
       action: 'CREATE',

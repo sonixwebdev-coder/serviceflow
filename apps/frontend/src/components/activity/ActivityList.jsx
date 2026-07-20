@@ -44,11 +44,7 @@ export default function ActivityList({
   return (
     <div className="divide-y divide-gray-100">
       {activities.map((activity) => (
-        <ActivityItem
-          key={activity.id}
-          activity={activity}
-          showTime={showTime}
-        />
+        <ActivityItem key={activity.id} activity={activity} showTime={showTime} />
       ))}
     </div>
   );

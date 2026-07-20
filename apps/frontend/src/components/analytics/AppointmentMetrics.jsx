@@ -22,10 +22,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       </p>
       {payload.map((entry, index) => (
         <div key={index} className="flex items-center gap-2 text-sm">
-          <div
-            className="w-3 h-3 rounded"
-            style={{ backgroundColor: entry.color }}
-          />
+          <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }} />
           <span className="text-gray-600">{entry.name}:</span>
           <span className="font-medium">{entry.value}</span>
         </div>
@@ -94,11 +91,7 @@ export default function AppointmentMetrics({ data = [], byStatus = {}, isLoading
             axisLine={{ stroke: '#e5e7eb' }}
             tickLine={false}
           />
-          <YAxis
-            tick={{ fontSize: 12, fill: '#6b7280' }}
-            axisLine={false}
-            tickLine={false}
-          />
+          <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
           <Tooltip content={<CustomTooltip />} />
           <Legend
             formatter={(value) => {

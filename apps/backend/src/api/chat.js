@@ -117,7 +117,11 @@ router.get(
   '/channels/:channelId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const channel = await chatService.getChannelById(req.tenantPrisma, req.params.channelId, req.user);
+    const channel = await chatService.getChannelById(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.user
+    );
     return ok(res, channel);
   })
 );
@@ -131,7 +135,12 @@ router.patch(
   authenticate,
   validate(updateChannelSchema),
   asyncHandler(async (req, res) => {
-    const channel = await chatService.updateChannel(req.tenantPrisma, req.params.channelId, req.body, req.user);
+    const channel = await chatService.updateChannel(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.body,
+      req.user
+    );
     return ok(res, channel);
   })
 );
@@ -144,7 +153,11 @@ router.post(
   '/channels/:channelId/archive',
   authenticate,
   asyncHandler(async (req, res) => {
-    const channel = await chatService.archiveChannel(req.tenantPrisma, req.params.channelId, req.user);
+    const channel = await chatService.archiveChannel(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.user
+    );
     return ok(res, channel);
   })
 );
@@ -159,7 +172,11 @@ router.get(
   '/channels/:channelId/members',
   authenticate,
   asyncHandler(async (req, res) => {
-    const channel = await chatService.getChannelById(req.tenantPrisma, req.params.channelId, req.user);
+    const channel = await chatService.getChannelById(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.user
+    );
     return ok(res, channel.members);
   })
 );
@@ -173,7 +190,12 @@ router.post(
   authenticate,
   validate(addMembersSchema),
   asyncHandler(async (req, res) => {
-    await chatService.addMembers(req.tenantPrisma, req.params.channelId, req.body.userIds, req.user);
+    await chatService.addMembers(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.body.userIds,
+      req.user
+    );
     return ok(res, { message: 'Members added successfully' });
   })
 );
@@ -186,7 +208,12 @@ router.delete(
   '/channels/:channelId/members/:userId',
   authenticate,
   asyncHandler(async (req, res) => {
-    await chatService.removeMember(req.tenantPrisma, req.params.channelId, req.params.userId, req.user);
+    await chatService.removeMember(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.params.userId,
+      req.user
+    );
     return ok(res, { message: 'Member removed successfully' });
   })
 );
@@ -235,7 +262,12 @@ router.get(
   authenticate,
   validate(listMessagesQuerySchema, 'query'),
   asyncHandler(async (req, res) => {
-    const messages = await chatMessageService.listMessages(req.tenantPrisma, req.params.channelId, req.query, req.user);
+    const messages = await chatMessageService.listMessages(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.query,
+      req.user
+    );
     return ok(res, messages);
   })
 );
@@ -249,7 +281,12 @@ router.post(
   authenticate,
   validate(createMessageSchema),
   asyncHandler(async (req, res) => {
-    const message = await chatMessageService.createMessage(req.tenantPrisma, req.params.channelId, req.body, req.user);
+    const message = await chatMessageService.createMessage(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.body,
+      req.user
+    );
 
     // Broadcast message in real-time
     broadcastChatMessage(req.user.organizationId, req.params.channelId, message);
@@ -276,9 +313,12 @@ router.post(
         try {
           const authorName = `${req.user.firstName} ${req.user.lastName}`;
           const channelName = channel.name || (channel.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
-          const messagePreview = message.type === 'TEXT'
-            ? (message.body.length > 50 ? message.body.substring(0, 47) + '...' : message.body)
-            : getMessageTypeLabel(message.type);
+          const messagePreview =
+            message.type === 'TEXT'
+              ? message.body.length > 50
+                ? message.body.substring(0, 47) + '...'
+                : message.body
+              : getMessageTypeLabel(message.type);
 
           // Create DB notifications for each recipient
           await Promise.all(
@@ -286,7 +326,8 @@ router.post(
               createNotification({
                 recipientId,
                 title: channel.type === 'DIRECT' ? authorName : channelName,
-                message: channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+                message:
+                  channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
                 type: 'MESSAGE',
                 entityType: 'CHAT_MESSAGE',
                 entityId: message.id,
@@ -336,7 +377,12 @@ router.patch(
   authenticate,
   validate(updateMessageSchema),
   asyncHandler(async (req, res) => {
-    const message = await chatMessageService.updateMessage(req.tenantPrisma, req.params.messageId, req.body, req.user);
+    const message = await chatMessageService.updateMessage(
+      req.tenantPrisma,
+      req.params.messageId,
+      req.body,
+      req.user
+    );
 
     // Broadcast message update
     broadcastChatMessageUpdate(req.user.organizationId, message.channelId, message);
@@ -353,7 +399,11 @@ router.delete(
   '/messages/:messageId',
   authenticate,
   asyncHandler(async (req, res) => {
-    const result = await chatMessageService.deleteMessage(req.tenantPrisma, req.params.messageId, req.user);
+    const result = await chatMessageService.deleteMessage(
+      req.tenantPrisma,
+      req.params.messageId,
+      req.user
+    );
 
     // Broadcast message deletion
     broadcastChatMessageDelete(req.user.organizationId, result.channelId, result.id);
@@ -397,7 +447,11 @@ router.post(
     }
 
     // Save file to storage
-    const attachmentData = await chatMessageService.saveAttachment(req.file, req.user.organizationId, message.channelId);
+    const attachmentData = await chatMessageService.saveAttachment(
+      req.file,
+      req.user.organizationId,
+      message.channelId
+    );
 
     // Create attachment record
     const attachment = await chatMessageService.createAttachment(
@@ -489,7 +543,8 @@ router.post(
         try {
           const authorName = `${req.user.firstName} ${req.user.lastName}`;
           const channelName = channel.name || (channel.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
-          const messagePreview = messageType === 'IMAGE' ? 'A trimis o imagine' : 'A trimis un fișier';
+          const messagePreview =
+            messageType === 'IMAGE' ? 'A trimis o imagine' : 'A trimis un fișier';
 
           // Create DB notifications for each recipient
           await Promise.all(
@@ -497,7 +552,8 @@ router.post(
               createNotification({
                 recipientId,
                 title: channel.type === 'DIRECT' ? authorName : channelName,
-                message: channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+                message:
+                  channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
                 type: 'MESSAGE',
                 entityType: 'CHAT_MESSAGE',
                 entityId: message.id,
@@ -609,7 +665,8 @@ router.post(
               createNotification({
                 recipientId,
                 title: channel.type === 'DIRECT' ? authorName : channelName,
-                message: channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+                message:
+                  channel.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
                 type: 'MESSAGE',
                 entityType: 'CHAT_MESSAGE',
                 entityId: message.id,
@@ -659,7 +716,11 @@ router.get(
   '/channels/:channelId/unread-count',
   authenticate,
   asyncHandler(async (req, res) => {
-    const count = await chatMessageService.getUnreadCount(req.tenantPrisma, req.params.channelId, req.user);
+    const count = await chatMessageService.getUnreadCount(
+      req.tenantPrisma,
+      req.params.channelId,
+      req.user
+    );
     return ok(res, { count });
   })
 );

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Wrench, Plus, Trash2 } from 'lucide-react';
 
-const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition';
+const inputClass =
+  'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition';
 
 const ServicesStep = ({ onNext, onBack, isSaving }) => {
   const [services, setServices] = useState([
@@ -10,13 +11,16 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
   const [errors, setErrors] = useState({});
 
   const addService = () => {
-    setServices(prev => [...prev, { id: crypto.randomUUID(), name: '', price: '', duration: '' }]);
+    setServices((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name: '', price: '', duration: '' },
+    ]);
   };
 
   const removeService = (id) => {
     if (services.length <= 1) return;
-    setServices(prev => prev.filter(s => s.id !== id));
-    setErrors(prev => {
+    setServices((prev) => prev.filter((s) => s.id !== id));
+    setErrors((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
@@ -24,15 +28,15 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
   };
 
   const updateService = (id, field, value) => {
-    setServices(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+    setServices((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
     if (errors[id]) {
-      setErrors(prev => ({ ...prev, [id]: undefined }));
+      setErrors((prev) => ({ ...prev, [id]: undefined }));
     }
   };
 
   const validate = () => {
     const newErrors = {};
-    services.forEach(s => {
+    services.forEach((s) => {
       if (!s.name.trim()) newErrors[s.id] = 'Numele serviciului este obligatoriu';
     });
     return newErrors;
@@ -44,7 +48,7 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
       setErrors(newErrors);
       return;
     }
-    const cleaned = services.map(s => ({
+    const cleaned = services.map((s) => ({
       id: s.id,
       name: s.name.trim(),
       price: s.price ? String(s.price) : '',
@@ -80,15 +84,19 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nume serviciu *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nume serviciu *
+                </label>
                 <input
                   type="text"
                   value={service.name}
-                  onChange={e => updateService(service.id, 'name', e.target.value)}
+                  onChange={(e) => updateService(service.id, 'name', e.target.value)}
                   placeholder="ex: Consultanta, Reparatie, etc."
                   className={`${inputClass} ${errors[service.id] ? 'border-red-500' : ''}`}
                 />
-                {errors[service.id] && <p className="text-red-500 text-xs mt-1">{errors[service.id]}</p>}
+                {errors[service.id] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[service.id]}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Pret (RON)</label>
@@ -97,7 +105,7 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
                   min="0"
                   step="0.01"
                   value={service.price}
-                  onChange={e => updateService(service.id, 'price', e.target.value)}
+                  onChange={(e) => updateService(service.id, 'price', e.target.value)}
                   placeholder="0.00"
                   className={inputClass}
                 />
@@ -108,7 +116,7 @@ const ServicesStep = ({ onNext, onBack, isSaving }) => {
                   type="number"
                   min="0"
                   value={service.duration}
-                  onChange={e => updateService(service.id, 'duration', e.target.value)}
+                  onChange={(e) => updateService(service.id, 'duration', e.target.value)}
                   placeholder="60"
                   className={inputClass}
                 />

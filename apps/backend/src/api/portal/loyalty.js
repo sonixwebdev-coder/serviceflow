@@ -115,7 +115,8 @@ router.post(
       return res.json({ valid: false, error: 'Cod de referral invalid' });
     }
 
-    const referrerName = `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim();
+    const referrerName =
+      `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim();
 
     res.json({
       valid: true,

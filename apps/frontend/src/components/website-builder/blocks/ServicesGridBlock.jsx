@@ -57,18 +57,11 @@ const ServicesGridBlock = ({ data, settings, isEditing = false, onClick, crmData
         {(title || subtitle) && (
           <div className="text-center mb-12">
             {title && (
-              <h2
-                className="text-3xl font-bold mb-4"
-                style={{ color: textColor }}
-              >
+              <h2 className="text-3xl font-bold mb-4" style={{ color: textColor }}>
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 
@@ -76,7 +69,10 @@ const ServicesGridBlock = ({ data, settings, isEditing = false, onClick, crmData
         <div className={cn('grid gap-6', columnClasses[columns] || columnClasses[3])}>
           {displayServices.length > 0 ? (
             displayServices.map((service, index) => (
-              <div key={service.id || index} className="bg-white rounded-lg border shadow-sm overflow-hidden">
+              <div
+                key={service.id || index}
+                className="bg-white rounded-lg border shadow-sm overflow-hidden"
+              >
                 {service.image && (
                   <div className="h-48 overflow-hidden">
                     <img
@@ -119,9 +115,7 @@ const ServicesGridBlock = ({ data, settings, isEditing = false, onClick, crmData
             ))
           ) : (
             <div className="col-span-full text-center py-12 text-gray-500">
-              {autoSync
-                ? 'Nu exista servicii configurate in CRM'
-                : 'Adaugati servicii din setari'}
+              {autoSync ? 'Nu exista servicii configurate in CRM' : 'Adaugati servicii din setari'}
             </div>
           )}
         </div>

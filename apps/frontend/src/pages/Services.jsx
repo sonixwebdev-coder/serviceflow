@@ -1,16 +1,6 @@
 import { useState, useMemo } from 'react';
 import confirm from '../utils/confirm';
-import {
-  Briefcase,
-  Plus,
-  Edit2,
-  Trash2,
-  Search,
-  X,
-  Clock,
-  Banknote,
-  Image,
-} from 'lucide-react';
+import { Briefcase, Plus, Edit2, Trash2, Search, X, Clock, Banknote, Image } from 'lucide-react';
 import { useServices, useServicesMutation } from '../hooks/useServices';
 import useToast from '../context/useToast';
 
@@ -23,7 +13,9 @@ const ServiceCard = ({ service, onEdit, onDelete, isDeleting }) => {
             src={service.image}
             alt={service.name}
             className="h-full w-full object-cover"
-            onError={(e) => { e.target.style.display = 'none'; }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
           />
         </div>
       )}
@@ -96,7 +88,10 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" style={{ margin: 0 }}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      style={{ margin: 0 }}
+    >
       <div className="relative w-full max-w-lg rounded-lg bg-white p-4 sm:p-6 shadow-xl">
         <button
           type="button"
@@ -112,9 +107,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Nume serviciu *
-            </label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Nume serviciu *</label>
             <input
               type="text"
               value={formData.name}
@@ -126,9 +119,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Descriere
-            </label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Descriere</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -141,9 +132,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Pret
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Pret</label>
               <input
                 type="text"
                 value={formData.price}
@@ -154,9 +143,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Durata
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Durata</label>
               <input
                 type="text"
                 value={formData.duration}
@@ -228,9 +215,7 @@ const Services = () => {
     try {
       let updatedServices;
       if (modalService) {
-        updatedServices = services.map((s) =>
-          s.id === modalService.id ? { ...s, ...data } : s
-        );
+        updatedServices = services.map((s) => (s.id === modalService.id ? { ...s, ...data } : s));
       } else {
         updatedServices = [...services, { ...data, id: crypto.randomUUID() }];
       }
@@ -255,7 +240,14 @@ const Services = () => {
   };
 
   const handleDelete = async (serviceId) => {
-    if (!await confirm({ title: 'Sterge serviciu', text: 'Esti sigur ca vrei sa stergi acest serviciu?', confirmText: 'Sterge', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Sterge serviciu',
+        text: 'Esti sigur ca vrei sa stergi acest serviciu?',
+        confirmText: 'Sterge',
+        danger: true,
+      }))
+    ) {
       return;
     }
 
@@ -306,9 +298,7 @@ const Services = () => {
         </button>
       </div>
 
-      {error && (
-        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>
-      )}
+      {error && <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

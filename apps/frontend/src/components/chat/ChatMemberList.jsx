@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useChannel } from '../../hooks/useChat';
-import { Users, Crown, Shield, User as UserIcon } from 'lucide-react';
+import { Users, Crown, Shield } from 'lucide-react';
 import UserHoverCard from './UserHoverCard';
 
 /**
@@ -10,7 +10,7 @@ import UserHoverCard from './UserHoverCard';
  * Displays channel members with online status and roles
  */
 export default function ChatMemberList() {
-  const { activeChannelId, isUserOnline, onlineUsers, initOnlineUsers } = useChatStore();
+  const { activeChannelId, onlineUsers, initOnlineUsers } = useChatStore();
   const { user: currentUser } = useAuthStore();
   const { data: channel, isLoading } = useChannel(activeChannelId);
 
@@ -95,16 +95,16 @@ export default function ChatMemberList() {
               >
                 <div
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer ${
-                    isCurrentUser
-                      ? 'bg-primary/5 border border-primary/20'
-                      : 'hover:bg-gray-50'
+                    isCurrentUser ? 'bg-primary/5 border border-primary/20' : 'hover:bg-gray-50'
                   }`}
                 >
                   {/* Avatar with online status */}
                   <div className="relative flex-shrink-0">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm text-white ${
-                      isCurrentUser ? 'bg-primary ring-2 ring-primary/30' : 'bg-primary'
-                    }`}>
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm text-white ${
+                        isCurrentUser ? 'bg-primary ring-2 ring-primary/30' : 'bg-primary'
+                      }`}
+                    >
                       {member.user.firstName[0]}
                       {member.user.lastName[0]}
                     </div>
@@ -116,11 +116,15 @@ export default function ChatMemberList() {
                   {/* User Info */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
-                      <p className={`truncate text-sm font-medium ${
-                        isCurrentUser ? 'text-primary' : 'text-gray-900'
-                      }`}>
+                      <p
+                        className={`truncate text-sm font-medium ${
+                          isCurrentUser ? 'text-primary' : 'text-gray-900'
+                        }`}
+                      >
                         {member.user.firstName} {member.user.lastName}
-                        {isCurrentUser && <span className="ml-1 text-xs font-normal text-gray-500">(tu)</span>}
+                        {isCurrentUser && (
+                          <span className="ml-1 text-xs font-normal text-gray-500">(tu)</span>
+                        )}
                       </p>
                       {getRoleIcon(member.role)}
                     </div>

@@ -6,6 +6,7 @@ import { useServicesMutation } from '../hooks/useServices';
 import useOnboardingStatus from '../hooks/useOnboardingStatus';
 import LocationStep from '../components/onboarding/LocationStep';
 import ServicesStep from '../components/onboarding/ServicesStep';
+import { runtimeConfig } from '../config/runtime';
 
 const STEPS = [
   { id: 'location', title: 'Locatie' },
@@ -81,8 +82,8 @@ const Onboarding = () => {
                 index < currentStep
                   ? 'bg-green-500 text-white'
                   : index === currentStep
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-200 text-gray-500'
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-200 text-gray-500'
               }`}
             >
               {index < currentStep ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : index + 1}
@@ -112,7 +113,7 @@ const Onboarding = () => {
     setError('');
     try {
       await createLocation(locationData);
-      setCompletedSteps(prev => ({ ...prev, location: true }));
+      setCompletedSteps((prev) => ({ ...prev, location: true }));
       setCurrentStep(1);
     } catch (err) {
       setError(err.message || 'Eroare la crearea locatiei');
@@ -124,7 +125,7 @@ const Onboarding = () => {
     setError('');
     try {
       await updateServices(services);
-      setCompletedSteps(prev => ({ ...prev, services: true }));
+      setCompletedSteps((prev) => ({ ...prev, services: true }));
       setCurrentStep(2);
     } catch (err) {
       setError(err.message || 'Eroare la salvarea serviciilor');
@@ -161,7 +162,9 @@ const Onboarding = () => {
           ) : (
             <div className="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0" />
           )}
-          <span className={completedSteps.location ? 'text-gray-800' : 'text-gray-400'}>Locatie principala</span>
+          <span className={completedSteps.location ? 'text-gray-800' : 'text-gray-400'}>
+            Locatie principala
+          </span>
         </div>
         <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
           {completedSteps.services ? (
@@ -169,7 +172,9 @@ const Onboarding = () => {
           ) : (
             <div className="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0" />
           )}
-          <span className={completedSteps.services ? 'text-gray-800' : 'text-gray-400'}>Servicii</span>
+          <span className={completedSteps.services ? 'text-gray-800' : 'text-gray-400'}>
+            Servicii
+          </span>
         </div>
       </div>
 
@@ -187,12 +192,7 @@ const Onboarding = () => {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
-        return (
-          <LocationStep
-            onNext={handleLocationSubmit}
-            isSaving={isSavingLocation}
-          />
-        );
+        return <LocationStep onNext={handleLocationSubmit} isSaving={isSavingLocation} />;
       case 1:
         return (
           <ServicesStep
@@ -214,7 +214,9 @@ const Onboarding = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-8">
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-1">ForjaIt</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-1">
+              {runtimeConfig.platformName}
+            </h1>
             <p className="text-gray-500 text-sm">Configureaza locatia si serviciile</p>
           </div>
 

@@ -10,7 +10,10 @@ const router = express.Router();
 const pricingLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
-  message: { success: false, message: 'Prea multe cereri. Incercati din nou peste cateva secunde.' },
+  message: {
+    success: false,
+    message: 'Prea multe cereri. Incercati din nou peste cateva secunde.',
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -31,20 +34,26 @@ router.get(
 
     // Starter
     const starter = {};
-    if (settings?.displayPriceStarterMonthly != null) starter.monthly = settings.displayPriceStarterMonthly;
-    if (settings?.displayPriceStarterAnnual != null) starter.annual = settings.displayPriceStarterAnnual;
+    if (settings?.displayPriceStarterMonthly != null)
+      starter.monthly = settings.displayPriceStarterMonthly;
+    if (settings?.displayPriceStarterAnnual != null)
+      starter.annual = settings.displayPriceStarterAnnual;
     if (Object.keys(starter).length > 0) result.starter = starter;
 
     // Professional
     const professional = {};
-    if (settings?.displayPriceProfessionalMonthly != null) professional.monthly = settings.displayPriceProfessionalMonthly;
-    if (settings?.displayPriceProfessionalAnnual != null) professional.annual = settings.displayPriceProfessionalAnnual;
+    if (settings?.displayPriceProfessionalMonthly != null)
+      professional.monthly = settings.displayPriceProfessionalMonthly;
+    if (settings?.displayPriceProfessionalAnnual != null)
+      professional.annual = settings.displayPriceProfessionalAnnual;
     if (Object.keys(professional).length > 0) result.professional = professional;
 
     // Enterprise
     const enterprise = {};
-    if (settings?.displayPriceEnterpriseMonthly != null) enterprise.monthly = settings.displayPriceEnterpriseMonthly;
-    if (settings?.displayPriceEnterpriseAnnual != null) enterprise.annual = settings.displayPriceEnterpriseAnnual;
+    if (settings?.displayPriceEnterpriseMonthly != null)
+      enterprise.monthly = settings.displayPriceEnterpriseMonthly;
+    if (settings?.displayPriceEnterpriseAnnual != null)
+      enterprise.annual = settings.displayPriceEnterpriseAnnual;
     if (Object.keys(enterprise).length > 0) result.enterprise = enterprise;
 
     return ok(res, result, 'Preturi preluate cu succes');

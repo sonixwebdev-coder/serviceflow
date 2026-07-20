@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 /**
  * Simple Emoji Picker Component
@@ -7,10 +7,10 @@ import React, { useState, useRef, useEffect } from 'react';
 
 const EMOJI_CATEGORIES = {
   'Frecvent folosite': ['😀', '😂', '😍', '🥰', '😊', '😉', '🤔', '😅', '😎', '🙄', '😴', '🤗'],
-  'Gesturi': ['👍', '👎', '👏', '🙌', '🤝', '✌️', '🤞', '👋', '🤙', '💪', '🙏', '❤️'],
-  'Expresii': ['😢', '😭', '😡', '🥺', '😱', '🤯', '🥳', '🤩', '😇', '🤓', '😬', '🤫'],
-  'Obiecte': ['🎉', '🎊', '🎁', '🔥', '⭐', '💡', '💯', '✅', '❌', '⚡', '💬', '📌'],
-  'Natură': ['☀️', '🌙', '⛅', '🌈', '🌸', '🌺', '🍀', '🌳', '🐶', '🐱', '🦋', '🐝'],
+  Gesturi: ['👍', '👎', '👏', '🙌', '🤝', '✌️', '🤞', '👋', '🤙', '💪', '🙏', '❤️'],
+  Expresii: ['😢', '😭', '😡', '🥺', '😱', '🤯', '🥳', '🤩', '😇', '🤓', '😬', '🤫'],
+  Obiecte: ['🎉', '🎊', '🎁', '🔥', '⭐', '💡', '💯', '✅', '❌', '⚡', '💬', '📌'],
+  Natură: ['☀️', '🌙', '⛅', '🌈', '🌸', '🌺', '🍀', '🌳', '🐶', '🐱', '🦋', '🐝'],
 };
 
 export default function EmojiPicker({ isOpen, onClose, onSelect, anchorRef }) {
@@ -80,9 +80,7 @@ export default function EmojiPicker({ isOpen, onClose, onSelect, anchorRef }) {
       </div>
 
       {/* Category Label */}
-      <div className="px-3 py-2 text-xs font-medium text-gray-500">
-        {activeCategory}
-      </div>
+      <div className="px-3 py-2 text-xs font-medium text-gray-500">{activeCategory}</div>
 
       {/* Emoji Grid */}
       <div className="grid grid-cols-6 gap-1 p-2 max-h-48 overflow-y-auto">

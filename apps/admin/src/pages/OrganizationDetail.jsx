@@ -1,34 +1,35 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Users, Calendar, FileText, Ban, CheckCircle, Shield, ShieldOff, CalendarPlus } from 'lucide-react';
 import {
-  useOrganization, useUpdateOrganization, useSuspendOrganization, useActivateOrganization,
-  useGrantPlan, useRevokeOverride,
+  ArrowLeft,
+  Building2,
+  Users,
+  Calendar,
+  FileText,
+  CreditCard,
+  Ban,
+  CheckCircle,
+  Shield,
+} from 'lucide-react';
+import {
+  useOrganization,
+  useUpdateOrganization,
+  useSuspendOrganization,
+  useActivateOrganization,
 } from '@/hooks/useOrganizations';
-import { useExtendTrial } from '@/hooks/useBilling';
-import useToast from '@/context/useToast';
 
 const STATUS_OPTIONS = ['ACTIVE', 'TRIAL', 'SUSPENDED', 'CANCELLED'];
-const OVERRIDE_PLAN_OPTIONS = ['PROFESSIONAL', 'ENTERPRISE'];
 
 export default function OrganizationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const { data: org, isLoading } = useOrganization(id);
   const updateMutation = useUpdateOrganization();
   const suspendMutation = useSuspendOrganization();
   const activateMutation = useActivateOrganization();
-  const grantMutation = useGrantPlan();
-  const revokeMutation = useRevokeOverride();
-  const extendTrialMutation = useExtendTrial();
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
-  const [showGrantForm, setShowGrantForm] = useState(false);
-  const [grantForm, setGrantForm] = useState({ plan: 'PROFESSIONAL', reason: '' });
-  const [showTrialForm, setShowTrialForm] = useState(false);
-  const [trialDays, setTrialDays] = useState(14);
 
   const startEditing = () => {
     setForm({
@@ -49,46 +50,6 @@ export default function OrganizationDetail() {
       maxAppointments: Number(form.maxAppointments) || 0,
     };
     updateMutation.mutate(payload, { onSuccess: () => setEditing(false) });
-  };
-
-  const handleGrant = () => {
-    grantMutation.mutate(
-      { id, plan: grantForm.plan, reason: grantForm.reason || undefined },
-      {
-        onSuccess: () => {
-          setShowGrantForm(false);
-          setGrantForm({ plan: 'PROFESSIONAL', reason: '' });
-          showToast({ title: 'Plan acordat', description: `Plan ${grantForm.plan} acordat cu succes.`, type: 'success' });
-        },
-      }
-    );
-  };
-
-  const handleRevoke = () => {
-    if (!window.confirm('Sigur doresti sa revoci override-ul? Organizatia va reveni la planul FREE sau la abonamentul Stripe activ.')) return;
-    revokeMutation.mutate(
-      { id },
-      {
-        onSuccess: () => {
-          showToast({ title: 'Override revocat', description: 'Planul a fost resetat.', type: 'success' });
-        },
-      }
-    );
-  };
-
-  const handleExtendTrial = () => {
-    const days = Number(trialDays);
-    if (!days || days < 1) return;
-    extendTrialMutation.mutate(
-      { orgId: id, days },
-      {
-        onSuccess: () => {
-          setShowTrialForm(false);
-          setTrialDays(14);
-          showToast({ title: 'Perioada extinsa', description: `Perioada de proba extinsa cu ${days} zile.`, type: 'success' });
-        },
-      }
-    );
   };
 
   if (isLoading) {
@@ -112,7 +73,10 @@ export default function OrganizationDetail() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <button onClick={() => navigate('/organizations')} className="mt-1 flex-shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+        <button
+          onClick={() => navigate('/organizations')}
+          className="mt-1 flex-shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+        >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1 min-w-0">
@@ -128,28 +92,30 @@ export default function OrganizationDetail() {
           </div>
           <p className="mt-0.5 text-sm text-gray-500 font-mono break-all">/{org.slug}</p>
           <div className="flex flex-wrap gap-2 mt-3">
-            {(org.status === 'TRIAL' || org.status === 'PAYMENT_REQUIRED') && (
-              <ActionBtn onClick={() => setShowTrialForm(!showTrialForm)} variant="blue" icon={CalendarPlus}>
-                Extinde Proba
-              </ActionBtn>
-            )}
-            {!org.planOverride && (
-              <ActionBtn onClick={() => setShowGrantForm(!showGrantForm)} variant="purple" icon={Shield}>
-                Acorda Plan
-              </ActionBtn>
-            )}
-            {org.planOverride && (
-              <ActionBtn onClick={handleRevoke} disabled={revokeMutation.isPending} variant="orange" icon={ShieldOff}>
-                Revocare Override
-              </ActionBtn>
-            )}
+            <ActionBtn
+              onClick={() => navigate(`/billing?organizationId=${encodeURIComponent(id)}`)}
+              variant="purple"
+              icon={CreditCard}
+            >
+              Gestioneaza Facturarea
+            </ActionBtn>
             {org.status !== 'SUSPENDED' && (
-              <ActionBtn onClick={() => suspendMutation.mutate(id)} disabled={suspendMutation.isPending} variant="red" icon={Ban}>
+              <ActionBtn
+                onClick={() => suspendMutation.mutate(id)}
+                disabled={suspendMutation.isPending}
+                variant="red"
+                icon={Ban}
+              >
                 Suspenda
               </ActionBtn>
             )}
             {org.status === 'SUSPENDED' && (
-              <ActionBtn onClick={() => activateMutation.mutate(id)} disabled={activateMutation.isPending} variant="green" icon={CheckCircle}>
+              <ActionBtn
+                onClick={() => activateMutation.mutate(id)}
+                disabled={activateMutation.isPending}
+                variant="green"
+                icon={CheckCircle}
+              >
                 Activeaza
               </ActionBtn>
             )}
@@ -165,86 +131,32 @@ export default function OrganizationDetail() {
         </div>
       </div>
 
-      {/* Grant Plan form */}
-      {showGrantForm && (
-        <InlinePanel title="Acorda Plan (Override)" color="purple" onClose={() => setShowGrantForm(false)}>
-          <div className="flex items-end gap-3">
-            <div>
-              <label className="block text-xs font-medium text-purple-700 mb-1">Plan</label>
-              <select
-                value={grantForm.plan}
-                onChange={(e) => setGrantForm({ ...grantForm, plan: e.target.value })}
-                className="rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-              >
-                {OVERRIDE_PLAN_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-purple-700 mb-1">Motiv (optional)</label>
-              <input
-                type="text"
-                value={grantForm.reason}
-                onChange={(e) => setGrantForm({ ...grantForm, reason: e.target.value })}
-                placeholder="ex: Early adopter, companie proprie"
-                className="w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-              />
-            </div>
-            <button
-              onClick={handleGrant}
-              disabled={grantMutation.isPending}
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 disabled:opacity-50 transition-colors"
-            >
-              {grantMutation.isPending ? 'Se acorda...' : 'Acorda'}
-            </button>
-          </div>
-        </InlinePanel>
-      )}
-
-      {/* Extend Trial form */}
-      {showTrialForm && (
-        <InlinePanel title="Extinde Perioada de Proba" color="blue" onClose={() => setShowTrialForm(false)}>
-          {org.trialEndsAt && (
-            <p className="text-xs text-blue-600 mb-3">
-              Trial-ul expira pe <strong>{new Date(org.trialEndsAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
-            </p>
-          )}
-          <div className="flex items-end gap-3">
-            <div>
-              <label className="block text-xs font-medium text-blue-700 mb-1">Zile</label>
-              <input
-                type="number"
-                value={trialDays}
-                onChange={(e) => setTrialDays(e.target.value)}
-                min="1"
-                max="365"
-                className="w-24 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              />
-            </div>
-            <button
-              onClick={handleExtendTrial}
-              disabled={extendTrialMutation.isPending}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {extendTrialMutation.isPending ? 'Se extinde...' : 'Extinde'}
-            </button>
-          </div>
-        </InlinePanel>
-      )}
-
       {/* Override banner */}
       {org.planOverride && (
         <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <Shield className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
           <div>
-            <p className="text-sm font-semibold text-emerald-800">Plan acordat manual (override activ)</p>
+            <p className="text-sm font-semibold text-emerald-800">
+              Plan acordat manual (override activ)
+            </p>
             <p className="mt-1 text-sm text-emerald-700">
               Acordat de <span className="font-medium">{org.planOverrideBy}</span>
               {org.planOverrideAt && (
-                <> la {new Date(org.planOverrideAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })}</>
+                <>
+                  {' '}
+                  la{' '}
+                  {new Date(org.planOverrideAt).toLocaleDateString('ro-RO', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </>
               )}
               {org.planOverrideReason && <> - {org.planOverrideReason}</>}
             </p>
-            <p className="mt-1 text-xs text-emerald-600/70">Webhook-urile Stripe nu vor modifica acest plan.</p>
+            <p className="mt-1 text-xs text-emerald-600/70">
+              Webhook-urile Stripe nu vor modifica acest plan.
+            </p>
           </div>
         </div>
       )}
@@ -258,11 +170,11 @@ export default function OrganizationDetail() {
       </div>
 
       {/* Details / Edit form */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
+      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-sm font-semibold text-gray-900">Detalii Organizatie</h3>
           {editing && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleSave}
                 disabled={updateMutation.isPending}
@@ -288,7 +200,11 @@ export default function OrganizationDetail() {
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                 className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
               >
-                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </FormField>
             <FormField label="Max Utilizatori">
@@ -322,12 +238,25 @@ export default function OrganizationDetail() {
             <InfoField label="Max Utilizatori" value={org.maxUsers} />
             <InfoField label="Max Clienti" value={org.maxClients} />
             <InfoField label="Max Programari" value={org.maxAppointments} />
-            <InfoField label="Trial Expira" value={org.trialEndsAt ? new Date(org.trialEndsAt).toLocaleDateString('ro-RO') : '-'} />
+            <InfoField
+              label="Trial Expira"
+              value={org.trialEndsAt ? new Date(org.trialEndsAt).toLocaleDateString('ro-RO') : '-'}
+            />
             <InfoField label="Trial Folosit" value={org.trialUsed ? 'Da' : 'Nu'} />
             <InfoField label="Stripe Customer" value={org.stripeCustomerId || '-'} mono />
             <InfoField label="Subscription" value={org.subscriptionId || '-'} mono />
-            <InfoField label="Subscription Ends" value={org.subscriptionEndsAt ? new Date(org.subscriptionEndsAt).toLocaleDateString('ro-RO') : '-'} />
-            <InfoField label="Data Crearii" value={new Date(org.createdAt).toLocaleDateString('ro-RO')} />
+            <InfoField
+              label="Subscription Ends"
+              value={
+                org.subscriptionEndsAt
+                  ? new Date(org.subscriptionEndsAt).toLocaleDateString('ro-RO')
+                  : '-'
+              }
+            />
+            <InfoField
+              label="Data Crearii"
+              value={new Date(org.createdAt).toLocaleDateString('ro-RO')}
+            />
           </div>
         )}
       </div>
@@ -354,26 +283,6 @@ function ActionBtn({ onClick, disabled, variant, icon: Icon, children }) {
       <Icon className="h-3.5 w-3.5" />
       {children}
     </button>
-  );
-}
-
-function InlinePanel({ title, color, onClose, children }) {
-  const colors = {
-    purple: 'border-purple-200 bg-purple-50/60',
-    blue: 'border-blue-200 bg-blue-50/60',
-  };
-  const titleColors = {
-    purple: 'text-purple-900',
-    blue: 'text-blue-900',
-  };
-  return (
-    <div className={`animate-fade-in rounded-2xl border p-4 ${colors[color]}`}>
-      <div className="flex items-center justify-between mb-3">
-        <h4 className={`text-sm font-semibold ${titleColors[color]}`}>{title}</h4>
-        <button onClick={onClose} className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors">Anuleaza</button>
-      </div>
-      {children}
-    </div>
   );
 }
 
@@ -404,7 +313,11 @@ function InfoField({ label, value, mono }) {
   return (
     <div>
       <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{label}</p>
-      <p className={`mt-0.5 text-sm font-medium text-gray-900 ${mono ? 'font-mono text-xs' : ''}`}>{value}</p>
+      <p
+        className={`mt-0.5 break-words text-sm font-medium text-gray-900 ${mono ? 'break-all font-mono text-xs' : ''}`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -418,7 +331,9 @@ function StatusBadge({ status }) {
     PAYMENT_REQUIRED: 'bg-orange-50 text-orange-700 border-orange-200',
   };
   return (
-    <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[status] || styles.ACTIVE}`}>
+    <span
+      className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[status] || styles.ACTIVE}`}
+    >
       {status}
     </span>
   );
@@ -432,7 +347,9 @@ function PlanBadge({ plan }) {
     ENTERPRISE: 'bg-amber-50 text-amber-700 border-amber-200',
   };
   return (
-    <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[plan] || styles.FREE}`}>
+    <span
+      className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[plan] || styles.FREE}`}
+    >
       {plan}
     </span>
   );

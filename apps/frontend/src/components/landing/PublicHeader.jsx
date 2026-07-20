@@ -36,11 +36,19 @@ export default function PublicHeader() {
           <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-gray-600">
             {NAV_ITEMS.map((item) =>
               item.to ? (
-                <Link key={item.label} to={item.to} className="hover:text-gray-900 transition-colors">
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="hover:text-gray-900 transition-colors"
+                >
                   {item.label}
                 </Link>
               ) : (
-                <button key={item.label} onClick={() => handleAnchor(item.anchor)} className="hover:text-gray-900 transition-colors">
+                <button
+                  key={item.label}
+                  onClick={() => handleAnchor(item.anchor)}
+                  className="hover:text-gray-900 transition-colors"
+                >
                   {item.label}
                 </button>
               )
@@ -48,15 +56,24 @@ export default function PublicHeader() {
           </nav>
 
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
               Autentificare
             </Link>
-            <Link to="/signup" className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25">
+            <Link
+              to="/signup"
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25"
+            >
               Incearca gratuit
             </Link>
           </div>
 
-          <button onClick={() => setOpen(!open)} className="lg:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100">
+          <button
+            onClick={() => setOpen(!open)}
+            className="lg:hidden rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+          >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
@@ -68,11 +85,20 @@ export default function PublicHeader() {
           <nav className="flex flex-col gap-1 text-sm font-medium text-gray-600">
             {NAV_ITEMS.map((item) =>
               item.to ? (
-                <Link key={item.label} to={item.to} className="py-2.5 hover:text-gray-900" onClick={() => setOpen(false)}>
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="py-2.5 hover:text-gray-900"
+                  onClick={() => setOpen(false)}
+                >
                   {item.label}
                 </Link>
               ) : (
-                <button key={item.label} onClick={() => handleAnchor(item.anchor)} className="text-left py-2.5 hover:text-gray-900">
+                <button
+                  key={item.label}
+                  onClick={() => handleAnchor(item.anchor)}
+                  className="text-left py-2.5 hover:text-gray-900"
+                >
                   {item.label}
                 </button>
               )
@@ -81,7 +107,11 @@ export default function PublicHeader() {
             <Link to="/login" className="py-2.5 hover:text-gray-900" onClick={() => setOpen(false)}>
               Autentificare
             </Link>
-            <Link to="/signup" className="rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white mt-1" onClick={() => setOpen(false)}>
+            <Link
+              to="/signup"
+              className="rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white mt-1"
+              onClick={() => setOpen(false)}
+            >
               Incearca gratuit
             </Link>
           </nav>

@@ -26,9 +26,7 @@ class ErrorBoundary extends Component {
         <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
           <div className="max-w-md text-center">
             <div className="mb-4 text-5xl">⚠️</div>
-            <h1 className="mb-2 text-2xl font-bold text-gray-900">
-              Ceva nu a funcționat
-            </h1>
+            <h1 className="mb-2 text-2xl font-bold text-gray-900">Ceva nu a funcționat</h1>
             <p className="mb-4 text-gray-600">
               A apărut o eroare neașteptată. Te rugăm să încerci din nou.
             </p>

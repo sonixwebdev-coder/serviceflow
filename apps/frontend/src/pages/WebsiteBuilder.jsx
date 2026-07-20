@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   Globe,
@@ -30,12 +30,21 @@ import {
 } from '@/hooks/useWebsiteBuilder';
 import BlockEditor from '@/components/website-builder/BlockEditor';
 import FloatingHelperWidget from '@/components/website-builder/FloatingHelperWidget';
-import { BrandingSettings, SeoSettings, PageSeoSettings, HeaderFooterSettings } from '@/components/website-builder/settings';
-import { TemplateSelector, getTemplateById, templates as allTemplates, getTemplatesBySector } from '@/components/website-builder/templates';
-import { createPage as createPageService, bulkUpsertPages, fetchPages as fetchPagesService } from '@/services/websiteService';
-import { updateCompanySettings } from '@/services/settingsService';
+import {
+  BrandingSettings,
+  SeoSettings,
+  PageSeoSettings,
+  HeaderFooterSettings,
+} from '@/components/website-builder/settings';
+import {
+  TemplateSelector,
+  templates as allTemplates,
+  getTemplatesBySector,
+} from '@/components/website-builder/templates';
+import { bulkUpsertPages } from '@/services/websiteService';
 import useToast from '@/context/useToast';
 import useAuth from '@/context/useAuth';
+import { runtimeConfig } from '@/config/runtime';
 
 const WebsiteBuilder = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -59,13 +68,17 @@ const WebsiteBuilder = () => {
   const { checkSubdomain, isAvailable, isChecking } = useSubdomainCheck();
 
   // Pages
-  const { pages, loading: pagesLoading, refresh: refreshPages } = useWebsitePages(
-    website?.id,
-    { enabled: !!website?.id }
-  );
-  const { createPage, updatePage, deletePage, isUpdating: isUpdatingPage } = usePageMutations(
-    website?.id
-  );
+  const {
+    pages,
+    loading: pagesLoading,
+    refresh: refreshPages,
+  } = useWebsitePages(website?.id, { enabled: !!website?.id });
+  const {
+    createPage,
+    updatePage,
+    deletePage,
+    isUpdating: isUpdatingPage,
+  } = usePageMutations(website?.id);
 
   // CRM data for auto-sync blocks
   const { data: servicesData } = useCrmData('services', { enabled: !!website?.id });
@@ -169,7 +182,10 @@ const WebsiteBuilder = () => {
       setShowSetupDialog(false);
     } catch (error) {
       setIsCreatingPages(false);
-      showToast({ title: error.message || createError || 'Eroare la crearea website-ului', type: 'error' });
+      showToast({
+        title: error.message || createError || 'Eroare la crearea website-ului',
+        type: 'error',
+      });
     }
   };
 
@@ -296,17 +312,6 @@ const WebsiteBuilder = () => {
         websiteId: website.id,
         isPublished: isPublishing,
       });
-      // When publishing, sync the website URL to company settings so it appears in the Settings page
-      if (isPublishing) {
-        const url = website?.url;
-        if (url) {
-          try {
-            await updateCompanySettings({ website: url });
-          } catch {
-            // Non-critical — don't block or show error for this
-          }
-        }
-      }
       refreshWebsite();
       showToast({
         title: isPublishing ? 'Website publicat cu succes!' : 'Website retras din publicare',
@@ -391,7 +396,8 @@ const WebsiteBuilder = () => {
           </div>
           <h2 className="text-lg font-semibold text-gray-900">Website Builder</h2>
           <p className="mt-2 text-sm text-gray-500 max-w-sm">
-            Website Builder-ul necesita un ecran mai mare pentru a functiona corect. Te rugam sa il accesezi de pe un calculator sau tableta.
+            Website Builder-ul necesita un ecran mai mare pentru a functiona corect. Te rugam sa il
+            accesezi de pe un calculator sau tableta.
           </p>
         </div>
       </div>
@@ -419,9 +425,7 @@ const WebsiteBuilder = () => {
               <div>
                 <h1 className="text-lg font-semibold">Website Builder</h1>
                 {website?.subdomain && (
-                  <p className="text-sm text-gray-500">
-                    {websiteUrl?.replace(/^https?:\/\//, '')}
-                  </p>
+                  <p className="text-sm text-gray-500">{websiteUrl?.replace(/^https?:\/\//, '')}</p>
                 )}
               </div>
             </div>
@@ -709,7 +713,9 @@ const WebsiteBuilder = () => {
                       {showPageSeo && (
                         <div className="h-[calc(100%-65px)] overflow-y-auto p-6 bg-gray-50">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold">Setari SEO - {selectedPage.title}</h3>
+                            <h3 className="text-lg font-semibold">
+                              Setari SEO - {selectedPage.title}
+                            </h3>
                             <button
                               onClick={() => setShowPageSeo(false)}
                               className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
@@ -822,7 +828,9 @@ const WebsiteBuilder = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">Creeaza website-ul</h3>
-                <p className="text-gray-500 text-sm">Alege un subdomain si optional un template pentru a incepe</p>
+                <p className="text-gray-500 text-sm">
+                  Alege un subdomain si optional un template pentru a incepe
+                </p>
               </div>
               <button
                 onClick={() => setShowSetupDialog(false)}
@@ -836,16 +844,16 @@ const WebsiteBuilder = () => {
               <div>
                 <label className="text-sm font-medium">Subdomain</label>
                 <div className="flex mt-1">
+                  <div className="flex max-w-[50%] items-center truncate rounded-l-lg border border-r-0 border-gray-200 bg-gray-100 px-3 text-sm text-gray-600">
+                    {runtimeConfig.websiteUrl.replace(/^https?:\/\//, '')}/
+                  </div>
                   <input
                     type="text"
                     value={setupSubdomain}
                     onChange={handleSetupSubdomainChange}
                     placeholder="compania-ta"
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="min-w-0 flex-1 rounded-r-lg border border-gray-200 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-primary"
                   />
-                  <div className="flex items-center px-3 bg-gray-100 border border-l-0 border-gray-200 rounded-r-lg text-gray-600 text-sm">
-                    .forja.it.com
-                  </div>
                 </div>
                 <div className="mt-1 text-sm">
                   {isChecking && (
@@ -865,7 +873,12 @@ const WebsiteBuilder = () => {
                 <div className="mt-2 grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto">
                   <button
                     onClick={() => handleCreateWebsite(null)}
-                    disabled={!setupSubdomain || setupSubdomain.length < 3 || isAvailable === false || isCreating}
+                    disabled={
+                      !setupSubdomain ||
+                      setupSubdomain.length < 3 ||
+                      isAvailable === false ||
+                      isCreating
+                    }
                     className="p-4 border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all text-center disabled:opacity-50"
                   >
                     <Layout className="h-8 w-8 mx-auto text-gray-400 mb-2" />
@@ -874,13 +887,23 @@ const WebsiteBuilder = () => {
                   </button>
 
                   {(getTemplatesBySector(user?.organization?.activitySector).length > 0
-                    ? [...getTemplatesBySector(user?.organization?.activitySector), ...allTemplates.filter(t => t.sector !== user?.organization?.activitySector)]
+                    ? [
+                        ...getTemplatesBySector(user?.organization?.activitySector),
+                        ...allTemplates.filter(
+                          (t) => t.sector !== user?.organization?.activitySector
+                        ),
+                      ]
                     : allTemplates
                   ).map((template) => (
                     <button
                       key={template.id}
                       onClick={() => handleCreateWebsite(template)}
-                      disabled={!setupSubdomain || setupSubdomain.length < 3 || isAvailable === false || isCreating}
+                      disabled={
+                        !setupSubdomain ||
+                        setupSubdomain.length < 3 ||
+                        isAvailable === false ||
+                        isCreating
+                      }
                       className="border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all text-left disabled:opacity-50 overflow-hidden"
                     >
                       <div className="aspect-video bg-gray-100 overflow-hidden">
@@ -909,7 +932,13 @@ const WebsiteBuilder = () => {
               </button>
               <button
                 onClick={() => handleCreateWebsite(null)}
-                disabled={!setupSubdomain || setupSubdomain.length < 3 || isAvailable === false || isCreating || isCreatingPages}
+                disabled={
+                  !setupSubdomain ||
+                  setupSubdomain.length < 3 ||
+                  isAvailable === false ||
+                  isCreating ||
+                  isCreatingPages
+                }
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
               >
                 {isCreating || isCreatingPages ? (
@@ -917,7 +946,9 @@ const WebsiteBuilder = () => {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     {isCreatingPages ? 'Se creeaza paginile...' : 'Se creeaza...'}
                   </span>
-                ) : 'Creeaza website'}
+                ) : (
+                  'Creeaza website'
+                )}
               </button>
             </div>
           </div>
@@ -970,11 +1001,15 @@ const WebsiteBuilder = () => {
       {/* Delete Page Dialog */}
       {showDeletePageDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setShowDeletePageDialog(false)} />
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowDeletePageDialog(false)}
+          />
           <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-semibold mb-2">Sterge pagina</h3>
             <p className="text-gray-500 mb-6">
-              Esti sigur ca vrei sa stergi pagina "{selectedPage?.title}"? Aceasta actiune nu poate fi anulata.
+              Esti sigur ca vrei sa stergi pagina "{selectedPage?.title}"? Aceasta actiune nu poate
+              fi anulata.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -997,17 +1032,24 @@ const WebsiteBuilder = () => {
       {/* Template Confirm Dialog */}
       {showTemplateConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/50" onClick={() => !isApplyingTemplate && setShowTemplateConfirm(null)} />
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => !isApplyingTemplate && setShowTemplateConfirm(null)}
+          />
           <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             {isApplyingTemplate ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
                 <h3 className="text-lg font-semibold mb-1">Se aplica template-ul...</h3>
-                <p className="text-gray-500 text-sm">Se actualizeaza paginile si setarile website-ului</p>
+                <p className="text-gray-500 text-sm">
+                  Se actualizeaza paginile si setarile website-ului
+                </p>
               </div>
             ) : (
               <>
-                <h3 className="text-lg font-semibold mb-2">Aplica template: {showTemplateConfirm.name}</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Aplica template: {showTemplateConfirm.name}
+                </h3>
                 <p className="text-gray-500 mb-2">
                   Aceasta actiune va actualiza branding-ul si setarile SEO ale website-ului.
                 </p>

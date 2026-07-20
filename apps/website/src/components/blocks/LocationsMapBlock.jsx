@@ -5,20 +5,23 @@ import { websiteService } from '@/services/websiteService';
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const DAY_NAMES = {
-  monday: 'Luni', tuesday: 'Marti', wednesday: 'Miercuri',
-  thursday: 'Joi', friday: 'Vineri', saturday: 'Sambata', sunday: 'Duminica',
+  monday: 'Luni',
+  tuesday: 'Marti',
+  wednesday: 'Miercuri',
+  thursday: 'Joi',
+  friday: 'Vineri',
+  saturday: 'Sambata',
+  sunday: 'Duminica',
 };
 
 function getMapEmbedUrl(location) {
-  const query = [location.address, location.city, location.county]
-    .filter(Boolean).join(', ');
+  const query = [location.address, location.city, location.county].filter(Boolean).join(', ');
   if (!query) return null;
   return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
 }
 
 function getDirectionsUrl(location) {
-  const query = [location.address, location.city, location.county]
-    .filter(Boolean).join(', ');
+  const query = [location.address, location.city, location.county].filter(Boolean).join(', ');
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
 }
 
@@ -41,7 +44,7 @@ export default function LocationsMapBlock({ data, subdomain, branding }) {
     enabled: autoSync,
   });
 
-  const locations = autoSync ? (crmLocations || []) : staticLocations;
+  const locations = autoSync ? crmLocations || [] : staticLocations;
 
   return (
     <div>
@@ -88,7 +91,10 @@ export default function LocationsMapBlock({ data, subdomain, branding }) {
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
               >
                 <div className="flex items-start gap-3 mb-4">
-                  <MapPin className="h-6 w-6 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                  <MapPin
+                    className="h-6 w-6 flex-shrink-0 mt-0.5"
+                    style={{ color: primaryColor }}
+                  />
                   <div>
                     <h3 className="font-semibold text-gray-900">{location.name}</h3>
                     {location.address && (

@@ -6,7 +6,10 @@ function useCountUp(target, duration = 2000, start = false) {
   useEffect(() => {
     if (!start || !target) return;
     const num = parseFloat(String(target).replace(/[^0-9.]/g, ''));
-    if (isNaN(num)) { setValue(target); return; }
+    if (isNaN(num)) {
+      setValue(target);
+      return;
+    }
     const startTime = performance.now();
     const step = (now) => {
       const progress = Math.min((now - startTime) / duration, 1);
@@ -29,27 +32,17 @@ function StatItem({ stat, primaryColor, isVisible }) {
 
   return (
     <div className="text-center p-6">
-      <div
-        className="text-4xl md:text-5xl font-bold mb-2"
-        style={{ color: primaryColor }}
-      >
+      <div className="text-4xl md:text-5xl font-bold mb-2" style={{ color: primaryColor }}>
         {isNumeric ? `${prefix}${animatedValue}${suffix}` : stat.value}
       </div>
       <div className="text-gray-600 font-medium">{stat.label}</div>
-      {stat.description && (
-        <p className="text-gray-400 text-sm mt-1">{stat.description}</p>
-      )}
+      {stat.description && <p className="text-gray-400 text-sm mt-1">{stat.description}</p>}
     </div>
   );
 }
 
 export default function StatsBlock({ data, branding }) {
-  const {
-    title,
-    subtitle,
-    stats = [],
-    columns = 4,
-  } = data;
+  const { title, subtitle, stats = [], columns = 4 } = data;
 
   const primaryColor = branding?.primaryColor || '#2563eb';
   const ref = useRef(null);
@@ -89,12 +82,7 @@ export default function StatsBlock({ data, branding }) {
       ) : (
         <div className={cn('grid gap-6', gridCols[columns] || gridCols[4])}>
           {stats.map((stat, index) => (
-            <StatItem
-              key={index}
-              stat={stat}
-              primaryColor={primaryColor}
-              isVisible={isVisible}
-            />
+            <StatItem key={index} stat={stat} primaryColor={primaryColor} isVisible={isVisible} />
           ))}
         </div>
       )}

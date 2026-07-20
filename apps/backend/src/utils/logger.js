@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { redactLogData, redactLogString } = require('./logRedaction');
 
 const LOG_DIR = path.join(__dirname, '../../logs');
 
@@ -9,11 +10,6 @@ if (!fs.existsSync(LOG_DIR)) {
 }
 
 // --- File logging (date-based) ---
-
-const getLogFilePath = () => {
-  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  return path.join(LOG_DIR, `${date}.log`);
-};
 
 let currentLogDate = null;
 let logStream = null;
@@ -41,20 +37,9 @@ const formatTimestamp = () => new Date().toISOString();
 const serializeData = (data) => {
   if (!data) return '';
   try {
-    if (data instanceof Error) {
-      return JSON.stringify({
-        name: data.name,
-        message: data.message,
-        stack: data.stack,
-        ...Object.getOwnPropertyNames(data).reduce((acc, key) => {
-          if (!['name', 'message', 'stack'].includes(key)) acc[key] = data[key];
-          return acc;
-        }, {}),
-      }, null, 2);
-    }
-    return JSON.stringify(data, null, 2);
+    return JSON.stringify(redactLogData(data), null, 2);
   } catch {
-    return String(data);
+    return redactLogString(String(data));
   }
 };
 
@@ -109,9 +94,12 @@ const scheduleFlush = () => {
     flushTimer = null;
     await flushBuffer();
   }, FLUSH_INTERVAL_MS);
+  flushTimer.unref?.();
 };
 
 const enqueue = (entry) => {
+  if (process.env.NODE_ENV === 'test') return;
+
   buffer.push(entry);
   if (buffer.length >= FLUSH_THRESHOLD) {
     if (flushTimer) {
@@ -140,16 +128,19 @@ const log = (level, category, message, extra = {}) => {
     extra = extra != null ? { value: extra } : {};
   }
 
+  extra = redactLogData(extra);
+  const safeMessage = redactLogString(String(message));
+
   const { stack, path: reqPath, method, userId, ip, duration, ...rest } = extra;
 
   // Always write to date-based file
-  writeFileLog(level, category, message, Object.keys(extra).length > 0 ? extra : null);
+  writeFileLog(level, category, safeMessage, Object.keys(extra).length > 0 ? extra : null);
 
   // Enqueue for DB write
   enqueue({
     level,
     category,
-    message: String(message).slice(0, 2000),
+    message: safeMessage.slice(0, 2000),
     data: Object.keys(rest).length > 0 ? rest : undefined,
     stack: stack || undefined,
     path: reqPath || undefined,

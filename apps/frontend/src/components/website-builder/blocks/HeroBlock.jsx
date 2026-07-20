@@ -8,7 +8,9 @@ const isSafeUrl = (url) => {
   try {
     const parsed = new URL(trimmed);
     return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol);
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 };
 
 const heightClasses = {
@@ -98,20 +100,19 @@ const HeroBlock = ({ data, settings, isEditing = false, onClick }) => {
         )}
 
         {subtitle && (
-          <p
-            className="text-lg md:text-xl opacity-90 mb-8 max-w-2xl"
-            style={{ color: textColor }}
-          >
+          <p className="text-lg md:text-xl opacity-90 mb-8 max-w-2xl" style={{ color: textColor }}>
             {subtitle}
           </p>
         )}
 
         {(ctaText || secondaryCtaText) && (
-          <div className={cn(
-            'flex gap-4',
-            layout === 'centered' && 'justify-center',
-            layout === 'right' && 'justify-end'
-          )}>
+          <div
+            className={cn(
+              'flex gap-4',
+              layout === 'centered' && 'justify-center',
+              layout === 'right' && 'justify-end'
+            )}
+          >
             {ctaText && (
               <button
                 className={cn(

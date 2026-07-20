@@ -5,8 +5,12 @@ const { broadcastInvoice } = require('../realtime/events');
 const { buildInvoicePdf } = require('../utils/pdf');
 const { writeFile, readFile, removeFile, exists } = require('../utils/storage');
 const { getCompanySettings } = require('./companySettingService');
-const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
-const { calculateTotalPaid, updateInvoicePaymentStatus } = require('./paymentService');
+const {
+  getPrismaPagination,
+  createPaginatedResponse,
+  parsePaginationParams,
+} = require('../utils/pagination');
+const { calculateTotalPaid } = require('./paymentService');
 const loyaltyService = require('./loyaltyService');
 const { sendInvoiceCreatedEmail } = require('./email/emailService');
 const logger = require('../utils/logger');
@@ -57,23 +61,24 @@ const mapInvoice = (invoice) => {
     finalPaidAt: invoice.finalPaidAt,
     createdAt: invoice.createdAt,
     updatedAt: invoice.updatedAt,
-    lineItems: invoice.lineItems?.map((item) => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      // Enhanced quantity tracking
-      hardwareQuantity: Number(item.hardwareQuantity || 1),
-      laborQuantity: Number(item.laborQuantity || 1),
-      hardwarePrice: Number(item.hardwarePrice || 0),
-      laborPrice: Number(item.laborPrice || 0),
-      hardwareUnit: item.hardwareUnit,
-      laborUnit: item.laborUnit,
-      totalPrice: Number(item.totalPrice),
-      // Backward compatibility fields
-      quantity: Number(item.quantity || 1),
-      unitPrice: Number(item.hardwarePrice || 0) + Number(item.laborPrice || 0),
-      order: item.order,
-    })) || [],
+    lineItems:
+      invoice.lineItems?.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        // Enhanced quantity tracking
+        hardwareQuantity: Number(item.hardwareQuantity || 1),
+        laborQuantity: Number(item.laborQuantity || 1),
+        hardwarePrice: Number(item.hardwarePrice || 0),
+        laborPrice: Number(item.laborPrice || 0),
+        hardwareUnit: item.hardwareUnit,
+        laborUnit: item.laborUnit,
+        totalPrice: Number(item.totalPrice),
+        // Backward compatibility fields
+        quantity: Number(item.quantity || 1),
+        unitPrice: Number(item.hardwarePrice || 0) + Number(item.laborPrice || 0),
+        order: item.order,
+      })) || [],
     appointment: invoice.appointment
       ? {
           id: invoice.appointment.id,
@@ -223,7 +228,11 @@ const generateInvoiceNumber = async (client = prisma, organizationId = null) => 
     }
   }
 
-  const prefix = (seq.prefix || 'INV').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) || 'INV';
+  const prefix =
+    (seq.prefix || 'INV')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 10) || 'INV';
   const separator = ['-', '/', '_', ''].includes(seq.separator) ? seq.separator : '-';
   const includeYear = seq.includeYear !== false;
   const paddingDigits = Math.max(3, Math.min(10, Number(seq.paddingDigits) || 5));
@@ -277,26 +286,22 @@ const persistPdfForInvoice = async ({
   companySettings,
   client = prisma,
 }) => {
-  try {
-    const buffer = await buildInvoicePdf(mappedInvoice, companySettings);
+  const buffer = await buildInvoicePdf(mappedInvoice, companySettings);
 
-    await writeFile(relativePath, buffer);
+  await writeFile(relativePath, buffer);
 
-    if (previousPath && previousPath !== relativePath) {
-      await removeFile(previousPath);
-    }
-
-    if (updateRecord) {
-      await client.invoice.update({
-        where: { id: mappedInvoice.id },
-        data: { pdfUrl: relativePath },
-      });
-    }
-
-    return { buffer, relativePath };
-  } catch (error) {
-    throw error;
+  if (previousPath && previousPath !== relativePath) {
+    await removeFile(previousPath);
   }
+
+  if (updateRecord) {
+    await client.invoice.update({
+      where: { id: mappedInvoice.id },
+      data: { pdfUrl: relativePath },
+    });
+  }
+
+  return { buffer, relativePath };
 };
 
 const sanitizeLineItems = (lineItems = []) => {
@@ -312,8 +317,9 @@ const sanitizeLineItems = (lineItems = []) => {
     const laborQuantity = Math.max(0, parseInt(item?.laborQuantity ?? 0, 10) || 0);
 
     // If both are 0, default to 1 for legacy support
-    const finalHardwareQuantity = (hardwareQuantity === 0 && laborQuantity === 0) ? 1 : hardwareQuantity;
-    const finalLaborQuantity = (hardwareQuantity === 0 && laborQuantity === 0) ? 1 : laborQuantity;
+    const finalHardwareQuantity =
+      hardwareQuantity === 0 && laborQuantity === 0 ? 1 : hardwareQuantity;
+    const finalLaborQuantity = hardwareQuantity === 0 && laborQuantity === 0 ? 1 : laborQuantity;
 
     let hardwarePrice = 0;
     let laborPrice = 0;
@@ -338,7 +344,7 @@ const sanitizeLineItems = (lineItems = []) => {
 
     // Calculate total: (hwQty * hwPrice) + (laborQty * laborPrice)
     const totalPrice = roundCurrency(
-      (finalHardwareQuantity * hardwarePrice) + (finalLaborQuantity * laborPrice)
+      finalHardwareQuantity * hardwarePrice + finalLaborQuantity * laborPrice
     );
 
     // Legacy quantity for backward compatibility
@@ -395,10 +401,16 @@ const resolveStatus = (requestedStatus, existingStatus) => {
 
   if (current) {
     if (IMMUTABLE_STATUSES.has(current) && desired !== current) {
-      throw new AppError(`Invoice is already ${current.toLowerCase()} and cannot change status`, 409);
+      throw new AppError(
+        `Invoice is already ${current.toLowerCase()} and cannot change status`,
+        409
+      );
     }
     if (!STATUS_TRANSITIONS[current].has(desired)) {
-      throw new AppError(`Cannot transition invoice from ${current.toLowerCase()} to ${desired.toLowerCase()}`, 409);
+      throw new AppError(
+        `Cannot transition invoice from ${current.toLowerCase()} to ${desired.toLowerCase()}`,
+        409
+      );
     }
   }
 
@@ -432,7 +444,9 @@ const sanitizePayload = (payload = {}, existing, companySettings = null) => {
   const status = resolveStatus(payload.status, existing?.status);
 
   // Validate dates
-  const issueDate = payload.issueDate ? new Date(payload.issueDate) : (existing?.issueDate || new Date());
+  const issueDate = payload.issueDate
+    ? new Date(payload.issueDate)
+    : existing?.issueDate || new Date();
   const dueDate = payload.dueDate ? new Date(payload.dueDate) : existing?.dueDate;
 
   if (!dueDate) {
@@ -610,7 +624,11 @@ const createInvoice = async (prisma, payload, options = {}) => {
   // Fetch company settings for TVA calculation
   const companySettings = await getCompanySettings(organizationId);
 
-  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, null, companySettings);
+  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(
+    payload,
+    null,
+    companySettings
+  );
 
   // Apply loyalty tier discount if applicable (opt-in; default true)
   let loyaltyDiscount = null;
@@ -631,7 +649,7 @@ const createInvoice = async (prisma, payload, options = {}) => {
   // Payment tracking from Payment records (not just advance payment)
   const totalPaid = await calculateTotalPaid(prisma, payload.appointmentId, { tx: client });
   const remainingBalance = roundCurrency(totals.total - totalPaid);
-  const paymentStatus = totalPaid === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+  const paymentStatus = totalPaid === 0 ? 'UNPAID' : remainingBalance <= 0 ? 'PAID' : 'PARTIAL';
 
   // Get payment dates from Payment records
   const payments = await client.payment.findMany({
@@ -639,9 +657,10 @@ const createInvoice = async (prisma, payload, options = {}) => {
     orderBy: { paymentDate: 'asc' },
   });
   const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
-  const finalPaidAt = paymentStatus === 'PAID' && payments.length > 0
-    ? payments[payments.length - 1].paymentDate
-    : null;
+  const finalPaidAt =
+    paymentStatus === 'PAID' && payments.length > 0
+      ? payments[payments.length - 1].paymentDate
+      : null;
 
   // Retry loop handles the rare case of concurrent invoice creation for the same org
   // producing duplicate invoice numbers (@@unique([organizationId, invoiceNumber]))
@@ -694,8 +713,9 @@ const createInvoice = async (prisma, payload, options = {}) => {
       });
       break; // success
     } catch (err) {
-      const isDuplicate = err.code === 'P2002' &&
-        (err.meta?.target ?? []).some(t => String(t).includes('invoiceNumber'));
+      const isDuplicate =
+        err.code === 'P2002' &&
+        (err.meta?.target ?? []).some((t) => String(t).includes('invoiceNumber'));
       if (isDuplicate && attempt < MAX_INVOICE_RETRIES - 1) continue;
       throw err;
     }
@@ -728,14 +748,16 @@ const createInvoice = async (prisma, payload, options = {}) => {
     advancePaidAt: invoice.advancePaidAt,
     finalPaidAt: invoice.finalPaidAt,
     lineItems: sanitizedItems,
-    appointment: appointment ? {
-      id: appointment.id,
-      title: appointment.title,
-      scheduledStart: appointment.scheduledStart,
-      scheduledEnd: appointment.scheduledEnd,
-      status: appointment.status?.toLowerCase(),
-      asset: appointment.asset || null,
-    } : null,
+    appointment: appointment
+      ? {
+          id: appointment.id,
+          title: appointment.title,
+          scheduledStart: appointment.scheduledStart,
+          scheduledEnd: appointment.scheduledEnd,
+          status: appointment.status?.toLowerCase(),
+          asset: appointment.asset || null,
+        }
+      : null,
     client: appointment?.client || null,
     pdfUrl: invoice.pdfUrl ? `/files/${invoice.pdfUrl.replace(/\\/g, '/')}` : null,
   };
@@ -791,8 +813,13 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
   // Fetch company settings for TVA calculation
   const companySettings = await getCompanySettings(existing.organizationId);
 
-  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(payload, existing, companySettings);
-  const relativePdfPath = existing.pdfUrl || buildRelativePdfPath(existing.appointmentId, existing.invoiceNumber, id);
+  const { status, issueDate, dueDate, notes, totals, sanitizedItems } = sanitizePayload(
+    payload,
+    existing,
+    companySettings
+  );
+  const relativePdfPath =
+    existing.pdfUrl || buildRelativePdfPath(existing.appointmentId, existing.invoiceNumber, id);
 
   // Handle loyalty discount for this update
   let updatedLoyaltyDiscount = Number(existing.loyaltyDiscount || 0);
@@ -829,7 +856,9 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
 
   // If changing status to PAID, check for TVA adjustment need
   if (changingToPaid && userId) {
-    const totalPaidBeforeAdjustment = await calculateTotalPaid(prisma, existing.appointmentId, { tx: client });
+    const totalPaidBeforeAdjustment = await calculateTotalPaid(prisma, existing.appointmentId, {
+      tx: client,
+    });
     const invoiceTotal = Number(totals.total);
     const remainingAmount = roundCurrency(invoiceTotal - totalPaidBeforeAdjustment);
 
@@ -870,7 +899,7 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
   // Recalculate payment status from Payment records (after potential TVA adjustment)
   const totalPaid = await calculateTotalPaid(prisma, existing.appointmentId, { tx: client });
   const remainingBalance = roundCurrency(totals.total - totalPaid);
-  const paymentStatus = totalPaid === 0 ? 'UNPAID' : (remainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+  const paymentStatus = totalPaid === 0 ? 'UNPAID' : remainingBalance <= 0 ? 'PAID' : 'PARTIAL';
 
   // Get payment dates from Payment records
   const payments = await client.payment.findMany({
@@ -878,9 +907,10 @@ const updateInvoice = async (prisma, id, payload, options = {}) => {
     orderBy: { paymentDate: 'asc' },
   });
   const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
-  const finalPaidAt = paymentStatus === 'PAID' && payments.length > 0
-    ? payments[payments.length - 1].paymentDate
-    : null;
+  const finalPaidAt =
+    paymentStatus === 'PAID' && payments.length > 0
+      ? payments[payments.length - 1].paymentDate
+      : null;
 
   const includeConfig = getIncludeConfig();
 
@@ -1002,7 +1032,9 @@ const generateInvoicePdf = async (tenantPrisma, id, { refresh = false } = {}) =>
   }
 
   const mapped = mapInvoice(invoice);
-  const relativePath = invoice.pdfUrl || buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, invoice.id);
+  const relativePath =
+    invoice.pdfUrl ||
+    buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, invoice.id);
   const companySettings = await getCompanySettings(invoice.organizationId);
   const { buffer, relativePath: storedPath } = await persistPdfForInvoice({
     mappedInvoice: mapped,
@@ -1109,7 +1141,8 @@ const markInvoiceAsPaid = async (prismaClient, id, options = {}) => {
   // Recalculate payment totals after potentially adding TVA adjustment
   const newTotalPaid = await calculateTotalPaid(client, invoice.appointmentId, { tx: client });
   const newRemainingBalance = roundCurrency(invoiceTotal - newTotalPaid);
-  const newPaymentStatus = newTotalPaid === 0 ? 'UNPAID' : (newRemainingBalance <= 0 ? 'PAID' : 'PARTIAL');
+  const newPaymentStatus =
+    newTotalPaid === 0 ? 'UNPAID' : newRemainingBalance <= 0 ? 'PAID' : 'PARTIAL';
 
   // Get payment dates
   const payments = await client.payment.findMany({
@@ -1117,9 +1150,10 @@ const markInvoiceAsPaid = async (prismaClient, id, options = {}) => {
     orderBy: { paymentDate: 'asc' },
   });
   const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
-  const finalPaidAt = newPaymentStatus === 'PAID' && payments.length > 0
-    ? payments[payments.length - 1].paymentDate
-    : null;
+  const finalPaidAt =
+    newPaymentStatus === 'PAID' && payments.length > 0
+      ? payments[payments.length - 1].paymentDate
+      : null;
 
   const updated = await client.invoice.update({
     where: { id },
@@ -1141,7 +1175,8 @@ const markInvoiceAsPaid = async (prismaClient, id, options = {}) => {
   const companySettings = await getCompanySettings(invoice.organizationId);
   persistPdfForInvoice({
     mappedInvoice: mapped,
-    relativePath: invoice.pdfUrl || buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, id),
+    relativePath:
+      invoice.pdfUrl || buildRelativePdfPath(invoice.appointmentId, invoice.invoiceNumber, id),
     previousPath: invoice.pdfUrl,
     updateRecord: false,
     companySettings,
@@ -1250,7 +1285,11 @@ const createInvoiceFromServiceOrder = async (prisma, serviceOrderId, options = {
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default: 30 days from now
   };
 
-  return createInvoice(prisma, { ...payload, applyLoyaltyDiscount }, { tx: client, skipBroadcast, organizationId });
+  return createInvoice(
+    prisma,
+    { ...payload, applyLoyaltyDiscount },
+    { tx: client, skipBroadcast, organizationId }
+  );
 };
 
 module.exports = {

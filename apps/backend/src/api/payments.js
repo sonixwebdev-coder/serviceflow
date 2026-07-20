@@ -13,6 +13,7 @@ const {
 } = require('../services/paymentService');
 const { generateServiceOrderPdf } = require('../services/serviceOrderService');
 const { logFromRequest, ENTITY_TYPES } = require('../services/auditLogService');
+const logger = require('../utils/logger');
 
 // Validation schemas
 const createPaymentSchema = z.object({
@@ -48,7 +49,11 @@ router.post(
       entityType: ENTITY_TYPES.PAYMENT,
       entityId: payment.id,
       description: `Inregistrat plata: ${validated.amount} RON (${validated.paymentMethod || 'CASH'})`,
-      metadata: { appointmentId: validated.appointmentId, amount: validated.amount, method: validated.paymentMethod },
+      metadata: {
+        appointmentId: validated.appointmentId,
+        amount: validated.amount,
+        method: validated.paymentMethod,
+      },
     });
 
     // Regenerate service order PDF to reflect new payment (async, don't block response)
@@ -63,7 +68,7 @@ router.post(
           await generateServiceOrderPdf(req.tenantPrisma, payment.appointmentId, { refresh: true });
         }
       } catch (pdfError) {
-        console.error('❌ Failed to regenerate service order PDF after payment creation:', pdfError);
+        logger.error('Failed to regenerate service order PDF after payment creation', pdfError);
       }
     });
 
@@ -134,7 +139,7 @@ router.delete(
           await generateServiceOrderPdf(req.tenantPrisma, appointmentId, { refresh: true });
         }
       } catch (pdfError) {
-        console.error('❌ Failed to regenerate service order PDF after payment deletion:', pdfError);
+        logger.error('Failed to regenerate service order PDF after payment deletion', pdfError);
       }
     });
 

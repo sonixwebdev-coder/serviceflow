@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { X, Download, ExternalLink, ZoomIn, ZoomOut } from 'lucide-react';
 import { useState } from 'react';
 
@@ -84,14 +84,17 @@ export default function ImagePreviewModal({ isOpen, onClose, src, alt, fileName 
     }
   };
 
-  const handleMouseMove = useCallback((e) => {
-    if (isDragging && scale > 1) {
-      setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
-    }
-  }, [isDragging, dragStart, scale]);
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (isDragging && scale > 1) {
+        setPosition({
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y,
+        });
+      }
+    },
+    [isDragging, dragStart, scale]
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -192,10 +195,7 @@ export default function ImagePreviewModal({ isOpen, onClose, src, alt, fileName 
       </div>
 
       {/* Image */}
-      <div
-        ref={imageContainerRef}
-        className="relative max-w-[90vw] max-h-[80vh] overflow-hidden"
-      >
+      <div ref={imageContainerRef} className="relative max-w-[90vw] max-h-[80vh] overflow-hidden">
         <img
           src={src}
           alt={alt || fileName || 'Preview'}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect, useMemo } from 'react';
 import API from '../utils/api';
 import { useAuthStore } from '../state/useAuthStore';
 
@@ -37,7 +37,15 @@ const DEFAULT_ASSET_FIELD_CONFIG = {
     fieldLabels: {},
   },
   hvac_unit: {
-    visibleFields: ['unitType', 'brand', 'model', 'serialNumber', 'btuCapacity', 'refrigerantType', 'installationDate'],
+    visibleFields: [
+      'unitType',
+      'brand',
+      'model',
+      'serialNumber',
+      'btuCapacity',
+      'refrigerantType',
+      'installationDate',
+    ],
     requiredFields: ['serialNumber'],
     fieldLabels: {},
   },
@@ -47,7 +55,19 @@ const DEFAULT_ASSET_FIELD_CONFIG = {
     fieldLabels: {},
   },
   device: {
-    visibleFields: ['deviceType', 'brand', 'model', 'serialNumber', 'imei', 'condition', 'storageCapacity', 'color', 'password', 'accessories', 'problemDescription'],
+    visibleFields: [
+      'deviceType',
+      'brand',
+      'model',
+      'serialNumber',
+      'imei',
+      'condition',
+      'storageCapacity',
+      'color',
+      'password',
+      'accessories',
+      'problemDescription',
+    ],
     requiredFields: ['deviceType'],
     fieldLabels: {},
   },
@@ -78,7 +98,7 @@ export const TerminologyProvider = ({ children }) => {
 
   const isAuthenticated = useAuthStore((s) => !!s.accessToken);
 
-  const applySettings = (settings) => {
+  const applySettings = useCallback((settings) => {
     if (settings.terminology) setTerminology(settings.terminology);
     if (settings.features) setFeatures(settings.features);
     if (settings.assetFieldConfig) setAssetFieldConfig(settings.assetFieldConfig);
@@ -86,8 +106,9 @@ export const TerminologyProvider = ({ children }) => {
     if (settings.sectorConfig) setSectorConfig(settings.sectorConfig);
     if (settings.description !== undefined) setOrgDescription(settings.description || '');
     if (settings.publicListing !== undefined) setPublicListing(settings.publicListing !== false);
-    if (settings.invoiceSequence !== undefined) setInvoiceSequence(settings.invoiceSequence || null);
-  };
+    if (settings.invoiceSequence !== undefined)
+      setInvoiceSequence(settings.invoiceSequence || null);
+  }, []);
 
   // Fetch terminology from API - only when authenticated (not on every token refresh)
   useEffect(() => {
@@ -115,13 +136,15 @@ export const TerminologyProvider = ({ children }) => {
 
     fetchSettings();
 
-    return () => { cancelled = true; };
-  }, [isAuthenticated]);
+    return () => {
+      cancelled = true;
+    };
+  }, [applySettings, isAuthenticated]);
 
   /**
    * Refresh settings from API (call after updating settings)
    */
-  const refreshSettings = async () => {
+  const refreshSettings = useCallback(async () => {
     try {
       const response = await API.get('/organizations/me/settings');
       const settings = response.data.data;
@@ -131,40 +154,50 @@ export const TerminologyProvider = ({ children }) => {
       console.error('Failed to refresh settings:', error);
       throw error;
     }
-  };
+  }, [applySettings]);
 
-  const value = useMemo(() => ({
-    terminology,
-    features,
-    assetFieldConfig,
-    publicBooking,
-    sectorConfig,
-    orgDescription,
-    publicListing,
-    invoiceSequence,
-    loading,
-    refreshSettings,
+  const value = useMemo(
+    () => ({
+      terminology,
+      features,
+      assetFieldConfig,
+      publicBooking,
+      sectorConfig,
+      orgDescription,
+      publicListing,
+      invoiceSequence,
+      loading,
+      refreshSettings,
 
-    // Helper functions for common terminology access
-    asset: terminology.asset,
-    resource: terminology.resource,
+      // Helper functions for common terminology access
+      asset: terminology.asset,
+      resource: terminology.resource,
 
-    // Singular forms
-    assetSingular: terminology.asset.singular,
-    assetPlural: terminology.asset.plural,
-    assetIdentifier: terminology.asset.identifier,
-    resourceSingular: terminology.resource.singular,
-    resourcePlural: terminology.resource.plural,
+      // Singular forms
+      assetSingular: terminology.asset.singular,
+      assetPlural: terminology.asset.plural,
+      assetIdentifier: terminology.asset.identifier,
+      resourceSingular: terminology.resource.singular,
+      resourcePlural: terminology.resource.plural,
 
-    // Sector-derived asset type (vehicle, appliance, equipment, etc.)
-    assetType: sectorConfig?.assetType || 'vehicle',
-  }), [terminology, features, assetFieldConfig, publicBooking, sectorConfig, orgDescription, publicListing, invoiceSequence, loading, refreshSettings]);
-
-  return (
-    <TerminologyContext.Provider value={value}>
-      {children}
-    </TerminologyContext.Provider>
+      // Sector-derived asset type (vehicle, appliance, equipment, etc.)
+      assetType: sectorConfig?.assetType || 'vehicle',
+    }),
+    [
+      terminology,
+      features,
+      assetFieldConfig,
+      publicBooking,
+      sectorConfig,
+      orgDescription,
+      publicListing,
+      invoiceSequence,
+      loading,
+      refreshSettings,
+    ]
   );
+
+  return <TerminologyContext.Provider value={value}>{children}</TerminologyContext.Provider>;
 };
 
 /**

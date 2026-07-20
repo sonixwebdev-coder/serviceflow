@@ -53,7 +53,9 @@ router.get(
     }
 
     const organization = await publicBookingService.getOrganizationBySlug(prisma, slug);
-    const slotDuration = duration ? parseInt(duration, 10) : (organization.publicBookingSettings?.slotDuration || 60);
+    const slotDuration = duration
+      ? parseInt(duration, 10)
+      : organization.publicBookingSettings?.slotDuration || 60;
 
     const slots = await publicBookingService.getAvailableSlots(prisma, {
       organizationId: organization.id,
@@ -75,14 +77,7 @@ router.post(
   '/:slug/book',
   asyncHandler(async (req, res) => {
     const { slug } = req.params;
-    const {
-      client,
-      appointment,
-      asset,
-      createAccount,
-      password,
-      locationId,
-    } = req.body;
+    const { client, appointment, asset, createAccount, password, locationId } = req.body;
 
     // Validate required fields
     if (!client?.firstName || !client?.lastName || !client?.email || !client?.phone) {

@@ -9,11 +9,16 @@ const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
 const { getStripe } = require('../utils/stripe');
 const {
-  orgListQuery, orgUpdate,
-  changePlan, paginationSchema, logQuery, platformSettingsUpdate,
-  grantPlan: grantPlanSchema, revokePlanOverride: revokePlanOverrideSchema,
+  orgListQuery,
+  orgUpdate,
+  changePlan,
+  logQuery,
+  platformSettingsUpdate,
+  grantPlan: grantPlanSchema,
+  revokePlanOverride: revokePlanOverrideSchema,
   manualCleanup: manualCleanupSchema,
-  extendTrial: extendTrialSchema, overridePlan: overridePlanSchema,
+  extendTrial: extendTrialSchema,
+  overridePlan: overridePlanSchema,
   billingSubscriptionsQuery,
 } = require('../schemas/superAdminSchema');
 const billingService = require('../services/billingService');
@@ -24,10 +29,14 @@ const { getJobsStatus } = require('../jobs');
 const { sendOrgSuspendedEmail } = require('../services/email/emailService');
 const { changePasswordSchema } = require('../schemas/userSchema');
 const { changePassword } = require('../services/userService');
-const { getSettings, updateSettings, maskSecrets, invalidateCache: invalidateSettingsCache } = require('../services/platformSettingsService');
+const { getSettings, updateSettings, maskSecrets } = require('../services/platformSettingsService');
 const { invalidateStripe } = require('../utils/stripe');
 const supportTicketService = require('../services/supportTicketService');
-const { updateTicket: updateTicketSchema, createMessage: createMessageSchema, ticketListQuery } = require('../schemas/supportSchema');
+const {
+  updateTicket: updateTicketSchema,
+  createMessage: createMessageSchema,
+  ticketListQuery,
+} = require('../schemas/supportSchema');
 
 const router = express.Router();
 
@@ -73,9 +82,16 @@ router.get(
         take: limit,
         orderBy: { createdAt: 'desc' },
         select: {
-          id: true, name: true, slug: true, plan: true, status: true,
-          activitySector: true, createdAt: true, updatedAt: true,
-          stripeCustomerId: true, subscriptionId: true,
+          id: true,
+          name: true,
+          slug: true,
+          plan: true,
+          status: true,
+          activitySector: true,
+          createdAt: true,
+          updatedAt: true,
+          stripeCustomerId: true,
+          subscriptionId: true,
           _count: {
             select: { users: true, clients: true, appointments: true },
           },
@@ -98,12 +114,26 @@ router.get(
     const org = await prisma.organization.findUnique({
       where: { id: req.params.id },
       select: {
-        id: true, name: true, slug: true, plan: true, status: true,
-        activitySector: true, maxUsers: true, maxClients: true, maxAppointments: true,
-        stripeCustomerId: true, subscriptionId: true, subscriptionEndsAt: true,
-        trialEndsAt: true, trialUsed: true,
-        planOverride: true, planOverrideBy: true, planOverrideAt: true, planOverrideReason: true,
-        createdAt: true, updatedAt: true,
+        id: true,
+        name: true,
+        slug: true,
+        plan: true,
+        status: true,
+        activitySector: true,
+        maxUsers: true,
+        maxClients: true,
+        maxAppointments: true,
+        stripeCustomerId: true,
+        subscriptionId: true,
+        subscriptionEndsAt: true,
+        trialEndsAt: true,
+        trialUsed: true,
+        planOverride: true,
+        planOverrideBy: true,
+        planOverrideAt: true,
+        planOverrideReason: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: { users: true, clients: true, appointments: true, invoices: true },
         },
@@ -299,9 +329,15 @@ router.get(
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
     const [
-      totalOrgs, totalUsers, totalClients, totalAppointments,
-      statusCounts, websiteTotal, websitePublished,
-      recentSignups, errorsLast24h,
+      totalOrgs,
+      totalUsers,
+      totalClients,
+      totalAppointments,
+      statusCounts,
+      websiteTotal,
+      websitePublished,
+      recentSignups,
+      errorsLast24h,
     ] = await Promise.all([
       prisma.organization.count(),
       prisma.user.count(),
@@ -348,7 +384,11 @@ router.get(
       totalAppointments,
       statusBreakdown,
       avgUsersPerOrg,
-      websiteAdoption: { total: websiteTotal, published: websitePublished, rate: websiteAdoptionRate },
+      websiteAdoption: {
+        total: websiteTotal,
+        published: websitePublished,
+        rate: websiteAdoptionRate,
+      },
       recentSignups,
       systemHealth: { errorsLast24h, status: systemHealthStatus },
     });
@@ -399,7 +439,10 @@ router.get(
       by: ['plan'],
       _count: { plan: true },
     });
-    return ok(res, plans.map((p) => ({ plan: p.plan, count: p._count.plan })));
+    return ok(
+      res,
+      plans.map((p) => ({ plan: p.plan, count: p._count.plan }))
+    );
   })
 );
 
@@ -411,7 +454,10 @@ router.get(
       by: ['activitySector'],
       _count: { activitySector: true },
     });
-    return ok(res, sectors.map((s) => ({ sector: s.activitySector, count: s._count.activitySector })));
+    return ok(
+      res,
+      sectors.map((s) => ({ sector: s.activitySector, count: s._count.activitySector }))
+    );
   })
 );
 
@@ -494,10 +540,20 @@ router.get(
   '/billing/subscriptions',
   validate(billingSubscriptionsQuery, 'query'),
   asyncHandler(async (req, res) => {
-    const { page, limit, status: filterStatus, plan: filterPlan, interval: filterInterval } = req.query;
+    const {
+      page,
+      limit,
+      organizationId,
+      status: filterStatus,
+      plan: filterPlan,
+      interval: filterInterval,
+    } = req.query;
     const skip = (page - 1) * limit;
 
     const where = {};
+    if (organizationId) {
+      where.id = organizationId;
+    }
     if (filterStatus) {
       where.status = filterStatus;
     }
@@ -633,9 +689,10 @@ router.put(
     const org = await prisma.organization.findUnique({ where: { id: req.params.id } });
     if (!org) throw new AppError('Organization not found', 404);
 
-    const baseDate = org.trialEndsAt && new Date(org.trialEndsAt) > new Date()
-      ? new Date(org.trialEndsAt)
-      : new Date();
+    const baseDate =
+      org.trialEndsAt && new Date(org.trialEndsAt) > new Date()
+        ? new Date(org.trialEndsAt)
+        : new Date();
     baseDate.setDate(baseDate.getDate() + days);
 
     const updated = await prisma.organization.update({
@@ -985,7 +1042,13 @@ router.get(
       prisma.platformContactMessage.count({ where: { status: 'REPLIED' } }),
       prisma.platformContactMessage.count({ where: { status: 'ARCHIVED' } }),
     ]);
-    return ok(res, { total, new: newCount, read: readCount, replied: repliedCount, archived: archivedCount });
+    return ok(res, {
+      total,
+      new: newCount,
+      read: readCount,
+      replied: repliedCount,
+      archived: archivedCount,
+    });
   })
 );
 

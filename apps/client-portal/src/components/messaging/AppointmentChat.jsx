@@ -262,7 +262,9 @@ export default function AppointmentChat({ appointmentId }) {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-              <h3 className="text-sm font-medium text-gray-900 truncate max-w-[250px]">{previewFile.name}</h3>
+              <h3 className="text-sm font-medium text-gray-900 truncate max-w-[250px]">
+                {previewFile.name}
+              </h3>
               <div className="flex items-center gap-2">
                 <a
                   href={previewFile.url}
@@ -299,7 +301,9 @@ export default function AppointmentChat({ appointmentId }) {
               ) : (
                 <div className="text-center py-12">
                   <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600 mb-4">Previzualizare indisponibila pentru acest tip de fisier</p>
+                  <p className="text-gray-600 mb-4">
+                    Previzualizare indisponibila pentru acest tip de fisier
+                  </p>
                   <a
                     href={previewFile.url}
                     download={previewFile.name}

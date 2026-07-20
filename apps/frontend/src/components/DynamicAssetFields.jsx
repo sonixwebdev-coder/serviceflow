@@ -69,13 +69,11 @@ const DynamicAssetFields = ({ assetType, formData, onChange, errors = {}, readOn
               disabled={readOnly}
               className={inputClasses}
             />
-            {hasError && (
-              <p className="text-xs text-red-500 mt-1">{errors[field.key]}</p>
-            )}
+            {hasError && <p className="text-xs text-red-500 mt-1">{errors[field.key]}</p>}
           </div>
         );
 
-      case 'date':
+      case 'date': {
         // Format date without timezone conversion to avoid day shift
         const formatDateForInput = (dateObj) => {
           if (!dateObj) return '';
@@ -95,16 +93,17 @@ const DynamicAssetFields = ({ assetType, formData, onChange, errors = {}, readOn
                 </>
               }
               value={value ? new Date(value) : null}
-              onChange={(date) => handleFieldChange(field.key, date ? formatDateForInput(date) : '')}
+              onChange={(date) =>
+                handleFieldChange(field.key, date ? formatDateForInput(date) : '')
+              }
               placeholder={field.placeholder || 'Selecteaza data'}
               required={field.required}
               disabled={readOnly}
             />
-            {hasError && (
-              <p className="text-xs text-red-500 mt-1">{errors[field.key]}</p>
-            )}
+            {hasError && <p className="text-xs text-red-500 mt-1">{errors[field.key]}</p>}
           </div>
         );
+      }
 
       case 'select':
         return (
@@ -129,9 +128,7 @@ const DynamicAssetFields = ({ assetType, formData, onChange, errors = {}, readOn
                 </option>
               ))}
             </select>
-            {hasError && (
-              <p className="text-xs text-red-500 mt-1">{errors[field.key]}</p>
-            )}
+            {hasError && <p className="text-xs text-red-500 mt-1">{errors[field.key]}</p>}
           </div>
         );
 
@@ -149,9 +146,7 @@ const DynamicAssetFields = ({ assetType, formData, onChange, errors = {}, readOn
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {visibleFields.map(renderField)}
-    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{visibleFields.map(renderField)}</div>
   );
 };
 

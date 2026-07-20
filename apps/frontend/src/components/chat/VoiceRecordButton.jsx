@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Mic, Square, Trash2, Send } from 'lucide-react';
 import { useUploadVoice } from '../../hooks/useChat';
 import useToast from '../../context/useToast';
@@ -60,7 +60,8 @@ export default function VoiceRecordButton({ channelId }) {
       console.error('Failed to start recording:', error);
       showToast({
         title: 'Eroare',
-        description: 'Nu s-a putut accesa microfonul. Te rugăm să acorzi permisiunea și să încerci din nou.',
+        description:
+          'Nu s-a putut accesa microfonul. Te rugăm să acorzi permisiunea și să încerci din nou.',
         type: 'error',
       });
     }
@@ -109,7 +110,8 @@ export default function VoiceRecordButton({ channelId }) {
       console.error('Failed to send voice message:', error);
       showToast({
         title: 'Eroare',
-        description: error?.message || 'Nu s-a putut trimite mesajul vocal. Te rugăm să încerci din nou.',
+        description:
+          error?.message || 'Nu s-a putut trimite mesajul vocal. Te rugăm să încerci din nou.',
         type: 'error',
       });
     } finally {
@@ -156,7 +158,10 @@ export default function VoiceRecordButton({ channelId }) {
             <div className="mb-4 flex h-16 items-center justify-center gap-[3px]">
               {[...Array(24)].map((_, i) => {
                 // Create wave pattern with varying base heights
-                const baseHeight = [30, 50, 70, 90, 70, 50, 30, 60, 80, 100, 80, 60, 40, 70, 90, 70, 40, 55, 75, 95, 75, 55, 35, 65][i];
+                const baseHeight = [
+                  30, 50, 70, 90, 70, 50, 30, 60, 80, 100, 80, 60, 40, 70, 90, 70, 40, 55, 75, 95,
+                  75, 55, 35, 65,
+                ][i];
                 return (
                   <div
                     key={i}

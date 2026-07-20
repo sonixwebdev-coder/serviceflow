@@ -1,12 +1,10 @@
 import { io } from 'socket.io-client';
+import { runtimeConfig } from '../config/runtime';
 
 let socket;
 
 const getBaseUrl = () => {
-  const configured = import.meta.env.VITE_SOCKET_URL;
-  if (configured) return configured.replace(/\/$/, '');
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-  return apiUrl.replace(/\/api\/?$/, '');
+  return runtimeConfig.socketUrl;
 };
 
 export const connectSocket = (token) => {

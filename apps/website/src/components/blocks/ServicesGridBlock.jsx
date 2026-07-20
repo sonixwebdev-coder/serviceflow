@@ -36,13 +36,17 @@ export default function ServicesGridBlock({ data, subdomain, branding }) {
   const primaryColor = branding?.primaryColor || '#2563eb';
 
   // Fetch services from CRM if autoSync is enabled
-  const { data: crmServices, isLoading, isError } = useQuery({
+  const {
+    data: crmServices,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['crm-services', subdomain],
     queryFn: () => websiteService.getCrmData(subdomain, 'services'),
     enabled: autoSync,
   });
 
-  const services = autoSync ? (crmServices || []) : staticServices;
+  const services = autoSync ? crmServices || [] : staticServices;
 
   const gridCols = {
     2: 'grid-cols-1 sm:grid-cols-2',
@@ -66,7 +70,9 @@ export default function ServicesGridBlock({ data, subdomain, branding }) {
           ))}
         </div>
       ) : autoSync && isError ? (
-        <p className="text-center text-gray-500">Nu s-au putut incarca serviciile. Incercati mai tarziu.</p>
+        <p className="text-center text-gray-500">
+          Nu s-au putut incarca serviciile. Incercati mai tarziu.
+        </p>
       ) : services.length === 0 ? (
         <p className="text-center text-gray-500">Nu exista servicii disponibile.</p>
       ) : (
@@ -84,13 +90,9 @@ export default function ServicesGridBlock({ data, subdomain, branding }) {
                 />
               )}
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {service.name}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{service.name}</h3>
                 {service.description && (
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {service.description}
-                  </p>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{service.description}</p>
                 )}
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   {showPrices && service.price && (

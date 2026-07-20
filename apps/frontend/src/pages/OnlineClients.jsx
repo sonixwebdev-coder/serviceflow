@@ -16,7 +16,32 @@
 
 import { useState, useMemo } from 'react';
 import confirm from '../utils/confirm';
-import { Search, X, Eye, Car, Calendar, FileText, Phone, Mail, Building2, User, Hash, MapPin, Globe, TrendingUp, Users as UsersIcon, CreditCard, Edit2, Save, Plus, Trash2, Upload, Download, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Search,
+  X,
+  Eye,
+  Car,
+  Calendar,
+  FileText,
+  Phone,
+  Mail,
+  Building2,
+  User,
+  Hash,
+  MapPin,
+  Globe,
+  TrendingUp,
+  Users as UsersIcon,
+  CreditCard,
+  Edit2,
+  Save,
+  Plus,
+  Trash2,
+  Upload,
+  Download,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, subDays, isAfter } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
@@ -25,7 +50,6 @@ import ExportButton from '../components/ExportButton.jsx';
 import API from '../utils/api.js';
 import useToast from '../context/useToast.js';
 import { getErrorMessage } from '../utils/errorUtils.js';
-import { useTerminology } from '../context/TerminologyContext';
 
 const formatDateTime = (value) => {
   if (!value) return '-';
@@ -46,7 +70,9 @@ const STATUS_META = {
 
 const getStatusMeta = (status) => {
   const normalized = status?.toString().toUpperCase().replace(/-/g, '_');
-  return STATUS_META[normalized] || { label: status, class: 'bg-gray-50 text-gray-800 border-gray-200' };
+  return (
+    STATUS_META[normalized] || { label: status, class: 'bg-gray-50 text-gray-800 border-gray-200' }
+  );
 };
 
 const fetchClientDetails = async (clientId) => {
@@ -64,9 +90,6 @@ const OnlineClients = () => {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
-  const [editingVehicleId, setEditingVehicleId] = useState(null);
-  const [vehicleForm, setVehicleForm] = useState({});
-  const [isAddingVehicle, setIsAddingVehicle] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [importResults, setImportResults] = useState(null);
@@ -89,12 +112,9 @@ const OnlineClients = () => {
   });
   const { showToast } = useToast();
   const queryClient = useQueryClient();
-  const { assetSingular } = useTerminology();
 
   // Fetch online clients
-  const { data, isLoading } = useClients(
-    search ? { search, isOnline: true } : { isOnline: true }
-  );
+  const { data, isLoading } = useClients(search ? { search, isOnline: true } : { isOnline: true });
 
   // Fetch all clients for statistics
   const { data: allClientsData } = useQuery({
@@ -124,64 +144,7 @@ const OnlineClients = () => {
       showToast({
         title: 'Eroare la actualizare',
         description: getErrorMessage(error),
-        type: 'error'
-      });
-    },
-  });
-
-  const updateVehicleMutation = useMutation({
-    mutationFn: async ({ clientId, vehicleId, data }) => {
-      const response = await API.patch(`/clients/${clientId}/vehicles/${vehicleId}`, data);
-      return response.data?.data || response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
-      setEditingVehicleId(null);
-      setVehicleForm({});
-      showToast({ title: `${assetSingular} actualizat cu succes`, type: 'success' });
-    },
-    onError: (error) => {
-      showToast({
-        title: `Eroare la actualizare ${assetSingular.toLowerCase()}`,
-        description: getErrorMessage(error),
-        type: 'error'
-      });
-    },
-  });
-
-  const addVehicleMutation = useMutation({
-    mutationFn: async ({ clientId, data }) => {
-      const response = await API.post(`/clients/${clientId}/vehicles`, data);
-      return response.data?.data || response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
-      setIsAddingVehicle(false);
-      setVehicleForm({});
-      showToast({ title: `${assetSingular} adaugat cu succes`, type: 'success' });
-    },
-    onError: (error) => {
-      showToast({
-        title: `Eroare la adaugare ${assetSingular.toLowerCase()}`,
-        description: getErrorMessage(error),
-        type: 'error'
-      });
-    },
-  });
-
-  const deleteVehicleMutation = useMutation({
-    mutationFn: async ({ clientId, vehicleId }) => {
-      await API.delete(`/clients/${clientId}/vehicles/${vehicleId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client', selectedClientId] });
-      showToast({ title: `${assetSingular} sters cu succes`, type: 'success' });
-    },
-    onError: (error) => {
-      showToast({
-        title: `Eroare la stergere ${assetSingular.toLowerCase()}`,
-        description: getErrorMessage(error),
-        type: 'error'
+        type: 'error',
       });
     },
   });
@@ -198,7 +161,7 @@ const OnlineClients = () => {
       showToast({
         title: 'Eroare la stergere client',
         description: getErrorMessage(error),
-        type: 'error'
+        type: 'error',
       });
     },
   });
@@ -218,13 +181,13 @@ const OnlineClients = () => {
       showToast({
         title: 'Eroare la adaugare client',
         description: getErrorMessage(error),
-        type: 'error'
+        type: 'error',
       });
     },
   });
 
   const clients = data?.items || [];
-  const allClients = allClientsData?.items || [];
+  const allClients = useMemo(() => allClientsData?.items || [], [allClientsData?.items]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -258,9 +221,6 @@ const OnlineClients = () => {
     setSelectedClientId(null);
     setIsEditing(false);
     setEditForm({});
-    setEditingVehicleId(null);
-    setVehicleForm({});
-    setIsAddingVehicle(false);
   };
 
   const startEditing = () => {
@@ -302,70 +262,15 @@ const OnlineClients = () => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const startEditingVehicle = (vehicle) => {
-    setVehicleForm({
-      make: vehicle.make || '',
-      model: vehicle.model || '',
-      year: vehicle.year || '',
-      vin: vehicle.vin || '',
-      plateNumber: vehicle.plateNumber || '',
-      color: vehicle.color || '',
-      odometerKm: vehicle.odometerKm || '',
-      notes: vehicle.notes || '',
-    });
-    setEditingVehicleId(vehicle.id);
-  };
-
-  const startAddingVehicle = () => {
-    setVehicleForm({
-      make: '',
-      model: '',
-      year: '',
-      vin: '',
-      plateNumber: '',
-      color: '',
-      odometerKm: '',
-      notes: '',
-    });
-    setIsAddingVehicle(true);
-  };
-
-  const handleVehicleInputChange = (field, value) => {
-    setVehicleForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveVehicle = () => {
-    if (isAddingVehicle) {
-      addVehicleMutation.mutate({
-        clientId: selectedClientId,
-        data: vehicleForm,
-      });
-    } else if (editingVehicleId) {
-      updateVehicleMutation.mutate({
-        clientId: selectedClientId,
-        vehicleId: editingVehicleId,
-        data: vehicleForm,
-      });
-    }
-  };
-
-  const handleDeleteVehicle = async (vehicleId) => {
-    if (await confirm({ title: 'Sterge vehicul', text: 'Sigur doresti sa stergi acest vehicul?', confirmText: 'Sterge', danger: true })) {
-      deleteVehicleMutation.mutate({
-        clientId: selectedClientId,
-        vehicleId,
-      });
-    }
-  };
-
-  const cancelVehicleEdit = () => {
-    setEditingVehicleId(null);
-    setIsAddingVehicle(false);
-    setVehicleForm({});
-  };
-
   const handleDeleteClient = async (clientId, clientName) => {
-    if (await confirm({ title: 'Sterge client', text: `Sigur doresti sa stergi clientul "${clientName}"? Aceasta actiune nu poate fi anulata.`, confirmText: 'Sterge', danger: true })) {
+    if (
+      await confirm({
+        title: 'Sterge client',
+        text: `Sigur doresti sa stergi clientul "${clientName}"? Aceasta actiune nu poate fi anulata.`,
+        confirmText: 'Sterge',
+        danger: true,
+      })
+    ) {
       deleteClientMutation.mutate(clientId);
     }
   };
@@ -642,11 +547,16 @@ const OnlineClients = () => {
           ) : (
             <div className="divide-y">
               {clients.map((client) => (
-                <div key={client.id} className="grid grid-cols-8 gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <div
+                  key={client.id}
+                  className="grid grid-cols-8 gap-4 px-6 py-4 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
                   <div className="font-medium text-gray-900">
                     {client.type === 'SRL'
                       ? client.companyName || 'Client companie'
-                      : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '-'}
+                      : `${client.firstName || ''} ${client.lastName || ''}`.trim() ||
+                        client.contactName ||
+                        '-'}
                     {client.type === 'SRL' && client.contactName ? (
                       <p className="text-xs text-gray-500">Contact: {client.contactName}</p>
                     ) : null}
@@ -682,7 +592,9 @@ const OnlineClients = () => {
                       className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
                       title={client.isOnline ? 'Marcheaza ca offline' : 'Marcheaza ca online'}
                     >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${client.isOnline ? 'translate-x-6' : 'translate-x-1'}`} />
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${client.isOnline ? 'translate-x-6' : 'translate-x-1'}`}
+                      />
                     </button>
                   </div>
                   <div className="flex gap-2">
@@ -698,9 +610,12 @@ const OnlineClients = () => {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const clientName = client.type === 'SRL'
-                          ? client.companyName || 'Client companie'
-                          : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || 'Client';
+                        const clientName =
+                          client.type === 'SRL'
+                            ? client.companyName || 'Client companie'
+                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() ||
+                              client.contactName ||
+                              'Client';
                         handleDeleteClient(client.id, clientName);
                       }}
                       disabled={deleteClientMutation.isPending}
@@ -744,10 +659,14 @@ const OnlineClients = () => {
                         <p className="font-semibold text-gray-900">
                           {client.type === 'SRL'
                             ? client.companyName || 'Client companie'
-                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || '-'}
+                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() ||
+                              client.contactName ||
+                              '-'}
                         </p>
                         {client.type === 'SRL' && client.contactName && (
-                          <p className="text-xs text-gray-500 mt-1">Contact: {client.contactName}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Contact: {client.contactName}
+                          </p>
                         )}
                       </div>
                       <button
@@ -757,7 +676,9 @@ const OnlineClients = () => {
                         className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary ml-2 flex-shrink-0"
                         title={client.isOnline ? 'Marcheaza ca offline' : 'Marcheaza ca online'}
                       >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${client.isOnline ? 'translate-x-6' : 'translate-x-1'}`} />
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${client.isOnline ? 'translate-x-6' : 'translate-x-1'}`}
+                        />
                       </button>
                     </div>
 
@@ -815,9 +736,12 @@ const OnlineClients = () => {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          const clientName = client.type === 'SRL'
-                            ? client.companyName || 'Client companie'
-                            : `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.contactName || 'Client';
+                          const clientName =
+                            client.type === 'SRL'
+                              ? client.companyName || 'Client companie'
+                              : `${client.firstName || ''} ${client.lastName || ''}`.trim() ||
+                                client.contactName ||
+                                'Client';
                           handleDeleteClient(client.id, clientName);
                         }}
                         disabled={deleteClientMutation.isPending}
@@ -838,10 +762,7 @@ const OnlineClients = () => {
       {/* Client Details Drawer */}
       {selectedClientId && (
         <div className="fixed inset-0 z-50 flex justify-end" style={{ margin: 0 }}>
-          <div
-            className="flex-1 bg-gray-900/40"
-            onClick={closeDrawer}
-          />
+          <div className="flex-1 bg-gray-900/40" onClick={closeDrawer} />
           <aside className="flex h-screen w-full max-w-3xl flex-col bg-white shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 bg-white">
@@ -908,7 +829,9 @@ const OnlineClients = () => {
 
                       {/* Client Type Selector */}
                       <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Tip client</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Tip client
+                        </label>
                         <div className="flex gap-4">
                           <label className="flex items-center">
                             <input
@@ -937,7 +860,9 @@ const OnlineClients = () => {
                         {editForm.type === 'SRL' ? (
                           <>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Nume Companie *</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nume Companie *
+                              </label>
                               <input
                                 type="text"
                                 value={editForm.companyName}
@@ -947,7 +872,9 @@ const OnlineClients = () => {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Persoana de contact</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Persoana de contact
+                              </label>
                               <input
                                 type="text"
                                 value={editForm.contactName}
@@ -956,7 +883,9 @@ const OnlineClients = () => {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">CUI</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                CUI
+                              </label>
                               <input
                                 type="text"
                                 value={editForm.vatNumber}
@@ -965,11 +894,15 @@ const OnlineClients = () => {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Nr. Reg. Com.</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nr. Reg. Com.
+                              </label>
                               <input
                                 type="text"
                                 value={editForm.registrationNumber}
-                                onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
+                                onChange={(e) =>
+                                  handleInputChange('registrationNumber', e.target.value)
+                                }
                                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
@@ -977,7 +910,9 @@ const OnlineClients = () => {
                         ) : (
                           <>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Prenume *</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Prenume *
+                              </label>
                               <input
                                 type="text"
                                 value={editForm.firstName}
@@ -987,7 +922,9 @@ const OnlineClients = () => {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Nume *</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nume *
+                              </label>
                               <input
                                 type="text"
                                 value={editForm.lastName}
@@ -999,7 +936,9 @@ const OnlineClients = () => {
                           </>
                         )}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email *
+                          </label>
                           <input
                             type="email"
                             value={editForm.email}
@@ -1009,7 +948,9 @@ const OnlineClients = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Telefon *</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Telefon *
+                          </label>
                           <input
                             type="tel"
                             value={editForm.phone}
@@ -1019,7 +960,9 @@ const OnlineClients = () => {
                           />
                         </div>
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Adresa</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Adresa
+                          </label>
                           <input
                             type="text"
                             value={editForm.address}
@@ -1028,7 +971,9 @@ const OnlineClients = () => {
                           />
                         </div>
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Card fidelitate</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Card fidelitate
+                          </label>
                           <input
                             type="text"
                             value={editForm.fidelityCardSerie}
@@ -1045,14 +990,18 @@ const OnlineClients = () => {
                               onChange={(e) => handleInputChange('isOnline', e.target.checked)}
                               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
-                            <span className="text-sm font-medium text-gray-700">Client online (disponibil si in magazin fizic)</span>
+                            <span className="text-sm font-medium text-gray-700">
+                              Client online (disponibil si in magazin fizic)
+                            </span>
                           </label>
                           <p className="text-xs text-gray-500 mt-1 ml-6">
                             Clientii online pot fi facuti disponibili si in lista de clienti normala
                           </p>
                         </div>
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Notite</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Notite
+                          </label>
                           <textarea
                             value={editForm.notes}
                             onChange={(e) => handleInputChange('notes', e.target.value)}
@@ -1073,87 +1022,119 @@ const OnlineClients = () => {
                           Informatii Client
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
-                      {selectedClient.type === 'SRL' ? (
-                        <>
+                          {selectedClient.type === 'SRL' ? (
+                            <>
+                              <div>
+                                <label className="text-xs font-medium text-gray-500">
+                                  Nume Companie
+                                </label>
+                                <p className="text-sm text-gray-900 mt-1">
+                                  {selectedClient.companyName || 'Persoana fizica'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-500">
+                                  Persoana de contact
+                                </label>
+                                <p className="text-sm text-gray-900 mt-1">
+                                  {selectedClient.contactName || '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-500">CUI</label>
+                                <p className="text-sm text-gray-900 mt-1">
+                                  {selectedClient.vatNumber || '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-500">
+                                  Nr. Reg. Com.
+                                </label>
+                                <p className="text-sm text-gray-900 mt-1">
+                                  {selectedClient.registrationNumber || '-'}
+                                </p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <label className="text-xs font-medium text-gray-500">Prenume</label>
+                                <p className="text-sm text-gray-900 mt-1">
+                                  {selectedClient.firstName || '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-gray-500">Nume</label>
+                                <p className="text-sm text-gray-900 mt-1">
+                                  {selectedClient.lastName || '-'}
+                                </p>
+                              </div>
+                            </>
+                          )}
                           <div>
-                            <label className="text-xs font-medium text-gray-500">Nume Companie</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.companyName || 'Persoana fizica'}</p>
+                            <label className="text-xs font-medium text-gray-500">Email</label>
+                            <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
+                              <Mail size={14} className="text-gray-400" />
+                              {selectedClient.email || '-'}
+                            </p>
                           </div>
                           <div>
-                            <label className="text-xs font-medium text-gray-500">Persoana de contact</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.contactName || '-'}</p>
+                            <label className="text-xs font-medium text-gray-500">Telefon</label>
+                            <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
+                              <Phone size={14} className="text-gray-400" />
+                              {selectedClient.phone || '-'}
+                            </p>
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-xs font-medium text-gray-500">Adresa</label>
+                            <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
+                              <MapPin size={14} className="text-gray-400" />
+                              {selectedClient.address || (
+                                <span className="text-gray-400 italic">Adresa necompletata</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-xs font-medium text-gray-500">
+                              Card fidelitate
+                            </label>
+                            <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
+                              <CreditCard size={14} className="text-gray-400" />
+                              {selectedClient.fidelityCardSerie || (
+                                <span className="text-gray-400 italic">Necompletat</span>
+                              )}
+                            </p>
                           </div>
                           <div>
-                            <label className="text-xs font-medium text-gray-500">CUI</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.vatNumber || '-'}</p>
+                            <label className="text-xs font-medium text-gray-500">
+                              Status Online
+                            </label>
+                            <div className="mt-2 flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleToggleOnline(selectedClient.id, selectedClient.isOnline)
+                                }
+                                disabled={updateClientMutation.isLoading}
+                                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
+                              >
+                                <span
+                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${selectedClient.isOnline ? 'translate-x-6' : 'translate-x-1'}`}
+                                />
+                              </button>
+                              <span className="text-sm text-gray-700">
+                                {selectedClient.isOnline ? 'Client Online' : 'Client Offline'}
+                              </span>
+                            </div>
                           </div>
-                          <div>
-                            <label className="text-xs font-medium text-gray-500">Nr. Reg. Com.</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.registrationNumber || '-'}</p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div>
-                            <label className="text-xs font-medium text-gray-500">Prenume</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.firstName || '-'}</p>
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-gray-500">Nume</label>
-                            <p className="text-sm text-gray-900 mt-1">{selectedClient.lastName || '-'}</p>
-                          </div>
-                        </>
-                      )}
-                      <div>
-                        <label className="text-xs font-medium text-gray-500">Email</label>
-                        <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
-                          <Mail size={14} className="text-gray-400" />
-                          {selectedClient.email || '-'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500">Telefon</label>
-                        <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
-                          <Phone size={14} className="text-gray-400" />
-                          {selectedClient.phone || '-'}
-                        </p>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="text-xs font-medium text-gray-500">Adresa</label>
-                        <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
-                          <MapPin size={14} className="text-gray-400" />
-                          {selectedClient.address || <span className="text-gray-400 italic">Adresa necompletata</span>}
-                        </p>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="text-xs font-medium text-gray-500">Card fidelitate</label>
-                        <p className="text-sm text-gray-900 mt-1 flex items-center gap-2">
-                          <CreditCard size={14} className="text-gray-400" />
-                          {selectedClient.fidelityCardSerie || <span className="text-gray-400 italic">Necompletat</span>}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-500">Status Online</label>
-                        <div className="mt-2 flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleOnline(selectedClient.id, selectedClient.isOnline)}
-                            disabled={updateClientMutation.isLoading}
-                            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
-                          >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${selectedClient.isOnline ? 'translate-x-6' : 'translate-x-1'}`} />
-                          </button>
-                          <span className="text-sm text-gray-700">
-                            {selectedClient.isOnline ? 'Client Online' : 'Client Offline'}
-                          </span>
-                        </div>
-                      </div>
-                      {selectedClient.notes && (
-                        <div className="col-span-2">
-                          <label className="text-xs font-medium text-gray-500">Notite</label>
-                          <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{selectedClient.notes}</p>
-                        </div>
-                      )}
+                          {selectedClient.notes && (
+                            <div className="col-span-2">
+                              <label className="text-xs font-medium text-gray-500">Notite</label>
+                              <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">
+                                {selectedClient.notes}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </>
@@ -1170,11 +1151,15 @@ const OnlineClients = () => {
                     ) : (
                       <div className="space-y-3">
                         {selectedClient.vehicles.map((vehicle) => (
-                          <div key={vehicle.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                          <div
+                            key={vehicle.id}
+                            className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                          >
                             <div className="flex items-start justify-between">
                               <div>
                                 <p className="font-semibold text-gray-900">
-                                  {vehicle.make} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}
+                                  {vehicle.make} {vehicle.model}{' '}
+                                  {vehicle.year ? `(${vehicle.year})` : ''}
                                 </p>
                                 <div className="mt-2 space-y-1 text-sm text-gray-600">
                                   {vehicle.plateNumber && (
@@ -1190,7 +1175,11 @@ const OnlineClients = () => {
                                     </p>
                                   )}
                                   {vehicle.color && <p>Culoare: {vehicle.color}</p>}
-                                  {vehicle.odometerKm && <p>Kilometraj: {vehicle.odometerKm.toLocaleString('ro-RO')} km</p>}
+                                  {vehicle.odometerKm && (
+                                    <p>
+                                      Kilometraj: {vehicle.odometerKm.toLocaleString('ro-RO')} km
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1213,10 +1202,15 @@ const OnlineClients = () => {
                         {selectedClient.appointments.map((appointment) => {
                           const statusMeta = getStatusMeta(appointment.status);
                           return (
-                            <div key={appointment.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            <div
+                              key={appointment.id}
+                              className="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                            >
                               <div className="flex items-start justify-between mb-2">
                                 <p className="font-semibold text-gray-900">{appointment.title}</p>
-                                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMeta.class}`}>
+                                <span
+                                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMeta.class}`}
+                                >
                                   {statusMeta.label}
                                 </span>
                               </div>
@@ -1224,26 +1218,34 @@ const OnlineClients = () => {
                                 <p className="flex items-center gap-2">
                                   <Calendar size={14} />
                                   {formatDateTime(appointment.scheduledStart)}
-                                  {appointment.scheduledEnd && ` - ${format(new Date(appointment.scheduledEnd), 'HH:mm')}`}
+                                  {appointment.scheduledEnd &&
+                                    ` - ${format(new Date(appointment.scheduledEnd), 'HH:mm')}`}
                                 </p>
                                 {appointment.vehicle && (
                                   <p className="flex items-center gap-2">
                                     <Car size={14} />
-                                    {appointment.vehicle.make} {appointment.vehicle.model} ({appointment.vehicle.plateNumber || 'fara nr.'})
+                                    {appointment.vehicle.make} {appointment.vehicle.model} (
+                                    {appointment.vehicle.plateNumber || 'fara nr.'})
                                   </p>
                                 )}
                                 {appointment.assignees?.length > 0 && (
                                   <p className="flex items-center gap-2">
                                     <User size={14} />
-                                    {appointment.assignees.map((a) =>
-                                      `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim()
-                                    ).join(', ')}
+                                    {appointment.assignees
+                                      .map((a) =>
+                                        `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim()
+                                      )
+                                      .join(', ')}
                                   </p>
                                 )}
                                 {appointment.serviceOrder && (
                                   <p className="flex items-center gap-2 text-primary">
                                     <FileText size={14} />
-                                    Comanda service: {new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON' }).format(appointment.serviceOrder.total || 0)}
+                                    Comanda service:{' '}
+                                    {new Intl.NumberFormat('ro-RO', {
+                                      style: 'currency',
+                                      currency: 'RON',
+                                    }).format(appointment.serviceOrder.total || 0)}
                                   </p>
                                 )}
                               </div>
@@ -1264,13 +1266,20 @@ const OnlineClients = () => {
 
       {/* Import Modal */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" style={{ margin: 0}}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          style={{ margin: 0 }}
+        >
           <div className="relative w-full max-w-2xl rounded-xl bg-white shadow-xl">
             {/* Header */}
             <div className="flex items-center justify-between border-b px-6 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Importa Clienti Online din CSV</h2>
-                <p className="text-sm text-gray-500">Incarca un fisier CSV pentru a importa clienti online in masa</p>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Importa Clienti Online din CSV
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Incarca un fisier CSV pentru a importa clienti online in masa
+                </p>
               </div>
               <button
                 type="button"
@@ -1291,7 +1300,8 @@ const OnlineClients = () => {
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-blue-900">Template CSV</h3>
                     <p className="text-sm text-blue-700 mt-1">
-                      Descarca template-ul pentru a vedea structura corecta a fisierului CSV (include campul Adresa)
+                      Descarca template-ul pentru a vedea structura corecta a fisierului CSV
+                      (include campul Adresa)
                     </p>
                     <button
                       type="button"
@@ -1307,7 +1317,9 @@ const OnlineClients = () => {
 
               {/* File Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Selecteaza fisier CSV</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selecteaza fisier CSV
+                </label>
                 <div className="relative">
                   <input
                     type="file"
@@ -1335,21 +1347,27 @@ const OnlineClients = () => {
                         <CheckCircle size={16} className="text-green-600" />
                         <span className="text-xs font-medium text-gray-500">Succes</span>
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{importResults.successful}</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {importResults.successful}
+                      </p>
                     </div>
                     <div className="rounded-lg bg-white p-3 border border-gray-200">
                       <div className="flex items-center gap-2">
                         <AlertCircle size={16} className="text-red-600" />
                         <span className="text-xs font-medium text-gray-500">Erori</span>
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{importResults.failed}</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {importResults.failed}
+                      </p>
                     </div>
                     <div className="rounded-lg bg-white p-3 border border-gray-200">
                       <div className="flex items-center gap-2">
                         <AlertCircle size={16} className="text-yellow-600" />
                         <span className="text-xs font-medium text-gray-500">Duplicate</span>
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{importResults.skipped}</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {importResults.skipped}
+                      </p>
                     </div>
                   </div>
 
@@ -1360,7 +1378,8 @@ const OnlineClients = () => {
                       <div className="max-h-40 overflow-y-auto space-y-1">
                         {importResults.errors.map((error, index) => (
                           <div key={index} className="text-xs text-red-700 bg-red-50 rounded p-2">
-                            <span className="font-medium">Rand {error.row}:</span> {error.errors.join(', ')}
+                            <span className="font-medium">Rand {error.row}:</span>{' '}
+                            {error.errors.join(', ')}
                           </div>
                         ))}
                       </div>
@@ -1370,10 +1389,15 @@ const OnlineClients = () => {
                   {/* Duplicate Details */}
                   {importResults.duplicates?.length > 0 && (
                     <div className="mt-3">
-                      <h4 className="text-xs font-semibold text-yellow-900 mb-2">Clienti Duplicate (sarite):</h4>
+                      <h4 className="text-xs font-semibold text-yellow-900 mb-2">
+                        Clienti Duplicate (sarite):
+                      </h4>
                       <div className="max-h-40 overflow-y-auto space-y-1">
                         {importResults.duplicates.map((dup, index) => (
-                          <div key={index} className="text-xs text-yellow-700 bg-yellow-50 rounded p-2">
+                          <div
+                            key={index}
+                            className="text-xs text-yellow-700 bg-yellow-50 rounded p-2"
+                          >
                             <span className="font-medium">Rand {dup.row}:</span> {dup.reason}
                           </div>
                         ))}
@@ -1421,13 +1445,18 @@ const OnlineClients = () => {
 
       {/* Add Client Modal */}
       {isAddClientModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" style={{ margin: 0 }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          style={{ margin: 0 }}
+        >
           <div className="relative w-full max-w-2xl rounded-xl bg-white shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between border-b px-6 py-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Adauga Client Online</h2>
-                <p className="text-sm text-gray-500">Completeaza informatiile pentru noul client online</p>
+                <p className="text-sm text-gray-500">
+                  Completeaza informatiile pentru noul client online
+                </p>
               </div>
               <button
                 type="button"
@@ -1444,7 +1473,9 @@ const OnlineClients = () => {
               <div className="space-y-4">
                 {/* Client Type Selector */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tip client *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tip client *
+                  </label>
                   <div className="flex gap-4">
                     <label className="flex items-center">
                       <input
@@ -1473,22 +1504,30 @@ const OnlineClients = () => {
                   {addClientForm.type === 'SRL' ? (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nume Companie *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nume Companie *
+                        </label>
                         <input
                           type="text"
                           value={addClientForm.companyName}
-                          onChange={(e) => handleAddClientInputChange('companyName', e.target.value)}
+                          onChange={(e) =>
+                            handleAddClientInputChange('companyName', e.target.value)
+                          }
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           required
                           placeholder="SC Exemplu SRL"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Persoana de contact</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Persoana de contact
+                        </label>
                         <input
                           type="text"
                           value={addClientForm.contactName}
-                          onChange={(e) => handleAddClientInputChange('contactName', e.target.value)}
+                          onChange={(e) =>
+                            handleAddClientInputChange('contactName', e.target.value)
+                          }
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           placeholder="Ion Popescu"
                         />
@@ -1504,11 +1543,15 @@ const OnlineClients = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nr. Reg. Com.</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nr. Reg. Com.
+                        </label>
                         <input
                           type="text"
                           value={addClientForm.registrationNumber}
-                          onChange={(e) => handleAddClientInputChange('registrationNumber', e.target.value)}
+                          onChange={(e) =>
+                            handleAddClientInputChange('registrationNumber', e.target.value)
+                          }
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                           placeholder="J40/1234/2020"
                         />
@@ -1517,7 +1560,9 @@ const OnlineClients = () => {
                   ) : (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Prenume *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Prenume *
+                        </label>
                         <input
                           type="text"
                           value={addClientForm.firstName}
@@ -1528,7 +1573,9 @@ const OnlineClients = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nume *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nume *
+                        </label>
                         <input
                           type="text"
                           value={addClientForm.lastName}
@@ -1552,7 +1599,9 @@ const OnlineClients = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefon *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Telefon *
+                    </label>
                     <input
                       type="tel"
                       value={addClientForm.phone}
@@ -1571,14 +1620,20 @@ const OnlineClients = () => {
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Str. Exemplu nr. 1, Bucuresti, Sector 1"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Adresa de livrare pentru clientii online</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Adresa de livrare pentru clientii online
+                    </p>
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Card fidelitate</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Card fidelitate
+                    </label>
                     <input
                       type="text"
                       value={addClientForm.fidelityCardSerie}
-                      onChange={(e) => handleAddClientInputChange('fidelityCardSerie', e.target.value)}
+                      onChange={(e) =>
+                        handleAddClientInputChange('fidelityCardSerie', e.target.value)
+                      }
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                       placeholder="Serie card fidelitate"
                     />
@@ -1601,7 +1656,8 @@ const OnlineClients = () => {
                     <div>
                       <p className="text-sm font-medium text-blue-900">Client Online</p>
                       <p className="text-sm text-blue-700 mt-1">
-                        Acest client va fi marcat automat ca "Online" si va aparea in lista de clienti online.
+                        Acest client va fi marcat automat ca "Online" si va aparea in lista de
+                        clienti online.
                       </p>
                     </div>
                   </div>

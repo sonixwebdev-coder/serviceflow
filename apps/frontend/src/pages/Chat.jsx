@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useChatStore } from '../state/useChatStore';
 import { useChannels } from '../hooks/useChat';
@@ -15,7 +15,14 @@ import useToast from '../context/useToast';
 export default function Chat() {
   const [searchParams] = useSearchParams();
   const { data: channels, isLoading, error } = useChannels();
-  const { activeChannelId, setChannels, setActiveChannel, isSidebarOpen, isMemberListOpen, channels: storeChannels } = useChatStore();
+  const {
+    activeChannelId,
+    setChannels,
+    setActiveChannel,
+    isSidebarOpen,
+    isMemberListOpen,
+    channels: storeChannels,
+  } = useChatStore();
   const { showToast } = useToast();
 
   // Detect mobile viewport
@@ -28,7 +35,8 @@ export default function Chat() {
 
   // Get the active channel to check its type
   const activeChannel = storeChannels.find((ch) => ch.id === activeChannelId);
-  const shouldShowMemberList = isMemberListOpen && activeChannelId && activeChannel?.type !== 'DIRECT';
+  const shouldShowMemberList =
+    isMemberListOpen && activeChannelId && activeChannel?.type !== 'DIRECT';
 
   // Update channels in store when data changes
   useEffect(() => {
@@ -68,7 +76,10 @@ export default function Chat() {
 
   if (isLoading) {
     return (
-      <div style={containerStyle} className="flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden">
+      <div
+        style={containerStyle}
+        className="flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden"
+      >
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
           <p className="mt-2 text-gray-600">Se încarcă chat-ul...</p>
@@ -79,7 +90,10 @@ export default function Chat() {
 
   if (error) {
     return (
-      <div style={containerStyle} className="flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden">
+      <div
+        style={containerStyle}
+        className="flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden"
+      >
         <div className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
             <MessageSquare className="h-8 w-8 text-red-600" />
@@ -102,7 +116,10 @@ export default function Chat() {
   const showChatArea = isMobile ? !!activeChannelId : true;
 
   return (
-    <div style={containerStyle} className="flex bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+    <div
+      style={containerStyle}
+      className="flex bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200"
+    >
       {/* Sidebar */}
       {showSidebar && <ChatSidebar isMobile={isMobile} />}
 

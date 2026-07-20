@@ -12,16 +12,10 @@ export default function ImageBlock({ data, settings }) {
         src={resolveFileUrl(src)}
         alt={alt || ''}
         loading="lazy"
-        className={cn(
-          'w-full h-auto',
-          rounded && 'rounded-lg',
-          shadow && 'shadow-lg'
-        )}
+        className={cn('w-full h-auto', rounded && 'rounded-lg', shadow && 'shadow-lg')}
       />
       {caption && (
-        <figcaption className="mt-3 text-sm text-gray-500 text-center">
-          {caption}
-        </figcaption>
+        <figcaption className="mt-3 text-sm text-gray-500 text-center">{caption}</figcaption>
       )}
     </figure>
   );

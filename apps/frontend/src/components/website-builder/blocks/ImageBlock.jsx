@@ -44,10 +44,7 @@ const ImageBlock = ({ data, settings, isEditing = false, onClick }) => {
         <img
           src={src}
           alt={alt}
-          className={cn(
-            'w-full rounded-lg object-cover',
-            aspectRatioClasses[aspectRatio]
-          )}
+          className={cn('w-full rounded-lg object-cover', aspectRatioClasses[aspectRatio])}
         />
       ) : (
         <div
@@ -60,9 +57,7 @@ const ImageBlock = ({ data, settings, isEditing = false, onClick }) => {
         </div>
       )}
 
-      {caption && (
-        <p className="mt-2 text-sm text-gray-500 text-center">{caption}</p>
-      )}
+      {caption && <p className="mt-2 text-sm text-gray-500 text-center">{caption}</p>}
     </div>
   );
 

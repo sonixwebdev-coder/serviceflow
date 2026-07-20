@@ -166,10 +166,14 @@ export const exportTimeTracking = async (format, filters = {}) => {
  * @returns {Promise<Blob>}
  */
 export const exportInvoicesAnafXML = async (invoiceIds) => {
-  const response = await API.post('/exports/invoices/anaf-xml', { invoiceIds }, {
-    responseType: 'blob',
-    timeout: 60000,
-  });
+  const response = await API.post(
+    '/exports/invoices/anaf-xml',
+    { invoiceIds },
+    {
+      responseType: 'blob',
+      timeout: 60000,
+    }
+  );
   return response.data;
 };
 
@@ -178,10 +182,14 @@ export const exportInvoicesAnafXML = async (invoiceIds) => {
  * @returns {Promise<Blob>}
  */
 export const exportAllData = async () => {
-  const response = await API.post('/exports/all-data', {}, {
-    responseType: 'blob',
-    timeout: 120000, // 2 minutes timeout for large exports
-  });
+  const response = await API.post(
+    '/exports/all-data',
+    {},
+    {
+      responseType: 'blob',
+      timeout: 120000, // 2 minutes timeout for large exports
+    }
+  );
 
   return response.data;
 };

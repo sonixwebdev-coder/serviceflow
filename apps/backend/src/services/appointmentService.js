@@ -1,15 +1,23 @@
 const { AppError } = require('../utils/errors');
-const { broadcastAppointment, broadcastServiceOrder, broadcastAppointmentToClient } = require('../realtime/events');
+const {
+  broadcastAppointment,
+  broadcastServiceOrder,
+  broadcastAppointmentToClient,
+} = require('../realtime/events');
 const { getCompanySettings } = require('./companySettingService');
 const { upsertServiceOrder, generateServiceOrderPdf } = require('./serviceOrderService');
 const { createNotification } = require('./notificationService');
 const { sendAppointmentNotification } = require('./pushNotificationService');
-const { optimizedAppointmentIncludes, minimalAppointmentIncludes } = require('../utils/optimizedIncludes');
-const { getPrismaPagination, createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
+const {
+  optimizedAppointmentIncludes,
+  minimalAppointmentIncludes,
+} = require('../utils/optimizedIncludes');
+const { createPaginatedResponse, parsePaginationParams } = require('../utils/pagination');
 const { createPayment } = require('./paymentService');
 const { resolveAsset } = require('./assetService');
 const logger = require('../utils/logger');
 const googleCalendarService = require('./google/googleCalendarService');
+const { getPlatformConfig } = require('../config/platform');
 const {
   sendAppointmentReminder,
   sendAppointmentCancelledEmail,
@@ -27,14 +35,19 @@ const STATUS_MAP = new Map([
   ['cancelled', 'CANCELLED'],
 ]);
 
-const normalizeKey = (value) => (typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '');
+const normalizeKey = (value) =>
+  typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '';
 const ADMIN_ROLE = 'admin';
 const TECHNICIAN_ROLE = 'technician';
 
 const mapStatus = (value) => {
   if (!value) return undefined;
   const normalized = value.toLowerCase();
-  return STATUS_MAP.get(normalized) || STATUS_MAP.get(normalized.replace('_', '-')) || value.toUpperCase();
+  return (
+    STATUS_MAP.get(normalized) ||
+    STATUS_MAP.get(normalized.replace('_', '-')) ||
+    value.toUpperCase()
+  );
 };
 
 const TX_OPTIONS = {
@@ -65,20 +78,6 @@ const assignIfProvided = (target, source, key, transform) => {
     return;
   }
   target[key] = transform ? transform(value) : value;
-};
-
-const assignNumberIfProvided = (target, source, key, transform = Number) => {
-  if (!source || !Object.prototype.hasOwnProperty.call(source, key)) return;
-  const value = source[key];
-  if (value === undefined) return;
-  if (value === null || value === '') {
-    target[key] = null;
-    return;
-  }
-  const next = transform(value);
-  if (Number.isFinite(next)) {
-    target[key] = next;
-  }
 };
 
 const collectRoleKeys = (source) => {
@@ -156,16 +155,28 @@ const ensureAssigneePermissions = async (tx, assigneeIds = [], currentUser) => {
   });
 
   if (users.length !== assigneeIds.length) {
-    throw new AppError('Unul sau mai multi tehnicieni selectati nu au fost gasiti. Va rugam verificati selectia.', 404);
+    throw new AppError(
+      'Unul sau mai multi tehnicieni selectati nu au fost gasiti. Va rugam verificati selectia.',
+      404
+    );
   }
 
   const invalid = users.filter((user) => !userHasRoleKey(user, TECHNICIAN_ROLE));
   if (invalid.length) {
-    throw new AppError('Doar tehnicienii pot fi asignati la programari. Va rugam selectati doar utilizatori cu rol de tehnician.', 403);
+    throw new AppError(
+      'Doar tehnicienii pot fi asignati la programari. Va rugam selectati doar utilizatori cu rol de tehnician.',
+      403
+    );
   }
 };
 
-const ensureRampAvailability = async (tx, scheduledStart, scheduledEnd, excludeAppointmentId, organizationId) => {
+const ensureRampAvailability = async (
+  tx,
+  scheduledStart,
+  scheduledEnd,
+  excludeAppointmentId,
+  organizationId
+) => {
   const settings = await getCompanySettings(organizationId);
   const rampCount = Number(settings.rampCount) || 0;
   if (!rampCount) return;
@@ -180,7 +191,10 @@ const ensureRampAvailability = async (tx, scheduledStart, scheduledEnd, excludeA
   });
 
   if (overlapping >= rampCount) {
-    throw new AppError('Nu exista rampe disponibile in intervalul orar selectat. Va rugam alegeti alt interval sau anulati o alta programare.', 409);
+    throw new AppError(
+      'Nu exista rampe disponibile in intervalul orar selectat. Va rugam alegeti alt interval sau anulati o alta programare.',
+      409
+    );
   }
 };
 
@@ -193,19 +207,30 @@ const resolveClient = async (tx, clientPayload, fallbackId, organizationId) => {
     const where = organizationId ? { id: fallbackId, organizationId } : { id: fallbackId };
     client = await tx.client.findFirst({ where });
     if (!client) {
-      throw new AppError('Clientul nu a fost gasit. Va rugam selectati un client valid sau creati unul nou.', 404);
+      throw new AppError(
+        'Clientul nu a fost gasit. Va rugam selectati un client valid sau creati unul nou.',
+        404
+      );
     }
   }
 
   if (clientPayload?.id && (!client || client.id !== clientPayload.id)) {
-    const where = organizationId ? { id: clientPayload.id, organizationId } : { id: clientPayload.id };
+    const where = organizationId
+      ? { id: clientPayload.id, organizationId }
+      : { id: clientPayload.id };
     client = await tx.client.findFirst({ where });
     if (!client) {
-      throw new AppError('Clientul specificat nu a fost gasit. Va rugam verificati datele clientului.', 404);
+      throw new AppError(
+        'Clientul specificat nu a fost gasit. Va rugam verificati datele clientului.',
+        404
+      );
     }
   }
 
-  const type = normalizeClientType(clientPayload?.type, client?.type || (clientPayload?.companyName ? 'SRL' : 'PF'));
+  const type = normalizeClientType(
+    clientPayload?.type,
+    client?.type || (clientPayload?.companyName ? 'SRL' : 'PF')
+  );
 
   if (!client && clientPayload) {
     if (type === 'SRL') {
@@ -242,7 +267,17 @@ const resolveClient = async (tx, clientPayload, fallbackId, organizationId) => {
   }
 
   const data = { type };
-  const fields = ['firstName', 'lastName', 'companyName', 'contactName', 'phone', 'email', 'vatNumber', 'registrationNumber', 'notes'];
+  const fields = [
+    'firstName',
+    'lastName',
+    'companyName',
+    'contactName',
+    'phone',
+    'email',
+    'vatNumber',
+    'registrationNumber',
+    'notes',
+  ];
   fields.forEach((field) => assignIfProvided(data, clientPayload, field));
 
   if (client) {
@@ -253,11 +288,17 @@ const resolveClient = async (tx, clientPayload, fallbackId, organizationId) => {
   }
 
   if (type === 'SRL' && !data.companyName) {
-    throw new AppError('Pentru clientii de tip Firma (SRL) este obligatoriu sa specificati numele companiei.', 400);
+    throw new AppError(
+      'Pentru clientii de tip Firma (SRL) este obligatoriu sa specificati numele companiei.',
+      400
+    );
   }
 
   if (type === 'PF' && !data.firstName) {
-    throw new AppError('Pentru clientii de tip Persoana Fizica (PF) este obligatoriu sa specificati numele.', 400);
+    throw new AppError(
+      'Pentru clientii de tip Persoana Fizica (PF) este obligatoriu sa specificati numele.',
+      400
+    );
   }
 
   if (!data.phone) {
@@ -320,7 +361,9 @@ const syncToGoogleCalendar = async (prisma, appointment, action = 'create') => {
         } else if (action === 'delete') {
           await googleCalendarService.deleteEvent(prisma, userId, appointment.id);
         }
-        logger.debug(`[GCAL] Sync ${action} successful for user ${userId}`, { appointmentId: appointment.id });
+        logger.debug(`[GCAL] Sync ${action} successful for user ${userId}`, {
+          appointmentId: appointment.id,
+        });
       } catch (err) {
         logger.error(`[GCAL] Sync ${action} failed for user ${userId}:`, {
           appointmentId: appointment.id,
@@ -417,10 +460,16 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
   const scheduledEnd = new Date(payload.scheduledEnd);
 
   if (!(scheduledStart instanceof Date && !Number.isNaN(scheduledStart.valueOf()))) {
-    throw new AppError('Data si ora de inceput sunt invalide. Va rugam selectati o data si ora valide.', 400);
+    throw new AppError(
+      'Data si ora de inceput sunt invalide. Va rugam selectati o data si ora valide.',
+      400
+    );
   }
   if (!(scheduledEnd instanceof Date && !Number.isNaN(scheduledEnd.valueOf()))) {
-    throw new AppError('Data si ora de sfarsit sunt invalide. Va rugam selectati o data si ora valide.', 400);
+    throw new AppError(
+      'Data si ora de sfarsit sunt invalide. Va rugam selectati o data si ora valide.',
+      400
+    );
   }
   if (scheduledEnd <= scheduledStart) {
     throw new AppError('Data si ora de sfarsit trebuie sa fie dupa data si ora de inceput.', 400);
@@ -435,9 +484,20 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
 
   await prisma.$transaction(async (tx) => {
     await ensureAssigneePermissions(tx, payload.assigneeIds, currentUser);
-    await ensureRampAvailability(tx, scheduledStart, scheduledEnd, null, currentUser.organizationId);
+    await ensureRampAvailability(
+      tx,
+      scheduledStart,
+      scheduledEnd,
+      null,
+      currentUser.organizationId
+    );
 
-    const client = await resolveClient(tx, payload.client, payload.clientId, currentUser.organizationId);
+    const client = await resolveClient(
+      tx,
+      payload.client,
+      payload.clientId,
+      currentUser.organizationId
+    );
     logger.info('✅ Client resolved', { clientId: client?.id });
 
     // Resolve asset from payload
@@ -483,7 +543,10 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
         include: includeConfig,
       });
 
-      logger.info('✅ Appointment created', { appointmentId: appointment.id, hasServiceOrder: !!payload.serviceOrder });
+      logger.info('✅ Appointment created', {
+        appointmentId: appointment.id,
+        hasServiceOrder: !!payload.serviceOrder,
+      });
     } catch (error) {
       if (error.code === 'P2003') {
         throw new AppError('Related entity not found', 400);
@@ -506,7 +569,7 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
         logger.error('❌ Service order creation failed:', {
           error: error.message,
           stack: error.stack,
-          appointmentId: appointment.id
+          appointmentId: appointment.id,
         });
         throw error;
       }
@@ -567,7 +630,9 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
   broadcastAppointment('created', appointment);
 
   // Create notifications for assignees and admins
-  logger.notification('🔔 Starting notification creation process', { appointmentId: appointment.id });
+  logger.notification('🔔 Starting notification creation process', {
+    appointmentId: appointment.id,
+  });
   try {
     logger.debug('🔍 Querying for admin users...');
     const adminUsers = await prisma.user.findMany({
@@ -582,7 +647,9 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
       select: { id: true },
     });
 
-    logger.notification(`Found ${adminUsers.length} admin users for notifications`, { adminUserIds: adminUsers.map(u => u.id) });
+    logger.notification(`Found ${adminUsers.length} admin users for notifications`, {
+      adminUserIds: adminUsers.map((u) => u.id),
+    });
 
     const notificationRecipients = new Set();
 
@@ -598,7 +665,7 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
 
     logger.notification(`Total notification recipients: ${notificationRecipients.size}`, {
       recipients: Array.from(notificationRecipients),
-      appointmentId: appointment.id
+      appointmentId: appointment.id,
     });
 
     // Create notifications for all recipients
@@ -625,13 +692,19 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
             scheduledStart: appointment.scheduledStart,
             scheduledEnd: appointment.scheduledEnd,
           },
-        }).then((notification) => {
-          logger.notification(`✓ Notification created for user ${recipientId}`, { notificationId: notification?.id });
-          return notification;
-        }).catch((err) => {
-          logger.error(`✗ Failed to create notification for user ${recipientId}`, { error: err.message });
-          return null;
         })
+          .then((notification) => {
+            logger.notification(`✓ Notification created for user ${recipientId}`, {
+              notificationId: notification?.id,
+            });
+            return notification;
+          })
+          .catch((err) => {
+            logger.error(`✗ Failed to create notification for user ${recipientId}`, {
+              error: err.message,
+            });
+            return null;
+          })
       )
     );
 
@@ -640,37 +713,50 @@ const createAppointment = async (prisma, payload, currentUser, options = {}) => 
       total: notificationResults.length,
       successful: successCount,
       failed: notificationResults.length - successCount,
-      appointmentId: appointment.id
+      appointmentId: appointment.id,
     });
 
     // Send push notifications
     try {
       await sendAppointmentNotification(appointment, 'created');
-      logger.notification('Push notifications sent for appointment creation', { appointmentId: appointment.id });
+      logger.notification('Push notifications sent for appointment creation', {
+        appointmentId: appointment.id,
+      });
     } catch (pushError) {
-      logger.error('Failed to send push notifications for appointment', { error: pushError.message, appointmentId: appointment.id });
+      logger.error('Failed to send push notifications for appointment', {
+        error: pushError.message,
+        appointmentId: appointment.id,
+      });
       // Don't fail if push notifications fail
     }
   } catch (notifError) {
-    logger.error('Failed to send appointment notifications', { error: notifError.message, appointmentId: appointment.id });
+    logger.error('Failed to send appointment notifications', {
+      error: notifError.message,
+      appointmentId: appointment.id,
+    });
     // Don't fail the whole operation if notifications fail
   }
 
   // Sync to Google Calendar (fire and forget, doesn't block the response)
   syncToGoogleCalendar(prisma, appointment, 'create').catch((err) => {
-    logger.error('[GCAL] Background sync failed:', { appointmentId: appointment.id, error: err.message });
+    logger.error('[GCAL] Background sync failed:', {
+      appointmentId: appointment.id,
+      error: err.message,
+    });
   });
 
   // Send appointment confirmation email to client (fire-and-forget)
   if (appointment.client?.email) {
-    getCompanySettings(appointment.organizationId).then((companySettings) => {
-      sendAppointmentReminder(prisma, {
-        appointment,
-        client: appointment.client,
-        companySettings,
-        organizationId: appointment.organizationId,
-      }).catch((err) => logger.error('[EMAIL] Appointment confirmation failed:', err.message));
-    }).catch(() => {});
+    getCompanySettings(appointment.organizationId)
+      .then((companySettings) => {
+        sendAppointmentReminder(prisma, {
+          appointment,
+          client: appointment.client,
+          companySettings,
+          organizationId: appointment.organizationId,
+        }).catch((err) => logger.error('[EMAIL] Appointment confirmation failed:', err.message));
+      })
+      .catch(() => {});
   }
 
   return appointment;
@@ -700,17 +786,30 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
 
   // Prevent editing completed appointments
   if (existing.status === 'COMPLETED') {
-    throw new AppError('Nu se pot edita programarile completate. Programarea este deja finalizata.', 400);
+    throw new AppError(
+      'Nu se pot edita programarile completate. Programarea este deja finalizata.',
+      400
+    );
   }
 
-  const scheduledStart = payload.scheduledStart ? new Date(payload.scheduledStart) : existing.scheduledStart;
-  const scheduledEnd = payload.scheduledEnd ? new Date(payload.scheduledEnd) : existing.scheduledEnd;
+  const scheduledStart = payload.scheduledStart
+    ? new Date(payload.scheduledStart)
+    : existing.scheduledStart;
+  const scheduledEnd = payload.scheduledEnd
+    ? new Date(payload.scheduledEnd)
+    : existing.scheduledEnd;
 
   if (!(scheduledStart instanceof Date && !Number.isNaN(scheduledStart.valueOf()))) {
-    throw new AppError('Data si ora de inceput sunt invalide. Va rugam selectati o data si ora valide.', 400);
+    throw new AppError(
+      'Data si ora de inceput sunt invalide. Va rugam selectati o data si ora valide.',
+      400
+    );
   }
   if (!(scheduledEnd instanceof Date && !Number.isNaN(scheduledEnd.valueOf()))) {
-    throw new AppError('Data si ora de sfarsit sunt invalide. Va rugam selectati o data si ora valide.', 400);
+    throw new AppError(
+      'Data si ora de sfarsit sunt invalide. Va rugam selectati o data si ora valide.',
+      400
+    );
   }
   if (scheduledEnd <= scheduledStart) {
     throw new AppError('Data si ora de sfarsit trebuie sa fie dupa data si ora de inceput.', 400);
@@ -723,9 +822,20 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     if (payload.assigneeIds) {
       await ensureAssigneePermissions(tx, payload.assigneeIds, currentUser);
     }
-    await ensureRampAvailability(tx, scheduledStart, scheduledEnd, appointmentId, currentUser.organizationId);
+    await ensureRampAvailability(
+      tx,
+      scheduledStart,
+      scheduledEnd,
+      appointmentId,
+      currentUser.organizationId
+    );
 
-    const client = await resolveClient(tx, payload.client, payload.clientId ?? existing.clientId, currentUser.organizationId);
+    const client = await resolveClient(
+      tx,
+      payload.client,
+      payload.clientId ?? existing.clientId,
+      currentUser.organizationId
+    );
     const asset = await resolveAsset(
       tx,
       client?.id || payload.clientId || existing.clientId,
@@ -776,7 +886,7 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
         logger.error('❌ Service order update failed:', {
           error: error.message,
           stack: error.stack,
-          appointmentId: appointmentId
+          appointmentId: appointmentId,
         });
         throw error;
       }
@@ -810,7 +920,9 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
     if (relevantFieldsChanged) {
       try {
         await generateServiceOrderPdf(appointmentId, { refresh: true });
-        logger.info('[APPOINTMENT] Service order PDF regenerated after appointment update', { appointmentId });
+        logger.info('[APPOINTMENT] Service order PDF regenerated after appointment update', {
+          appointmentId,
+        });
       } catch (pdfError) {
         logger.error('[APPOINTMENT] Failed to regenerate service order PDF:', pdfError);
         // Don't fail the whole operation if PDF regeneration fails
@@ -897,17 +1009,23 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
       // Send push notifications for status change
       try {
         await sendAppointmentNotification(updated, 'updated');
-        logger.notification('Push notifications sent for appointment update', { appointmentId: updated.id });
+        logger.notification('Push notifications sent for appointment update', {
+          appointmentId: updated.id,
+        });
       } catch (pushError) {
-        logger.error('Failed to send push notifications for appointment update', { error: pushError.message, appointmentId: updated.id });
+        logger.error('Failed to send push notifications for appointment update', {
+          error: pushError.message,
+          appointmentId: updated.id,
+        });
         // Don't fail if push notifications fail
       }
 
       // Send email to client on status change (fire-and-forget)
       if (updated.client?.email) {
-        const clientName = updated.client.type === 'SRL'
-          ? updated.client.companyName
-          : `${updated.client.firstName || ''} ${updated.client.lastName || ''}`.trim();
+        const clientName =
+          updated.client.type === 'SRL'
+            ? updated.client.companyName
+            : `${updated.client.firstName || ''} ${updated.client.lastName || ''}`.trim();
 
         const statusLabels = {
           PENDING: 'In asteptare',
@@ -917,25 +1035,32 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
           CANCELLED: 'Anulata',
         };
 
-        getCompanySettings(updated.organizationId).then((companySettings) => {
-          sendEmail(prisma, {
-            to: updated.client.email,
-            template: 'appointment-status-change',
-            templateData: {
-              clientName: clientName || 'Client',
-              appointmentTitle: updated.title,
-              date: new Date(updated.scheduledStart).toLocaleDateString('ro-RO'),
-              time: new Date(updated.scheduledStart).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
-              oldStatus: statusLabels[existing.status] || existing.status,
-              newStatus: statusLabels[updated.status] || updated.status,
-              companyName: companySettings?.name || 'ForjaIt',
-              companyPhone: companySettings?.phone,
-            },
-            recipientType: 'CLIENT',
-            recipientId: updated.clientId,
-            organizationId: updated.organizationId,
-          }).catch((err) => logger.error('[EMAIL] Appointment status change email failed:', err.message));
-        }).catch(() => {});
+        getCompanySettings(updated.organizationId)
+          .then((companySettings) => {
+            sendEmail(prisma, {
+              to: updated.client.email,
+              template: 'appointment-status-change',
+              templateData: {
+                clientName: clientName || 'Client',
+                appointmentTitle: updated.title,
+                date: new Date(updated.scheduledStart).toLocaleDateString('ro-RO'),
+                time: new Date(updated.scheduledStart).toLocaleTimeString('ro-RO', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+                oldStatus: statusLabels[existing.status] || existing.status,
+                newStatus: statusLabels[updated.status] || updated.status,
+                companyName: companySettings?.name || getPlatformConfig().name,
+                companyPhone: companySettings?.phone,
+              },
+              recipientType: 'CLIENT',
+              recipientId: updated.clientId,
+              organizationId: updated.organizationId,
+            }).catch((err) =>
+              logger.error('[EMAIL] Appointment status change email failed:', err.message)
+            );
+          })
+          .catch(() => {});
       }
     }
   } catch (notifError) {
@@ -958,25 +1083,40 @@ const updateAppointment = async (prisma, appointmentId, payload, currentUser) =>
 
   // Sync to Google Calendar (fire and forget, doesn't block the response)
   syncToGoogleCalendar(prisma, updated, 'update').catch((err) => {
-    logger.error('[GCAL] Background sync failed:', { appointmentId: updated.id, error: err.message });
+    logger.error('[GCAL] Background sync failed:', {
+      appointmentId: updated.id,
+      error: err.message,
+    });
   });
 
   // Send reschedule email if date/time changed (fire-and-forget)
-  const dateChanged = existing.scheduledStart.getTime() !== updated.scheduledStart.getTime()
-    || existing.scheduledEnd.getTime() !== updated.scheduledEnd.getTime();
+  const dateChanged =
+    existing.scheduledStart.getTime() !== updated.scheduledStart.getTime() ||
+    existing.scheduledEnd.getTime() !== updated.scheduledEnd.getTime();
   if (dateChanged && updated.client?.email) {
-    const oldDate = existing.scheduledStart.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' });
-    const oldTime = existing.scheduledStart.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-    getCompanySettings(updated.organizationId).then((companySettings) => {
-      sendAppointmentRescheduledEmail(prisma, {
-        appointment: updated,
-        client: updated.client,
-        oldDate,
-        oldTime,
-        companySettings,
-        organizationId: updated.organizationId,
-      }).catch((err) => logger.error('[EMAIL] Appointment reschedule email failed:', err.message));
-    }).catch(() => {});
+    const oldDate = existing.scheduledStart.toLocaleDateString('ro-RO', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const oldTime = existing.scheduledStart.toLocaleTimeString('ro-RO', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    getCompanySettings(updated.organizationId)
+      .then((companySettings) => {
+        sendAppointmentRescheduledEmail(prisma, {
+          appointment: updated,
+          client: updated.client,
+          oldDate,
+          oldTime,
+          companySettings,
+          organizationId: updated.organizationId,
+        }).catch((err) =>
+          logger.error('[EMAIL] Appointment reschedule email failed:', err.message)
+        );
+      })
+      .catch(() => {});
   }
 
   return updated;
@@ -1016,39 +1156,52 @@ const cancelAppointment = async (prisma, appointmentId, reason, currentUser) => 
 
   // Send in-app + push notifications for cancellation
   try {
-    const recipientIds = updated.assignees?.map(a => a.userId || a.user?.id).filter(Boolean) || [];
-    await Promise.all(recipientIds.map((recipientId) =>
-      createNotification({
-        recipientId,
-        title: 'Programare anulata',
-        message: `Programarea "${updated.title}" a fost anulata`,
-        type: 'APPOINTMENT',
-        entityType: 'APPOINTMENT',
-        entityId: updated.id,
-        organizationId: updated.organizationId,
-      }).catch(() => {})
-    ));
+    const recipientIds =
+      updated.assignees?.map((a) => a.userId || a.user?.id).filter(Boolean) || [];
+    await Promise.all(
+      recipientIds.map((recipientId) =>
+        createNotification({
+          recipientId,
+          title: 'Programare anulata',
+          message: `Programarea "${updated.title}" a fost anulata`,
+          type: 'APPOINTMENT',
+          entityType: 'APPOINTMENT',
+          entityId: updated.id,
+          organizationId: updated.organizationId,
+        }).catch(() => {})
+      )
+    );
     await sendAppointmentNotification(updated, 'cancelled');
   } catch (pushError) {
-    logger.error('Failed to send notifications for appointment cancellation', { error: pushError.message, appointmentId: updated.id });
+    logger.error('Failed to send notifications for appointment cancellation', {
+      error: pushError.message,
+      appointmentId: updated.id,
+    });
   }
 
   // Delete from Google Calendar (fire and forget, doesn't block the response)
   syncToGoogleCalendar(prisma, updated, 'delete').catch((err) => {
-    logger.error('[GCAL] Background delete failed:', { appointmentId: updated.id, error: err.message });
+    logger.error('[GCAL] Background delete failed:', {
+      appointmentId: updated.id,
+      error: err.message,
+    });
   });
 
   // Send cancellation email to client (fire-and-forget)
   if (updated.client?.email) {
-    getCompanySettings(updated.organizationId).then((companySettings) => {
-      sendAppointmentCancelledEmail(prisma, {
-        appointment: updated,
-        client: updated.client,
-        cancellationReason: reason,
-        companySettings,
-        organizationId: updated.organizationId,
-      }).catch((err) => logger.error('[EMAIL] Appointment cancellation email failed:', err.message));
-    }).catch(() => {});
+    getCompanySettings(updated.organizationId)
+      .then((companySettings) => {
+        sendAppointmentCancelledEmail(prisma, {
+          appointment: updated,
+          client: updated.client,
+          cancellationReason: reason,
+          companySettings,
+          organizationId: updated.organizationId,
+        }).catch((err) =>
+          logger.error('[EMAIL] Appointment cancellation email failed:', err.message)
+        );
+      })
+      .catch(() => {});
   }
 
   return updated;
@@ -1100,7 +1253,10 @@ const recordAdvancePayment = async (prisma, appointmentId, amount, userId) => {
   const total = calculateAppointmentTotal(appointment);
 
   if (total === 0) {
-    throw new AppError('Nu se poate inregistra plata pentru o programare fara articole in comanda de service.', 400);
+    throw new AppError(
+      'Nu se poate inregistra plata pentru o programare fara articole in comanda de service.',
+      400
+    );
   }
 
   // Create Payment record (which will automatically update appointment payment status)
@@ -1123,7 +1279,9 @@ const recordAdvancePayment = async (prisma, appointmentId, amount, userId) => {
   if (updated?.serviceOrder) {
     try {
       await generateServiceOrderPdf(appointmentId, { refresh: true });
-      logger.info('[PAYMENT] Service order PDF regenerated after advance payment', { appointmentId });
+      logger.info('[PAYMENT] Service order PDF regenerated after advance payment', {
+        appointmentId,
+      });
     } catch (pdfError) {
       logger.error('[PAYMENT] Failed to regenerate service order PDF:', pdfError);
       // Don't fail the whole operation if PDF regeneration fails
@@ -1250,16 +1408,21 @@ const getPaymentStatus = async (prisma, appointmentId) => {
     total,
     totalPaid,
     status: appointment.paymentStatus,
-    advancePayment: totalPaid > 0 ? {
-      amount: totalPaid,
-      paidAt: appointment.advancePaidAt,
-    } : null,
+    advancePayment:
+      totalPaid > 0
+        ? {
+            amount: totalPaid,
+            paidAt: appointment.advancePaidAt,
+          }
+        : null,
     remaining,
     loyaltyDiscount,
     loyaltyTierAtTime,
-    finalPayment: appointment.finalPaidAt ? {
-      paidAt: appointment.finalPaidAt,
-    } : null,
+    finalPayment: appointment.finalPaidAt
+      ? {
+          paidAt: appointment.finalPaidAt,
+        }
+      : null,
     isFullyPaid: appointment.paymentStatus === 'PAID',
   };
 };

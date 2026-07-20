@@ -1,9 +1,9 @@
-import React, { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import confirm from '../../utils/confirm';
 import { format } from 'date-fns';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useDeleteMessage, useUpdateMessage } from '../../hooks/useChat';
-import { MoreVertical, Edit2, Trash2, File, Image, Mic, Clock, AlertCircle } from 'lucide-react';
+import { Edit2, Trash2, File, Mic, Clock, AlertCircle } from 'lucide-react';
 import useToast from '../../context/useToast';
 import ImagePreviewModal from './ImagePreviewModal';
 import UserHoverCard from './UserHoverCard';
@@ -25,8 +25,11 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
   const deleteMessageMutation = useDeleteMessage();
 
   // Use prop if provided, otherwise compute
-  const isOwnMessage = isOwnMessageProp ?? (message.author?.id === currentUser?.id);
-  const timestamp = useMemo(() => format(new Date(message.createdAt), 'HH:mm'), [message.createdAt]);
+  const isOwnMessage = isOwnMessageProp ?? message.author?.id === currentUser?.id;
+  const timestamp = useMemo(
+    () => format(new Date(message.createdAt), 'HH:mm'),
+    [message.createdAt]
+  );
 
   // Get display body based on message type
   const getDisplayBody = () => {
@@ -39,7 +42,9 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
     if (message.type === 'FILE' || message.type === 'IMAGE') {
       const fileName = message.attachments?.[0]?.fileName || '';
       if (message.type === 'IMAGE') {
-        return isOwnMessage ? `Ai trimis o imagine: ${fileName}` : `A trimis o imagine: ${fileName}`;
+        return isOwnMessage
+          ? `Ai trimis o imagine: ${fileName}`
+          : `A trimis o imagine: ${fileName}`;
       }
       return isOwnMessage ? `Ai trimis un fișier: ${fileName}` : `A trimis un fișier: ${fileName}`;
     }
@@ -64,7 +69,8 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
       } catch (error) {
         showToast({
           title: 'Eroare',
-          description: error?.message || 'Nu s-a putut actualiza mesajul. Te rugăm să încerci din nou.',
+          description:
+            error?.message || 'Nu s-a putut actualiza mesajul. Te rugăm să încerci din nou.',
           type: 'error',
         });
         return;
@@ -74,7 +80,14 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
   };
 
   const handleDelete = async () => {
-    if (await confirm({ title: 'Sterge mesaj', text: 'Esti sigur ca vrei sa stergi acest mesaj?', confirmText: 'Sterge', danger: true })) {
+    if (
+      await confirm({
+        title: 'Sterge mesaj',
+        text: 'Esti sigur ca vrei sa stergi acest mesaj?',
+        confirmText: 'Sterge',
+        danger: true,
+      })
+    ) {
       try {
         await deleteMessageMutation.mutateAsync(message.id);
         showToast({
@@ -85,7 +98,8 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
       } catch (error) {
         showToast({
           title: 'Eroare',
-          description: error?.message || 'Nu s-a putut șterge mesajul. Te rugăm să încerci din nou.',
+          description:
+            error?.message || 'Nu s-a putut șterge mesajul. Te rugăm să încerci din nou.',
           type: 'error',
         });
       }
@@ -123,13 +137,17 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
                   isOwnMessage ? 'bg-orange-600/20' : 'bg-gray-100'
                 }`}
               >
-                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                  isOwnMessage ? 'bg-white/30' : 'bg-primary/10'
-                }`}>
+                <div
+                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                    isOwnMessage ? 'bg-white/30' : 'bg-primary/10'
+                  }`}
+                >
                   <Mic className={`h-5 w-5 ${isOwnMessage ? 'text-white' : 'text-primary'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-medium mb-1 ${isOwnMessage ? 'text-white/80' : 'text-gray-500'}`}>
+                  <p
+                    className={`text-xs font-medium mb-1 ${isOwnMessage ? 'text-white/80' : 'text-gray-500'}`}
+                  >
                     Mesaj vocal
                   </p>
                   <audio
@@ -175,8 +193,8 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
       onMouseLeave={() => setShowActions(false)}
     >
       {/* Avatar - only show for other users' messages */}
-      {!isOwnMessage && (
-        showAvatar ? (
+      {!isOwnMessage &&
+        (showAvatar ? (
           <UserHoverCard user={message.author}>
             <div className="flex-shrink-0 cursor-pointer">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
@@ -187,8 +205,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
           </UserHoverCard>
         ) : (
           <div className="w-10 flex-shrink-0"></div>
-        )
-      )}
+        ))}
 
       {/* Message Content */}
       <div className={`min-w-0 max-w-[70%] ${isOwnMessage ? 'ml-auto' : ''}`}>
@@ -201,9 +218,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
               </span>
             </UserHoverCard>
             <span className="text-xs text-gray-500">{timestamp}</span>
-            {message.editedAt && (
-              <span className="text-xs text-gray-400">(editat)</span>
-            )}
+            {message.editedAt && <span className="text-xs text-gray-400">(editat)</span>}
           </div>
         )}
 
@@ -252,13 +267,13 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
             {/* Timestamp for own messages */}
             {isOwnMessage && (
               <div className="mt-1 flex items-center justify-end gap-1 text-xs opacity-70">
-                {isPending && status === 'sending' && (
-                  <Clock className="h-3 w-3 animate-pulse" />
-                )}
+                {isPending && status === 'sending' && <Clock className="h-3 w-3 animate-pulse" />}
                 {isPending && status === 'failed' && (
                   <AlertCircle className="h-3 w-3 text-red-300" />
                 )}
-                <span>{isPending ? (status === 'sending' ? 'Se trimite...' : 'Eroare') : timestamp}</span>
+                <span>
+                  {isPending ? (status === 'sending' ? 'Se trimite...' : 'Eroare') : timestamp}
+                </span>
                 {!isPending && message.editedAt && <span>(editat)</span>}
               </div>
             )}
@@ -271,7 +286,9 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
 
       {/* Actions Menu */}
       {showActions && isOwnMessage && !message.isDeleted && !isEditing && !isPending && (
-        <div className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} top-0 flex gap-1 rounded-lg bg-white shadow-sm border border-gray-200 p-1`}>
+        <div
+          className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} top-0 flex gap-1 rounded-lg bg-white shadow-sm border border-gray-200 p-1`}
+        >
           <button
             onClick={() => setIsEditing(true)}
             className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"

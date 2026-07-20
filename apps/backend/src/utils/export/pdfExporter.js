@@ -4,6 +4,7 @@
  */
 
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
+const { getPlatformConfig } = require('../../config/platform');
 const fontkit = require('@pdf-lib/fontkit');
 const fs = require('fs');
 const path = require('path');
@@ -36,7 +37,9 @@ const sanitizeForPdf = (value) => {
 const loadFontBytes = (filePath) => {
   if (!filePath) return null;
   try {
-    const resolved = path.isAbsolute(filePath) ? filePath : path.resolve(__dirname, '../../../', filePath);
+    const resolved = path.isAbsolute(filePath)
+      ? filePath
+      : path.resolve(__dirname, '../../../', filePath);
     if (!fs.existsSync(resolved)) {
       return null;
     }
@@ -60,10 +63,7 @@ const embedFonts = async (pdfDoc) => {
     'PDF_FONT_REGULAR_PATH',
     'assets/fonts/static/NotoSans-Regular.ttf'
   );
-  const boldBytes = resolveFontBytes(
-    'PDF_FONT_BOLD_PATH',
-    'assets/fonts/static/NotoSans-Bold.ttf'
-  );
+  const boldBytes = resolveFontBytes('PDF_FONT_BOLD_PATH', 'assets/fonts/static/NotoSans-Bold.ttf');
 
   if (regularBytes && boldBytes) {
     try {
@@ -213,7 +213,7 @@ const exportToPDF = async (data, options = {}) => {
   const {
     columns,
     title = 'Export Date',
-    companyName = process.env.COMPANY_NAME || 'ForjaIt CRM',
+    companyName = process.env.COMPANY_NAME || getPlatformConfig().name,
   } = options;
 
   const pdfDoc = await PDFDocument.create();
@@ -293,7 +293,7 @@ const exportToPDF = async (data, options = {}) => {
   });
   context.cursor -= 10;
 
-  context.page.drawText(sanitizeForPdf('Document generat automat de ForjaIt CRM'), {
+  context.page.drawText(sanitizeForPdf(`Document generat automat de ${getPlatformConfig().name}`), {
     x: context.margin,
     y: context.cursor,
     size: 8,

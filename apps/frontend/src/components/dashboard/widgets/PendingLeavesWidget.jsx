@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
-import { Users, ChevronRight, Check, X } from 'lucide-react';
+import { ChevronRight, Check } from 'lucide-react';
 import useLeaveRequests from '../../../hooks/useLeaveRequests';
 import { LEAVE_STATUS, LEAVE_TYPE } from '../../../utils/constants';
 
@@ -15,7 +15,7 @@ const LEAVE_TYPE_LABELS = {
 
 const ListSkeleton = () => (
   <div className="space-y-2">
-    {[1, 2, 3].map(i => (
+    {[1, 2, 3].map((i) => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
         <div className="flex-1 space-y-1">
@@ -32,7 +32,7 @@ export default function PendingLeavesWidget() {
   const { leaveRequests, loading } = useLeaveRequests();
 
   const pendingRequests = (leaveRequests || [])
-    .filter(req => req.status === LEAVE_STATUS.PENDING)
+    .filter((req) => req.status === LEAVE_STATUS.PENDING)
     .slice(0, 5);
 
   if (loading) {
@@ -53,21 +53,23 @@ export default function PendingLeavesWidget() {
 
   return (
     <div className="space-y-2">
-      {pendingRequests.map(request => (
+      {pendingRequests.map((request) => (
         <div
           key={request._id}
           onClick={() => navigate('/leaves')}
           className="flex items-center gap-3 p-3 rounded-lg bg-yellow-50 hover:bg-yellow-100 cursor-pointer transition"
         >
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-200 text-yellow-700 flex items-center justify-center text-sm font-semibold">
-            {request.employee?.firstName?.[0] || '?'}{request.employee?.lastName?.[0] || ''}
+            {request.employee?.firstName?.[0] || '?'}
+            {request.employee?.lastName?.[0] || ''}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
               {request.employee?.firstName} {request.employee?.lastName}
             </p>
             <p className="text-xs text-gray-600">
-              {request.totalDays} {request.totalDays === 1 ? 'zi' : 'zile'} · {LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType}
+              {request.totalDays} {request.totalDays === 1 ? 'zi' : 'zile'} ·{' '}
+              {LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType}
             </p>
           </div>
           {request.startDate && (

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import * as LucideIcons from 'lucide-react';
+import { getWebsiteBuilderIcon } from '../iconRegistry';
 
 const isSafeUrl = (url) => {
   if (!url) return false;
@@ -8,7 +8,9 @@ const isSafeUrl = (url) => {
   try {
     const parsed = new URL(trimmed);
     return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol);
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 };
 
 const ButtonBlock = ({ data, settings, isEditing = false, onClick }) => {
@@ -47,7 +49,7 @@ const ButtonBlock = ({ data, settings, isEditing = false, onClick }) => {
   };
 
   // Get icon component if specified
-  const IconComponent = icon ? LucideIcons[icon] : null;
+  const IconComponent = getWebsiteBuilderIcon(icon);
 
   const handleClick = (e) => {
     if (isEditing) {

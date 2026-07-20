@@ -7,12 +7,12 @@ const TIER_CONFIG = {
 
 export default function TierBadge({ tier, size = 'sm' }) {
   const config = TIER_CONFIG[tier] || TIER_CONFIG.BRONZE;
-  const sizeClasses = size === 'lg'
-    ? 'px-3 py-1 text-sm'
-    : 'px-2 py-0.5 text-xs';
+  const sizeClasses = size === 'lg' ? 'px-3 py-1 text-sm' : 'px-2 py-0.5 text-xs';
 
   return (
-    <span className={`inline-flex items-center rounded-full border font-semibold ${config.className} ${sizeClasses}`}>
+    <span
+      className={`inline-flex items-center rounded-full border font-semibold ${config.className} ${sizeClasses}`}
+    >
       {config.label}
     </span>
   );

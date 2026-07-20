@@ -2,12 +2,7 @@ import { cn } from '@/lib/utils';
 import { BarChart3 } from 'lucide-react';
 
 const StatsBlock = ({ data, settings, isEditing = false, onClick }) => {
-  const {
-    title = '',
-    subtitle = '',
-    stats = [],
-    columns = 4,
-  } = data || {};
+  const { title = '', subtitle = '', stats = [], columns = 4 } = data || {};
 
   const {
     backgroundColor = '#ffffff',
@@ -51,9 +46,7 @@ const StatsBlock = ({ data, settings, isEditing = false, onClick }) => {
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 

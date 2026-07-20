@@ -17,7 +17,10 @@ const Assets = () => {
   const currentLocationId = useLocationStore((s) => s.currentLocationId);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['assets', { search, page: currentPage, limit: PAGE_SIZE, locationId: currentLocationId }],
+    queryKey: [
+      'assets',
+      { search, page: currentPage, limit: PAGE_SIZE, locationId: currentLocationId },
+    ],
     queryFn: () => fetchAssets({ search, page: currentPage, limit: PAGE_SIZE }),
   });
 
@@ -42,7 +45,8 @@ const Assets = () => {
   const handleClientClick = (client) => {
     if (!client) return;
     // Navigate to clients page with search pre-filled
-    const searchTerm = client.type === 'SRL' ? client.companyName : `${client.firstName} ${client.lastName}`;
+    const searchTerm =
+      client.type === 'SRL' ? client.companyName : `${client.firstName} ${client.lastName}`;
     navigate(`/crm/clients?search=${encodeURIComponent(searchTerm)}`);
   };
 
@@ -81,7 +85,9 @@ const Assets = () => {
       </div>
 
       {/* Assets List */}
-      <div className={`bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}>
+      <div
+        className={`bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}
+      >
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
@@ -105,12 +111,24 @@ const Assets = () => {
             <table className="w-full">
               <thead className="bg-gray-50/50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Nume</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{assetIdentifier}</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Tip</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Producator</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Model</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Nume
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    {assetIdentifier}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Tip
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Producator
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Model
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Client
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -125,7 +143,9 @@ const Assets = () => {
                           {assetSingular}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{asset.manufacturer || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {asset.manufacturer || '-'}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-600">{asset.model || '-'}</td>
                       <td className="px-6 py-4 text-sm">
                         {clientName ? (
@@ -141,7 +161,10 @@ const Assets = () => {
                               )}
                               <span className="font-medium">{clientName}</span>
                             </span>
-                            <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition" />
+                            <ExternalLink
+                              size={12}
+                              className="opacity-0 group-hover:opacity-100 transition"
+                            />
                           </button>
                         ) : (
                           <span className="text-gray-400">-</span>

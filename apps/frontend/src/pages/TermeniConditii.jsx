@@ -2,207 +2,112 @@ import { Link } from 'react-router-dom';
 import PublicHeader from '../components/landing/PublicHeader';
 import PublicFooter from '../components/landing/PublicFooter';
 import SEOHead from '../components/landing/SEOHead';
+import { runtimeConfig } from '../config/runtime';
 
 export default function TermsAndConditions() {
+  const platformName = runtimeConfig.platformName;
+
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="Termeni si Conditii - ForjaIt"
-        description="Termenii si conditiile de utilizare a platformei ForjaIt. Informatii despre drepturi, obligatii si politicile de utilizare."
-        canonical="https://app.forja.it.com/terms"
+        title={`Termeni si Conditii - ${platformName}`}
+        description={`Conditiile generale pentru utilizarea instalarii ${platformName}.`}
+        canonical={`${runtimeConfig.platformUrl}/terms`}
       />
       <PublicHeader />
 
       <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Termeni si Conditii</h1>
-        <p className="mt-2 text-sm text-gray-500">Ultima actualizare: 8 martie 2026</p>
+        <p className="mt-2 text-sm text-gray-500">Ultima actualizare: 20 iulie 2026</p>
 
         <div className="mt-10 space-y-8 text-sm leading-relaxed text-gray-700">
-          {/* 1 */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">1. Introducere</h2>
+            <h2 className="text-lg font-semibold text-gray-900">1. Domeniu de aplicare</h2>
             <p className="mt-2">
-              Acesti Termeni si Conditii (denumiti in continuare „Termenii") reglementeaza utilizarea platformei
-              ForjaIt (denumita in continuare „Platforma"), operata de ForjaIt, cu sediul in Romania.
-              Prin accesarea sau utilizarea Platformei, confirmati ca ati citit, inteles si acceptat acesti Termeni
-              in integralitatea lor.
+              Acesti termeni descriu regulile generale de utilizare a acestei instante{' '}
+              {platformName}. Instanta este administrata de operatorul care v-a furnizat contul sau
+              accesul. Operatorul trebuie sa completeze acesti termeni cu identitatea sa legala,
+              conditiile comerciale si regulile aplicabile serviciului oferit.
             </p>
           </section>
 
-          {/* 2 */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">2. Descrierea serviciului</h2>
+            <h2 className="text-lg font-semibold text-gray-900">2. Serviciul</h2>
             <p className="mt-2">
-              ForjaIt este o platforma de management pentru afaceri de servicii care ofera urmatoarele
-              functionalitati principale:
+              Platforma poate include gestionarea clientilor, programari, facturare, website-uri,
+              comunicare, administrarea echipei, rapoarte si alte module configurate de operator.
+              Functionalitatile disponibile pot varia intre instalari, organizatii si planuri.
             </p>
-            <ul className="mt-3 list-disc pl-5 space-y-1">
-              <li>Gestionarea clientilor (CRM)</li>
-              <li>Programari online si calendar</li>
-              <li>Facturare si urmarirea platilor</li>
-              <li>Website builder integrat</li>
-              <li>Comunicare in timp real cu clientii</li>
-              <li>Management echipa si angajati</li>
-              <li>Portal dedicat pentru clienti</li>
-              <li>Program de fidelitate si puncte de loialitate</li>
-              <li>Management multi-locatie</li>
-              <li>Notificari push si in-app</li>
-              <li>Rapoarte si analize</li>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900">3. Conturi si acces</h2>
+            <p className="mt-2">
+              Furnizati informatii corecte, protejati credentialele si folositi numai conturile si
+              organizatiile pentru care aveti autorizare. Informati operatorul fara intarziere daca
+              suspectati acces neautorizat. Operatorul poate suspenda accesul pentru protejarea
+              serviciului sau in cazul incalcarii regulilor comunicate.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900">4. Utilizare acceptabila</h2>
+            <p className="mt-2">Nu folositi platforma pentru a:</p>
+            <ul className="mt-3 list-disc space-y-1 pl-5">
+              <li>incalca legea, drepturile tertilor sau obligatiile de confidentialitate;</li>
+              <li>accesa date, conturi ori sisteme fara autorizare;</li>
+              <li>transmite continut daunator sau perturba functionarea serviciului;</li>
+              <li>introduce date personale fara un temei si masuri adecvate;</li>
+              <li>eluda limitele tehnice sau controalele de acces configurate.</li>
             </ul>
           </section>
 
-          {/* 3 */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">3. Inregistrarea si contul</h2>
+            <h2 className="text-lg font-semibold text-gray-900">5. Date si confidentialitate</h2>
             <p className="mt-2">
-              Pentru a utiliza Platforma, trebuie sa creati un cont furnizand informatii corecte si complete.
-              Sunteti responsabil pentru mentinerea confidentialitatii credentialelor contului si pentru toate
-              activitatile desfasurate prin intermediul contului dumneavoastra. Trebuie sa ne notificati imediat
-              cu privire la orice utilizare neautorizata a contului.
-            </p>
-          </section>
-
-          {/* 4 */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900">4. Obligatiile utilizatorului</h2>
-            <p className="mt-2">In calitate de utilizator al Platformei, va obligati sa:</p>
-            <ul className="mt-3 list-disc pl-5 space-y-1">
-              <li>Furnizati informatii reale si actualizate</li>
-              <li>Nu utilizati Platforma in scopuri ilegale sau neautorizate</li>
-              <li>Nu incercati sa accesati neautorizat sistemele sau datele altor utilizatori</li>
-              <li>Respectati drepturile de proprietate intelectuala ale ForjaIt si ale tertilor</li>
-              <li>Nu transmiteti continut daunator, ofensator sau care incalca legislatia in vigoare</li>
-              <li>Respectati regulamentele aplicabile privind protectia datelor cu caracter personal</li>
-            </ul>
-          </section>
-
-          {/* 5 */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900">5. Proprietate intelectuala</h2>
-            <p className="mt-2">
-              Platforma, inclusiv dar fara a se limita la codul sursa, designul, logo-urile, textele si
-              functionalitajile, sunt proprietatea exclusiva a ForjaIt si sunt protejate de legislatia
-              privind drepturile de autor si proprietatea intelectuala. Nu aveti dreptul sa copiati, modificati,
-              distribuiti sau sa creati opere derivate fara acordul scris prealabil.
-            </p>
-          </section>
-
-          {/* 6 */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900">6. Datele utilizatorilor si retentia datelor</h2>
-            <p className="mt-2">
-              Datele pe care le introduceti in Platforma (informatii clienti, programari, facturi etc.) va
-              apartin. ForjaIt actioneaza ca procesator de date in conformitate cu Regulamentul General
-              privind Protectia Datelor (GDPR). Prelucrarea datelor cu caracter personal este descrisa in
-              detaliu in{' '}
+              Organizatia dumneavoastra ramane responsabila pentru datele introduse si pentru
+              acordarea accesului utilizatorilor sai. Modul de prelucrare, retentie, export si
+              stergere este descris in{' '}
               <Link to="/privacy" className="text-primary hover:underline">
                 Politica de Confidentialitate
               </Link>
               .
             </p>
-            <p className="mt-3">
-              In conformitate cu legislatia romana, datele sunt pastrate conform urmatoarelor perioade:
-            </p>
-            <ul className="mt-3 list-disc pl-5 space-y-1">
-              <li>
-                <strong>Documente financiar-contabile</strong> (facturi, chitante): <strong>5 ani</strong> de la
-                1 iulie al anului urmator exercitiului financiar (Legea nr. 82/1991, modificata prin Legea nr. 36/2023)
-              </li>
-              <li>
-                <strong>Situatii financiare anuale:</strong> <strong>10 ani</strong> (Legea nr. 82/1991)
-              </li>
-              <li>
-                <strong>Date de cont si profil:</strong> pe durata utilizarii + 30 de zile dupa stergerea contului
-              </li>
-              <li>
-                <strong>Date clienti si programari:</strong> pe durata relatiei contractuale + 3 ani (termen de prescriptie)
-              </li>
-              <li>
-                <strong>Jurnale de activitate:</strong> 12 luni
-              </li>
-            </ul>
-            <p className="mt-3">
-              La stergerea contului, datele vor fi eliminate conform perioadelor de retentie de mai sus.
-              Datele fara obligatie legala de pastrare sunt sterse in termen de 30 de zile.
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900">6. Disponibilitate si backup</h2>
+            <p className="mt-2">
+              Disponibilitatea, mentenanta, copiile de siguranta, recuperarea datelor si orice nivel
+              de serviciu sunt stabilite de operatorul instalarii. Software-ul open-source este
+              furnizat conform licentei sale, fara ca proiectul upstream sa ofere implicit servicii
+              de gazduire sau suport.
             </p>
           </section>
 
-          {/* 7 */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">7. Disponibilitate si intretinere</h2>
+            <h2 className="text-lg font-semibold text-gray-900">7. Licenta software</h2>
             <p className="mt-2">
-              Depunem eforturi rezonabile pentru a asigura disponibilitatea continua a Platformei. Cu toate
-              acestea, nu garantam functionarea neintrerupta. Pot exista perioade de intretinere planificata
-              sau incidente tehnice care pot afecta temporar accesul. Vom depune eforturi sa notificam
-              utilizatorii in avans cu privire la intreruperile planificate.
+              ServiceFlow este disponibil sub GNU Affero General Public License v3.0 only. Licenta
+              codului nu acorda drepturi asupra marcilor, domeniilor sau serviciilor comerciale ale
+              unui operator si nu limiteaza drepturile pe care le aveti asupra propriilor date.
             </p>
           </section>
 
-          {/* 8 */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">8. Limitarea raspunderii</h2>
+            <h2 className="text-lg font-semibold text-gray-900">8. Contact si litigii</h2>
             <p className="mt-2">
-              In masura maxima permisa de lege, ForjaIt nu va fi raspunzator pentru:
+              Pentru suport, exercitarea drepturilor sau clarificarea termenilor aplicabili acestei
+              instalari, contactati operatorul la{' '}
+              <a
+                className="text-primary hover:underline"
+                href={`mailto:${runtimeConfig.platformContactEmail}`}
+              >
+                {runtimeConfig.platformContactEmail}
+              </a>
+              . Legea aplicabila si mecanismele de solutionare a litigiilor sunt cele comunicate de
+              operator si impuse de jurisdictia relevanta.
             </p>
-            <ul className="mt-3 list-disc pl-5 space-y-1">
-              <li>Pierderi indirecte, incidentale sau consecvente rezultate din utilizarea Platformei</li>
-              <li>Pierderea de date cauzata de factori in afara controlului nostru</li>
-              <li>Intreruperi ale serviciului datorate unor cauze de forta majora</li>
-              <li>Actiunile sau omisiunile tertilor</li>
-            </ul>
-            <p className="mt-3">
-              Raspunderea totala a ForjaIt nu va depasi suma platita de utilizator pentru servicii in
-              ultimele 12 luni.
-            </p>
-          </section>
-
-          {/* 9 */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900">9. Rezilierea</h2>
-            <p className="mt-2">
-              Puteti inceta utilizarea Platformei si sterge contul in orice moment. ForjaIt isi rezerva
-              dreptul de a suspenda sau inchide contul dumneavoastra in cazul incalcarii acestor Termeni,
-              dupa o notificare prealabila de 30 de zile, cu exceptia cazurilor de incalcare grava care pot
-              duce la suspendarea imediata. La stergerea contului, datele dumneavoastra vor fi eliminate in
-              conformitate cu Politica de Confidentialitate.
-            </p>
-          </section>
-
-          {/* 10 */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900">10. Modificari ale Termenilor</h2>
-            <p className="mt-2">
-              Ne rezervam dreptul de a modifica acesti Termeni in orice moment. Modificarile vor fi publicate
-              pe aceasta pagina, cu actualizarea datei de la inceput. Continuarea utilizarii Platformei dupa
-              publicarea modificarilor constituie acceptarea noilor Termeni. Pentru modificari semnificative,
-              vom notifica utilizatorii prin email.
-            </p>
-          </section>
-
-          {/* 11 */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900">11. Legea aplicabila si jurisdictia</h2>
-            <p className="mt-2">
-              Acesti Termeni sunt guvernati de legislatia din Romania. Orice disputa rezultata din sau in
-              legatura cu acesti Termeni va fi solutionata de instantele competente din Romania. Partile vor
-              incerca sa rezolve orice disputa pe cale amiabila inainte de a recurge la instanta.
-            </p>
-          </section>
-
-          {/* 12 */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900">12. Contact</h2>
-            <p className="mt-2">
-              Pentru intrebari sau clarificari privind acesti Termeni, ne puteti contacta la:
-            </p>
-            <ul className="mt-3 space-y-1">
-              <li>
-                <strong>Email:</strong> contact@forja.it.com
-              </li>
-              <li>
-                <strong>Platforma:</strong> ForjaIt
-              </li>
-            </ul>
           </section>
         </div>
       </main>

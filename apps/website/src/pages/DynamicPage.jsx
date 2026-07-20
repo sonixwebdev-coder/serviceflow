@@ -52,7 +52,8 @@ function generateJsonLd(website, page, content) {
   }
 
   // AggregateRating for testimonials blocks with ratings
-  const testimonialBlocks = content?.filter((b) => b.type === 'testimonials' && b.data?.testimonials?.length > 0) || [];
+  const testimonialBlocks =
+    content?.filter((b) => b.type === 'testimonials' && b.data?.testimonials?.length > 0) || [];
   if (testimonialBlocks.length > 0) {
     const allTestimonials = testimonialBlocks.flatMap((b) => b.data.testimonials);
     const rated = allTestimonials.filter((t) => t.rating);
@@ -93,7 +94,11 @@ export default function DynamicPage() {
   const { website } = useOutletContext();
 
   // Fetch page content
-  const { data: page, isLoading, error } = useQuery({
+  const {
+    data: page,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['page', subdomain, slug],
     queryFn: () => websiteService.getPage(subdomain, slug || 'home'),
     enabled: !!subdomain,
@@ -137,10 +142,18 @@ export default function DynamicPage() {
   return (
     <>
       {pageDescription && <meta name="description" content={pageDescription} />}
-      {seo?.keywords && <meta name="keywords" content={Array.isArray(seo.keywords) ? seo.keywords.join(', ') : seo.keywords} />}
+      {seo?.keywords && (
+        <meta
+          name="keywords"
+          content={Array.isArray(seo.keywords) ? seo.keywords.join(', ') : seo.keywords}
+        />
+      )}
       {seo?.canonicalUrl && <link rel="canonical" href={seo.canonicalUrl} />}
       {(seo?.robotsIndex === false || seo?.robotsFollow === false) && (
-        <meta name="robots" content={`${seo.robotsIndex === false ? 'noindex' : 'index'}, ${seo.robotsFollow === false ? 'nofollow' : 'follow'}`} />
+        <meta
+          name="robots"
+          content={`${seo.robotsIndex === false ? 'noindex' : 'index'}, ${seo.robotsFollow === false ? 'nofollow' : 'follow'}`}
+        />
       )}
       {seo?.ogImage && <meta property="og:image" content={seo.ogImage} />}
       <meta property="og:title" content={pageTitle} />
@@ -154,17 +167,20 @@ export default function DynamicPage() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
         />
       ))}
-      {seo?.customSchema && (() => {
-        try {
-          JSON.parse(seo.customSchema);
-          return (
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: seo.customSchema.replace(/</g, '\\u003c') }}
-            />
-          );
-        } catch { return null; }
-      })()}
+      {seo?.customSchema &&
+        (() => {
+          try {
+            JSON.parse(seo.customSchema);
+            return (
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: seo.customSchema.replace(/</g, '\\u003c') }}
+              />
+            );
+          } catch {
+            return null;
+          }
+        })()}
 
       <div className="page-content">
         {content?.map((block) => (
@@ -173,6 +189,7 @@ export default function DynamicPage() {
             block={block}
             subdomain={subdomain}
             branding={website?.branding}
+            organization={website?.organization}
           />
         ))}
 

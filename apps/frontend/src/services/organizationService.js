@@ -49,7 +49,10 @@ export const updateServices = async (services) => {
 let pricingPromise = null;
 export const fetchPricing = () => {
   if (!pricingPromise) {
-    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
+    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(
+      /\/+$/,
+      ''
+    );
     pricingPromise = fetch(`${baseUrl}/pricing`, { method: 'GET' })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch pricing');

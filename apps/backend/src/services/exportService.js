@@ -8,13 +8,19 @@
 
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
-const { validateFormat, generateFilename, getEntityNameRO, formatDate, formatDateTime, formatCurrency, getStatusLabelRO, applyFilters } = require('../utils/export/exportUtils');
+const {
+  validateFormat,
+  generateFilename,
+  getEntityNameRO,
+  formatDate,
+  formatDateTime,
+  formatCurrency,
+  getStatusLabelRO,
+} = require('../utils/export/exportUtils');
 const { exportEntityToCSV } = require('../utils/export/csvExporter');
-const { exportEntityToExcel, fieldConfigToColumns } = require('../utils/export/excelExporter');
+const { exportEntityToExcel } = require('../utils/export/excelExporter');
 const { exportEntityToJSON } = require('../utils/export/jsonExporter');
-const { exportEntityToPDF } = require('../utils/export/pdfExporter');
 const { exportEntitiesToZip, createZipArchive } = require('../utils/export/zipExporter');
-const { FIELD_CONFIGS } = require('../utils/export/csvExporter');
 const { exportEntityToXML } = require('../utils/export/xmlExporter');
 const { exportInvoiceToAnafXML } = require('../utils/export/anafExporter');
 const { buildInvoicePdf } = require('../utils/pdf');
@@ -26,7 +32,7 @@ const MAX_EXPORT_RECORDS = 10000;
 /**
  * Check if user has permission to export entity data
  */
-const checkExportPermission = (userId, userRoles, entityType, filters = {}) => {
+const checkExportPermission = (userId, userRoles, entityType) => {
   // Explicit validation
   if (!userId || typeof userId !== 'string') {
     throw new AppError('Invalid user authentication', 401);
@@ -37,10 +43,12 @@ const checkExportPermission = (userId, userRoles, entityType, filters = {}) => {
   }
 
   // Handle both string array and object array formats
-  const roleKeys = userRoles.map(r => {
-    if (typeof r === 'string') return r;
-    return r.role?.key || r.key;
-  }).filter(Boolean);
+  const roleKeys = userRoles
+    .map((r) => {
+      if (typeof r === 'string') return r;
+      return r.role?.key || r.key;
+    })
+    .filter(Boolean);
 
   if (roleKeys.length === 0) {
     throw new AppError('No valid roles found for user', 403);
@@ -51,13 +59,13 @@ const checkExportPermission = (userId, userRoles, entityType, filters = {}) => {
 
   // Explicit permission matrix - exports are admin-only
   const ENTITY_PERMISSIONS = {
-    'appointments': ['admin'],
-    'invoices': ['admin'],
-    'clients': ['admin'],
-    'users': ['admin'],
-    'leaveRequests': ['admin'],
-    'timeTracking': ['admin'],
-    'tasks': ['admin'],
+    appointments: ['admin'],
+    invoices: ['admin'],
+    clients: ['admin'],
+    users: ['admin'],
+    leaveRequests: ['admin'],
+    timeTracking: ['admin'],
+    tasks: ['admin'],
   };
 
   const allowedRoles = ENTITY_PERMISSIONS[entityType];
@@ -66,7 +74,7 @@ const checkExportPermission = (userId, userRoles, entityType, filters = {}) => {
     throw new AppError('Invalid entity type for export', 400);
   }
 
-  const hasPermission = roleKeys.some(role => allowedRoles.includes(role));
+  const hasPermission = roleKeys.some((role) => allowedRoles.includes(role));
 
   if (!hasPermission) {
     throw new AppError('Insufficient permissions to export this entity', 403);
@@ -79,7 +87,7 @@ const checkExportPermission = (userId, userRoles, entityType, filters = {}) => {
   return {
     canExport: true,
     applyUserFilter: shouldFilterToUser,
-    userId: shouldFilterToUser ? userId : null
+    userId: shouldFilterToUser ? userId : null,
   };
 };
 
@@ -87,7 +95,7 @@ const checkExportPermission = (userId, userRoles, entityType, filters = {}) => {
  * Transform appointment data for export
  */
 const transformAppointmentData = (appointments) => {
-  return appointments.map(appt => ({
+  return appointments.map((appt) => ({
     title: appt.title || '',
     description: appt.description || '',
     status: getStatusLabelRO(appt.status),
@@ -95,9 +103,9 @@ const transformAppointmentData = (appointments) => {
     scheduledEnd: formatDateTime(appt.scheduledEnd),
     location: appt.location || '',
     'client.name': appt.client
-      ? (appt.client.type === 'SRL'
+      ? appt.client.type === 'SRL'
         ? appt.client.companyName
-        : `${appt.client.firstName || ''} ${appt.client.lastName || ''}`.trim())
+        : `${appt.client.firstName || ''} ${appt.client.lastName || ''}`.trim()
       : '',
     'client.phone': appt.client?.phone || '',
     'client.email': appt.client?.email || '',
@@ -105,9 +113,10 @@ const transformAppointmentData = (appointments) => {
     'asset.manufacturer': appt.asset?.manufacturer || '',
     'asset.model': appt.asset?.model || '',
     'asset.name': appt.asset?.name || '',
-    assignees: appt.assignees?.map(a =>
-      `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim()
-    ).join(', ') || '',
+    assignees:
+      appt.assignees
+        ?.map((a) => `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim())
+        .join(', ') || '',
     paymentStatus: getStatusLabelRO(appt.paymentStatus),
     advancePayment: formatCurrency(appt.advancePayment),
     'createdBy.name': appt.createdBy
@@ -186,7 +195,7 @@ const exportAppointments = async (prismaClient, format, filters = {}, userId, us
       entityType: 'appointments',
       userId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Return sanitized error to client
@@ -239,12 +248,12 @@ const exportAppointments = async (prismaClient, format, filters = {}, userId, us
  * Transform invoice data for export
  */
 const transformInvoiceData = (invoices) => {
-  return invoices.map(inv => ({
+  return invoices.map((inv) => ({
     invoiceNumber: inv.invoiceNumber || '',
     'client.name': inv.client
-      ? (inv.client.type === 'SRL'
+      ? inv.client.type === 'SRL'
         ? inv.client.companyName
-        : `${inv.client.firstName || ''} ${inv.client.lastName || ''}`.trim())
+        : `${inv.client.firstName || ''} ${inv.client.lastName || ''}`.trim()
       : '',
     'client.vatNumber': inv.client?.vatNumber || '',
     status: getStatusLabelRO(inv.status),
@@ -323,7 +332,7 @@ const exportInvoices = async (prismaClient, format, filters = {}, userId, userRo
       entityType: 'invoices',
       userId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Return sanitized error to client
@@ -413,7 +422,10 @@ const exportBulkInvoicePDFs = async (prismaClient, invoiceIds, userId, userRoles
         buffer: pdfBuffer,
       });
     } catch (err) {
-      logger.error('Failed to generate PDF for invoice', { invoiceId: invoice.id, error: err.message });
+      logger.error('Failed to generate PDF for invoice', {
+        invoiceId: invoice.id,
+        error: err.message,
+      });
     }
   }
 
@@ -430,7 +442,13 @@ const exportBulkInvoicePDFs = async (prismaClient, invoiceIds, userId, userRoles
 /**
  * Export invoices as ANAF UBL XML ZIP
  */
-const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles, organizationId) => {
+const exportInvoicesAnafXML = async (
+  prismaClient,
+  invoiceIds,
+  userId,
+  userRoles,
+  organizationId
+) => {
   const permission = checkExportPermission(userId, userRoles, 'invoices');
 
   if (!permission.canExport) {
@@ -470,7 +488,10 @@ const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles
         buffer: xmlBuffer,
       });
     } catch (err) {
-      logger.error('Failed to generate ANAF XML for invoice', { invoiceId: invoice.id, error: err.message });
+      logger.error('Failed to generate ANAF XML for invoice', {
+        invoiceId: invoice.id,
+        error: err.message,
+      });
     }
   }
 
@@ -488,7 +509,7 @@ const exportInvoicesAnafXML = async (prismaClient, invoiceIds, userId, userRoles
  * Transform client data for export
  */
 const transformClientData = (clients) => {
-  return clients.map(client => ({
+  return clients.map((client) => ({
     type: client.type === 'SRL' ? 'Firma' : 'Persoana Fizica',
     firstName: client.firstName || '',
     lastName: client.lastName || '',
@@ -544,11 +565,7 @@ const exportClients = async (prismaClient, format, filters = {}, userId, userRol
   try {
     clients = await prismaClient.client.findMany({
       where,
-      orderBy: [
-        { type: 'asc' },
-        { lastName: 'asc' },
-        { companyName: 'asc' },
-      ],
+      orderBy: [{ type: 'asc' }, { lastName: 'asc' }, { companyName: 'asc' }],
       take: MAX_EXPORT_RECORDS,
     });
   } catch (error) {
@@ -557,7 +574,7 @@ const exportClients = async (prismaClient, format, filters = {}, userId, userRol
       entityType: 'clients',
       userId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Return sanitized error to client
@@ -607,7 +624,7 @@ const exportClients = async (prismaClient, format, filters = {}, userId, userRol
  * Transform user data for export
  */
 const transformUserData = (users) => {
-  return users.map(user => ({
+  return users.map((user) => ({
     email: user.email || '',
     firstName: user.firstName || '',
     lastName: user.lastName || '',
@@ -617,7 +634,7 @@ const transformUserData = (users) => {
     hourlyRate: user.hourlyRate ? formatCurrency(user.hourlyRate) : '',
     hireDate: user.hireDate ? formatDate(user.hireDate) : '',
     isActive: user.isActive ? 'Da' : 'Nu',
-    role: user.roles?.map(r => r.role?.name).join(', ') || '',
+    role: user.roles?.map((r) => r.role?.name).join(', ') || '',
   }));
 };
 
@@ -666,10 +683,7 @@ const exportUsers = async (prismaClient, format, filters = {}, userId, userRoles
           },
         },
       },
-      orderBy: [
-        { lastName: 'asc' },
-        { firstName: 'asc' },
-      ],
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
       take: MAX_EXPORT_RECORDS,
     });
   } catch (error) {
@@ -678,7 +692,7 @@ const exportUsers = async (prismaClient, format, filters = {}, userId, userRoles
       entityType: 'users',
       userId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Return sanitized error to client
@@ -728,7 +742,7 @@ const exportUsers = async (prismaClient, format, filters = {}, userId, userRoles
  * Transform leave request data for export
  */
 const transformLeaveRequestData = (requests) => {
-  return requests.map(req => ({
+  return requests.map((req) => ({
     'employee.name': req.employee
       ? `${req.employee.firstName || ''} ${req.employee.lastName || ''}`.trim()
       : '',
@@ -818,7 +832,7 @@ const exportLeaveRequests = async (prismaClient, format, filters = {}, userId, u
       entityType: 'leaveRequests',
       userId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Return sanitized error to client
@@ -868,7 +882,7 @@ const exportLeaveRequests = async (prismaClient, format, filters = {}, userId, u
  * Transform time tracking data for export
  */
 const transformTimeTrackingData = (entries) => {
-  return entries.map(entry => ({
+  return entries.map((entry) => ({
     'employee.name': entry.employee
       ? `${entry.employee.firstName || ''} ${entry.employee.lastName || ''}`.trim()
       : '',
@@ -944,7 +958,7 @@ const exportTimeTracking = async (prismaClient, format, filters = {}, userId, us
       entityType: 'timeTracking',
       userId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Return sanitized error to client
@@ -1063,7 +1077,7 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
       entityType: 'tasks',
       userId,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
 
     // Return sanitized error to client
@@ -1084,7 +1098,7 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
     );
   }
 
-  const transformedData = tasks.map(task => ({
+  const transformedData = tasks.map((task) => ({
     title: task.title || '',
     description: task.description || '',
     taskType: task.taskType || '',
@@ -1093,9 +1107,10 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
     dueDate: task.dueDate ? formatDate(task.dueDate) : '',
     estimatedHours: task.estimatedHours || 0,
     completionPercentage: task.completionPercentage || 0,
-    assignees: task.assignments?.map(a =>
-      `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim()
-    ).join(', ') || '',
+    assignees:
+      task.assignments
+        ?.map((a) => `${a.user?.firstName || ''} ${a.user?.lastName || ''}`.trim())
+        .join(', ') || '',
     customerName: task.customerName || '',
     customerPhone: task.customerPhone || '',
     customerVehicle: task.customerVehicle || '',
@@ -1132,10 +1147,13 @@ const exportTasks = async (prismaClient, format, filters = {}, userId, userRoles
  * Export all data as ZIP archive (admin only)
  */
 const exportAllData = async (prismaClient, userId, userRoles, organizationId) => {
-  const roleKeys = userRoles?.map(r => {
-    if (typeof r === 'string') return r;
-    return r.role?.key || r.key;
-  }).filter(Boolean) || [];
+  const roleKeys =
+    userRoles
+      ?.map((r) => {
+        if (typeof r === 'string') return r;
+        return r.role?.key || r.key;
+      })
+      .filter(Boolean) || [];
   const isAdmin = roleKeys.includes('admin');
 
   if (!isAdmin) {
@@ -1174,12 +1192,14 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
     // -- Assets
     try {
       const assets = await prismaClient.asset.findMany({
-        include: { client: { select: { firstName: true, lastName: true, companyName: true, type: true } } },
+        include: {
+          client: { select: { firstName: true, lastName: true, companyName: true, type: true } },
+        },
         orderBy: { createdAt: 'desc' },
         take: MAX_EXPORT_RECORDS,
       });
       if (assets.length > 0) {
-        const data = assets.map(a => ({
+        const data = assets.map((a) => ({
           name: a.name || '',
           identifier: a.identifier || '',
           type: a.type || '',
@@ -1187,14 +1207,23 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
           model: a.model || '',
           year: a.year || '',
           client: a.client
-            ? (a.client.type === 'SRL' ? a.client.companyName : `${a.client.firstName || ''} ${a.client.lastName || ''}`.trim())
+            ? a.client.type === 'SRL'
+              ? a.client.companyName
+              : `${a.client.firstName || ''} ${a.client.lastName || ''}`.trim()
             : '',
           createdAt: formatDateTime(a.createdAt),
         }));
         const buffer = await exportEntityToExcel('assets', data);
-        entities.push({ name: 'Echipamente', fileName: generateFilename('echipamente', 'excel'), buffer, recordCount: data.length });
+        entities.push({
+          name: 'Echipamente',
+          fileName: generateFilename('echipamente', 'excel'),
+          buffer,
+          recordCount: data.length,
+        });
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // -- Service Orders
     try {
@@ -1207,7 +1236,7 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
         take: MAX_EXPORT_RECORDS,
       });
       if (serviceOrders.length > 0) {
-        const data = serviceOrders.map(so => ({
+        const data = serviceOrders.map((so) => ({
           orderNumber: so.orderNumber || '',
           status: getStatusLabelRO(so.status),
           appointment: so.appointment?.title || '',
@@ -1219,9 +1248,16 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
           createdAt: formatDateTime(so.createdAt),
         }));
         const buffer = await exportEntityToExcel('serviceOrders', data);
-        entities.push({ name: 'Comenzi_Service', fileName: generateFilename('comenzi_service', 'excel'), buffer, recordCount: data.length });
+        entities.push({
+          name: 'Comenzi_Service',
+          fileName: generateFilename('comenzi_service', 'excel'),
+          buffer,
+          recordCount: data.length,
+        });
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // -- Payments
     try {
@@ -1234,7 +1270,7 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
         take: MAX_EXPORT_RECORDS,
       });
       if (payments.length > 0) {
-        const data = payments.map(p => ({
+        const data = payments.map((p) => ({
           amount: formatCurrency(p.amount),
           paymentMethod: p.paymentMethod || '',
           type: p.type || '',
@@ -1242,12 +1278,21 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
           appointment: p.appointment?.title || '',
           reference: p.reference || '',
           notes: p.notes || '',
-          createdBy: p.createdBy ? `${p.createdBy.firstName || ''} ${p.createdBy.lastName || ''}`.trim() : '',
+          createdBy: p.createdBy
+            ? `${p.createdBy.firstName || ''} ${p.createdBy.lastName || ''}`.trim()
+            : '',
         }));
         const buffer = await exportEntityToExcel('payments', data);
-        entities.push({ name: 'Plati', fileName: generateFilename('plati', 'excel'), buffer, recordCount: data.length });
+        entities.push({
+          name: 'Plati',
+          fileName: generateFilename('plati', 'excel'),
+          buffer,
+          recordCount: data.length,
+        });
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // -- Schedules
     try {
@@ -1259,8 +1304,10 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
         take: MAX_EXPORT_RECORDS,
       });
       if (schedules.length > 0) {
-        const data = schedules.map(s => ({
-          employee: s.employee ? `${s.employee.firstName || ''} ${s.employee.lastName || ''}`.trim() : '',
+        const data = schedules.map((s) => ({
+          employee: s.employee
+            ? `${s.employee.firstName || ''} ${s.employee.lastName || ''}`.trim()
+            : '',
           date: formatDate(s.date),
           startTime: s.startTime || '',
           endTime: s.endTime || '',
@@ -1269,9 +1316,16 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
           notes: s.notes || '',
         }));
         const buffer = await exportEntityToExcel('schedules', data);
-        entities.push({ name: 'Program', fileName: generateFilename('program', 'excel'), buffer, recordCount: data.length });
+        entities.push({
+          name: 'Program',
+          fileName: generateFilename('program', 'excel'),
+          buffer,
+          recordCount: data.length,
+        });
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // -- Locations
     try {
@@ -1279,7 +1333,7 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
         orderBy: { createdAt: 'desc' },
       });
       if (locations.length > 0) {
-        const data = locations.map(l => ({
+        const data = locations.map((l) => ({
           name: l.name || '',
           address: l.address || '',
           city: l.city || '',
@@ -1290,18 +1344,32 @@ const exportAllData = async (prismaClient, userId, userRoles, organizationId) =>
           isActive: l.isActive ? 'Da' : 'Nu',
         }));
         const buffer = await exportEntityToExcel('locations', data);
-        entities.push({ name: 'Locatii', fileName: generateFilename('locatii', 'excel'), buffer, recordCount: data.length });
+        entities.push({
+          name: 'Locatii',
+          fileName: generateFilename('locatii', 'excel'),
+          buffer,
+          recordCount: data.length,
+        });
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // -- Company Settings (as JSON for easy re-import)
     try {
       const companySettings = await getCompanySettings(organizationId);
       if (companySettings && Object.keys(companySettings).length > 0) {
         const buffer = Buffer.from(JSON.stringify(companySettings, null, 2), 'utf-8');
-        entities.push({ name: 'Setari_Companie', fileName: 'setari_companie.json', buffer, recordCount: 1 });
+        entities.push({
+          name: 'Setari_Companie',
+          fileName: 'setari_companie.json',
+          buffer,
+          recordCount: 1,
+        });
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     if (entities.length === 0) {
       throw new AppError('No data available to export', 404);

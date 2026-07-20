@@ -1,9 +1,24 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
-  Check, Eye, Layout, X, FileText,
-  LayoutTemplate, Type, Image, MousePointerClick, Grid3x3,
-  Users, MapPin, Calendar, Mail, Images, Quote, Minus, MoveVertical,
+  Check,
+  Eye,
+  Layout,
+  X,
+  FileText,
+  LayoutTemplate,
+  Type,
+  Image,
+  MousePointerClick,
+  Grid3x3,
+  Users,
+  MapPin,
+  Calendar,
+  Mail,
+  Images,
+  Quote,
+  Minus,
+  MoveVertical,
 } from 'lucide-react';
 import { templates, getTemplatesBySector } from './templateData';
 
@@ -52,11 +67,12 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
   const [previewPageIndex, setPreviewPageIndex] = useState(0);
   const [filter, setFilter] = useState('all');
 
-  const filteredTemplates = filter === 'all'
-    ? templates
-    : filter === 'recommended'
-      ? getTemplatesBySector(selectedSector)
-      : templates.filter((t) => t.sector === filter);
+  const filteredTemplates =
+    filter === 'all'
+      ? templates
+      : filter === 'recommended'
+        ? getTemplatesBySector(selectedSector)
+        : templates.filter((t) => t.sector === filter);
 
   const handleSelect = (template) => {
     setSelectedTemplate(template);
@@ -224,10 +240,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
       {/* Preview Dialog */}
       {previewOpen && selectedTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setPreviewOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/50" onClick={() => setPreviewOpen(false)} />
 
           <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
             {/* Header */}
@@ -300,24 +313,32 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
                             !isHero && hasBg && 'bg-gray-50'
                           )}
                         >
-                          <div className={cn(
-                            'w-8 h-8 rounded flex items-center justify-center flex-shrink-0',
-                            isHero ? 'bg-white/20' : 'bg-blue-50'
-                          )}>
-                            <Icon className={cn('h-4 w-4', isHero ? 'text-white' : 'text-blue-600')} />
+                          <div
+                            className={cn(
+                              'w-8 h-8 rounded flex items-center justify-center flex-shrink-0',
+                              isHero ? 'bg-white/20' : 'bg-blue-50'
+                            )}
+                          >
+                            <Icon
+                              className={cn('h-4 w-4', isHero ? 'text-white' : 'text-blue-600')}
+                            />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className={cn(
-                              'text-sm font-medium',
-                              isHero ? 'text-white' : 'text-gray-700'
-                            )}>
+                            <span
+                              className={cn(
+                                'text-sm font-medium',
+                                isHero ? 'text-white' : 'text-gray-700'
+                              )}
+                            >
                               {label}
                             </span>
                             {title && (
-                              <p className={cn(
-                                'text-xs truncate',
-                                isHero ? 'text-gray-300' : 'text-gray-400'
-                              )}>
+                              <p
+                                className={cn(
+                                  'text-xs truncate',
+                                  isHero ? 'text-gray-300' : 'text-gray-400'
+                                )}
+                              >
                                 {title}
                               </p>
                             )}
@@ -360,7 +381,10 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
                 </div>
                 <div className="bg-white rounded-lg border p-3 text-center">
                   <p className="text-2xl font-bold text-gray-900">
-                    {new Set(previewPages.flatMap(p => (p.content || []).map(b => b.type))).size}
+                    {
+                      new Set(previewPages.flatMap((p) => (p.content || []).map((b) => b.type)))
+                        .size
+                    }
                   </p>
                   <p className="text-xs text-gray-500">Tipuri de bloc</p>
                 </div>

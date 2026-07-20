@@ -56,18 +56,11 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
         {(title || subtitle) && (
           <div className="text-center mb-12">
             {title && (
-              <h2
-                className="text-3xl font-bold mb-4"
-                style={{ color: textColor }}
-              >
+              <h2 className="text-3xl font-bold mb-4" style={{ color: textColor }}>
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 
@@ -75,7 +68,10 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
         <div className={cn('grid gap-8', columnClasses[columns] || columnClasses[3])}>
           {displayMembers.length > 0 ? (
             displayMembers.map((member, index) => (
-              <div key={member.id || index} className="bg-white rounded-lg border shadow-sm text-center p-6">
+              <div
+                key={member.id || index}
+                className="bg-white rounded-lg border shadow-sm text-center p-6"
+              >
                 {/* Avatar */}
                 <div className="mx-auto w-32 h-32 rounded-full overflow-hidden mb-4 bg-gray-100">
                   {member.image ? (
@@ -95,9 +91,7 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
                 <h3 className="text-lg font-semibold" style={{ color: textColor }}>
                   {member.name}
                 </h3>
-                {member.role && (
-                  <p className="text-sm text-gray-500 mb-2">{member.role}</p>
-                )}
+                {member.role && <p className="text-sm text-gray-500 mb-2">{member.role}</p>}
 
                 {/* Bio */}
                 {showBio && member.bio && (
@@ -143,9 +137,7 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
             ))
           ) : (
             <div className="col-span-full text-center py-12 text-gray-500">
-              {autoSync
-                ? 'Nu exista membri in echipa'
-                : 'Adaugati membri din setari'}
+              {autoSync ? 'Nu exista membri in echipa' : 'Adaugati membri din setari'}
             </div>
           )}
         </div>

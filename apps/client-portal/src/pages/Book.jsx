@@ -1,7 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Calendar, Clock, User, Car, Package, CheckCircle, ArrowLeft, ArrowRight, Loader2, MapPin, Smartphone } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  User,
+  Car,
+  Package,
+  CheckCircle,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  MapPin,
+  Smartphone,
+} from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -100,7 +112,11 @@ export default function Book() {
   const [bookingResult, setBookingResult] = useState(null);
 
   // Fetch organization info
-  const { data: organization, isLoading: orgLoading, error: orgError } = useQuery({
+  const {
+    data: organization,
+    isLoading: orgLoading,
+    error: orgError,
+  } = useQuery({
     queryKey: ['organization', slug],
     queryFn: () => bookingService.getOrganization(slug),
   });
@@ -109,15 +125,22 @@ export default function Book() {
   const sectorConfig = organization?.sectorConfig;
   const hasAssets = sectorConfig?.hasAssets || false;
   const assetType = sectorConfig?.assetType;
-  const assetTerminology = sectorConfig?.terminology?.asset || { singular: 'Activ', plural: 'Active', identifier: 'Identificator' };
-  const locations = organization?.locations || [];
+  const assetTerminology = sectorConfig?.terminology?.asset || {
+    singular: 'Activ',
+    plural: 'Active',
+    identifier: 'Identificator',
+  };
+  const locations = useMemo(() => organization?.locations || [], [organization?.locations]);
   const hasMultipleLocations = organization?.hasMultipleLocations || false;
-  const steps = useMemo(() => getStepsForSector(sectorConfig, hasMultipleLocations), [sectorConfig, hasMultipleLocations]);
+  const steps = useMemo(
+    () => getStepsForSector(sectorConfig, hasMultipleLocations),
+    [sectorConfig, hasMultipleLocations]
+  );
   const currentStepId = steps[currentStep]?.id;
   const isLastStep = currentStep === steps.length - 1;
 
   // Auto-select primary location if only one location exists
-  useMemo(() => {
+  useEffect(() => {
     if (locations.length === 1 && !formData.selectedLocation) {
       setFormData((prev) => ({ ...prev, selectedLocation: locations[0] }));
     }
@@ -133,7 +156,8 @@ export default function Book() {
   // Fetch available slots for selected date (filtered by location if selected)
   const { data: slots, isLoading: slotsLoading } = useQuery({
     queryKey: ['available-slots', slug, formData.selectedDate, formData.selectedLocation?.id],
-    queryFn: () => bookingService.getAvailableSlots(slug, formData.selectedDate, formData.selectedLocation?.id),
+    queryFn: () =>
+      bookingService.getAvailableSlots(slug, formData.selectedDate, formData.selectedLocation?.id),
     enabled: !!formData.selectedDate,
   });
 
@@ -200,7 +224,10 @@ export default function Book() {
       // Add asset data based on sector's asset type
       // Backend expects 'asset' field for all asset types
       if (hasAssets) {
-        if (assetType === 'vehicle' && (formData.vehicle.make || formData.vehicle.plateNumber || formData.vehicle.model)) {
+        if (
+          assetType === 'vehicle' &&
+          (formData.vehicle.make || formData.vehicle.plateNumber || formData.vehicle.model)
+        ) {
           // Map vehicle form data to asset structure
           bookingData.asset = {
             manufacturer: formData.vehicle.make,
@@ -210,10 +237,19 @@ export default function Book() {
             // Generate name from vehicle data
             name: `${formData.vehicle.make || ''} ${formData.vehicle.model || ''}`.trim() || null,
           };
-        } else if (assetType === 'device' && (formData.device.brand || formData.device.model || formData.device.serialNumber || formData.device.imei)) {
+        } else if (
+          assetType === 'device' &&
+          (formData.device.brand ||
+            formData.device.model ||
+            formData.device.serialNumber ||
+            formData.device.imei)
+        ) {
           // Map device form data to asset structure
           bookingData.asset = {
-            name: `${formData.device.brand || ''} ${formData.device.model || ''}`.trim() || formData.device.deviceType || null,
+            name:
+              `${formData.device.brand || ''} ${formData.device.model || ''}`.trim() ||
+              formData.device.deviceType ||
+              null,
             manufacturer: formData.device.brand,
             model: formData.device.model,
             identifier: formData.device.serialNumber || formData.device.imei,
@@ -228,7 +264,11 @@ export default function Book() {
               problemDescription: formData.device.problemDescription,
             },
           };
-        } else if (assetType !== 'vehicle' && assetType !== 'device' && (formData.asset.name || formData.asset.identifier)) {
+        } else if (
+          assetType !== 'vehicle' &&
+          assetType !== 'device' &&
+          (formData.asset.name || formData.asset.identifier)
+        ) {
           bookingData.asset = formData.asset;
         }
       }
@@ -304,7 +344,11 @@ export default function Book() {
                 </Button>
               </Link>
               <Link to={`/book/${slug}`} className="block">
-                <Button variant="secondary" className="w-full" onClick={() => window.location.reload()}>
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => window.location.reload()}
+                >
                   Fa o alta programare
                 </Button>
               </Link>
@@ -334,8 +378,8 @@ export default function Book() {
                   index < currentStep
                     ? 'bg-primary-600 text-white'
                     : index === currentStep
-                    ? 'bg-primary-100 text-primary-600 border-2 border-primary-600'
-                    : 'bg-gray-200 text-gray-500'
+                      ? 'bg-primary-100 text-primary-600 border-2 border-primary-600'
+                      : 'bg-gray-200 text-gray-500'
                 )}
               >
                 <step.icon className="h-5 w-5" />
@@ -382,23 +426,35 @@ export default function Book() {
                       )}
                     >
                       <div className="flex items-start gap-3">
-                        <MapPin className={cn(
-                          'h-5 w-5 mt-0.5 flex-shrink-0',
-                          formData.selectedLocation?.id === location.id ? 'text-primary-600' : 'text-gray-400'
-                        )} />
+                        <MapPin
+                          className={cn(
+                            'h-5 w-5 mt-0.5 flex-shrink-0',
+                            formData.selectedLocation?.id === location.id
+                              ? 'text-primary-600'
+                              : 'text-gray-400'
+                          )}
+                        />
                         <div>
-                          <p className={cn(
-                            'font-medium',
-                            formData.selectedLocation?.id === location.id ? 'text-primary-700' : 'text-gray-900'
-                          )}>
+                          <p
+                            className={cn(
+                              'font-medium',
+                              formData.selectedLocation?.id === location.id
+                                ? 'text-primary-700'
+                                : 'text-gray-900'
+                            )}
+                          >
                             {location.name}
                             {location.isPrimary && (
-                              <span className="ml-2 text-xs font-normal text-gray-500">(Principal)</span>
+                              <span className="ml-2 text-xs font-normal text-gray-500">
+                                (Principal)
+                              </span>
                             )}
                           </p>
                           {(location.address || location.city) && (
                             <p className="mt-1 text-sm text-gray-500">
-                              {[location.address, location.city, location.county].filter(Boolean).join(', ')}
+                              {[location.address, location.city, location.county]
+                                .filter(Boolean)
+                                .join(', ')}
                             </p>
                           )}
                           {location.phone && (
@@ -534,7 +590,9 @@ export default function Book() {
                   <label className="label">Motiv programare</label>
                   <Input
                     value={formData.appointment.description}
-                    onChange={(e) => updateNestedFormData('appointment', 'description', e.target.value)}
+                    onChange={(e) =>
+                      updateNestedFormData('appointment', 'description', e.target.value)
+                    }
                     placeholder="Descriere scurta (optional)"
                   />
                 </div>
@@ -583,7 +641,9 @@ export default function Book() {
                         <label className="label">{assetTerminology.identifier}</label>
                         <Input
                           value={formData.vehicle.plateNumber}
-                          onChange={(e) => updateNestedFormData('vehicle', 'plateNumber', e.target.value)}
+                          onChange={(e) =>
+                            updateNestedFormData('vehicle', 'plateNumber', e.target.value)
+                          }
                           placeholder="ex: B 123 ABC"
                         />
                       </div>
@@ -599,7 +659,9 @@ export default function Book() {
                         <label className="label">Tip dispozitiv</label>
                         <select
                           value={formData.device.deviceType}
-                          onChange={(e) => updateNestedFormData('device', 'deviceType', e.target.value)}
+                          onChange={(e) =>
+                            updateNestedFormData('device', 'deviceType', e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         >
                           <option value="">Selecteaza...</option>
@@ -634,7 +696,9 @@ export default function Book() {
                         <label className="label">Stare la receptie</label>
                         <select
                           value={formData.device.condition}
-                          onChange={(e) => updateNestedFormData('device', 'condition', e.target.value)}
+                          onChange={(e) =>
+                            updateNestedFormData('device', 'condition', e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         >
                           <option value="">Selecteaza...</option>
@@ -658,7 +722,9 @@ export default function Book() {
                         <label className="label">Cod acces (optional)</label>
                         <Input
                           value={formData.device.password}
-                          onChange={(e) => updateNestedFormData('device', 'password', e.target.value)}
+                          onChange={(e) =>
+                            updateNestedFormData('device', 'password', e.target.value)
+                          }
                           placeholder="PIN/Pattern pentru testare"
                         />
                       </div>
@@ -667,7 +733,9 @@ export default function Book() {
                       <label className="label">Descriere problema</label>
                       <textarea
                         value={formData.device.problemDescription}
-                        onChange={(e) => updateNestedFormData('device', 'problemDescription', e.target.value)}
+                        onChange={(e) =>
+                          updateNestedFormData('device', 'problemDescription', e.target.value)
+                        }
                         placeholder="Descrieti problema dispozitivului..."
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent min-h-[80px]"
                       />
@@ -676,7 +744,9 @@ export default function Book() {
                       <label className="label">Accesorii predate (optional)</label>
                       <Input
                         value={formData.device.accessories}
-                        onChange={(e) => updateNestedFormData('device', 'accessories', e.target.value)}
+                        onChange={(e) =>
+                          updateNestedFormData('device', 'accessories', e.target.value)
+                        }
                         placeholder="ex: Incarcator, husa, casti"
                       />
                     </div>
@@ -699,7 +769,9 @@ export default function Book() {
                         <label className="label">{assetTerminology.identifier}</label>
                         <Input
                           value={formData.asset.identifier}
-                          onChange={(e) => updateNestedFormData('asset', 'identifier', e.target.value)}
+                          onChange={(e) =>
+                            updateNestedFormData('asset', 'identifier', e.target.value)
+                          }
                           placeholder="ex: SN123456"
                         />
                       </div>
@@ -717,7 +789,9 @@ export default function Book() {
                         <label className="label">Producator</label>
                         <Input
                           value={formData.asset.manufacturer}
-                          onChange={(e) => updateNestedFormData('asset', 'manufacturer', e.target.value)}
+                          onChange={(e) =>
+                            updateNestedFormData('asset', 'manufacturer', e.target.value)
+                          }
                           placeholder="ex: Dell, Apple"
                         />
                       </div>
@@ -775,28 +849,37 @@ export default function Book() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">{assetTerminology.singular}:</span>
                       <span className="font-medium">
-                        {formData.vehicle.make} {formData.vehicle.model} - {formData.vehicle.plateNumber}
+                        {formData.vehicle.make} {formData.vehicle.model} -{' '}
+                        {formData.vehicle.plateNumber}
                       </span>
                     </div>
                   )}
-                  {hasAssets && assetType === 'device' && (formData.device.brand || formData.device.model || formData.device.deviceType) && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">{assetTerminology.singular}:</span>
-                      <span className="font-medium">
-                        {formData.device.deviceType && `${formData.device.deviceType}: `}
-                        {formData.device.brand} {formData.device.model}
-                        {formData.device.imei && ` (${formData.device.imei})`}
-                      </span>
-                    </div>
-                  )}
-                  {hasAssets && assetType !== 'vehicle' && assetType !== 'device' && (formData.asset.name || formData.asset.identifier) && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">{assetTerminology.singular}:</span>
-                      <span className="font-medium">
-                        {formData.asset.name}{formData.asset.identifier && ` - ${formData.asset.identifier}`}
-                      </span>
-                    </div>
-                  )}
+                  {hasAssets &&
+                    assetType === 'device' &&
+                    (formData.device.brand ||
+                      formData.device.model ||
+                      formData.device.deviceType) && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">{assetTerminology.singular}:</span>
+                        <span className="font-medium">
+                          {formData.device.deviceType && `${formData.device.deviceType}: `}
+                          {formData.device.brand} {formData.device.model}
+                          {formData.device.imei && ` (${formData.device.imei})`}
+                        </span>
+                      </div>
+                    )}
+                  {hasAssets &&
+                    assetType !== 'vehicle' &&
+                    assetType !== 'device' &&
+                    (formData.asset.name || formData.asset.identifier) && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">{assetTerminology.singular}:</span>
+                        <span className="font-medium">
+                          {formData.asset.name}
+                          {formData.asset.identifier && ` - ${formData.asset.identifier}`}
+                        </span>
+                      </div>
+                    )}
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
@@ -809,11 +892,19 @@ export default function Book() {
                     />
                     <span className="text-sm text-gray-700">
                       Am citit si sunt de acord cu{' '}
-                      <Link to="/terms" target="_blank" className="text-primary-600 hover:text-primary-700 underline">
+                      <Link
+                        to="/terms"
+                        target="_blank"
+                        className="text-primary-600 hover:text-primary-700 underline"
+                      >
                         Termenii si Conditiile
                       </Link>{' '}
                       si{' '}
-                      <Link to="/privacy" target="_blank" className="text-primary-600 hover:text-primary-700 underline">
+                      <Link
+                        to="/privacy"
+                        target="_blank"
+                        className="text-primary-600 hover:text-primary-700 underline"
+                      >
                         Politica de Confidentialitate
                       </Link>
                       <span className="text-red-500"> *</span>
@@ -847,7 +938,8 @@ export default function Book() {
 
                 {bookingMutation.isError && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    {bookingMutation.error?.response?.data?.message || 'A aparut o eroare. Te rugam sa incerci din nou.'}
+                    {bookingMutation.error?.response?.data?.message ||
+                      'A aparut o eroare. Te rugam sa incerci din nou.'}
                   </div>
                 )}
               </div>

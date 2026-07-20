@@ -14,28 +14,19 @@ const PagePreview = ({ blocks, branding, crmData = {} }) => {
       }}
     >
       {blocks.map((block) => (
-        <BlockRenderer
-          key={block.id}
-          block={block}
-          isEditing={false}
-          crmData={crmData}
-        />
+        <BlockRenderer key={block.id} block={block} isEditing={false} crmData={crmData} />
       ))}
     </div>
   );
 };
 
-export const PagePreviewFrame = ({ subdomain, slug = 'home', branding }) => {
+export const PagePreviewFrame = ({ subdomain, slug = 'home' }) => {
   // This component renders the preview in an iframe
   const previewUrl = `${window.location.origin}/preview/${subdomain}/${slug}`;
 
   return (
     <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-      <iframe
-        src={previewUrl}
-        className="w-full h-full border-0"
-        title="Page Preview"
-      />
+      <iframe src={previewUrl} className="w-full h-full border-0" title="Page Preview" />
     </div>
   );
 };
@@ -48,15 +39,13 @@ export const ResponsivePreview = ({ blocks, branding, crmData, device = 'desktop
   };
 
   return (
-    <div className={cn(
-      'mx-auto bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300',
-      deviceWidths[device]
-    )}>
-      <PagePreview
-        blocks={blocks}
-        branding={branding}
-        crmData={crmData}
-      />
+    <div
+      className={cn(
+        'mx-auto bg-white shadow-lg rounded-lg overflow-hidden transition-all duration-300',
+        deviceWidths[device]
+      )}
+    >
+      <PagePreview blocks={blocks} branding={branding} crmData={crmData} />
     </div>
   );
 };

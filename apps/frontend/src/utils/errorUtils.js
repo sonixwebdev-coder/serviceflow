@@ -11,7 +11,10 @@
  * @param {string} fallbackMessage - Optional fallback message if no error message found
  * @returns {string} - User-friendly error message
  */
-export const getErrorMessage = (error, fallbackMessage = 'A aparut o eroare. Va rugam incercati din nou.') => {
+export const getErrorMessage = (
+  error,
+  fallbackMessage = 'A aparut o eroare. Va rugam incercati din nou.'
+) => {
   // Check for axios response error with message
   if (error?.response?.data?.message) {
     return error.response.data.message;
@@ -22,7 +25,7 @@ export const getErrorMessage = (error, fallbackMessage = 'A aparut o eroare. Va 
     const errors = error.response.data.errors;
     if (Array.isArray(errors) && errors.length > 0) {
       // Join multiple validation errors with line breaks
-      return errors.map(err => err.message || err).join('\n');
+      return errors.map((err) => err.message || err).join('\n');
     }
     if (typeof errors === 'object') {
       // Handle object of field errors

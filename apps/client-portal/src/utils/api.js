@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useAuthStore } from '../state/useAuthStore';
+import { runtimeConfig } from '../config/runtime';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = runtimeConfig.apiUrl;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -102,16 +103,21 @@ api.interceptors.response.use(
           await fetchCsrfToken();
           config._csrfRetry = true;
 
-          if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+          if (
+            csrfToken &&
+            ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())
+          ) {
             config.headers['x-csrf-token'] = csrfToken;
           }
 
           return api(config);
         } catch {
-          return Promise.reject(response.data || {
-            message: 'Security validation failed. Please refresh the page and try again.',
-            code: 'CSRF_VALIDATION_FAILED'
-          });
+          return Promise.reject(
+            response.data || {
+              message: 'Security validation failed. Please refresh the page and try again.',
+              code: 'CSRF_VALIDATION_FAILED',
+            }
+          );
         }
       }
     }

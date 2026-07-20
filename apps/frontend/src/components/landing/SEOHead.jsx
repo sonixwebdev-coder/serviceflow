@@ -58,9 +58,7 @@ export default function SEOHead({ title, description, canonical, og, schema }) {
         scriptEl.type = 'application/ld+json';
         document.head.appendChild(scriptEl);
       }
-      scriptEl.textContent = JSON.stringify(
-        schemas.length === 1 ? schemas[0] : schemas
-      );
+      scriptEl.textContent = JSON.stringify(schemas.length === 1 ? schemas[0] : schemas);
     }
 
     return () => {

@@ -205,7 +205,10 @@ router.post(
 
     // Always return success to prevent email enumeration
     if (!account || account.isVerified || !account.verificationToken) {
-      return res.json({ success: true, message: 'Daca exista un cont neverificat, email-ul de verificare a fost retrimis' });
+      return res.json({
+        success: true,
+        message: 'Daca exista un cont neverificat, email-ul de verificare a fost retrimis',
+      });
     }
 
     // Send verification email
@@ -217,12 +220,14 @@ router.post(
         where: { id: account.client.organizationId },
         select: { slug: true },
       });
-      const portalUrl = process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
+      const portalUrl =
+        process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
       const verificationLink = `${portalUrl}/${org?.slug || ''}/verify-email?token=${account.verificationToken}`;
 
-      const clientName = account.client.type === 'SRL'
-        ? account.client.companyName
-        : `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
+      const clientName =
+        account.client.type === 'SRL'
+          ? account.client.companyName
+          : `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
 
       try {
         const companySettings = await getCompanySettings(account.client.organizationId);
@@ -238,7 +243,10 @@ router.post(
       }
     }
 
-    res.json({ success: true, message: 'Daca exista un cont neverificat, email-ul de verificare a fost retrimis' });
+    res.json({
+      success: true,
+      message: 'Daca exista un cont neverificat, email-ul de verificare a fost retrimis',
+    });
   })
 );
 

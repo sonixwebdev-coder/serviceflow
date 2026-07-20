@@ -126,7 +126,7 @@ const createLocation = async (prisma, data, organizationId) => {
   }
 
   // Generate unique slug if not provided
-  const slug = data.slug || await generateUniqueSlug(prisma, organizationId, data.name);
+  const slug = data.slug || (await generateUniqueSlug(prisma, organizationId, data.name));
 
   // Check if this is the first location (make it primary)
   const isFirstLocation = currentCount === 0;
@@ -360,7 +360,10 @@ const deleteLocation = async (prisma, locationId, organizationId) => {
   }
 
   if (location.isPrimary) {
-    throw new AppError('Nu se poate sterge locatia principala. Setati alta locatie ca principala mai intai.', 400);
+    throw new AppError(
+      'Nu se poate sterge locatia principala. Setati alta locatie ca principala mai intai.',
+      400
+    );
   }
 
   // Check if there are active appointments
@@ -431,7 +434,10 @@ const assignUsersToLocation = async (prisma, locationId, userIds, options = {}) 
   });
 
   if (users.length !== userIds.length) {
-    throw new AppError('Unul sau mai multi utilizatori nu au fost gasiti sau nu apartin organizatiei', 400);
+    throw new AppError(
+      'Unul sau mai multi utilizatori nu au fost gasiti sau nu apartin organizatiei',
+      400
+    );
   }
 
   // Create user-location assignments

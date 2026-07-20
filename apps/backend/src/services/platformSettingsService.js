@@ -40,12 +40,20 @@ const maskSecrets = (settings) => {
 
   // Safe fields that can be returned as-is
   const SAFE_FIELDS = new Set([
-    'id', 'createdAt', 'updatedAt', 'trialDays',
-    'displayPriceStarterMonthly', 'displayPriceStarterAnnual',
-    'displayPriceProfessionalMonthly', 'displayPriceProfessionalAnnual',
-    'displayPriceEnterpriseMonthly', 'displayPriceEnterpriseAnnual',
-    'addonPriceClients100', 'addonPriceClients300',
-    'addonPriceAppointments200', 'addonPriceAppointments500',
+    'id',
+    'createdAt',
+    'updatedAt',
+    'trialDays',
+    'displayPriceStarterMonthly',
+    'displayPriceStarterAnnual',
+    'displayPriceProfessionalMonthly',
+    'displayPriceProfessionalAnnual',
+    'displayPriceEnterpriseMonthly',
+    'displayPriceEnterpriseAnnual',
+    'addonPriceClients100',
+    'addonPriceClients300',
+    'addonPriceAppointments200',
+    'addonPriceAppointments500',
   ]);
 
   const result = {};

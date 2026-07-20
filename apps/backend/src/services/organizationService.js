@@ -45,10 +45,7 @@ const createOrganization = async ({
   // Validate slug format (lowercase, alphanumeric, hyphens only)
   const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
   if (!slugRegex.test(slug)) {
-    throw new AppError(
-      'Organization slug must be lowercase alphanumeric with hyphens only',
-      400
-    );
+    throw new AppError('Organization slug must be lowercase alphanumeric with hyphens only', 400);
   }
 
   // Validate entity type
@@ -76,7 +73,9 @@ const createOrganization = async ({
       }
       // If ANAF/VIES are both down (503), allow signup with checksum-valid CUI
       // The CUI was already checksum-validated above
-      logger.warn(`VAT services unavailable during signup for CUI ${vatNumber} - allowing checksum-valid CUI`);
+      logger.warn(
+        `VAT services unavailable during signup for CUI ${vatNumber} - allowing checksum-valid CUI`
+      );
     }
   } else {
     throw new AppError('CUI-ul este obligatoriu', 400);
@@ -119,112 +118,112 @@ const createOrganization = async ({
   };
 
   try {
-  await prisma.$transaction(async (tx) => {
-    // Create organization
-    const selectedPlan = plan || 'PROFESSIONAL';
-    const limits = getAllPlanLimits(selectedPlan);
+    await prisma.$transaction(async (tx) => {
+      // Create organization
+      const selectedPlan = plan || 'PROFESSIONAL';
+      const limits = getAllPlanLimits(selectedPlan);
 
-    organization = await tx.organization.create({
-      data: {
-        name: organizationName,
-        slug,
-        status: 'TRIAL',
-        plan: selectedPlan,
-        trialEndsAt,
-        trialStartedAt: new Date(),
-        trialUsed: true,
-        activitySector,
-        settings,
-        maxUsers: limits.maxUsers === Infinity ? 999999 : limits.maxUsers,
-        maxClients: limits.maxClients === Infinity ? 999999 : limits.maxClients,
-        maxAppointments: limits.maxAppointments === Infinity ? 999999 : limits.maxAppointments,
-      },
-    });
+      organization = await tx.organization.create({
+        data: {
+          name: organizationName,
+          slug,
+          status: 'TRIAL',
+          plan: selectedPlan,
+          trialEndsAt,
+          trialStartedAt: new Date(),
+          trialUsed: true,
+          activitySector,
+          settings,
+          maxUsers: limits.maxUsers === Infinity ? 999999 : limits.maxUsers,
+          maxClients: limits.maxClients === Infinity ? 999999 : limits.maxClients,
+          maxAppointments: limits.maxAppointments === Infinity ? 999999 : limits.maxAppointments,
+        },
+      });
 
-    // Ensure admin role exists
-    const adminRole = await ensureRole('admin', tx);
+      // Ensure admin role exists
+      const adminRole = await ensureRole('admin', tx);
 
-    // Create admin user for the organization
-    user = await tx.user.create({
-      data: {
-        organizationId: organization.id,
-        email,
-        password: hash,
-        firstName,
-        lastName,
-        phoneNumber,
-        employmentType: 'FULL_TIME',
-        isActive: true,
-      },
-    });
+      // Create admin user for the organization
+      user = await tx.user.create({
+        data: {
+          organizationId: organization.id,
+          email,
+          password: hash,
+          firstName,
+          lastName,
+          phoneNumber,
+          employmentType: 'FULL_TIME',
+          isActive: true,
+        },
+      });
 
-    // Assign admin role to user
-    await tx.userRole.create({
-      data: {
-        userId: user.id,
-        roleId: adminRole.id,
-      },
-    });
+      // Assign admin role to user
+      await tx.userRole.create({
+        data: {
+          userId: user.id,
+          roleId: adminRole.id,
+        },
+      });
 
-    // Fetch user with roles for token generation
-    const userWithRoles = await tx.user.findUnique({
-      where: { id: user.id },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
+      // Fetch user with roles for token generation
+      const userWithRoles = await tx.user.findUnique({
+        where: { id: user.id },
+        include: {
+          roles: {
+            include: {
+              role: {
+                include: {
+                  permissions: {
+                    include: {
+                      permission: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    // Generate JWT payload with CRM type for session isolation
-    const payload = {
-      sub: userWithRoles.id,
-      email: userWithRoles.email,
-      name: `${userWithRoles.firstName} ${userWithRoles.lastName}`,
-      roles: userWithRoles.roles.map((r) => r.role.key),
-      organizationId: organization.id,
-      type: 'crm',
-    };
-
-    // Generate tokens
-    accessToken = signAccessToken(payload);
-    const { token, expiresAt } = generateRefreshToken();
-    refreshToken = token;
-
-    await tx.refreshToken.create({
-      data: {
-        userId: userWithRoles.id,
-        token: refreshToken,
-        expiresAt,
-        context: 'crm',
-      },
-    });
-
-    // Create organization profile with company details from signup
-    await tx.organizationProfile.create({
-      data: {
+      // Generate JWT payload with CRM type for session isolation
+      const payload = {
+        sub: userWithRoles.id,
+        email: userWithRoles.email,
+        name: `${userWithRoles.firstName} ${userWithRoles.lastName}`,
+        roles: userWithRoles.roles.map((r) => r.role.key),
         organizationId: organization.id,
-        companyName: organizationName,
-        ...(vatNumber && { vatNumber }),
-        ...(companyAddress && { address: companyAddress }),
-        ...(companyEmail && { email: companyEmail }),
-        ...(companyPhone && { phone: companyPhone }),
-        ...(entityType && { entityType }),
-        ...(registrationNumber && { registrationNumber }),
-        ...(cnp && { cnp }),
-      },
+        type: 'crm',
+      };
+
+      // Generate tokens
+      accessToken = signAccessToken(payload);
+      const { token, expiresAt } = generateRefreshToken();
+      refreshToken = token;
+
+      await tx.refreshToken.create({
+        data: {
+          userId: userWithRoles.id,
+          token: refreshToken,
+          expiresAt,
+          context: 'crm',
+        },
+      });
+
+      // Create organization profile with company details from signup
+      await tx.organizationProfile.create({
+        data: {
+          organizationId: organization.id,
+          companyName: organizationName,
+          ...(vatNumber && { vatNumber }),
+          ...(companyAddress && { address: companyAddress }),
+          ...(companyEmail && { email: companyEmail }),
+          ...(companyPhone && { phone: companyPhone }),
+          ...(entityType && { entityType }),
+          ...(registrationNumber && { registrationNumber }),
+          ...(cnp && { cnp }),
+        },
+      });
     });
-  });
   } catch (error) {
     if (error.code === 'P2002') {
       const field = error.meta?.target;
@@ -445,26 +444,21 @@ const getQuotaUsage = async (organizationId) => {
  * Get organization statistics
  */
 const getOrganizationStats = async (organizationId) => {
-  const [
-    userCount,
-    clientCount,
-    appointmentCount,
-    invoiceCount,
-    activeAppointmentCount,
-  ] = await Promise.all([
-    prisma.user.count({ where: { organizationId } }),
-    prisma.client.count({ where: { organizationId } }),
-    prisma.appointment.count({ where: { organizationId } }),
-    prisma.invoice.count({ where: { organizationId } }),
-    prisma.appointment.count({
-      where: {
-        organizationId,
-        status: {
-          in: ['SCHEDULED', 'IN_PROGRESS'],
+  const [userCount, clientCount, appointmentCount, invoiceCount, activeAppointmentCount] =
+    await Promise.all([
+      prisma.user.count({ where: { organizationId } }),
+      prisma.client.count({ where: { organizationId } }),
+      prisma.appointment.count({ where: { organizationId } }),
+      prisma.invoice.count({ where: { organizationId } }),
+      prisma.appointment.count({
+        where: {
+          organizationId,
+          status: {
+            in: ['SCHEDULED', 'IN_PROGRESS'],
+          },
         },
-      },
-    }),
-  ]);
+      }),
+    ]);
 
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },

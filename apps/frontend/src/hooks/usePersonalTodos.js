@@ -83,7 +83,7 @@ export const usePersonalTodo = (todoId, options = {}) => {
   return useQuery({
     queryKey: ['personalTodo', todoId],
     queryFn: () => fetchPersonalTodo(todoId),
-    enabled: Boolean(todoId) && (options.enabled !== false),
+    enabled: Boolean(todoId) && options.enabled !== false,
     staleTime: 30000,
   });
 };

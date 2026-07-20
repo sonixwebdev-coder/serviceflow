@@ -9,8 +9,8 @@ const logger = require('../utils/logger');
 
 const createSocketServer = (httpServer) => {
   const corsOrigins = [
-    process.env.FRONTEND_URL || 'https://app.forja.it.com',
-    process.env.CLIENT_PORTAL_URL || 'https://portal.forja.it.com',
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    process.env.CLIENT_PORTAL_URL || 'http://localhost:5174',
   ];
   if (process.env.NODE_ENV !== 'production') {
     corsOrigins.push('http://localhost:5173', 'http://localhost:5174');
@@ -61,10 +61,11 @@ const createSocketServer = (httpServer) => {
         // For client portal, get client info (cached to avoid a DB hit on every reconnect)
         const clientAccount = await cache.wrap(
           `socket:client:${payload.sub}`,
-          () => prisma.clientAccount.findUnique({
-            where: { id: payload.sub },
-            include: { client: true },
-          }),
+          () =>
+            prisma.clientAccount.findUnique({
+              where: { id: payload.sub },
+              include: { client: true },
+            }),
           cache.TTL.SHORT
         );
 
@@ -87,10 +88,16 @@ const createSocketServer = (httpServer) => {
       // CRM user authentication - re-validate against DB (cached to avoid a DB hit on every reconnect)
       const dbUser = await cache.wrap(
         `socket:user:${payload.sub}`,
-        () => prisma.user.findUnique({
-          where: { id: payload.sub },
-          select: { id: true, isActive: true, organizationId: true, organization: { select: { status: true } } },
-        }),
+        () =>
+          prisma.user.findUnique({
+            where: { id: payload.sub },
+            select: {
+              id: true,
+              isActive: true,
+              organizationId: true,
+              organization: { select: { status: true } },
+            },
+          }),
         cache.TTL.SHORT
       );
 
@@ -252,9 +259,11 @@ const createSocketServer = (httpServer) => {
         broadcastPresence(socket.user.organizationId, socket.user.id, false);
 
         // Clean up any stuck typing indicators for this user
-        prisma.chatTypingIndicator.deleteMany({
-          where: { userId: socket.user.id },
-        }).catch(() => {});
+        prisma.chatTypingIndicator
+          .deleteMany({
+            where: { userId: socket.user.id },
+          })
+          .catch(() => {});
       }
     });
   });

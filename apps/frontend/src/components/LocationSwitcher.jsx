@@ -9,7 +9,13 @@ const LocationSwitcher = () => {
   const dropdownRef = useRef(null);
   const { hasRole } = useAuth();
 
-  const { locations: userLocations, currentLocationId, setCurrentLocation, getCurrentLocation, initLocation } = useLocationStore();
+  const {
+    locations: userLocations,
+    currentLocationId,
+    setCurrentLocation,
+    getCurrentLocation,
+    initLocation,
+  } = useLocationStore();
   const { loading: loadingUserLocations } = useMyLocations();
 
   // Check if user can switch between locations (admin/manager)
@@ -21,8 +27,10 @@ const LocationSwitcher = () => {
   });
 
   // Use all org locations for admins, user locations for others
-  const availableLocations = canSwitchLocations && allOrgLocations.length > 0 ? allOrgLocations : userLocations;
-  const currentLocation = getCurrentLocation() || availableLocations.find((l) => l.id === currentLocationId);
+  const availableLocations =
+    canSwitchLocations && allOrgLocations.length > 0 ? allOrgLocations : userLocations;
+  const currentLocation =
+    getCurrentLocation() || availableLocations.find((l) => l.id === currentLocationId);
 
   const loading = loadingUserLocations || (canSwitchLocations && loadingOrgLocations);
 
@@ -31,7 +39,8 @@ const LocationSwitcher = () => {
   // without triggering the full-screen switching overlay.
   useEffect(() => {
     if (!loading && !currentLocationId && availableLocations.length > 0) {
-      const primary = availableLocations.find((l) => l.isPrimary || l.isPrimaryForUser) || availableLocations[0];
+      const primary =
+        availableLocations.find((l) => l.isPrimary || l.isPrimaryForUser) || availableLocations[0];
       initLocation(primary.id);
     }
   }, [loading, currentLocationId, availableLocations, initLocation]);
@@ -104,17 +113,16 @@ const LocationSwitcher = () => {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <MapPin size={14} className={currentLocationId === location.id ? 'text-primary' : 'text-gray-400'} />
+                  <MapPin
+                    size={14}
+                    className={currentLocationId === location.id ? 'text-primary' : 'text-gray-400'}
+                  />
                   <div className="text-left">
                     <div className="font-medium">{location.name}</div>
-                    {location.city && (
-                      <div className="text-xs text-gray-500">{location.city}</div>
-                    )}
+                    {location.city && <div className="text-xs text-gray-500">{location.city}</div>}
                   </div>
                 </div>
-                {currentLocationId === location.id && (
-                  <Check size={16} className="text-primary" />
-                )}
+                {currentLocationId === location.id && <Check size={16} className="text-primary" />}
               </button>
             ))}
           </div>

@@ -16,31 +16,50 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
-const SITE = 'https://app.forja.it.com';
-const OG_IMAGE = `${SITE}/og-image.png`;
+const PLATFORM_NAME = process.env.VITE_PLATFORM_NAME || 'ServiceFlow';
+const CONTACT_EMAIL = process.env.VITE_PLATFORM_CONTACT_EMAIL || 'contact@example.com';
+const SITE = (process.env.VITE_PLATFORM_URL || 'http://localhost:5173').replace(/\/+$/, '');
+
+const applyBranding = (value) => {
+  if (typeof value === 'string') {
+    return value
+      .replaceAll('ServiceFlow', PLATFORM_NAME)
+      .replaceAll('contact@example.com', CONTACT_EMAIL);
+  }
+  if (Array.isArray(value)) return value.map(applyBranding);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, applyBranding(item)])
+    );
+  }
+  return value;
+};
 
 // ---------------------------------------------------------------------------
 // Route definitions — each route gets its own prerendered index.html
 // ---------------------------------------------------------------------------
-const ROUTES = [
+const ROUTE_DEFINITIONS = [
   {
     path: '/',
-    title: 'ForjaIt - Clientii se programeaza singuri | Programari, CRM, Facturare',
-    description: 'O singura platforma care inlocuieste agenda, Excel-ul si WhatsApp-ul. Programari online, CRM, facturare, website builder si portal clienti. 14 zile gratuit.',
+    title: 'ServiceFlow - Clientii se programeaza singuri | Programari, CRM, Facturare',
+    description:
+      'O singura platforma care inlocuieste agenda, Excel-ul si WhatsApp-ul. Programari online, CRM, facturare, website builder si portal clienti. 14 zile gratuit.',
     canonical: `${SITE}/`,
     og: {
-      title: 'ForjaIt - Clientii se programeaza singuri. Tu te ocupi de business.',
-      description: 'Programari online, CRM, facturare si website - o singura platforma pentru afaceri de servicii. 14 zile gratuit.',
+      title: 'ServiceFlow - Clientii se programeaza singuri. Tu te ocupi de business.',
+      description:
+        'Programari online, CRM, facturare si website - o singura platforma pentru afaceri de servicii. 14 zile gratuit.',
     },
     schema: [
       {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
-        name: 'ForjaIt',
+        name: 'ServiceFlow',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
         url: SITE,
-        description: 'Platforma de management pentru afaceri de servicii din Romania - programari online, CRM, facturare, website builder si portal clienti.',
+        description:
+          'Platforma de management pentru afaceri de servicii din Romania - programari online, CRM, facturare, website builder si portal clienti.',
         offers: {
           '@type': 'AggregateOffer',
           priceCurrency: 'RON',
@@ -52,12 +71,12 @@ const ROUTES = [
       {
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        name: 'ForjaIt',
+        name: 'ServiceFlow',
         url: SITE,
         logo: `${SITE}/favicon-512x512.png`,
         contactPoint: {
           '@type': 'ContactPoint',
-          email: 'support@forja.it.com',
+          email: 'contact@example.com',
           contactType: 'customer support',
           availableLanguage: 'Romanian',
         },
@@ -65,7 +84,7 @@ const ROUTES = [
       },
     ],
     body: `
-      <header><nav aria-label="Navigare principala"><a href="/">ForjaIt</a><a href="/pricing">Preturi</a><a href="/signup">Inregistrare</a><a href="/login">Autentificare</a></nav></header>
+      <header><nav aria-label="Navigare principala"><a href="/">ServiceFlow</a><a href="/pricing">Preturi</a><a href="/signup">Inregistrare</a><a href="/login">Autentificare</a></nav></header>
       <main>
         <h1>Clientii se programeaza singuri. Tu te ocupi de business.</h1>
         <p>O singura platforma care inlocuieste agenda, Excel-ul si WhatsApp-ul. Programari online, CRM, facturare, website builder si portal clienti.</p>
@@ -95,32 +114,62 @@ const ROUTES = [
         <a href="/pricing">Vezi preturile</a>
       </main>
       <footer>
-        <p>&copy; ForjaIt - Platforma de management pentru afaceri de servicii din Romania</p>
+        <p>&copy; ServiceFlow - Platforma de management pentru afaceri de servicii din Romania</p>
         <nav aria-label="Pagini legale"><a href="/privacy">Confidentialitate</a> <a href="/terms">Termeni si Conditii</a></nav>
       </footer>`,
     sitemap: { priority: '1.0', changefreq: 'weekly' },
   },
   {
     path: '/pricing',
-    title: 'Preturi ForjaIt - Planuri de la 0 RON/luna | Fara contract',
-    description: 'Planuri flexibile pentru orice afacere de servicii. Starter 99 RON/luna, Professional 249 RON/luna. 14 zile gratuit, fara card de credit.',
+    title: 'Preturi ServiceFlow - Planuri de la 0 RON/luna | Fara contract',
+    description:
+      'Planuri flexibile pentru orice afacere de servicii. Starter 99 RON/luna, Professional 249 RON/luna. 14 zile gratuit, fara card de credit.',
     canonical: `${SITE}/pricing`,
     og: {
-      title: 'Preturi ForjaIt - Costa mai putin decat un client pierdut',
-      description: 'Planuri de la 0 RON/luna. 14 zile gratuit pe orice plan. Fara contract, fara penalizari.',
+      title: 'Preturi ServiceFlow - Costa mai putin decat un client pierdut',
+      description:
+        'Planuri de la 0 RON/luna. 14 zile gratuit pe orice plan. Fara contract, fara penalizari.',
     },
     schema: {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
       mainEntity: [
-        { '@type': 'Question', name: 'Cat costa ForjaIt?', acceptedAnswer: { '@type': 'Answer', text: 'Planul Gratuit: 0 RON/luna (1 utilizator, 50 clienti). Starter: 99 RON/luna (5 utilizatori, 500 clienti). Professional: 249 RON/luna (15 utilizatori, nelimitat). Enterprise: pret personalizat. Toate planurile includ 14 zile gratuit.' } },
-        { '@type': 'Question', name: 'Pot schimba planul oricand?', acceptedAnswer: { '@type': 'Answer', text: 'Da. Poti face upgrade sau downgrade oricand. La upgrade, diferenta se calculeaza pro-rata.' } },
-        { '@type': 'Question', name: 'Ce se intampla dupa cele 14 zile gratuite?', acceptedAnswer: { '@type': 'Answer', text: 'Daca nu alegi un plan platit, contul revine automat la planul Gratuit. Nu pierzi datele, doar accesul la functiile premium.' } },
-        { '@type': 'Question', name: 'Exista contracte pe termen lung?', acceptedAnswer: { '@type': 'Answer', text: 'Nu. Toate planurile sunt fara angajament. Plata anuala ofera o reducere de 20%, dar poti anula oricand.' } },
+        {
+          '@type': 'Question',
+          name: 'Cat costa ServiceFlow?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Planul Gratuit: 0 RON/luna (1 utilizator, 50 clienti). Starter: 99 RON/luna (5 utilizatori, 500 clienti). Professional: 249 RON/luna (15 utilizatori, nelimitat). Enterprise: pret personalizat. Toate planurile includ 14 zile gratuit.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Pot schimba planul oricand?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Da. Poti face upgrade sau downgrade oricand. La upgrade, diferenta se calculeaza pro-rata.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Ce se intampla dupa cele 14 zile gratuite?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Daca nu alegi un plan platit, contul revine automat la planul Gratuit. Nu pierzi datele, doar accesul la functiile premium.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Exista contracte pe termen lung?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Nu. Toate planurile sunt fara angajament. Plata anuala ofera o reducere de 20%, dar poti anula oricand.',
+          },
+        },
       ],
     },
     body: `
-      <header><nav aria-label="Navigare principala"><a href="/">ForjaIt</a><a href="/pricing">Preturi</a><a href="/signup">Inregistrare</a></nav></header>
+      <header><nav aria-label="Navigare principala"><a href="/">ServiceFlow</a><a href="/pricing">Preturi</a><a href="/signup">Inregistrare</a></nav></header>
       <main>
         <h1>Costa mai putin decat un client pierdut.</h1>
         <p>Alege planul care ti se potriveste. 14 zile gratuit pe orice plan. Schimba sau anuleaza oricand.</p>
@@ -145,7 +194,7 @@ const ROUTES = [
 
         <h2>Toate planurile includ</h2>
         <ul>
-          <li>Securitate - Criptare HTTPS, parole bcrypt, 2FA optional, GDPR compliant</li>
+          <li>Protectia datelor - HTTPS, parole hashuite, 2FA optional si controale de acces</li>
           <li>14 zile trial - Testeaza orice plan platit gratuit, fara card bancar</li>
           <li>Fara angajament - Anuleaza oricand, fara penalizari sau contracte</li>
           <li>Suport - Email si chat integrat</li>
@@ -156,8 +205,9 @@ const ROUTES = [
   },
   {
     path: '/signup',
-    title: 'Inregistrare - Creeaza cont ForjaIt gratuit | 14 zile trial',
-    description: 'Creeaza cont gratuit ForjaIt in 2 minute. Programari online, CRM, facturare si website builder. 14 zile trial pe orice plan, fara card de credit.',
+    title: 'Inregistrare - Creeaza cont ServiceFlow gratuit | 14 zile trial',
+    description:
+      'Creeaza cont gratuit ServiceFlow in 2 minute. Programari online, CRM, facturare si website builder. 14 zile trial pe orice plan, fara card de credit.',
     canonical: `${SITE}/signup`,
     body: `
       <main>
@@ -169,22 +219,24 @@ const ROUTES = [
   },
   {
     path: '/login',
-    title: 'Autentificare - ForjaIt',
-    description: 'Conecteaza-te la contul tau ForjaIt. Acceseaza programari, clienti, facturi si toate instrumentele de management.',
+    title: 'Autentificare - ServiceFlow',
+    description:
+      'Conecteaza-te la contul tau ServiceFlow. Acceseaza programari, clienti, facturi si toate instrumentele de management.',
     canonical: `${SITE}/login`,
     robots: 'noindex, follow',
     body: `
       <main>
         <h1>Autentificare</h1>
-        <p>Conecteaza-te la contul tau ForjaIt.</p>
+        <p>Conecteaza-te la contul tau ServiceFlow.</p>
         <p>Nu ai cont? <a href="/signup">Creeaza cont gratuit</a></p>
       </main>`,
     sitemap: false,
   },
   {
     path: '/forgot-password',
-    title: 'Recuperare parola - ForjaIt',
-    description: 'Reseteaza parola contului tau ForjaIt. Vei primi un email cu un link de resetare.',
+    title: 'Recuperare parola - ServiceFlow',
+    description:
+      'Reseteaza parola contului tau ServiceFlow. Vei primi un email cu un link de resetare.',
     canonical: `${SITE}/forgot-password`,
     robots: 'noindex, nofollow',
     body: `
@@ -196,41 +248,45 @@ const ROUTES = [
   },
   {
     path: '/privacy',
-    title: 'Politica de Confidentialitate - ForjaIt',
-    description: 'Politica de confidentialitate ForjaIt. Cum colectam, stocam si protejam datele tale personale. Conform GDPR si Legii nr. 190/2018.',
+    title: 'Politica de Confidentialitate - ServiceFlow',
+    description:
+      'Informatii despre datele prelucrate prin instalarea ServiceFlow, optiunile disponibile si responsabilitatile operatorului.',
     canonical: `${SITE}/privacy`,
     body: `
       <main>
         <h1>Politica de Confidentialitate</h1>
-        <p>Ultima actualizare: 8 martie 2026</p>
-        <p>Aceasta politica descrie cum ForjaIt colecteaza, stocheaza si protejeaza datele tale personale, in conformitate cu Regulamentul General privind Protectia Datelor (GDPR) si Legea nr. 190/2018.</p>
+        <p>Ultima actualizare: 20 iulie 2026</p>
+        <p>Aceasta instanta este administrata de operatorul care ofera accesul. Operatorul stabileste scopurile, temeiurile, furnizorii si perioadele de pastrare aplicabile.</p>
         <h2>Date colectate</h2>
         <p>Colectam date de identificare (nume, email, telefon), date de cont, date de utilizare si date tehnice.</p>
         <h2>Drepturile tale</h2>
         <p>Ai dreptul de acces, rectificare, stergere, portabilitate si opozitie conform GDPR.</p>
         <h2>Contact</h2>
-        <p>Pentru orice intrebari legate de datele personale, ne poti contacta la <a href="mailto:support@forja.it.com">support@forja.it.com</a>.</p>
+        <p>Pentru orice intrebari legate de datele personale, ne poti contacta la <a href="mailto:contact@example.com">contact@example.com</a>.</p>
       </main>`,
     sitemap: { priority: '0.3', changefreq: 'yearly' },
   },
   {
     path: '/terms',
-    title: 'Termeni si Conditii - ForjaIt',
-    description: 'Termenii si conditiile de utilizare a platformei ForjaIt. Informatii despre drepturi, obligatii si politicile de utilizare.',
+    title: 'Termeni si Conditii - ServiceFlow',
+    description:
+      'Termenii si conditiile de utilizare a platformei ServiceFlow. Informatii despre drepturi, obligatii si politicile de utilizare.',
     canonical: `${SITE}/terms`,
     body: `
       <main>
         <h1>Termeni si Conditii</h1>
-        <p>Ultima actualizare: 8 martie 2026</p>
-        <p>Acesti Termeni si Conditii reglementeaza utilizarea platformei ForjaIt. Prin accesarea si utilizarea platformei, acceptati acesti termeni.</p>
+        <p>Ultima actualizare: 20 iulie 2026</p>
+        <p>Acesti termeni descriu regulile generale ale instalarii. Operatorul trebuie sa comunice identitatea legala si conditiile comerciale aplicabile.</p>
         <h2>Utilizarea platformei</h2>
-        <p>ForjaIt este o platforma digitala care faciliteaza conexiunea intre furnizori de servicii si clienti prin instrumente de programari, CRM, facturare si comunicare.</p>
+        <p>ServiceFlow este o platforma digitala care faciliteaza conexiunea intre furnizori de servicii si clienti prin instrumente de programari, CRM, facturare si comunicare.</p>
         <h2>Contact</h2>
-        <p>Pentru orice intrebari, ne poti contacta la <a href="mailto:support@forja.it.com">support@forja.it.com</a>.</p>
+        <p>Pentru orice intrebari, ne poti contacta la <a href="mailto:contact@example.com">contact@example.com</a>.</p>
       </main>`,
     sitemap: { priority: '0.3', changefreq: 'yearly' },
   },
 ];
+
+const ROUTES = applyBranding(ROUTE_DEFINITIONS);
 
 // ---------------------------------------------------------------------------
 // Inject SEO into a single HTML file
@@ -356,19 +412,17 @@ for (const route of ROUTES) {
 // Generate sitemap.xml
 // ---------------------------------------------------------------------------
 const today = new Date().toISOString().split('T')[0];
-const sitemapUrls = ROUTES
-  .filter((r) => r.sitemap !== false)
-  .map((r) => {
-    const sm = r.sitemap || {};
-    const priority = sm.priority || '0.5';
-    const freq = sm.changefreq || 'monthly';
-    return `  <url>
+const sitemapUrls = ROUTES.filter((r) => r.sitemap !== false).map((r) => {
+  const sm = r.sitemap || {};
+  const priority = sm.priority || '0.5';
+  const freq = sm.changefreq || 'monthly';
+  return `  <url>
     <loc>${SITE}${r.path}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>${freq}</changefreq>
     <priority>${priority}</priority>
   </url>`;
-  });
+});
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

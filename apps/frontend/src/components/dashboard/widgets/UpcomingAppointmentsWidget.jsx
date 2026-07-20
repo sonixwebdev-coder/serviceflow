@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, isToday, isTomorrow, isThisWeek, addDays, startOfDay } from 'date-fns';
+import { format, isToday, isTomorrow, isThisWeek } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
 import { CalendarDays, ChevronRight } from 'lucide-react';
 import { useAppointments } from '../../../hooks/useAppointments';
 
 const ListSkeleton = () => (
   <div className="space-y-2">
-    {[1, 2, 3].map(i => (
+    {[1, 2, 3].map((i) => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="w-12 space-y-1">
           <div className="h-4 w-10 animate-pulse rounded bg-gray-200" />
@@ -25,12 +25,10 @@ const ListSkeleton = () => (
 export default function UpcomingAppointmentsWidget() {
   const navigate = useNavigate();
   const { data: appointments = [], isLoading } = useAppointments();
-  const now = new Date();
-  const today = startOfDay(now);
-
   const upcomingAppointments = useMemo(() => {
+    const now = new Date();
     return appointments
-      .filter(apt => {
+      .filter((apt) => {
         if (!apt.scheduledStart) return false;
         const aptDate = new Date(apt.scheduledStart);
         // Show appointments from today onwards (excluding past ones today)
@@ -38,7 +36,7 @@ export default function UpcomingAppointmentsWidget() {
       })
       .sort((a, b) => new Date(a.scheduledStart) - new Date(b.scheduledStart))
       .slice(0, 6);
-  }, [appointments, now]);
+  }, [appointments]);
 
   const getDateLabel = (date) => {
     if (isToday(date)) return 'Astazi';
@@ -67,10 +65,10 @@ export default function UpcomingAppointmentsWidget() {
 
   return (
     <div className="space-y-2">
-      {upcomingAppointments.map(apt => {
+      {upcomingAppointments.map((apt) => {
         const aptDate = new Date(apt.scheduledStart);
         const isTodayApt = isToday(aptDate);
-        const isPast = aptDate < now && !isTodayApt;
+        const isPast = aptDate < new Date() && !isTodayApt;
 
         return (
           <div
@@ -81,15 +79,17 @@ export default function UpcomingAppointmentsWidget() {
             } ${isPast ? 'opacity-50' : ''}`}
           >
             <div className="w-12 text-center flex-shrink-0">
-              <p className={`text-sm font-semibold ${isTodayApt ? 'text-primary' : 'text-gray-900'}`}>
+              <p
+                className={`text-sm font-semibold ${isTodayApt ? 'text-primary' : 'text-gray-900'}`}
+              >
                 {format(aptDate, 'HH:mm')}
               </p>
-              <p className="text-[10px] text-gray-500 uppercase">
-                {getDateLabel(aptDate)}
-              </p>
+              <p className="text-[10px] text-gray-500 uppercase">{getDateLabel(aptDate)}</p>
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${isTodayApt ? 'text-primary' : 'text-gray-900'}`}>
+              <p
+                className={`text-sm font-medium truncate ${isTodayApt ? 'text-primary' : 'text-gray-900'}`}
+              >
                 {apt.title}
               </p>
               {apt.client && (

@@ -54,21 +54,21 @@ const DatePicker = ({
   const normalizedMinDate = minDate ? startOfDay(minDate) : undefined;
   const normalizedMaxDate = maxDate ? startOfDay(maxDate) : undefined;
 
-useEffect(() => {
-  if (value) {
-    setVisibleMonth(new Date(value));
-  }
-}, [value]);
+  useEffect(() => {
+    if (value) {
+      setVisibleMonth(new Date(value));
+    }
+  }, [value]);
 
-useEffect(() => {
-  if (normalizedMinDate && isBefore(visibleMonth, startOfMonth(normalizedMinDate))) {
-    setVisibleMonth(new Date(normalizedMinDate));
-    return;
-  }
-  if (normalizedMaxDate && isAfter(visibleMonth, endOfMonth(normalizedMaxDate))) {
-    setVisibleMonth(new Date(normalizedMaxDate));
-  }
-}, [visibleMonth, normalizedMinDate, normalizedMaxDate]);
+  useEffect(() => {
+    if (normalizedMinDate && isBefore(visibleMonth, startOfMonth(normalizedMinDate))) {
+      setVisibleMonth(new Date(normalizedMinDate));
+      return;
+    }
+    if (normalizedMaxDate && isAfter(visibleMonth, endOfMonth(normalizedMaxDate))) {
+      setVisibleMonth(new Date(normalizedMaxDate));
+    }
+  }, [visibleMonth, normalizedMinDate, normalizedMaxDate]);
 
   useEffect(() => {
     const handleClickAway = (event) => {
@@ -240,8 +240,8 @@ useEffect(() => {
                       isSelected
                         ? 'bg-primary text-white hover:bg-orange-600'
                         : isMuted
-                        ? 'text-gray-400 hover:bg-gray-100'
-                        : 'text-gray-800 hover:bg-gray-100'
+                          ? 'text-gray-400 hover:bg-gray-100'
+                          : 'text-gray-800 hover:bg-gray-100'
                     }`}
                   >
                     {format(day, 'd')}

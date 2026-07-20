@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Search, UserPlus, Users, MessageSquare } from 'lucide-react';
-import { useCreateDM, useCreateGroupDM, useSendMessage } from '../../hooks/useChat';
+import { useCreateDM, useCreateGroupDM } from '../../hooks/useChat';
 import { useChatStore } from '../../state/useChatStore';
 import useUsers from '../../hooks/useUsers';
 import { useAuthStore } from '../../state/useAuthStore';
@@ -17,7 +17,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
   const [groupName, setGroupName] = useState('');
   const [initialMessage, setInitialMessage] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const [createdChannelId, setCreatedChannelId] = useState(null);
+  const [, setCreatedChannelId] = useState(null);
 
   const { user: currentUser } = useAuthStore();
   const { users, loading } = useUsers();
@@ -26,7 +26,6 @@ export default function CreateDMDialog({ isOpen, onClose }) {
 
   const createDMMutation = useCreateDM();
   const createGroupDMMutation = useCreateGroupDM();
-  const sendMessageMutation = useSendMessage(createdChannelId);
 
   if (!isOpen) return null;
 
@@ -111,7 +110,9 @@ export default function CreateDMDialog({ isOpen, onClose }) {
 
       showToast({
         title: 'Succes',
-        description: isGroupDM ? 'Grupul a fost creat cu succes.' : 'Conversația a fost creată cu succes.',
+        description: isGroupDM
+          ? 'Grupul a fost creat cu succes.'
+          : 'Conversația a fost creată cu succes.',
         type: 'success',
       });
 
@@ -120,7 +121,8 @@ export default function CreateDMDialog({ isOpen, onClose }) {
       console.error('Failed to create DM:', error);
       showToast({
         title: 'Eroare',
-        description: error?.message || 'Nu s-a putut crea conversația. Te rugăm să încerci din nou.',
+        description:
+          error?.message || 'Nu s-a putut crea conversația. Te rugăm să încerci din nou.',
         type: 'error',
       });
     } finally {
@@ -305,9 +307,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
                       <p className="truncate font-medium text-gray-900">
                         {user.firstName} {user.lastName}
                       </p>
-                      {user.email && (
-                        <p className="truncate text-sm text-gray-500">{user.email}</p>
-                      )}
+                      {user.email && <p className="truncate text-sm text-gray-500">{user.email}</p>}
                     </div>
 
                     {/* Checkmark */}

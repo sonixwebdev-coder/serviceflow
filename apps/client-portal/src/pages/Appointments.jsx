@@ -1,7 +1,20 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Plus, X, ArrowLeft, ArrowRight, Loader2, Package, FileText } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  X,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Package,
+  FileText,
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -81,7 +94,8 @@ export default function Appointments() {
     if (showCreateModal) {
       // Fetch locations first
       setLoadingLocations(true);
-      appointmentService.getLocations()
+      appointmentService
+        .getLocations()
         .then((data) => {
           setLocations(data.locations || []);
           setHasMultipleLocations(data.hasMultipleLocations || false);
@@ -97,13 +111,15 @@ export default function Appointments() {
         .finally(() => setLoadingLocations(false));
 
       setLoadingAssets(true);
-      profileService.getAssets()
+      profileService
+        .getAssets()
         .then((data) => setAssets(data || []))
         .catch(() => setAssets([]))
         .finally(() => setLoadingAssets(false));
 
       setLoadingDates(true);
-      appointmentService.getAvailableDates(30)
+      appointmentService
+        .getAvailableDates(30)
         .then((data) => setAvailableDates(data || []))
         .catch(() => setAvailableDates([]))
         .finally(() => setLoadingDates(false));
@@ -115,7 +131,8 @@ export default function Appointments() {
     if (formData.selectedDate) {
       setLoadingSlots(true);
       setAvailableSlots([]);
-      appointmentService.getAvailableSlots(formData.selectedDate, 60, formData.selectedLocation?.id)
+      appointmentService
+        .getAvailableSlots(formData.selectedDate, 60, formData.selectedLocation?.id)
         .then((data) => setAvailableSlots(data || []))
         .catch(() => setAvailableSlots([]))
         .finally(() => setLoadingSlots(false));
@@ -225,10 +242,7 @@ export default function Appointments() {
       {/* Create Appointment Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="fixed inset-0 bg-black/50"
-            onClick={closeModal}
-          />
+          <div className="fixed inset-0 bg-black/50" onClick={closeModal} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -251,8 +265,8 @@ export default function Appointments() {
                       index < currentStep
                         ? 'bg-primary-600 text-white'
                         : index === currentStep
-                        ? 'bg-primary-100 text-primary-600 border-2 border-primary-600'
-                        : 'bg-gray-200 text-gray-500'
+                          ? 'bg-primary-100 text-primary-600 border-2 border-primary-600'
+                          : 'bg-gray-200 text-gray-500'
                     )}
                   >
                     <step.icon className="h-4 w-4" />
@@ -274,15 +288,15 @@ export default function Appointments() {
               {/* Select Location */}
               {currentStepId === 'location' && (
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600 mb-4">Selecteaza locatia pentru programare:</p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Selecteaza locatia pentru programare:
+                  </p>
                   {loadingLocations ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-primary-600" />
                     </div>
                   ) : locations.length === 0 ? (
-                    <p className="text-center py-8 text-gray-500">
-                      Nu exista locatii disponibile.
-                    </p>
+                    <p className="text-center py-8 text-gray-500">Nu exista locatii disponibile.</p>
                   ) : (
                     <div className="grid grid-cols-1 gap-2">
                       {locations.map((loc) => (
@@ -303,18 +317,28 @@ export default function Appointments() {
                           )}
                         >
                           <div className="flex items-start gap-3">
-                            <MapPin className={cn(
-                              'h-5 w-5 mt-0.5 flex-shrink-0',
-                              formData.selectedLocation?.id === loc.id ? 'text-primary-600' : 'text-gray-400'
-                            )} />
+                            <MapPin
+                              className={cn(
+                                'h-5 w-5 mt-0.5 flex-shrink-0',
+                                formData.selectedLocation?.id === loc.id
+                                  ? 'text-primary-600'
+                                  : 'text-gray-400'
+                              )}
+                            />
                             <div className="flex-1">
-                              <p className={cn(
-                                'font-medium',
-                                formData.selectedLocation?.id === loc.id ? 'text-primary-700' : 'text-gray-900'
-                              )}>
+                              <p
+                                className={cn(
+                                  'font-medium',
+                                  formData.selectedLocation?.id === loc.id
+                                    ? 'text-primary-700'
+                                    : 'text-gray-900'
+                                )}
+                              >
                                 {loc.name}
                                 {loc.isPrimary && (
-                                  <span className="ml-2 text-xs font-normal text-gray-500">(Principal)</span>
+                                  <span className="ml-2 text-xs font-normal text-gray-500">
+                                    (Principal)
+                                  </span>
                                 )}
                               </p>
                               {(loc.address || loc.city) && (
@@ -328,8 +352,18 @@ export default function Appointments() {
                             </div>
                             {formData.selectedLocation?.id === loc.id && (
                               <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
                                 </svg>
                               </div>
                             )}
@@ -402,7 +436,9 @@ export default function Appointments() {
                     </div>
                   ) : availableSlots.length === 0 ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-500 mb-4">Nu exista intervale disponibile pentru aceasta zi.</p>
+                      <p className="text-gray-500 mb-4">
+                        Nu exista intervale disponibile pentru aceasta zi.
+                      </p>
                       <Button variant="secondary" size="sm" onClick={handleBack}>
                         Alege alta data
                       </Button>
@@ -507,7 +543,12 @@ export default function Appointments() {
                           <button
                             key={asset.id}
                             type="button"
-                            onClick={() => updateFormData('assetId', asset.id === formData.assetId ? '' : asset.id)}
+                            onClick={() =>
+                              updateFormData(
+                                'assetId',
+                                asset.id === formData.assetId ? '' : asset.id
+                              )
+                            }
                             className={cn(
                               'w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3',
                               formData.assetId === asset.id
@@ -515,14 +556,20 @@ export default function Appointments() {
                                 : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                             )}
                           >
-                            <div className={cn(
-                              'w-10 h-10 rounded-lg flex items-center justify-center',
-                              formData.assetId === asset.id ? 'bg-primary-100' : 'bg-gray-100'
-                            )}>
-                              <Package className={cn(
-                                'h-5 w-5',
-                                formData.assetId === asset.id ? 'text-primary-600' : 'text-gray-500'
-                              )} />
+                            <div
+                              className={cn(
+                                'w-10 h-10 rounded-lg flex items-center justify-center',
+                                formData.assetId === asset.id ? 'bg-primary-100' : 'bg-gray-100'
+                              )}
+                            >
+                              <Package
+                                className={cn(
+                                  'h-5 w-5',
+                                  formData.assetId === asset.id
+                                    ? 'text-primary-600'
+                                    : 'text-gray-500'
+                                )}
+                              />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-sm text-gray-900 truncate">
@@ -534,8 +581,18 @@ export default function Appointments() {
                             </div>
                             {formData.assetId === asset.id && (
                               <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center">
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
                                 </svg>
                               </div>
                             )}

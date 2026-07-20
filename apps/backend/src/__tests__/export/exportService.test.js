@@ -3,19 +3,8 @@
  * Tests complete export workflows for all entities and formats
  */
 
-const {
-  exportAppointments,
-  exportInvoices,
-  exportClients,
-  exportUsers,
-  exportLeaveRequests,
-  exportTimeTracking,
-  exportTasks,
-  exportAllData,
-} = require('../../services/exportService');
-
+const exportService = require('../../services/exportService');
 const prisma = require('../../../lib/prisma');
-const { AppError } = require('../../utils/errors');
 const { assertValidExportFile } = require('../helpers/exportHelpers');
 const {
   mockAppointments,
@@ -27,6 +16,15 @@ const {
   mockTasks,
   mockUserRoles,
 } = require('../fixtures/exportFixtures');
+
+const exportAppointments = (...args) => exportService.exportAppointments(prisma, ...args);
+const exportInvoices = (...args) => exportService.exportInvoices(prisma, ...args);
+const exportClients = (...args) => exportService.exportClients(prisma, ...args);
+const exportUsers = (...args) => exportService.exportUsers(prisma, ...args);
+const exportLeaveRequests = (...args) => exportService.exportLeaveRequests(prisma, ...args);
+const exportTimeTracking = (...args) => exportService.exportTimeTracking(prisma, ...args);
+const exportTasks = (...args) => exportService.exportTasks(prisma, ...args);
+const exportAllData = (...args) => exportService.exportAllData(prisma, ...args);
 
 // Mock Prisma
 jest.mock('../../../lib/prisma', () => ({
@@ -76,8 +74,10 @@ describe('Export Service - exportAppointments', () => {
 
     const result = await exportAppointments('excel', {}, 'user-1', mockUserRoles.admin);
 
-    expect(result.contentType).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    expect(result.filename).toMatch(/\.excel$/);
+    expect(result.contentType).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    expect(result.filename).toMatch(/\.xlsx$/);
     await assertValidExportFile(result.buffer, 'excel');
   });
 
@@ -91,14 +91,14 @@ describe('Export Service - exportAppointments', () => {
     await assertValidExportFile(result.buffer, 'json');
   });
 
-  it('exports appointments in PDF format', async () => {
+  it('exports appointments in XML format', async () => {
     prisma.appointment.findMany.mockResolvedValue(mockAppointments);
 
-    const result = await exportAppointments('pdf', {}, 'user-1', mockUserRoles.admin);
+    const result = await exportAppointments('xml', {}, 'user-1', mockUserRoles.admin);
 
-    expect(result.contentType).toBe('application/pdf');
-    expect(result.filename).toMatch(/\.pdf$/);
-    await assertValidExportFile(result.buffer, 'pdf');
+    expect(result.contentType).toBe('application/xml; charset=utf-8');
+    expect(result.filename).toMatch(/\.xml$/);
+    await assertValidExportFile(result.buffer, 'xml');
   });
 
   it('applies status filter', async () => {
@@ -118,10 +118,15 @@ describe('Export Service - exportAppointments', () => {
   it('applies date range filter', async () => {
     prisma.appointment.findMany.mockResolvedValue(mockAppointments);
 
-    await exportAppointments('csv', {
-      startDate: '2024-01-01',
-      endDate: '2024-12-31',
-    }, 'user-1', mockUserRoles.admin);
+    await exportAppointments(
+      'csv',
+      {
+        startDate: '2024-01-01',
+        endDate: '2024-12-31',
+      },
+      'user-1',
+      mockUserRoles.admin
+    );
 
     expect(prisma.appointment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -143,26 +148,24 @@ describe('Export Service - exportAppointments', () => {
     expect(prisma.appointment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          OR: expect.arrayContaining([
-            expect.objectContaining({ title: expect.anything() }),
-          ]),
+          OR: expect.arrayContaining([expect.objectContaining({ title: expect.anything() })]),
         }),
       })
     );
   });
 
   it('throws error for invalid format', async () => {
-    await expect(
-      exportAppointments('invalid', {}, 'user-1', mockUserRoles.admin)
-    ).rejects.toThrow('Invalid export format');
+    await expect(exportAppointments('invalid', {}, 'user-1', mockUserRoles.admin)).rejects.toThrow(
+      'Invalid export format'
+    );
   });
 
   it('throws error when no appointments found', async () => {
     prisma.appointment.findMany.mockResolvedValue([]);
 
-    await expect(
-      exportAppointments('csv', {}, 'user-1', mockUserRoles.admin)
-    ).rejects.toThrow('No appointments found');
+    await expect(exportAppointments('csv', {}, 'user-1', mockUserRoles.admin)).rejects.toThrow(
+      'No appointments found'
+    );
   });
 
   it('allows admin to export all appointments', async () => {
@@ -173,12 +176,12 @@ describe('Export Service - exportAppointments', () => {
     ).resolves.toBeDefined();
   });
 
-  it('allows manager to export all appointments', async () => {
+  it('rejects manager-wide exports without an explicit self scope', async () => {
     prisma.appointment.findMany.mockResolvedValue(mockAppointments);
 
-    await expect(
-      exportAppointments('csv', {}, 'manager-1', mockUserRoles.manager)
-    ).resolves.toBeDefined();
+    await expect(exportAppointments('csv', {}, 'manager-1', mockUserRoles.manager)).rejects.toThrow(
+      'Insufficient permissions'
+    );
   });
 });
 
@@ -190,7 +193,7 @@ describe('Export Service - exportInvoices', () => {
   it('exports invoices in all formats', async () => {
     prisma.invoice.findMany.mockResolvedValue(mockInvoices);
 
-    const formats = ['csv', 'excel', 'json', 'pdf'];
+    const formats = ['csv', 'excel', 'json', 'xml'];
 
     for (const format of formats) {
       const result = await exportInvoices(format, {}, 'user-1', mockUserRoles.admin);
@@ -230,9 +233,9 @@ describe('Export Service - exportInvoices', () => {
   it('throws error when no invoices found', async () => {
     prisma.invoice.findMany.mockResolvedValue([]);
 
-    await expect(
-      exportInvoices('csv', {}, 'user-1', mockUserRoles.admin)
-    ).rejects.toThrow('No invoices found');
+    await expect(exportInvoices('csv', {}, 'user-1', mockUserRoles.admin)).rejects.toThrow(
+      'No invoices found'
+    );
   });
 });
 
@@ -244,7 +247,7 @@ describe('Export Service - exportClients', () => {
   it('exports clients in all formats', async () => {
     prisma.client.findMany.mockResolvedValue(mockClients);
 
-    const formats = ['csv', 'excel', 'json', 'pdf'];
+    const formats = ['csv', 'excel', 'json', 'xml'];
 
     for (const format of formats) {
       const result = await exportClients(format, {}, 'user-1', mockUserRoles.admin);
@@ -253,7 +256,7 @@ describe('Export Service - exportClients', () => {
   });
 
   it('filters by client type', async () => {
-    prisma.client.findMany.mockResolvedValue(mockClients.filter(c => c.type === 'PF'));
+    prisma.client.findMany.mockResolvedValue(mockClients.filter((c) => c.type === 'PF'));
 
     await exportClients('csv', { type: 'PF' }, 'user-1', mockUserRoles.admin);
 
@@ -295,23 +298,18 @@ describe('Export Service - exportUsers', () => {
     const parsed = JSON.parse(jsonString);
 
     // Ensure password is not included
-    parsed.data.forEach(user => {
+    parsed.data.forEach((user) => {
       expect(user).not.toHaveProperty('password');
     });
   });
 
-  it('restricts non-admin users to their own data', async () => {
+  it('rejects user exports for non-admin users', async () => {
     prisma.user.findMany.mockResolvedValue([mockUsers[1]]);
 
-    await exportUsers('csv', {}, 'user-2', mockUserRoles.technician);
-
-    expect(prisma.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          id: 'user-2',
-        }),
-      })
+    await expect(exportUsers('csv', {}, 'user-2', mockUserRoles.technician)).rejects.toThrow(
+      'Insufficient permissions'
     );
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
   });
 
   it('allows admin to export all users', async () => {
@@ -343,7 +341,7 @@ describe('Export Service - exportUsers', () => {
   });
 
   it('filters by active status', async () => {
-    prisma.user.findMany.mockResolvedValue(mockUsers.filter(u => u.isActive));
+    prisma.user.findMany.mockResolvedValue(mockUsers.filter((u) => u.isActive));
 
     await exportUsers('csv', { isActive: 'true' }, 'admin-1', mockUserRoles.admin);
 
@@ -365,7 +363,7 @@ describe('Export Service - exportLeaveRequests', () => {
   it('exports leave requests in all formats', async () => {
     prisma.timeOffRequest.findMany.mockResolvedValue(mockLeaveRequests);
 
-    const formats = ['csv', 'excel', 'json', 'pdf'];
+    const formats = ['csv', 'excel', 'json', 'xml'];
 
     for (const format of formats) {
       const result = await exportLeaveRequests(format, {}, 'user-1', mockUserRoles.admin);
@@ -373,18 +371,13 @@ describe('Export Service - exportLeaveRequests', () => {
     }
   });
 
-  it('restricts employee to their own requests', async () => {
+  it('rejects leave-request exports for employees', async () => {
     prisma.timeOffRequest.findMany.mockResolvedValue([mockLeaveRequests[0]]);
 
-    await exportLeaveRequests('csv', {}, 'user-2', mockUserRoles.employee);
-
-    expect(prisma.timeOffRequest.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          employeeId: 'user-2',
-        }),
-      })
+    await expect(exportLeaveRequests('csv', {}, 'user-2', mockUserRoles.employee)).rejects.toThrow(
+      'Insufficient permissions'
     );
+    expect(prisma.timeOffRequest.findMany).not.toHaveBeenCalled();
   });
 
   it('filters by leave type', async () => {
@@ -428,27 +421,27 @@ describe('Export Service - exportTimeTracking', () => {
     await assertValidExportFile(result.buffer, 'csv');
   });
 
-  it('restricts employee to their own entries', async () => {
+  it('rejects time-tracking exports for employees', async () => {
     prisma.timeEntry.findMany.mockResolvedValue([mockTimeTracking[0]]);
 
-    await exportTimeTracking('csv', {}, 'user-2', mockUserRoles.employee);
-
-    expect(prisma.timeEntry.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          employeeId: 'user-2',
-        }),
-      })
+    await expect(exportTimeTracking('csv', {}, 'user-2', mockUserRoles.employee)).rejects.toThrow(
+      'Insufficient permissions'
     );
+    expect(prisma.timeEntry.findMany).not.toHaveBeenCalled();
   });
 
   it('applies date range filter', async () => {
     prisma.timeEntry.findMany.mockResolvedValue(mockTimeTracking);
 
-    await exportTimeTracking('csv', {
-      startDate: '2024-02-01',
-      endDate: '2024-02-28',
-    }, 'admin-1', mockUserRoles.admin);
+    await exportTimeTracking(
+      'csv',
+      {
+        startDate: '2024-02-01',
+        endDate: '2024-02-28',
+      },
+      'admin-1',
+      mockUserRoles.admin
+    );
 
     expect(prisma.timeEntry.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -471,7 +464,7 @@ describe('Export Service - exportTasks', () => {
   it('exports tasks in all formats', async () => {
     prisma.task.findMany.mockResolvedValue(mockTasks);
 
-    const formats = ['csv', 'excel', 'json', 'pdf'];
+    const formats = ['csv', 'excel', 'json', 'xml'];
 
     for (const format of formats) {
       const result = await exportTasks(format, {}, 'admin-1', mockUserRoles.admin);
@@ -530,9 +523,9 @@ describe('Export Service - exportAllData', () => {
   });
 
   it('rejects non-admin users', async () => {
-    await expect(
-      exportAllData('user-1', mockUserRoles.technician)
-    ).rejects.toThrow('Only administrators can export all data');
+    await expect(exportAllData('user-1', mockUserRoles.technician)).rejects.toThrow(
+      'Only administrators can export all data'
+    );
   });
 
   it('includes all entities in ZIP', async () => {
@@ -545,7 +538,7 @@ describe('Export Service - exportAllData', () => {
     // Should have metadata.json + 7 entity files
     expect(entries.length).toBeGreaterThanOrEqual(7);
 
-    const fileNames = entries.map(e => e.entryName);
+    const fileNames = entries.map((e) => e.entryName);
     expect(fileNames).toContain('metadata.json');
   });
 
@@ -558,7 +551,7 @@ describe('Export Service - exportAllData', () => {
     expect(result.buffer).toBeInstanceOf(Buffer);
   });
 
-  it('throws error when no data available', async () => {
+  it('produces a metadata-only archive when no entity data is available', async () => {
     // Mock all queries to return empty arrays
     prisma.appointment.findMany.mockResolvedValue([]);
     prisma.invoice.findMany.mockResolvedValue([]);
@@ -568,9 +561,9 @@ describe('Export Service - exportAllData', () => {
     prisma.timeEntry.findMany.mockResolvedValue([]);
     prisma.task.findMany.mockResolvedValue([]);
 
-    await expect(
-      exportAllData('admin-1', mockUserRoles.admin)
-    ).rejects.toThrow('No data available to export');
+    const result = await exportAllData('admin-1', mockUserRoles.admin);
+    expect(result.buffer).toBeInstanceOf(Buffer);
+    expect(result.contentType).toBe('application/zip');
   });
 });
 
@@ -580,31 +573,25 @@ describe('Export Service - Authorization', () => {
   });
 
   it('throws error for unauthenticated requests', async () => {
-    await expect(
-      exportAppointments('csv', {}, null, [])
-    ).rejects.toThrow('User not authenticated');
+    await expect(exportAppointments('csv', {}, null, [])).rejects.toThrow(
+      'Invalid user authentication'
+    );
   });
 
-  it('allows manager to export restricted entities', async () => {
+  it('rejects restricted entity exports for managers', async () => {
     prisma.user.findMany.mockResolvedValue(mockUsers);
 
-    await expect(
-      exportUsers('csv', {}, 'manager-1', mockUserRoles.manager)
-    ).resolves.toBeDefined();
+    await expect(exportUsers('csv', {}, 'manager-1', mockUserRoles.manager)).rejects.toThrow(
+      'Insufficient permissions'
+    );
   });
 
-  it('restricts technician from exporting all users', async () => {
+  it('rejects user exports for technicians', async () => {
     prisma.user.findMany.mockResolvedValue([mockUsers[1]]);
 
-    const result = await exportUsers('csv', {}, 'tech-1', mockUserRoles.technician);
-
-    // Should only get their own data
-    expect(prisma.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          id: 'tech-1',
-        }),
-      })
+    await expect(exportUsers('csv', {}, 'tech-1', mockUserRoles.technician)).rejects.toThrow(
+      'Insufficient permissions'
     );
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
   });
 });

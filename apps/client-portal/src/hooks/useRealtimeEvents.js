@@ -18,17 +18,14 @@ export const useRealtimeEvents = () => {
   const handleNewMessage = useCallback(
     (message) => {
       // Update messages cache for the specific appointment
-      queryClient.setQueryData(
-        ['appointment-messages', message.appointmentId],
-        (old) => {
-          if (!old) return [message];
-          // Check if message already exists
-          if (old.some((m) => m.id === message.id)) {
-            return old;
-          }
-          return [...old, message];
+      queryClient.setQueryData(['appointment-messages', message.appointmentId], (old) => {
+        if (!old) return [message];
+        // Check if message already exists
+        if (old.some((m) => m.id === message.id)) {
+          return old;
         }
-      );
+        return [...old, message];
+      });
 
       // Show toast notification if message is from CRM staff (not from self)
       const isOwnMessage = message.clientAuthorId === client?.id;
@@ -55,22 +52,16 @@ export const useRealtimeEvents = () => {
       }
 
       // Invalidate unread count
-      queryClient.invalidateQueries([
-        'appointment-messages-unread',
-        message.appointmentId,
-      ]);
+      queryClient.invalidateQueries(['appointment-messages-unread', message.appointmentId]);
     },
     [queryClient, client?.id, showToast]
   );
 
   // Handle typing indicator event
-  const handleTyping = useCallback(
-    (data) => {
-      // You can implement typing indicator state here if needed
-      console.log('[Socket] Typing indicator:', data);
-    },
-    []
-  );
+  const handleTyping = useCallback((data) => {
+    // You can implement typing indicator state here if needed
+    console.log('[Socket] Typing indicator:', data);
+  }, []);
 
   // Handle appointment update event
   const handleAppointmentUpdate = useCallback(

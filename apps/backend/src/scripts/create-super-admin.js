@@ -21,11 +21,9 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-const ask = (question) =>
-  new Promise((resolve) => rl.question(question, resolve));
+const ask = (question) => new Promise((resolve) => rl.question(question, resolve));
 
-const validateEmail = (email) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const run = async () => {
   console.log('\n=== Create Super Admin ===\n');

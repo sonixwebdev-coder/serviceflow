@@ -1,4 +1,4 @@
-const { emit, emitToUser, emitToOrganization, emitToClient } = require('./emitter');
+const { emitToUser, emitToOrganization, emitToClient } = require('./emitter');
 
 const broadcastAuditLog = (organizationId, auditLog) => {
   if (!auditLog || !organizationId) return;
@@ -25,7 +25,11 @@ const broadcastTimeOff = (action, request) => {
 
 const broadcastNotification = (notification) => {
   if (!notification) return;
-  emitToUser(notification.recipient?._id || notification.recipientId, 'notification:new', notification);
+  emitToUser(
+    notification.recipient?._id || notification.recipientId,
+    'notification:new',
+    notification
+  );
 };
 
 const broadcastAppointment = (action, appointment) => {
@@ -72,7 +76,7 @@ const broadcastTyping = (organizationId, appointmentId, user, isTyping) => {
       firstName,
       lastName,
     },
-    isTyping
+    isTyping,
   });
 };
 
@@ -122,12 +126,14 @@ const broadcastAppointmentToClient = (action, appointment) => {
     scheduledEnd: appointment.scheduledEnd,
     location: appointment.location,
     cancellationReason: appointment.cancellationReason,
-    asset: appointment.asset ? {
-      id: appointment.asset.id,
-      name: appointment.asset.name,
-      identifier: appointment.asset.identifier,
-      type: appointment.asset.type,
-    } : null,
+    asset: appointment.asset
+      ? {
+          id: appointment.asset.id,
+          name: appointment.asset.name,
+          identifier: appointment.asset.identifier,
+          type: appointment.asset.type,
+        }
+      : null,
   };
   emitToClient(appointment.clientId, event, clientData);
 };

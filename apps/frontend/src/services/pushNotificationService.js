@@ -83,7 +83,9 @@ export const subscribeToPush = async () => {
     // Detect Brave browser
     const isBrave = navigator.brave && (await navigator.brave.isBrave());
     if (isBrave) {
-      console.warn('Brave browser detected - ensure push notifications are enabled in Brave Shields settings');
+      console.warn(
+        'Brave browser detected - ensure push notifications are enabled in Brave Shields settings'
+      );
     }
 
     // 1. Get VAPID public key first
@@ -101,7 +103,7 @@ export const subscribeToPush = async () => {
     }
 
     // 3. Wait a bit for cleanup to complete
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // 4. Register fresh service worker
     const registration = await registerServiceWorker();
@@ -139,9 +141,13 @@ export const subscribeToPush = async () => {
     if (error.name === 'AbortError') {
       const isBrave = navigator.brave && (await navigator.brave.isBrave().catch(() => false));
       if (isBrave) {
-        throw new Error('Brave browser blocheaza notificarile push. Activeaza "Allow Google login buttons" si "Use Google Services for Push Messaging" in Brave Shields (brave://settings/privacy)');
+        throw new Error(
+          'Brave browser blocheaza notificarile push. Activeaza "Allow Google login buttons" si "Use Google Services for Push Messaging" in Brave Shields (brave://settings/privacy)'
+        );
       }
-      throw new Error('Browser-ul blocheaza notificarile push. Verifica setarile de confidentialitate.');
+      throw new Error(
+        'Browser-ul blocheaza notificarile push. Verifica setarile de confidentialitate.'
+      );
     }
 
     throw error;

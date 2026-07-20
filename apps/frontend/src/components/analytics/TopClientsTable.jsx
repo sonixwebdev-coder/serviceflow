@@ -25,19 +25,14 @@ export default function TopClientsTable({ data = [], isLoading }) {
 
   if (!data.length) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Nu exista date pentru perioada selectata
-      </div>
+      <div className="text-center py-8 text-gray-500">Nu exista date pentru perioada selectata</div>
     );
   }
 
   return (
     <div className="divide-y divide-gray-100">
       {data.map((item, index) => (
-        <div
-          key={item.client?.id || index}
-          className="flex items-center gap-4 py-3"
-        >
+        <div key={item.client?.id || index} className="flex items-center gap-4 py-3">
           {/* Rank */}
           <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
             <span
@@ -45,10 +40,10 @@ export default function TopClientsTable({ data = [], isLoading }) {
                 index === 0
                   ? 'text-yellow-500'
                   : index === 1
-                  ? 'text-gray-400'
-                  : index === 2
-                  ? 'text-amber-700'
-                  : 'text-gray-500'
+                    ? 'text-gray-400'
+                    : index === 2
+                      ? 'text-amber-700'
+                      : 'text-gray-500'
               }`}
             >
               {index + 1}
@@ -70,9 +65,7 @@ export default function TopClientsTable({ data = [], isLoading }) {
 
           {/* Client info */}
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-gray-900 truncate">
-              {getClientName(item.client)}
-            </p>
+            <p className="font-medium text-gray-900 truncate">{getClientName(item.client)}</p>
             <p className="text-sm text-gray-500">
               {item.invoiceCount} {item.invoiceCount === 1 ? 'factura' : 'facturi'}
             </p>

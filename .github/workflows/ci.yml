@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: postgresql://serviceflow:serviceflow@localhost:5432/serviceflow_test
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: ci-access-secret-not-for-production
+      JWT_REFRESH_SECRET: ci-refresh-secret-not-for-production
+      CSRF_SECRET: ci-csrf-secret-not-for-production
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci
+      - run: npm run env:check
+      - run: npm run docs:check
+      - run: npm run openapi:validate
+      - run: npm run modules:check
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run prisma:validate
+      - run: npm test
+      - run: npm run build
+      - run: npm run audit
+      - run: npm run release:inventory
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci
+      - run: npm run test:integration
+
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - run: cp .env.example .env
+      - name: Validate Compose configurations
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.test.yml config --quiet
+          POSTGRES_PASSWORD=compose-validation-only docker compose -f docker-compose.prod.yml config --quiet
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            dockerfile: apps/backend/Dockerfile
+          - name: frontend
+            dockerfile: apps/frontend/Dockerfile
+          - name: client-portal
+            dockerfile: apps/client-portal/Dockerfile
+          - name: admin
+            dockerfile: apps/admin/Dockerfile
+          - name: website
+            dockerfile: apps/website/Dockerfile
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Build ${{ matrix.name }} image
+        run: docker build --file "${{ matrix.dockerfile }}" --tag "serviceflow-${{ matrix.name }}:ci" .

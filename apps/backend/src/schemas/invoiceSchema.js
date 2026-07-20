@@ -8,9 +8,10 @@ const invoiceLineItemSchema = z.object({
   order: z.number().int().nonnegative().optional(),
 });
 
-const invoiceStatusEnum = z.string().transform((val) => val.toUpperCase()).pipe(
-  z.enum(['DRAFT', 'GENERATED', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'])
-);
+const invoiceStatusEnum = z
+  .string()
+  .transform((val) => val.toUpperCase())
+  .pipe(z.enum(['DRAFT', 'GENERATED', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED']));
 
 const createInvoiceSchema = z.object({
   appointmentId: z.string().min(1, 'Appointment ID is required'),

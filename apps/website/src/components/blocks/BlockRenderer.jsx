@@ -76,7 +76,7 @@ function useScrollAnimation(type) {
   return { ref, isVisible };
 }
 
-export default function BlockRenderer({ block, subdomain, branding }) {
+export default function BlockRenderer({ block, subdomain, branding, organization }) {
   const { type, data, settings } = block;
   const BlockComponent = blockComponents[type];
   const { ref, isVisible } = useScrollAnimation(type);
@@ -117,6 +117,7 @@ export default function BlockRenderer({ block, subdomain, branding }) {
           settings={settings}
           subdomain={subdomain}
           branding={branding}
+          organization={organization}
         />
       ) : (
         <div className={cn('mx-auto px-4 sm:px-6 lg:px-8', maxWidthClasses[maxWidth])}>
@@ -125,6 +126,7 @@ export default function BlockRenderer({ block, subdomain, branding }) {
             settings={settings}
             subdomain={subdomain}
             branding={branding}
+            organization={organization}
           />
         </div>
       )}

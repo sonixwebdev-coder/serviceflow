@@ -1,18 +1,21 @@
-const logger = require('../utils/logger');
-
 /**
  * Search across all entities
  * @param {Object} prisma - Tenant-scoped Prisma client
  * @param {Object} options - Search options
  * @returns {Promise<Object>} Search results grouped by entity type
  */
-const globalSearch = async (prisma, { query, limit = 5, types = null, locationFilter = {} } = {}) => {
+const globalSearch = async (
+  prisma,
+  { query, limit = 5, types = null, locationFilter = {} } = {}
+) => {
   if (!query || query.trim().length < 2) {
     return { results: [], total: 0 };
   }
 
   const searchTerm = query.trim().toLowerCase();
-  const searchTypes = types ? types.split(',') : ['clients', 'appointments', 'tasks', 'invoices', 'users'];
+  const searchTypes = types
+    ? types.split(',')
+    : ['clients', 'appointments', 'tasks', 'invoices', 'users'];
 
   const results = {};
   let totalCount = 0;
@@ -385,14 +388,50 @@ const getQuickActions = () => {
  */
 const getNavigationShortcuts = () => {
   return [
-    { id: 'nav-dashboard', type: 'navigation', title: 'Tablou de bord', url: '/dashboard', icon: 'layout-dashboard' },
+    {
+      id: 'nav-dashboard',
+      type: 'navigation',
+      title: 'Tablou de bord',
+      url: '/dashboard',
+      icon: 'layout-dashboard',
+    },
     { id: 'nav-clients', type: 'navigation', title: 'Clienti', url: '/crm/clients', icon: 'users' },
-    { id: 'nav-appointments', type: 'navigation', title: 'Programari', url: '/crm/appointments', icon: 'calendar' },
-    { id: 'nav-invoices', type: 'navigation', title: 'Facturi', url: '/crm/invoices', icon: 'file-text' },
-    { id: 'nav-tasks', type: 'navigation', title: 'Task-uri', url: '/tasks', icon: 'clipboard-list' },
+    {
+      id: 'nav-appointments',
+      type: 'navigation',
+      title: 'Programari',
+      url: '/crm/appointments',
+      icon: 'calendar',
+    },
+    {
+      id: 'nav-invoices',
+      type: 'navigation',
+      title: 'Facturi',
+      url: '/crm/invoices',
+      icon: 'file-text',
+    },
+    {
+      id: 'nav-tasks',
+      type: 'navigation',
+      title: 'Task-uri',
+      url: '/tasks',
+      icon: 'clipboard-list',
+    },
     { id: 'nav-chat', type: 'navigation', title: 'Chat', url: '/chat', icon: 'message-square' },
-    { id: 'nav-analytics', type: 'navigation', title: 'Statistici', url: '/analytics', icon: 'bar-chart' },
-    { id: 'nav-activity', type: 'navigation', title: 'Activitate', url: '/activity', icon: 'activity' },
+    {
+      id: 'nav-analytics',
+      type: 'navigation',
+      title: 'Statistici',
+      url: '/analytics',
+      icon: 'bar-chart',
+    },
+    {
+      id: 'nav-activity',
+      type: 'navigation',
+      title: 'Activitate',
+      url: '/activity',
+      icon: 'activity',
+    },
     { id: 'nav-profile', type: 'navigation', title: 'Profil', url: '/profile', icon: 'user' },
   ];
 };

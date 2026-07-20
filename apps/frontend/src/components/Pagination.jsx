@@ -55,7 +55,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSiz
           </p>
         </div>
         <div>
-          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+          <nav
+            className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+            aria-label="Pagination"
+          >
             {/* Previous button */}
             <button
               onClick={() => onPageChange(currentPage - 1)}

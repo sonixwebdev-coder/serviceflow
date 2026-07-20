@@ -20,12 +20,7 @@ const useTimeTracking = (initialFilters = {}, options = {}) => {
 
   const queryKey = useMemo(() => ['time-tracking', queryParams], [queryParams]);
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: () => fetchTimeTracking(queryParams),
   });

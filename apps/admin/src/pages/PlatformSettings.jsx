@@ -22,7 +22,11 @@ export default function PlatformSettings() {
   const [activeTab, setActiveTab] = useState('stripe');
   const [form, setForm] = useState({});
   const [showSecrets, setShowSecrets] = useState({});
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [passwordError, setPasswordError] = useState('');
   const { showToast } = useToast();
 
@@ -70,8 +74,14 @@ export default function PlatformSettings() {
       payload[key] = value;
     }
     save(payload, {
-      onSuccess: () => showToast({ title: 'Salvat', description: 'Setarile au fost actualizate.', type: 'success' }),
-      onError: () => showToast({ title: 'Eroare', description: 'Nu s-au putut salva setarile.', type: 'error' }),
+      onSuccess: () =>
+        showToast({
+          title: 'Salvat',
+          description: 'Setarile au fost actualizate.',
+          type: 'success',
+        }),
+      onError: () =>
+        showToast({ title: 'Eroare', description: 'Nu s-au putut salva setarile.', type: 'error' }),
     });
   };
 
@@ -87,7 +97,8 @@ export default function PlatformSettings() {
     );
   }
 
-  const inputClass = 'w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors';
+  const inputClass =
+    'w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors';
 
   const secretField = (label, key, placeholder = 'sk_live_...') => (
     <div key={key}>
@@ -136,11 +147,16 @@ export default function PlatformSettings() {
       <div className="flex-1 min-w-0">
         {activeTab === 'stripe' && (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <Card title="Credentiale Stripe" description="Cheile de autentificare pentru integrarea cu Stripe.">
+            <Card
+              title="Credentiale Stripe"
+              description="Cheile de autentificare pentru integrarea cu Stripe."
+            >
               <div className="space-y-4">
                 {secretField('Secret Key', 'stripeSecretKey')}
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Publishable Key</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                    Publishable Key
+                  </label>
                   <input
                     type="text"
                     value={form.stripePublishableKey || ''}
@@ -158,7 +174,10 @@ export default function PlatformSettings() {
 
         {activeTab === 'subscriptions' && (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <Card title="Price IDs Stripe" description="ID-urile de pret din Stripe pentru fiecare plan si interval.">
+            <Card
+              title="Price IDs Stripe"
+              description="ID-urile de pret din Stripe pentru fiecare plan si interval."
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {PLANS.map((plan) =>
                   INTERVALS.map((interval) => {
@@ -200,7 +219,9 @@ export default function PlatformSettings() {
                           min="0"
                           step="0.01"
                           value={form[key] ?? ''}
-                          onChange={(e) => handleChange(key, e.target.value ? Number(e.target.value) : '')}
+                          onChange={(e) =>
+                            handleChange(key, e.target.value ? Number(e.target.value) : '')
+                          }
                           className={inputClass}
                           placeholder="0.00"
                         />
@@ -228,7 +249,9 @@ export default function PlatformSettings() {
                   { key: 'addonPriceIdAppointments500', label: '+500 Programari' },
                 ].map(({ key, label }) => (
                   <div key={key}>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                      {label}
+                    </label>
                     <input
                       type="text"
                       value={form[key] || ''}
@@ -250,16 +273,24 @@ export default function PlatformSettings() {
                   { key: 'addonPriceClients100', label: '+100 Clienti', defaultPrice: 1500 },
                   { key: 'addonPriceClients300', label: '+300 Clienti', defaultPrice: 2900 },
                   { key: 'addonPriceAppointments200', label: '+200 Programari', defaultPrice: 900 },
-                  { key: 'addonPriceAppointments500', label: '+500 Programari', defaultPrice: 1900 },
+                  {
+                    key: 'addonPriceAppointments500',
+                    label: '+500 Programari',
+                    defaultPrice: 1900,
+                  },
                 ].map(({ key, label, defaultPrice }) => (
                   <div key={key}>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                      {label}
+                    </label>
                     <input
                       type="number"
                       min="0"
                       step="1"
                       value={form[key] ?? ''}
-                      onChange={(e) => handleChange(key, e.target.value ? Number(e.target.value) : '')}
+                      onChange={(e) =>
+                        handleChange(key, e.target.value ? Number(e.target.value) : '')
+                      }
                       className={inputClass}
                       placeholder={`implicit: ${defaultPrice} (${defaultPrice / 100} RON)`}
                     />
@@ -273,7 +304,10 @@ export default function PlatformSettings() {
 
         {activeTab === 'general' && (
           <form onSubmit={handleSubmit} className="space-y-5">
-            <Card title="Perioada de trial" description="Numarul de zile oferite gratuit la inregistrare.">
+            <Card
+              title="Perioada de trial"
+              description="Numarul de zile oferite gratuit la inregistrare."
+            >
               <div className="max-w-xs">
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">Zile trial</label>
                 <input
@@ -310,14 +344,27 @@ export default function PlatformSettings() {
                   return;
                 }
                 changePassword(
-                  { currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword },
+                  {
+                    currentPassword: passwordForm.currentPassword,
+                    newPassword: passwordForm.newPassword,
+                  },
                   {
                     onSuccess: () => {
-                      showToast({ title: 'Succes', description: 'Parola a fost schimbata.', type: 'success' });
-                      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                      showToast({
+                        title: 'Succes',
+                        description: 'Parola a fost schimbata.',
+                        type: 'success',
+                      });
+                      setPasswordForm({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: '',
+                      });
                     },
                     onError: (err) => {
-                      setPasswordError(err?.response?.data?.message || 'Eroare la schimbarea parolei');
+                      setPasswordError(
+                        err?.response?.data?.message || 'Eroare la schimbarea parolei'
+                      );
                     },
                   }
                 );
@@ -325,17 +372,23 @@ export default function PlatformSettings() {
               className="space-y-4 max-w-md"
             >
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Parola curenta</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  Parola curenta
+                </label>
                 <input
                   type="password"
                   required
                   value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                  onChange={(e) =>
+                    setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))
+                  }
                   className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Parola noua</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  Parola noua
+                </label>
                 <input
                   type="password"
                   required
@@ -345,12 +398,16 @@ export default function PlatformSettings() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Confirmare parola noua</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  Confirmare parola noua
+                </label>
                 <input
                   type="password"
                   required
                   value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                  onChange={(e) =>
+                    setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))
+                  }
                   className={inputClass}
                 />
               </div>

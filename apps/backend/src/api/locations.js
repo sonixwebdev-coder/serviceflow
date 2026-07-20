@@ -144,7 +144,11 @@ router.delete(
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
     const location = await getLocationById(req.tenantPrisma, req.params.locationId);
-    const result = await deleteLocation(req.tenantPrisma, req.params.locationId, req.user.organizationId);
+    const result = await deleteLocation(
+      req.tenantPrisma,
+      req.params.locationId,
+      req.user.organizationId
+    );
 
     await logFromRequest(req, {
       action: 'DELETE',

@@ -7,7 +7,6 @@ const BookingWidgetBlock = ({ data, settings, isEditing = false, onClick }) => {
     subtitle = '',
     showServices = true,
     showEmployee = false,
-    compactMode = false,
   } = data || {};
 
   const {
@@ -38,9 +37,13 @@ const BookingWidgetBlock = ({ data, settings, isEditing = false, onClick }) => {
       }}
       onClick={onClick}
     >
-      <div className={cn('mx-auto bg-white rounded-lg border shadow-sm', maxWidthClasses[maxWidth])}>
+      <div
+        className={cn('mx-auto bg-white rounded-lg border shadow-sm', maxWidthClasses[maxWidth])}
+      >
         <div className="p-6 border-b text-center">
-          <h3 className="font-semibold" style={{ color: textColor }}>{title}</h3>
+          <h3 className="font-semibold" style={{ color: textColor }}>
+            {title}
+          </h3>
           {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
         </div>
         <div className="p-6 space-y-4">
@@ -84,10 +87,7 @@ const BookingWidgetBlock = ({ data, settings, isEditing = false, onClick }) => {
             </div>
             <div className="grid grid-cols-7 gap-1">
               {['L', 'Ma', 'Mi', 'J', 'V', 'S', 'D'].map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-xs text-gray-400 py-1"
-                >
+                <div key={day} className="text-center text-xs text-gray-400 py-1">
                   {day}
                 </div>
               ))}
@@ -113,20 +113,22 @@ const BookingWidgetBlock = ({ data, settings, isEditing = false, onClick }) => {
               Selectati ora
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map((time, i) => (
-                <button
-                  key={time}
-                  className={cn(
-                    'w-full px-2 py-1.5 text-sm font-medium rounded-lg transition-colors',
-                    i === 2
-                      ? 'bg-blue-600 text-white'
-                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  )}
-                  disabled={isEditing}
-                >
-                  {time}
-                </button>
-              ))}
+              {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map(
+                (time, i) => (
+                  <button
+                    key={time}
+                    className={cn(
+                      'w-full px-2 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                      i === 2
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    )}
+                    disabled={isEditing}
+                  >
+                    {time}
+                  </button>
+                )
+              )}
             </div>
           </div>
 

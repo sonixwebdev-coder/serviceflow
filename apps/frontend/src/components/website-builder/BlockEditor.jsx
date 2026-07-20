@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Eye, EyeOff, X } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import BlockRenderer from './BlockRenderer';
 import BlockToolbar from './BlockToolbar';
 import BlockSettings from './BlockSettings';
 import { blockTypes, blockCategories } from './blocks';
+import { getWebsiteBuilderIcon, websiteBuilderIcons } from './iconRegistry';
 import { createBlock } from '@/hooks/useWebsiteBuilder';
 
 const BlockEditor = ({
@@ -42,11 +42,14 @@ const BlockEditor = ({
     setShowSettings(true);
   };
 
-  const handleBlockClick = useCallback((blockId) => {
-    if (previewMode) return;
-    onSelectBlock(blockId);
-    setShowSettings(true);
-  }, [previewMode, onSelectBlock]);
+  const handleBlockClick = useCallback(
+    (blockId) => {
+      if (previewMode) return;
+      onSelectBlock(blockId);
+      setShowSettings(true);
+    },
+    [previewMode, onSelectBlock]
+  );
 
   const handleMoveUp = () => {
     const index = blocks.findIndex((b) => b.id === selectedBlockId);
@@ -127,14 +130,8 @@ const BlockEditor = ({
 
         {/* Editor Canvas */}
         <div className="flex-1 overflow-y-auto bg-gray-100">
-          <div className={cn(
-            'min-h-full',
-            !previewMode && 'py-8 px-4'
-          )}>
-            <div className={cn(
-              'bg-white shadow-sm',
-              !previewMode && 'rounded-lg overflow-hidden'
-            )}>
+          <div className={cn('min-h-full', !previewMode && 'py-8 px-4')}>
+            <div className={cn('bg-white shadow-sm', !previewMode && 'rounded-lg overflow-hidden')}>
               {blocks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-gray-500">
                   <p className="mb-4">Niciun bloc adaugat</p>
@@ -167,7 +164,9 @@ const BlockEditor = ({
                         className={cn(
                           'relative group',
                           !previewMode && 'hover:ring-2 hover:ring-blue-300 hover:ring-inset',
-                          !previewMode && selectedBlockId === block.id && 'ring-2 ring-blue-500 ring-inset'
+                          !previewMode &&
+                            selectedBlockId === block.id &&
+                            'ring-2 ring-blue-500 ring-inset'
                         )}
                       >
                         {/* Block Toolbar */}
@@ -253,13 +252,12 @@ const BlockEditor = ({
               <div className="space-y-6">
                 {blockCategories.map((category) => (
                   <div key={category.name}>
-                    <h3 className="text-sm font-semibold text-gray-500 mb-3">
-                      {category.name}
-                    </h3>
+                    <h3 className="text-sm font-semibold text-gray-500 mb-3">{category.name}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       {category.blocks.map((blockType) => {
                         const config = blockTypes[blockType];
-                        const IconComponent = LucideIcons[config.icon] || LucideIcons.Square;
+                        const IconComponent =
+                          getWebsiteBuilderIcon(config.icon) || websiteBuilderIcons.Square;
                         return (
                           <button
                             key={blockType}

@@ -5,15 +5,13 @@ import { fetchUsers } from '../services/userService';
 const useUsers = (initialFilters = {}, options = {}) => {
   const { enabled = true } = options;
   const [overrides, setFilters] = useState({});
-  const queryParams = useMemo(() => ({ ...initialFilters, ...overrides }), [initialFilters, overrides]);
+  const queryParams = useMemo(
+    () => ({ ...initialFilters, ...overrides }),
+    [initialFilters, overrides]
+  );
   const queryKey = useMemo(() => ['users', queryParams], [queryParams]);
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     enabled,
     queryFn: () => fetchUsers(queryParams),

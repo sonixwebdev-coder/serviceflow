@@ -1,8 +1,12 @@
 const { AppError } = require('../utils/errors');
-const { writeFile, removeFile } = require('../utils/storage');
+const { removeFile } = require('../utils/storage');
 const { ensureChannelAccess } = require('./chatService');
-const crypto = require('crypto');
-const path = require('path');
+const {
+  createAttachment,
+  deleteAttachment,
+  saveAttachment,
+  saveVoiceMessage,
+} = require('./chatMessage/chatMessageFiles');
 const logger = require('../utils/logger');
 
 /**
@@ -225,7 +229,8 @@ async function deleteMessage(prisma, messageId, currentUser) {
 
   // Check if user can delete (owner or admin)
   const member = message.channel.members[0];
-  const canDelete = message.authorId === currentUser.id || ['OWNER', 'ADMIN'].includes(member?.role);
+  const canDelete =
+    message.authorId === currentUser.id || ['OWNER', 'ADMIN'].includes(member?.role);
 
   if (!canDelete) {
     throw new AppError('You can only delete your own messages', 403);
@@ -248,7 +253,10 @@ async function deleteMessage(prisma, messageId, currentUser) {
       try {
         await removeFile(attachment.fileUrl);
       } catch (error) {
-        logger.error('Failed to delete file', { fileUrl: attachment.fileUrl, error: error.message });
+        logger.error('Failed to delete file', {
+          fileUrl: attachment.fileUrl,
+          error: error.message,
+        });
       }
     }
 
@@ -259,115 +267,6 @@ async function deleteMessage(prisma, messageId, currentUser) {
   });
 
   return { id: messageId, channelId: message.channelId };
-}
-
-/**
- * Save file attachment
- * @param {Object} file - Multer file object
- * @param {string} organizationId - Organization ID
- * @param {string} channelId - Channel ID
- * @returns {Promise<Object>} Attachment metadata
- */
-async function saveAttachment(file, organizationId, channelId) {
-  const fileHash = crypto.randomBytes(16).toString('hex');
-  const ext = path.extname(file.originalname);
-  const fileName = `${fileHash}${ext}`;
-  const relativePath = `chat/${organizationId}/${channelId}/files/${fileName}`;
-
-  await writeFile(relativePath, file.buffer);
-
-  return {
-    fileName: file.originalname,
-    fileUrl: relativePath,
-    fileType: file.mimetype,
-    fileSize: file.size,
-  };
-}
-
-/**
- * Save voice message
- * @param {Object} file - Multer file object
- * @param {string} organizationId - Organization ID
- * @param {string} channelId - Channel ID
- * @returns {Promise<Object>} Voice message metadata
- */
-async function saveVoiceMessage(file, organizationId, channelId) {
-  const fileHash = crypto.randomBytes(16).toString('hex');
-  const ext = path.extname(file.originalname) || '.webm';
-  const fileName = `voice-${fileHash}${ext}`;
-  const relativePath = `chat/${organizationId}/${channelId}/voice/${fileName}`;
-
-  await writeFile(relativePath, file.buffer);
-
-  return {
-    fileName: fileName,
-    fileUrl: relativePath,
-    fileType: file.mimetype,
-    fileSize: file.size,
-  };
-}
-
-/**
- * Create attachment for a message
- * @param {PrismaClient} prisma - Tenant-scoped Prisma client
- * @param {string} messageId - Message ID
- * @param {Object} attachmentData - Attachment metadata
- * @param {Object} currentUser - Current authenticated user
- * @returns {Promise<Object>} Created attachment
- */
-async function createAttachment(prisma, messageId, attachmentData, currentUser) {
-  const message = await prisma.chatMessage.findUnique({
-    where: { id: messageId },
-  });
-
-  if (!message) {
-    throw new AppError('Message not found', 404);
-  }
-
-  if (message.authorId !== currentUser.id) {
-    throw new AppError('You can only add attachments to your own messages', 403);
-  }
-
-  const attachment = await prisma.chatAttachment.create({
-    data: {
-      messageId,
-      ...attachmentData,
-    },
-  });
-
-  return attachment;
-}
-
-/**
- * Delete an attachment
- * @param {PrismaClient} prisma - Tenant-scoped Prisma client
- * @param {string} attachmentId - Attachment ID
- * @param {Object} currentUser - Current authenticated user
- * @returns {Promise<void>}
- */
-async function deleteAttachment(prisma, attachmentId, currentUser) {
-  const attachment = await prisma.chatAttachment.findUnique({
-    where: { id: attachmentId },
-    include: {
-      message: true,
-    },
-  });
-
-  if (!attachment) {
-    throw new AppError('Attachment not found', 404);
-  }
-
-  if (attachment.message.authorId !== currentUser.id) {
-    throw new AppError('You can only delete your own attachments', 403);
-  }
-
-  // Delete from filesystem
-  await removeFile(attachment.fileUrl);
-
-  // Delete from database
-  await prisma.chatAttachment.delete({
-    where: { id: attachmentId },
-  });
 }
 
 /**

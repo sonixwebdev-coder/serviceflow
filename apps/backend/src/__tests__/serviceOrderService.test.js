@@ -1,4 +1,4 @@
-const { upsertServiceOrder, generateServiceOrderPdf } = require('../services/serviceOrderService');
+const serviceOrderService = require('../services/serviceOrderService');
 const prisma = require('../../lib/prisma');
 const { buildServiceOrderPdf } = require('../utils/pdf');
 const storage = require('../utils/storage');
@@ -6,9 +6,10 @@ const { broadcastServiceOrder } = require('../realtime/events');
 const { getCompanySettings } = require('../services/companySettingService');
 
 jest.mock('../../lib/prisma', () => ({
-  appointment: { findUnique: jest.fn() },
+  appointment: { findFirst: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
   serviceOrder: {
     count: jest.fn(),
+    findFirst: jest.fn(),
     findUnique: jest.fn(),
     upsert: jest.fn(),
     update: jest.fn(),
@@ -18,6 +19,10 @@ jest.mock('../../lib/prisma', () => ({
     upsert: jest.fn(),
   },
 }));
+
+const upsertServiceOrder = (...args) => serviceOrderService.upsertServiceOrder(prisma, ...args);
+const generateServiceOrderPdf = (...args) =>
+  serviceOrderService.generateServiceOrderPdf(prisma, ...args);
 
 jest.mock('../utils/pdf', () => ({
   buildServiceOrderPdf: jest.fn(),
@@ -39,14 +44,16 @@ jest.mock('../realtime/events', () => ({
 }));
 
 jest.mock('../utils/transform', () => ({
-  mapUser: jest.fn((user) => (user ? { id: user.id, firstName: user.firstName, lastName: user.lastName } : null)),
+  mapUser: jest.fn((user) =>
+    user ? { id: user.id, firstName: user.firstName, lastName: user.lastName } : null
+  ),
 }));
 
 describe('serviceOrderService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getCompanySettings.mockResolvedValue({
-      companyName: 'ViperX Automotive',
+      companyName: 'ExampleCo Automotive',
       vatNumber: 'RO1234567',
     });
   });
@@ -68,7 +75,7 @@ describe('serviceOrderService', () => {
   };
 
   it('creates a new service order, calculates totals, and persists a PDF', async () => {
-    prisma.appointment.findUnique.mockResolvedValue(appointment);
+    prisma.appointment.findFirst.mockResolvedValue(appointment);
     prisma.serviceOrder.findUnique.mockResolvedValue(null);
     prisma.serviceOrder.count.mockResolvedValue(0);
 
@@ -111,17 +118,17 @@ describe('serviceOrderService', () => {
         create: expect.objectContaining({
           subtotal: 120,
           total: 120,
-          pdfUrl: 'service-orders/appt1/SO-00001.pdf',
+          pdfUrl: 'comanda-service/appt1/CS-00001.pdf',
         }),
       })
     );
     expect(storage.writeFile).toHaveBeenCalledWith(
-      'service-orders/appt1/SO-00001.pdf',
+      'comanda-service/appt1/CS-00001.pdf',
       expect.any(Buffer)
     );
     expect(buildServiceOrderPdf).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'order1' }),
-      expect.objectContaining({ companyName: 'ViperX Automotive' })
+      expect.objectContaining({ companyName: 'ExampleCo Automotive' })
     );
     expect(broadcastServiceOrder).toHaveBeenCalledWith(
       'created',
@@ -153,7 +160,7 @@ describe('serviceOrderService', () => {
     expect(storage.readFile).toHaveBeenCalledWith('service-orders/appt1/SO-00002.pdf');
     expect(buildServiceOrderPdf).not.toHaveBeenCalled();
     expect(buffer.toString()).toBe('cached');
-    expect(filename).toBe('SO-00002.pdf');
+    expect(filename).toBe('SO-00002_Client_NoAsset.pdf');
   });
 
   it('refreshes PDF when requested', async () => {
@@ -182,5 +189,95 @@ describe('serviceOrderService', () => {
       expect.any(Buffer)
     );
     expect(buffer.toString()).toBe('fresh');
+  });
+
+  it('preserves separate parts and labor totals while applying configured TVA', async () => {
+    prisma.appointment.findFirst.mockResolvedValue(appointment);
+    prisma.serviceOrder.findUnique.mockResolvedValue(null);
+    prisma.serviceOrder.count.mockResolvedValue(0);
+    getCompanySettings.mockResolvedValue({
+      companyName: 'ExampleCo Automotive',
+      tvaEnabled: true,
+      tvaPercentage: 19,
+    });
+    prisma.serviceOrder.upsert.mockImplementation(async ({ create }) => ({
+      id: 'order-with-tva',
+      ...create,
+      lineItems: create.lineItems.create.map((item, index) => ({ id: `line-${index}`, ...item })),
+      appointment,
+    }));
+    buildServiceOrderPdf.mockResolvedValue(Buffer.from('PDF', 'utf8'));
+    storage.writeFile.mockResolvedValue('/tmp/comanda-service/appt1/CS-00001.pdf');
+
+    const result = await upsertServiceOrder('appt1', {
+      lineItems: [
+        {
+          name: 'Piese si manopera',
+          hardwareQuantity: 2,
+          hardwarePrice: 10,
+          laborQuantity: 3,
+          laborPrice: 10,
+          hardwareUnit: 'buc',
+          laborUnit: 'ore',
+        },
+      ],
+    });
+
+    expect(prisma.serviceOrder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          subtotal: 50,
+          tax: 9.5,
+          total: 59.5,
+          lineItems: {
+            create: [
+              expect.objectContaining({
+                hardwareQuantity: 2,
+                hardwarePrice: 10,
+                laborQuantity: 3,
+                laborPrice: 10,
+                totalPrice: 50,
+              }),
+            ],
+          },
+        }),
+      })
+    );
+    expect(result).toMatchObject({
+      subtotal: 50,
+      tax: 9.5,
+      total: 59.5,
+      lineItems: [
+        expect.objectContaining({
+          hardwareQuantity: 2,
+          laborQuantity: 3,
+          unitPrice: 20,
+          totalPrice: 50,
+        }),
+      ],
+    });
+  });
+
+  it('does not allow a signed service order to return to draft', async () => {
+    prisma.appointment.findFirst.mockResolvedValue(appointment);
+    prisma.serviceOrder.findUnique.mockResolvedValue({
+      id: 'signed-order',
+      appointmentId: appointment.id,
+      orderNumber: 'CS-00001',
+      status: 'SIGNED',
+      total: 50,
+      lineItems: [],
+    });
+
+    await expect(
+      upsertServiceOrder(appointment.id, {
+        status: 'draft',
+        lineItems: [{ name: 'Inspectie', quantity: 1, unitPrice: 50 }],
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: 'Nu se poate schimba statusul unei comenzi finalizate sau anulate.',
+    });
+    expect(prisma.serviceOrder.upsert).not.toHaveBeenCalled();
   });
 });

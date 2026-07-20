@@ -1,7 +1,8 @@
 import axios from 'axios';
 import useAuthStore from '@/state/useAuthStore';
+import { runtimeConfig } from '@/config/runtime';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = runtimeConfig.serverUrl;
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -34,10 +35,7 @@ api.interceptors.request.use((config) => {
 let refreshPromise = null;
 
 const performTokenRefresh = async () => {
-  const { data } = await refreshClient.post(
-    `${API_BASE}/api/auth/refresh`,
-    { context: 'admin' },
-  );
+  const { data } = await refreshClient.post(`${API_BASE}/api/auth/refresh`, { context: 'admin' });
 
   const { accessToken: newToken, user } = data.data || data;
 
@@ -80,7 +78,11 @@ api.interceptors.response.use(
     }
 
     // 403 CSRF → refresh CSRF token and retry once
-    if (error.response?.status === 403 && error.response?.data?.code === 'CSRF_VALIDATION_FAILED' && !originalRequest._csrfRetry) {
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.code === 'CSRF_VALIDATION_FAILED' &&
+      !originalRequest._csrfRetry
+    ) {
       originalRequest._csrfRetry = true;
       await fetchCsrfToken();
       originalRequest.headers['x-csrf-token'] = csrfToken;

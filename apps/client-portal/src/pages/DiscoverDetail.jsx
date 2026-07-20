@@ -2,8 +2,19 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import {
-  ArrowLeft, ArrowRight, MapPin, Phone, Clock, CalendarCheck, Briefcase,
-  Navigation, Calendar, FileText, X, Loader2, Package,
+  ArrowLeft,
+  ArrowRight,
+  MapPin,
+  Phone,
+  Clock,
+  CalendarCheck,
+  Briefcase,
+  Navigation,
+  Calendar,
+  FileText,
+  X,
+  Loader2,
+  Package,
 } from 'lucide-react';
 import { useMarketplaceOrganization } from '@/hooks/useMarketplace';
 import { useProfile, useAssets } from '@/hooks/useProfile';
@@ -18,8 +29,13 @@ import useToast from '@/context/useToast';
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const DAY_NAMES_RO = {
-  monday: 'Luni', tuesday: 'Marti', wednesday: 'Miercuri',
-  thursday: 'Joi', friday: 'Vineri', saturday: 'Sambata', sunday: 'Duminica',
+  monday: 'Luni',
+  tuesday: 'Marti',
+  wednesday: 'Miercuri',
+  thursday: 'Joi',
+  friday: 'Vineri',
+  saturday: 'Sambata',
+  sunday: 'Duminica',
 };
 
 export default function DiscoverDetail() {
@@ -75,7 +91,9 @@ export default function DiscoverDetail() {
   return (
     <div className="space-y-6">
       {/* Header banner */}
-      <div className={`-mx-6 -mt-6 bg-gradient-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}>
+      <div
+        className={`-mx-6 -mt-6 bg-gradient-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}
+      >
         <div className="px-6 sm:px-8 py-8">
           {/* Back link */}
           <Link
@@ -99,9 +117,7 @@ export default function DiscoverDetail() {
                   </span>
                 )}
               </div>
-              {org.description && (
-                <p className="mt-2 text-white/80 max-w-2xl">{org.description}</p>
-              )}
+              {org.description && <p className="mt-2 text-white/80 max-w-2xl">{org.description}</p>}
               <div className="mt-4 flex flex-wrap gap-3">
                 {filledLocations.length > 0 && (
                   <span className="inline-flex items-center gap-1.5 text-sm text-white/70">
@@ -140,7 +156,9 @@ export default function DiscoverDetail() {
                     <div className="min-w-0 flex-1">
                       <h3 className="font-medium text-gray-900">{service.name}</h3>
                       {service.description && (
-                        <p className="mt-0.5 text-sm text-gray-500 line-clamp-1">{service.description}</p>
+                        <p className="mt-0.5 text-sm text-gray-500 line-clamp-1">
+                          {service.description}
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-4 ml-4 flex-shrink-0">
@@ -171,8 +189,12 @@ export default function DiscoverDetail() {
                   <Card key={loc.id}>
                     <CardContent>
                       <div className="flex items-start gap-3">
-                        <div className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0`}>
-                          <MapPin className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`} />
+                        <div
+                          className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0`}
+                        >
+                          <MapPin
+                            className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`}
+                          />
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="font-medium text-gray-900">{loc.name}</h3>
@@ -195,8 +217,10 @@ export default function DiscoverDetail() {
                                   const hours = loc.operatingHours[day];
                                   return (
                                     <div key={day}>
-                                      <span className="font-medium">{DAY_NAMES_RO[day] || day}:</span>{' '}
-                                      {(hours.closed === true || hours.isOpen === false)
+                                      <span className="font-medium">
+                                        {DAY_NAMES_RO[day] || day}:
+                                      </span>{' '}
+                                      {hours.closed === true || hours.isOpen === false
                                         ? 'Inchis'
                                         : `${hours.open || hours.openTime} - ${hours.close || hours.closeTime}`}
                                     </div>
@@ -221,9 +245,7 @@ export default function DiscoverDetail() {
               <p className="text-gray-500">
                 Aceasta companie nu a publicat inca servicii sau detalii de locatie.
               </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Poti totusi crea o programare direct.
-              </p>
+              <p className="text-sm text-gray-400 mt-1">Poti totusi crea o programare direct.</p>
             </div>
           )}
         </div>
@@ -234,16 +256,12 @@ export default function DiscoverDetail() {
             {/* CTA Card */}
             <Card>
               <CardContent className="text-center py-6">
-                <CalendarCheck className={`h-10 w-10 mx-auto mb-3 ${sector?.iconColor || 'text-primary-600'}`} />
+                <CalendarCheck
+                  className={`h-10 w-10 mx-auto mb-3 ${sector?.iconColor || 'text-primary-600'}`}
+                />
                 <h3 className="font-semibold text-gray-900">Programeaza o vizita</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Alege data si ora care ti se potrivesc
-                </p>
-                <Button
-                  className="w-full mt-4"
-                  size="lg"
-                  onClick={() => setShowBookingModal(true)}
-                >
+                <p className="mt-1 text-sm text-gray-500">Alege data si ora care ti se potrivesc</p>
+                <Button className="w-full mt-4" size="lg" onClick={() => setShowBookingModal(true)}>
                   Programeaza acum
                 </Button>
               </CardContent>
@@ -255,10 +273,14 @@ export default function DiscoverDetail() {
                 <CardContent className="space-y-4">
                   {sector && (
                     <div>
-                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Categorie</p>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Categorie
+                      </p>
                       <div className="mt-1.5 flex items-center gap-2">
                         {SectorIcon && (
-                          <div className={`h-8 w-8 rounded-lg ${sector.iconBg} flex items-center justify-center`}>
+                          <div
+                            className={`h-8 w-8 rounded-lg ${sector.iconBg} flex items-center justify-center`}
+                          >
                             <SectorIcon className={`h-4 w-4 ${sector.iconColor}`} />
                           </div>
                         )}
@@ -268,16 +290,22 @@ export default function DiscoverDetail() {
                   )}
                   {filledLocations[0]?.city && (
                     <div>
-                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Locatie</p>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Locatie
+                      </p>
                       <p className="mt-1 text-sm text-gray-900 flex items-center gap-1.5">
                         <MapPin className="h-4 w-4 text-gray-400" />
-                        {[filledLocations[0].city, filledLocations[0].county].filter(Boolean).join(', ')}
+                        {[filledLocations[0].city, filledLocations[0].county]
+                          .filter(Boolean)
+                          .join(', ')}
                       </p>
                     </div>
                   )}
                   {filledLocations[0]?.phone && (
                     <div>
-                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Telefon</p>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Telefon
+                      </p>
                       <p className="mt-1 text-sm text-gray-900 flex items-center gap-1.5">
                         <Phone className="h-4 w-4 text-gray-400" />
                         {filledLocations[0].phone}
@@ -345,7 +373,8 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
   // Fetch available dates on mount
   useEffect(() => {
     setLoadingDates(true);
-    bookingService.getAvailableDates(slug)
+    bookingService
+      .getAvailableDates(slug)
       .then((data) => setAvailableDates(data || []))
       .catch(() => setAvailableDates([]))
       .finally(() => setLoadingDates(false));
@@ -356,7 +385,8 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
     if (formData.selectedDate) {
       setLoadingSlots(true);
       setAvailableSlots([]);
-      bookingService.getAvailableSlots(slug, formData.selectedDate, formData.selectedLocation?.id)
+      bookingService
+        .getAvailableSlots(slug, formData.selectedDate, formData.selectedLocation?.id)
         .then((data) => setAvailableSlots(data || []))
         .catch(() => setAvailableSlots([]))
         .finally(() => setLoadingSlots(false));
@@ -419,10 +449,14 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
 
       // Add asset data if selected
       if (formData.assetId) {
-        const selectedAsset = (Array.isArray(assets) ? assets : []).find((a) => a.id === formData.assetId);
+        const selectedAsset = (Array.isArray(assets) ? assets : []).find(
+          (a) => a.id === formData.assetId
+        );
         if (selectedAsset) {
           bookingData.asset = {
-            name: selectedAsset.name || `${selectedAsset.manufacturer || ''} ${selectedAsset.model || ''}`.trim(),
+            name:
+              selectedAsset.name ||
+              `${selectedAsset.manufacturer || ''} ${selectedAsset.model || ''}`.trim(),
             manufacturer: selectedAsset.manufacturer || undefined,
             model: selectedAsset.model || undefined,
             identifier: selectedAsset.identifier || undefined,
@@ -465,8 +499,8 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                   index < currentStep
                     ? 'bg-primary-600 text-white'
                     : index === currentStep
-                    ? 'bg-primary-100 text-primary-600 border-2 border-primary-600'
-                    : 'bg-gray-200 text-gray-500'
+                      ? 'bg-primary-100 text-primary-600 border-2 border-primary-600'
+                      : 'bg-gray-200 text-gray-500'
                 )}
               >
                 <step.icon className="h-4 w-4" />
@@ -507,18 +541,28 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <MapPin className={cn(
-                        'h-5 w-5 mt-0.5 flex-shrink-0',
-                        formData.selectedLocation?.id === loc.id ? 'text-primary-600' : 'text-gray-400'
-                      )} />
+                      <MapPin
+                        className={cn(
+                          'h-5 w-5 mt-0.5 flex-shrink-0',
+                          formData.selectedLocation?.id === loc.id
+                            ? 'text-primary-600'
+                            : 'text-gray-400'
+                        )}
+                      />
                       <div className="flex-1">
-                        <p className={cn(
-                          'font-medium',
-                          formData.selectedLocation?.id === loc.id ? 'text-primary-700' : 'text-gray-900'
-                        )}>
+                        <p
+                          className={cn(
+                            'font-medium',
+                            formData.selectedLocation?.id === loc.id
+                              ? 'text-primary-700'
+                              : 'text-gray-900'
+                          )}
+                        >
                           {loc.name}
                           {loc.isPrimary && (
-                            <span className="ml-2 text-xs font-normal text-gray-500">(Principal)</span>
+                            <span className="ml-2 text-xs font-normal text-gray-500">
+                              (Principal)
+                            </span>
                           )}
                         </p>
                         {(loc.address || loc.city) && (
@@ -526,14 +570,22 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                             {[loc.address, loc.city, loc.county].filter(Boolean).join(', ')}
                           </p>
                         )}
-                        {loc.phone && (
-                          <p className="mt-1 text-xs text-gray-400">{loc.phone}</p>
-                        )}
+                        {loc.phone && <p className="mt-1 text-xs text-gray-400">{loc.phone}</p>}
                       </div>
                       {formData.selectedLocation?.id === loc.id && (
                         <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         </div>
                       )}
@@ -605,7 +657,9 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                 </div>
               ) : availableSlots.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">Nu exista intervale disponibile pentru aceasta zi.</p>
+                  <p className="text-gray-500 mb-4">
+                    Nu exista intervale disponibile pentru aceasta zi.
+                  </p>
                   <Button variant="secondary" size="sm" onClick={handleBack}>
                     Alege alta data
                   </Button>
@@ -680,9 +734,7 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Descriere
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Descriere</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => updateFormData('description', e.target.value)}
@@ -706,7 +758,9 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                       <button
                         key={asset.id}
                         type="button"
-                        onClick={() => updateFormData('assetId', asset.id === formData.assetId ? '' : asset.id)}
+                        onClick={() =>
+                          updateFormData('assetId', asset.id === formData.assetId ? '' : asset.id)
+                        }
                         className={cn(
                           'w-full p-3 rounded-lg border text-left transition-all flex items-center gap-3',
                           formData.assetId === asset.id
@@ -714,14 +768,18 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         )}
                       >
-                        <div className={cn(
-                          'w-10 h-10 rounded-lg flex items-center justify-center',
-                          formData.assetId === asset.id ? 'bg-primary-100' : 'bg-gray-100'
-                        )}>
-                          <Package className={cn(
-                            'h-5 w-5',
-                            formData.assetId === asset.id ? 'text-primary-600' : 'text-gray-500'
-                          )} />
+                        <div
+                          className={cn(
+                            'w-10 h-10 rounded-lg flex items-center justify-center',
+                            formData.assetId === asset.id ? 'bg-primary-100' : 'bg-gray-100'
+                          )}
+                        >
+                          <Package
+                            className={cn(
+                              'h-5 w-5',
+                              formData.assetId === asset.id ? 'text-primary-600' : 'text-gray-500'
+                            )}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm text-gray-900 truncate">
@@ -733,8 +791,18 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                         </div>
                         {formData.assetId === asset.id && (
                           <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center">
-                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
                           </div>
                         )}
@@ -746,7 +814,8 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
 
               {bookingMutation.isError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {bookingMutation.error?.response?.data?.message || 'A aparut o eroare. Te rugam sa incerci din nou.'}
+                  {bookingMutation.error?.response?.data?.message ||
+                    'A aparut o eroare. Te rugam sa incerci din nou.'}
                 </div>
               )}
             </div>

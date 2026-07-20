@@ -2,7 +2,12 @@ import { useState } from 'react';
 import confirm from '../utils/confirm';
 import { Search, Plus, Edit2, Trash2, Boxes } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchResources, createResource, updateResource, deleteResource } from '../services/resourceService';
+import {
+  fetchResources,
+  createResource,
+  updateResource,
+  deleteResource,
+} from '../services/resourceService';
 import useToast from '../context/useToast';
 import { useTerminology } from '../context/TerminologyContext';
 
@@ -32,14 +37,20 @@ const Resources = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setIsCreating(false);
-      setResourceForm({ name: '', type: 'workspace', description: '', capacity: '1', isActive: true });
+      setResourceForm({
+        name: '',
+        type: 'workspace',
+        description: '',
+        capacity: '1',
+        isActive: true,
+      });
       showToast({ title: `${resourceSingular} created successfully`, type: 'success' });
     },
     onError: (error) => {
       showToast({
         title: `Error creating ${resourceSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
-        type: 'error'
+        type: 'error',
       });
     },
   });
@@ -55,7 +66,7 @@ const Resources = () => {
       showToast({
         title: `Error updating ${resourceSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
-        type: 'error'
+        type: 'error',
       });
     },
   });
@@ -70,7 +81,7 @@ const Resources = () => {
       showToast({
         title: `Error deleting ${resourceSingular.toLowerCase()}`,
         description: error?.response?.data?.message || error.message,
-        type: 'error'
+        type: 'error',
       });
     },
   });
@@ -92,7 +103,9 @@ const Resources = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="page-header">
           <h1 className="page-title">{resourcePlural}</h1>
-          <p className="page-subtitle">Gestioneaza {resourcePlural.toLowerCase()} pentru programari</p>
+          <p className="page-subtitle">
+            Gestioneaza {resourcePlural.toLowerCase()} pentru programari
+          </p>
         </div>
         <button
           onClick={() => setIsCreating(true)}
@@ -120,7 +133,9 @@ const Resources = () => {
       {/* Create/Edit Form */}
       {(isCreating || editingResource) && (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">{editingResource ? `Edit ${resourceSingular}` : `Create New ${resourceSingular}`}</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            {editingResource ? `Edit ${resourceSingular}` : `Create New ${resourceSingular}`}
+          </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
@@ -199,7 +214,13 @@ const Resources = () => {
                 onClick={() => {
                   setIsCreating(false);
                   setEditingResource(null);
-                  setResourceForm({ name: '', type: 'workspace', description: '', capacity: '1', isActive: true });
+                  setResourceForm({
+                    name: '',
+                    type: 'workspace',
+                    description: '',
+                    capacity: '1',
+                    isActive: true,
+                  });
                 }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
               >
@@ -219,19 +240,35 @@ const Resources = () => {
         ) : resources.length === 0 ? (
           <div className="text-center py-12">
             <Boxes className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <p className="text-gray-600">{search ? `No ${resourcePlural.toLowerCase()} found` : `No ${resourcePlural.toLowerCase()} yet. Create your first ${resourceSingular.toLowerCase()}!`}</p>
+            <p className="text-gray-600">
+              {search
+                ? `No ${resourcePlural.toLowerCase()} found`
+                : `No ${resourcePlural.toLowerCase()} yet. Create your first ${resourceSingular.toLowerCase()}!`}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Capacity
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -243,14 +280,18 @@ const Resources = () => {
                         {resource.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{resource.description || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {resource.description || '-'}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{resource.capacity}</td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        resource.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          resource.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
                         {resource.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -273,7 +314,14 @@ const Resources = () => {
                         </button>
                         <button
                           onClick={async () => {
-                            if (await confirm({ title: 'Sterge resursa', text: `Esti sigur ca vrei sa stergi aceasta ${resourceSingular.toLowerCase()}?`, confirmText: 'Sterge', danger: true })) {
+                            if (
+                              await confirm({
+                                title: 'Sterge resursa',
+                                text: `Esti sigur ca vrei sa stergi aceasta ${resourceSingular.toLowerCase()}?`,
+                                confirmText: 'Sterge',
+                                danger: true,
+                              })
+                            ) {
                               deleteMutation.mutate(resource.id);
                             }
                           }}

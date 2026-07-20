@@ -3,6 +3,7 @@ const Handlebars = require('handlebars');
 const Brevo = require('@getbrevo/brevo');
 const logger = require('../../utils/logger');
 const { getRedisClient, isAvailable: isRedisAvailable } = require('../../lib/redis');
+const { getPlatformConfig } = require('../../config/platform');
 
 // Per-org email rate limit: 100 emails per hour
 const EMAIL_RATE_LIMIT = 100;
@@ -58,7 +59,9 @@ const initTransporter = () => {
 
   // Only create transporter if credentials are configured
   if (!config.auth.user || !config.auth.pass) {
-    logger.warn('Email service: SMTP credentials not configured. Emails will be logged but not sent.');
+    logger.warn(
+      'Email service: SMTP credentials not configured. Emails will be logged but not sent.'
+    );
     return null;
   }
 
@@ -82,18 +85,24 @@ const sendViaBrevo = async (to, subject, html, text) => {
     sendSmtpEmail.textContent = text;
   }
   sendSmtpEmail.sender = {
-    name: process.env.EMAIL_FROM_NAME || 'ForjaIt',
+    name: process.env.EMAIL_FROM_NAME || getPlatformConfig().name,
     email: process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@example.com',
   };
   sendSmtpEmail.to = [{ email: to }];
 
   try {
     const response = await api.sendTransacEmail(sendSmtpEmail);
-    logger.info(`Email sent via Brevo to ${to}, messageId: ${response.body?.messageId || response.messageId}`);
+    logger.info(
+      `Email sent via Brevo to ${to}, messageId: ${response.body?.messageId || response.messageId}`
+    );
     return response;
   } catch (error) {
     // Extract meaningful error from Brevo response
-    const errorMessage = error.body?.message || error.response?.body?.message || error.message || 'Unknown Brevo error';
+    const errorMessage =
+      error.body?.message ||
+      error.response?.body?.message ||
+      error.message ||
+      'Unknown Brevo error';
     const errorCode = error.body?.code || error.response?.body?.code || error.status || 'UNKNOWN';
     logger.error(`Brevo API error: ${errorCode} - ${errorMessage}`, {
       to,
@@ -124,7 +133,10 @@ const sendWithRetry = async (sendFn, ...args) => {
       lastError = err;
       if (attempt < EMAIL_MAX_RETRIES) {
         const delay = EMAIL_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
-        logger.warn(`Email attempt ${attempt}/${EMAIL_MAX_RETRIES} failed, retrying in ${delay}ms`, { error: err.message });
+        logger.warn(
+          `Email attempt ${attempt}/${EMAIL_MAX_RETRIES} failed, retrying in ${delay}ms`,
+          { error: err.message }
+        );
         await sleep(delay);
       }
     }
@@ -163,7 +175,13 @@ const sendViaSMTP = async (to, subject, html, text) => {
  */
 const compileTemplate = (templateString, data) => {
   const template = Handlebars.compile(templateString);
-  return template(data);
+  const platform = getPlatformConfig();
+  return template({
+    platformName: platform.name,
+    platformUrl: platform.url,
+    platformContactEmail: platform.contactEmail,
+    ...data,
+  });
 };
 
 /**
@@ -172,7 +190,7 @@ const compileTemplate = (templateString, data) => {
  */
 const SYSTEM_TEMPLATES = {
   'crm-password-reset': {
-    subject: 'Resetare parola - ForjaIt',
+    subject: 'Resetare parola - {{platformName}}',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -196,7 +214,7 @@ const SYSTEM_TEMPLATES = {
     </div>
     <div class="content">
       <p>Buna ziua, {{userName}}!</p>
-      <p>Am primit o cerere de resetare a parolei pentru contul tau ForjaIt.</p>
+      <p>Am primit o cerere de resetare a parolei pentru contul tau {{platformName}}.</p>
       <div class="info">
         <p>Click pe butonul de mai jos pentru a-ti reseta parola:</p>
         <a href="{{resetLink}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Reseteaza Parola</a>
@@ -205,7 +223,7 @@ const SYSTEM_TEMPLATES = {
       <p>Daca nu ai solicitat resetarea parolei, ignora acest email.</p>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platformă de management</p>
+      <p>{{platformName}} - Platformă de management</p>
       <p>Acest email a fost trimis automat. Te rugăm să nu răspunzi la acest mesaj.</p>
     </div>
   </div>
@@ -247,7 +265,7 @@ const SYSTEM_TEMPLATES = {
       </div>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
       <p>Acest email a fost trimis automat. Te rugam sa nu raspunzi la acest mesaj.</p>
     </div>
   </div>
@@ -256,7 +274,7 @@ const SYSTEM_TEMPLATES = {
 `,
   },
   'org-idle-warning': {
-    subject: 'Contul tau ForjaIt este inactiv',
+    subject: 'Contul tau {{platformName}} este inactiv',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -285,11 +303,11 @@ const SYSTEM_TEMPLATES = {
       </div>
       <p>Autentifica-te pentru a-ti mentine contul activ:</p>
       <div style="text-align: center;">
-        <a href="{{loginUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Acceseaza ForjaIt</a>
+        <a href="{{loginUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Acceseaza {{platformName}}</a>
       </div>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
       <p>Acest email a fost trimis automat. Te rugam sa nu raspunzi la acest mesaj.</p>
     </div>
   </div>
@@ -335,7 +353,7 @@ const SYSTEM_TEMPLATES = {
       <p style="margin-top: 15px; font-size: 13px; color: #6b7280;">Dupa expirare, contul va fi trecut pe planul gratuit cu functionalitati limitate.</p>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
     </div>
   </div>
 </body>
@@ -343,7 +361,7 @@ const SYSTEM_TEMPLATES = {
 `,
   },
   'subscription-activated': {
-    subject: 'Abonamentul tau ForjaIt a fost activat!',
+    subject: 'Abonamentul tau {{platformName}} a fost activat!',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -379,7 +397,7 @@ const SYSTEM_TEMPLATES = {
       </div>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
     </div>
   </div>
 </body>
@@ -387,7 +405,7 @@ const SYSTEM_TEMPLATES = {
 `,
   },
   'subscription-cancelled': {
-    subject: 'Abonamentul tau ForjaIt a fost anulat',
+    subject: 'Abonamentul tau {{platformName}} a fost anulat',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -421,7 +439,7 @@ const SYSTEM_TEMPLATES = {
       </div>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
     </div>
   </div>
 </body>
@@ -429,7 +447,7 @@ const SYSTEM_TEMPLATES = {
 `,
   },
   'subscription-renewed': {
-    subject: 'Plata abonamentului ForjaIt procesata cu succes',
+    subject: 'Plata abonamentului {{platformName}} procesata cu succes',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -460,7 +478,7 @@ const SYSTEM_TEMPLATES = {
       </div>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
     </div>
   </div>
 </body>
@@ -501,7 +519,7 @@ const SYSTEM_TEMPLATES = {
       </div>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
     </div>
   </div>
 </body>
@@ -542,7 +560,7 @@ const SYSTEM_TEMPLATES = {
       </div>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platforma de management</p>
+      <p>{{platformName}} - Platforma de management</p>
     </div>
   </div>
 </body>
@@ -550,7 +568,7 @@ const SYSTEM_TEMPLATES = {
 `,
   },
   'crm-welcome': {
-    subject: 'Bine ai venit in ForjaIt!',
+    subject: 'Bine ai venit in {{platformName}}!',
     bodyHtml: `
 <!DOCTYPE html>
 <html>
@@ -573,19 +591,19 @@ const SYSTEM_TEMPLATES = {
     </div>
     <div class="content">
       <p>Buna ziua, {{userName}}!</p>
-      <p>Contul tau ForjaIt a fost creat cu succes.</p>
+      <p>Contul tau {{platformName}} a fost creat cu succes.</p>
       <div class="info">
         <p><strong>Email:</strong> {{email}}</p>
         {{#if organizationName}}<p><strong>Organizatie:</strong> {{organizationName}}</p>{{/if}}
       </div>
       <p>Poti accesa platforma folosind butonul de mai jos:</p>
       <div style="text-align: center;">
-        <a href="{{loginUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Acceseaza ForjaIt</a>
+        <a href="{{loginUrl}}" class="button" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 15px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;">Acceseaza {{platformName}}</a>
       </div>
       <p style="margin-top: 20px;">Daca ai intrebari sau ai nevoie de ajutor, echipa noastra de suport iti sta la dispozitie.</p>
     </div>
     <div class="footer">
-      <p>ForjaIt - Platformă de management</p>
+      <p>{{platformName}} - Platformă de management</p>
       <p>Acest email a fost trimis automat. Te rugăm să nu răspunzi la acest mesaj.</p>
     </div>
   </div>
@@ -620,7 +638,9 @@ const sendSystemEmail = async (templateName, templateData, to) => {
   const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 
   if (!brevoConfigured && !smtpConfigured) {
-    logger.info(`System email: Would send to ${to} with subject "${subject}" (No email provider configured)`);
+    logger.info(
+      `System email: Would send to ${to} with subject "${subject}" (No email provider configured)`
+    );
     return { success: true, simulated: true };
   }
 
@@ -678,87 +698,149 @@ const sendCrmWelcomeEmail = async ({ email, userName, organizationName, loginUrl
 const sendOrgSuspendedEmail = async ({ email, userName, organizationName, reason, billingUrl }) => {
   if (!email) return null;
 
-  return sendSystemEmail('org-suspended', {
-    userName: userName || 'Administrator',
-    organizationName,
-    reason: reason || 'Plata nu a putut fi procesata dupa mai multe incercari.',
-    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
-  }, email);
+  return sendSystemEmail(
+    'org-suspended',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      reason: reason || 'Plata nu a putut fi procesata dupa mai multe incercari.',
+      billingUrl:
+        billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+    },
+    email
+  );
 };
 
 /**
  * Send idle account warning email to admin
  */
-const sendIdleWarningEmail = async ({ email, userName, organizationName, idleDays, plan, loginUrl }) => {
+const sendIdleWarningEmail = async ({
+  email,
+  userName,
+  organizationName,
+  idleDays,
+  plan,
+  loginUrl,
+}) => {
   if (!email) return null;
 
-  return sendSystemEmail('org-idle-warning', {
-    userName: userName || 'Administrator',
-    organizationName,
-    idleDays: idleDays || 180,
-    plan: plan || 'FREE',
-    loginUrl: loginUrl || process.env.FRONTEND_URL || 'http://localhost:5173',
-  }, email);
+  return sendSystemEmail(
+    'org-idle-warning',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      idleDays: idleDays || 180,
+      plan: plan || 'FREE',
+      loginUrl: loginUrl || process.env.FRONTEND_URL || 'http://localhost:5173',
+    },
+    email
+  );
 };
 
 /**
  * Send trial ending warning email to org admin
  */
-const sendTrialEndingEmail = async ({ email, userName, organizationName, plan, daysLeft, trialEndDate, billingUrl }) => {
+const sendTrialEndingEmail = async ({
+  email,
+  userName,
+  organizationName,
+  plan,
+  daysLeft,
+  trialEndDate,
+  billingUrl,
+}) => {
   if (!email) return null;
 
-  return sendSystemEmail('trial-ending', {
-    userName: userName || 'Administrator',
-    organizationName,
-    plan: plan || 'PROFESSIONAL',
-    daysLeft: daysLeft || 3,
-    trialEndDate: trialEndDate || 'N/A',
-    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
-  }, email);
+  return sendSystemEmail(
+    'trial-ending',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      plan: plan || 'PROFESSIONAL',
+      daysLeft: daysLeft || 3,
+      trialEndDate: trialEndDate || 'N/A',
+      billingUrl:
+        billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+    },
+    email
+  );
 };
 
 /**
  * Send subscription activated email to org admin
  */
-const sendSubscriptionActivatedEmail = async ({ email, userName, organizationName, plan, amount, nextBillingDate, billingUrl }) => {
+const sendSubscriptionActivatedEmail = async ({
+  email,
+  userName,
+  organizationName,
+  plan,
+  amount,
+  nextBillingDate,
+  billingUrl,
+}) => {
   if (!email) return null;
 
-  return sendSystemEmail('subscription-activated', {
-    userName: userName || 'Administrator',
-    organizationName,
-    plan: plan || 'PROFESSIONAL',
-    amount: amount || 'N/A',
-    nextBillingDate: nextBillingDate || 'N/A',
-    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
-  }, email);
+  return sendSystemEmail(
+    'subscription-activated',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      plan: plan || 'PROFESSIONAL',
+      amount: amount || 'N/A',
+      nextBillingDate: nextBillingDate || 'N/A',
+      billingUrl:
+        billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+    },
+    email
+  );
 };
 
 /**
  * Send subscription cancelled email to org admin
  */
-const sendSubscriptionCancelledEmail = async ({ email, userName, organizationName, billingUrl }) => {
+const sendSubscriptionCancelledEmail = async ({
+  email,
+  userName,
+  organizationName,
+  billingUrl,
+}) => {
   if (!email) return null;
 
-  return sendSystemEmail('subscription-cancelled', {
-    userName: userName || 'Administrator',
-    organizationName,
-    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing`,
-  }, email);
+  return sendSystemEmail(
+    'subscription-cancelled',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing`,
+    },
+    email
+  );
 };
 
 /**
  * Send subscription renewed (payment succeeded) email to org admin
  */
-const sendSubscriptionRenewedEmail = async ({ email, userName, organizationName, plan, amount, nextBillingDate }) => {
+const sendSubscriptionRenewedEmail = async ({
+  email,
+  userName,
+  organizationName,
+  plan,
+  amount,
+  nextBillingDate,
+}) => {
   if (!email) return null;
 
-  return sendSystemEmail('subscription-renewed', {
-    userName: userName || 'Administrator',
-    organizationName,
-    plan: plan || 'PROFESSIONAL',
-    amount: amount || 'N/A',
-    nextBillingDate: nextBillingDate || 'N/A',
-  }, email);
+  return sendSystemEmail(
+    'subscription-renewed',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      plan: plan || 'PROFESSIONAL',
+      amount: amount || 'N/A',
+      nextBillingDate: nextBillingDate || 'N/A',
+    },
+    email
+  );
 };
 
 /**
@@ -767,11 +849,16 @@ const sendSubscriptionRenewedEmail = async ({ email, userName, organizationName,
 const sendTrialExpiredEmail = async ({ email, userName, organizationName, billingUrl }) => {
   if (!email) return null;
 
-  return sendSystemEmail('trial-expired', {
-    userName: userName || 'Administrator',
-    organizationName,
-    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
-  }, email);
+  return sendSystemEmail(
+    'trial-expired',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      billingUrl:
+        billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+    },
+    email
+  );
 };
 
 /**
@@ -780,11 +867,16 @@ const sendTrialExpiredEmail = async ({ email, userName, organizationName, billin
 const sendPaymentRequiredEmail = async ({ email, userName, organizationName, billingUrl }) => {
   if (!email) return null;
 
-  return sendSystemEmail('payment-required', {
-    userName: userName || 'Administrator',
-    organizationName,
-    billingUrl: billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
-  }, email);
+  return sendSystemEmail(
+    'payment-required',
+    {
+      userName: userName || 'Administrator',
+      organizationName,
+      billingUrl:
+        billingUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/billing`,
+    },
+    email
+  );
 };
 
 /**
@@ -917,7 +1009,7 @@ const getDefaultTemplate = (templateName) => {
 </html>
 `,
     },
-    'welcome': {
+    welcome: {
       subject: 'Bine ai venit la {{companyName}}!',
       bodyHtml: `
 <!DOCTYPE html>
@@ -1378,19 +1470,28 @@ const getDefaultTemplate = (templateName) => {
  */
 const EMAIL_REGEX = /^[^\s@<>()[\]\\,;:]+@[^\s@<>()[\]\\,;:]+\.[^\s@<>()[\]\\,;:]+$/;
 
-const sendEmail = async (prisma, {
-  to,
-  subject,
-  html,
-  text,
-  template,
-  templateData,
-  recipientType = 'CLIENT',
-  recipientId = null,
-  organizationId,
-}) => {
+const sendEmail = async (
+  prisma,
+  {
+    to,
+    subject,
+    html,
+    text,
+    template,
+    templateData,
+    recipientType = 'CLIENT',
+    recipientId = null,
+    organizationId,
+  }
+) => {
   // Validate email to prevent header injection and bad addresses
-  if (!to || typeof to !== 'string' || !EMAIL_REGEX.test(to) || to.includes('\n') || to.includes('\r')) {
+  if (
+    !to ||
+    typeof to !== 'string' ||
+    !EMAIL_REGEX.test(to) ||
+    to.includes('\n') ||
+    to.includes('\r')
+  ) {
     logger.warn('Email rejected: invalid recipient address', { to, template });
     return null;
   }
@@ -1405,7 +1506,11 @@ const sendEmail = async (prisma, {
         await redis.expire(rateKey, EMAIL_RATE_WINDOW);
       }
       if (count > EMAIL_RATE_LIMIT) {
-        logger.warn('Email rate limit exceeded', { organizationId, count, limit: EMAIL_RATE_LIMIT });
+        logger.warn('Email rate limit exceeded', {
+          organizationId,
+          count,
+          limit: EMAIL_RATE_LIMIT,
+        });
         return null;
       }
     } catch (err) {
@@ -1474,7 +1579,9 @@ const sendEmail = async (prisma, {
   const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 
   if (!brevoConfigured && !smtpConfigured) {
-    logger.info(`Email service: Would send email to ${to} with subject "${finalSubject}" (No email provider configured)`);
+    logger.info(
+      `Email service: Would send email to ${to} with subject "${finalSubject}" (No email provider configured)`
+    );
     return emailLog;
   }
 
@@ -1520,23 +1627,30 @@ const sendEmail = async (prisma, {
 /**
  * Send appointment reminder email
  */
-const sendAppointmentReminder = async (prisma, { appointment, client, companySettings, organizationId }) => {
+const sendAppointmentReminder = async (
+  prisma,
+  { appointment, client, companySettings, organizationId }
+) => {
   if (!client?.email) {
     logger.warn(`Cannot send appointment reminder: client has no email`);
     return null;
   }
 
-  const clientName = client.type === 'SRL'
-    ? client.companyName
-    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+  const clientName =
+    client.type === 'SRL'
+      ? client.companyName
+      : `${client.firstName || ''} ${client.lastName || ''}`.trim();
 
   const templateData = {
     clientName: clientName || 'Client',
     date: new Date(appointment.scheduledStart).toLocaleDateString('ro-RO'),
-    time: new Date(appointment.scheduledStart).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
+    time: new Date(appointment.scheduledStart).toLocaleTimeString('ro-RO', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
     location: appointment.location,
     description: appointment.description,
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1553,15 +1667,19 @@ const sendAppointmentReminder = async (prisma, { appointment, client, companySet
 /**
  * Send invoice created email
  */
-const sendInvoiceCreatedEmail = async (prisma, { invoice, client, companySettings, organizationId }) => {
+const sendInvoiceCreatedEmail = async (
+  prisma,
+  { invoice, client, companySettings, organizationId }
+) => {
   if (!client?.email) {
     logger.warn(`Cannot send invoice email: client has no email`);
     return null;
   }
 
-  const clientName = client.type === 'SRL'
-    ? client.companyName
-    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+  const clientName =
+    client.type === 'SRL'
+      ? client.companyName
+      : `${client.firstName || ''} ${client.lastName || ''}`.trim();
 
   const templateData = {
     clientName: clientName || 'Client',
@@ -1570,7 +1688,7 @@ const sendInvoiceCreatedEmail = async (prisma, { invoice, client, companySetting
     dueDate: new Date(invoice.dueDate).toLocaleDateString('ro-RO'),
     total: Number(invoice.total).toFixed(2),
     pdfUrl: invoice.pdfUrl,
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1587,7 +1705,10 @@ const sendInvoiceCreatedEmail = async (prisma, { invoice, client, companySetting
 /**
  * Send welcome email to new client
  */
-const sendVerificationEmail = async (prisma, { email, clientName, verificationLink, companySettings, organizationId }) => {
+const sendVerificationEmail = async (
+  prisma,
+  { email, clientName, verificationLink, companySettings, organizationId }
+) => {
   if (!email) {
     logger.warn(`Cannot send verification email: no email provided`);
     return null;
@@ -1596,7 +1717,7 @@ const sendVerificationEmail = async (prisma, { email, clientName, verificationLi
   const templateData = {
     clientName: clientName || 'Client',
     verificationLink,
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1615,13 +1736,14 @@ const sendWelcomeEmail = async (prisma, { client, companySettings, organizationI
     return null;
   }
 
-  const clientName = client.type === 'SRL'
-    ? client.companyName
-    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+  const clientName =
+    client.type === 'SRL'
+      ? client.companyName
+      : `${client.firstName || ''} ${client.lastName || ''}`.trim();
 
   const templateData = {
     clientName: clientName || 'Client',
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1638,7 +1760,10 @@ const sendWelcomeEmail = async (prisma, { client, companySettings, organizationI
 /**
  * Send password reset email
  */
-const sendPasswordResetEmail = async (prisma, { email, clientName, resetLink, expiresIn, companySettings, organizationId }) => {
+const sendPasswordResetEmail = async (
+  prisma,
+  { email, clientName, resetLink, expiresIn, companySettings, organizationId }
+) => {
   if (!email) {
     logger.warn(`Cannot send password reset email: no email provided`);
     return null;
@@ -1648,7 +1773,7 @@ const sendPasswordResetEmail = async (prisma, { email, clientName, resetLink, ex
     clientName: clientName || 'Client',
     resetLink,
     expiresIn: expiresIn || '1 ora',
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1664,25 +1789,33 @@ const sendPasswordResetEmail = async (prisma, { email, clientName, resetLink, ex
 /**
  * Send appointment cancelled email
  */
-const sendAppointmentCancelledEmail = async (prisma, { appointment, client, cancellationReason, companySettings, organizationId }) => {
+const sendAppointmentCancelledEmail = async (
+  prisma,
+  { appointment, client, cancellationReason, companySettings, organizationId }
+) => {
   if (!client?.email) {
     logger.warn(`Cannot send appointment cancelled email: client has no email`);
     return null;
   }
 
-  const clientName = client.type === 'SRL'
-    ? client.companyName
-    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+  const clientName =
+    client.type === 'SRL'
+      ? client.companyName
+      : `${client.firstName || ''} ${client.lastName || ''}`.trim();
 
   const appointmentDate = new Date(appointment.scheduledStart);
 
   const templateData = {
     clientName: clientName || 'Client',
-    date: appointmentDate.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }),
+    date: appointmentDate.toLocaleDateString('ro-RO', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }),
     time: appointmentDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
     location: appointment.location,
     cancellationReason: cancellationReason || appointment.cancellationReason,
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1699,15 +1832,19 @@ const sendAppointmentCancelledEmail = async (prisma, { appointment, client, canc
 /**
  * Send appointment rescheduled email
  */
-const sendAppointmentRescheduledEmail = async (prisma, { appointment, client, oldDate, oldTime, companySettings, organizationId }) => {
+const sendAppointmentRescheduledEmail = async (
+  prisma,
+  { appointment, client, oldDate, oldTime, companySettings, organizationId }
+) => {
   if (!client?.email) {
     logger.warn(`Cannot send appointment rescheduled email: client has no email`);
     return null;
   }
 
-  const clientName = client.type === 'SRL'
-    ? client.companyName
-    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+  const clientName =
+    client.type === 'SRL'
+      ? client.companyName
+      : `${client.firstName || ''} ${client.lastName || ''}`.trim();
 
   const newDate = new Date(appointment.scheduledStart);
 
@@ -1715,10 +1852,14 @@ const sendAppointmentRescheduledEmail = async (prisma, { appointment, client, ol
     clientName: clientName || 'Client',
     oldDate: oldDate || 'N/A',
     oldTime: oldTime || 'N/A',
-    newDate: newDate.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }),
+    newDate: newDate.toLocaleDateString('ro-RO', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }),
     newTime: newDate.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }),
     location: appointment.location,
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1735,15 +1876,19 @@ const sendAppointmentRescheduledEmail = async (prisma, { appointment, client, ol
 /**
  * Send invoice overdue email to client
  */
-const sendInvoiceOverdueEmail = async (prisma, { invoice, client, daysOverdue, companySettings, organizationId }) => {
+const sendInvoiceOverdueEmail = async (
+  prisma,
+  { invoice, client, daysOverdue, companySettings, organizationId }
+) => {
   if (!client?.email) {
     logger.warn('Cannot send invoice overdue email: client has no email');
     return null;
   }
 
-  const clientName = client.type === 'SRL'
-    ? client.companyName
-    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+  const clientName =
+    client.type === 'SRL'
+      ? client.companyName
+      : `${client.firstName || ''} ${client.lastName || ''}`.trim();
 
   const templateData = {
     clientName: clientName || 'Client',
@@ -1751,7 +1896,7 @@ const sendInvoiceOverdueEmail = async (prisma, { invoice, client, daysOverdue, c
     dueDate: new Date(invoice.dueDate).toLocaleDateString('ro-RO'),
     daysOverdue: daysOverdue || 1,
     total: Number(invoice.total).toFixed(2),
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1768,7 +1913,10 @@ const sendInvoiceOverdueEmail = async (prisma, { invoice, client, daysOverdue, c
 /**
  * Send task assigned email to CRM user
  */
-const sendTaskAssignedEmail = async (prisma, { user, task, assignedBy, companySettings, organizationId }) => {
+const sendTaskAssignedEmail = async (
+  prisma,
+  { user, task, assignedBy, companySettings, organizationId }
+) => {
   if (!user?.email) {
     logger.warn('Cannot send task assigned email: user has no email');
     return null;
@@ -1786,7 +1934,7 @@ const sendTaskAssignedEmail = async (prisma, { user, task, assignedBy, companySe
     dueDate: task.dueDate ? new Date(task.dueDate).toLocaleDateString('ro-RO') : null,
     assignedBy: assignedBy || null,
     taskUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/tasks`,
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
   };
 
   return sendEmail(prisma, {
@@ -1802,15 +1950,19 @@ const sendTaskAssignedEmail = async (prisma, { user, task, assignedBy, companySe
 /**
  * Send payment received email
  */
-const sendPaymentReceivedEmail = async (prisma, { client, amount, paymentDate, paymentMethod, invoiceNumber, companySettings, organizationId }) => {
+const sendPaymentReceivedEmail = async (
+  prisma,
+  { client, amount, paymentDate, paymentMethod, invoiceNumber, companySettings, organizationId }
+) => {
   if (!client?.email) {
     logger.warn(`Cannot send payment received email: client has no email`);
     return null;
   }
 
-  const clientName = client.type === 'SRL'
-    ? client.companyName
-    : `${client.firstName || ''} ${client.lastName || ''}`.trim();
+  const clientName =
+    client.type === 'SRL'
+      ? client.companyName
+      : `${client.firstName || ''} ${client.lastName || ''}`.trim();
 
   const paymentMethods = {
     CASH: 'Numerar',
@@ -1822,12 +1974,13 @@ const sendPaymentReceivedEmail = async (prisma, { client, amount, paymentDate, p
   const templateData = {
     clientName: clientName || 'Client',
     amount: typeof amount === 'number' ? amount.toFixed(2) : amount,
-    paymentDate: paymentDate instanceof Date
-      ? paymentDate.toLocaleDateString('ro-RO')
-      : new Date(paymentDate).toLocaleDateString('ro-RO'),
+    paymentDate:
+      paymentDate instanceof Date
+        ? paymentDate.toLocaleDateString('ro-RO')
+        : new Date(paymentDate).toLocaleDateString('ro-RO'),
     paymentMethod: paymentMethods[paymentMethod] || paymentMethod,
     invoiceNumber,
-    companyName: companySettings?.name || 'ForjaIt',
+    companyName: companySettings?.name || getPlatformConfig().name,
     companyPhone: companySettings?.phone,
   };
 
@@ -1907,7 +2060,10 @@ const getOrCreateTemplate = async (prisma, { organizationId, name }) => {
 /**
  * Update email template
  */
-const updateTemplate = async (prisma, { organizationId, name, subject, bodyHtml, bodyText, isActive }) => {
+const updateTemplate = async (
+  prisma,
+  { organizationId, name, subject, bodyHtml, bodyText, isActive }
+) => {
   return prisma.emailTemplate.upsert({
     where: {
       organizationId_name: { organizationId, name },

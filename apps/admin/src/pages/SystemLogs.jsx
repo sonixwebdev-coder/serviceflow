@@ -74,7 +74,11 @@ export default function SystemLogs() {
           className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate nivelurile</option>
-          {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+          {LEVELS.map((l) => (
+            <option key={l} value={l}>
+              {l}
+            </option>
+          ))}
         </select>
         <select
           value={filters.category}
@@ -82,7 +86,11 @@ export default function SystemLogs() {
           className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate categoriile</option>
-          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -103,14 +111,30 @@ export default function SystemLogs() {
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50 text-left">
                 <th className="w-8 px-4 py-3" />
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Timestamp</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Nivel</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Categorie</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Mesaj</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Cale</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Metoda</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Durata</th>
-                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">IP</th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Timestamp
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Nivel
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Categorie
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Mesaj
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Cale
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Metoda
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Durata
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  IP
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -178,17 +202,20 @@ function LogRow({ log, isExpanded, onToggle }) {
         onClick={hasDetails ? onToggle : undefined}
       >
         <td className="px-4 py-3">
-          {hasDetails && (
-            isExpanded
-              ? <ChevronDown className="h-4 w-4 text-gray-400" />
-              : <ChevronRight className="h-4 w-4 text-gray-400" />
-          )}
+          {hasDetails &&
+            (isExpanded ? (
+              <ChevronDown className="h-4 w-4 text-gray-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+            ))}
         </td>
         <td className="px-4 py-3 whitespace-nowrap text-xs tabular-nums text-gray-500">
           {new Date(log.createdAt).toLocaleString('ro-RO')}
         </td>
         <td className="px-4 py-3">
-          <span className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold ${LEVEL_STYLES[log.level] || LEVEL_STYLES.INFO}`}>
+          <span
+            className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-semibold ${LEVEL_STYLES[log.level] || LEVEL_STYLES.INFO}`}
+          >
             {log.level}
           </span>
         </td>
@@ -207,7 +234,9 @@ function LogRow({ log, isExpanded, onToggle }) {
             <div className="space-y-3">
               {log.message && (
                 <div>
-                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Mesaj complet</p>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    Mesaj complet
+                  </p>
                   <pre className="whitespace-pre-wrap rounded-xl bg-gray-900 p-4 text-xs text-gray-200 leading-relaxed">
                     {log.message}
                   </pre>
@@ -215,7 +244,9 @@ function LogRow({ log, isExpanded, onToggle }) {
               )}
               {log.stack && (
                 <div>
-                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Stack Trace</p>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    Stack Trace
+                  </p>
                   <pre className="whitespace-pre-wrap rounded-xl bg-gray-900 p-4 text-xs text-red-300 overflow-x-auto max-h-64 leading-relaxed">
                     {log.stack}
                   </pre>
@@ -223,7 +254,9 @@ function LogRow({ log, isExpanded, onToggle }) {
               )}
               {log.data && (
                 <div>
-                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Date aditionale</p>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    Date aditionale
+                  </p>
                   <pre className="whitespace-pre-wrap rounded-xl bg-gray-900 p-4 text-xs text-emerald-300 overflow-x-auto max-h-64 leading-relaxed">
                     {typeof log.data === 'string' ? log.data : JSON.stringify(log.data, null, 2)}
                   </pre>

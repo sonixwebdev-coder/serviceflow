@@ -43,7 +43,9 @@ export const searchClients = async (query, limit = 10) => {
  * Search appointments
  */
 export const searchAppointments = async (query, limit = 10) => {
-  const response = await api.get(`/search/appointments?q=${encodeURIComponent(query)}&limit=${limit}`);
+  const response = await api.get(
+    `/search/appointments?q=${encodeURIComponent(query)}&limit=${limit}`
+  );
   return response.data;
 };
 

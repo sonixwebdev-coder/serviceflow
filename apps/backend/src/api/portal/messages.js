@@ -18,8 +18,16 @@ const { z } = require('zod');
 
 const portalMessageSchema = z.object({
   body: z.string().min(1).max(5000),
-  type: z.preprocess((v) => (typeof v === 'string' ? v.toUpperCase() : v), z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE'])).optional().default('TEXT'),
-  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  type: z
+    .preprocess(
+      (v) => (typeof v === 'string' ? v.toUpperCase() : v),
+      z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE'])
+    )
+    .optional()
+    .default('TEXT'),
+  metadata: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .optional(),
 });
 
 // Configure multer for file uploads
@@ -62,13 +70,7 @@ const fileFilter = (req, file, cb) => {
 
 const voiceFilter = (req, file, cb) => {
   // Allowed voice types
-  const allowedTypes = [
-    'audio/webm',
-    'audio/mp4',
-    'audio/mpeg',
-    'audio/ogg',
-    'audio/wav',
-  ];
+  const allowedTypes = ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg', 'audio/wav'];
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -216,7 +218,9 @@ router.post(
         metadata: {
           ...message.metadata,
           isVoice: true,
-          duration: req.body.duration ? Math.min(Math.max(0, parseInt(req.body.duration, 10) || 0), 600) : null,
+          duration: req.body.duration
+            ? Math.min(Math.max(0, parseInt(req.body.duration, 10) || 0), 600)
+            : null,
         },
       },
     });

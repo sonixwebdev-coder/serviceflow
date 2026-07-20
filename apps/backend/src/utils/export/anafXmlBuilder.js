@@ -55,9 +55,7 @@ function buildSupplierParty(company) {
     'cac:PartyTaxScheme': {
       // BT-31: VAT identifier.  RO + CUI for VAT payers, just CUI otherwise.
       // For PFA without CUI, use CNP prefixed with RO per ANAF guidance.
-      'cbc:CompanyID': isPFA
-        ? (vat.raw || (company.cnp ? `RO${company.cnp}` : ''))
-        : (vat.raw || ''),
+      'cbc:CompanyID': isPFA ? vat.raw || (company.cnp ? `RO${company.cnp}` : '') : vat.raw || '',
       'cac:TaxScheme': {
         'cbc:ID': 'VAT',
       },
@@ -65,9 +63,7 @@ function buildSupplierParty(company) {
     'cac:PartyLegalEntity': {
       'cbc:RegistrationName': company.legalName || company.companyName || company.name || '',
       // BT-30: Legal registration. J-number for SRL, or CUI/CNP for PFA.
-      'cbc:CompanyID': isPFA
-        ? (vat.numeric || company.cnp || '')
-        : (company.registrationNumber || ''),
+      'cbc:CompanyID': isPFA ? vat.numeric || company.cnp || '' : company.registrationNumber || '',
     },
   };
 
@@ -89,7 +85,7 @@ function buildSupplierParty(company) {
 function buildCustomerParty(client) {
   const isBusiness = client.type === 'SRL';
   const displayName = isBusiness
-    ? (client.companyName || '')
+    ? client.companyName || ''
     : `${client.firstName || ''} ${client.lastName || ''}`.trim();
   const vat = parseRomanianVat(client.vatNumber);
 
@@ -144,12 +140,12 @@ function buildInvoiceLine(item, index, taxRate) {
   return {
     'cbc:ID': String(index + 1),
     'cbc:InvoicedQuantity': {
-      '_': formatDecimal(quantity, 3),
-      '$': { 'unitCode': 'EA' },
+      _: formatDecimal(quantity, 3),
+      $: { unitCode: 'EA' },
     },
     'cbc:LineExtensionAmount': {
-      '_': formatDecimal(lineTotal, 2),
-      '$': { 'currencyID': 'RON' },
+      _: formatDecimal(lineTotal, 2),
+      $: { currencyID: 'RON' },
     },
     'cac:Item': {
       'cbc:Name': item.name || 'Serviciu',
@@ -162,8 +158,8 @@ function buildInvoiceLine(item, index, taxRate) {
     },
     'cac:Price': {
       'cbc:PriceAmount': {
-        '_': formatDecimal(unitPrice, 4),
-        '$': { 'currencyID': 'RON' },
+        _: formatDecimal(unitPrice, 4),
+        $: { currencyID: 'RON' },
       },
     },
   };
@@ -209,14 +205,15 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
 
     // Build the complete UBL structure
     const ublInvoice = {
-      'Invoice': {
-        '$': {
-          'xmlns': 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
+      Invoice: {
+        $: {
+          xmlns: 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
           'xmlns:cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
           'xmlns:cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
         },
         'cbc:UBLVersionID': '2.1',
-        'cbc:CustomizationID': 'urn:cen.eu:en16931:2017#compliant#urn:efactura.mfinante.ro:CIUS-RO:1.0.1',
+        'cbc:CustomizationID':
+          'urn:cen.eu:en16931:2017#compliant#urn:efactura.mfinante.ro:CIUS-RO:1.0.1',
         'cbc:ID': invoiceData.invoiceNumber,
         'cbc:IssueDate': formatDate(invoiceData.issueDate),
         'cbc:DueDate': formatDate(invoiceData.dueDate),
@@ -229,38 +226,40 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
         'cac:PaymentMeans': paymentMeans,
 
         // Document-level allowance (loyalty discount) - BT-92 / BG-20
-        ...(loyaltyDiscount > 0 ? {
-          'cac:AllowanceCharge': {
-            'cbc:ChargeIndicator': 'false',
-            'cbc:AllowanceChargeReasonCode': '95',
-            'cbc:AllowanceChargeReason': loyaltyTierAtTime
-              ? `Reducere fidelitate ${loyaltyTierAtTime}`
-              : 'Reducere fidelitate',
-            'cbc:Amount': {
-              '_': formatDecimal(loyaltyDiscount, 2),
-              '$': { 'currencyID': 'RON' },
-            },
-            'cac:TaxCategory': {
-              'cbc:ID': 'S',
-              'cbc:Percent': formatDecimal(taxRate, 2),
-              'cac:TaxScheme': { 'cbc:ID': 'VAT' },
-            },
-          },
-        } : {}),
+        ...(loyaltyDiscount > 0
+          ? {
+              'cac:AllowanceCharge': {
+                'cbc:ChargeIndicator': 'false',
+                'cbc:AllowanceChargeReasonCode': '95',
+                'cbc:AllowanceChargeReason': loyaltyTierAtTime
+                  ? `Reducere fidelitate ${loyaltyTierAtTime}`
+                  : 'Reducere fidelitate',
+                'cbc:Amount': {
+                  _: formatDecimal(loyaltyDiscount, 2),
+                  $: { currencyID: 'RON' },
+                },
+                'cac:TaxCategory': {
+                  'cbc:ID': 'S',
+                  'cbc:Percent': formatDecimal(taxRate, 2),
+                  'cac:TaxScheme': { 'cbc:ID': 'VAT' },
+                },
+              },
+            }
+          : {}),
 
         'cac:TaxTotal': {
           'cbc:TaxAmount': {
-            '_': formatDecimal(tax, 2),
-            '$': { 'currencyID': 'RON' },
+            _: formatDecimal(tax, 2),
+            $: { currencyID: 'RON' },
           },
           'cac:TaxSubtotal': {
             'cbc:TaxableAmount': {
-              '_': formatDecimal(taxableBase, 2),
-              '$': { 'currencyID': 'RON' },
+              _: formatDecimal(taxableBase, 2),
+              $: { currencyID: 'RON' },
             },
             'cbc:TaxAmount': {
-              '_': formatDecimal(tax, 2),
-              '$': { 'currencyID': 'RON' },
+              _: formatDecimal(tax, 2),
+              $: { currencyID: 'RON' },
             },
             'cac:TaxCategory': {
               'cbc:ID': 'S',
@@ -272,26 +271,28 @@ function buildUBLInvoice(invoiceData, companyData, clientData) {
 
         'cac:LegalMonetaryTotal': {
           'cbc:LineExtensionAmount': {
-            '_': formatDecimal(subtotal, 2),
-            '$': { 'currencyID': 'RON' },
+            _: formatDecimal(subtotal, 2),
+            $: { currencyID: 'RON' },
           },
-          ...(loyaltyDiscount > 0 ? {
-            'cbc:AllowanceTotalAmount': {
-              '_': formatDecimal(loyaltyDiscount, 2),
-              '$': { 'currencyID': 'RON' },
-            },
-          } : {}),
+          ...(loyaltyDiscount > 0
+            ? {
+                'cbc:AllowanceTotalAmount': {
+                  _: formatDecimal(loyaltyDiscount, 2),
+                  $: { currencyID: 'RON' },
+                },
+              }
+            : {}),
           'cbc:TaxExclusiveAmount': {
-            '_': formatDecimal(taxableBase, 2),
-            '$': { 'currencyID': 'RON' },
+            _: formatDecimal(taxableBase, 2),
+            $: { currencyID: 'RON' },
           },
           'cbc:TaxInclusiveAmount': {
-            '_': formatDecimal(total, 2),
-            '$': { 'currencyID': 'RON' },
+            _: formatDecimal(total, 2),
+            $: { currencyID: 'RON' },
           },
           'cbc:PayableAmount': {
-            '_': formatDecimal(total, 2),
-            '$': { 'currencyID': 'RON' },
+            _: formatDecimal(total, 2),
+            $: { currencyID: 'RON' },
           },
         },
 

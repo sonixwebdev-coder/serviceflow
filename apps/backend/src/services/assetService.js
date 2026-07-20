@@ -5,17 +5,6 @@ const { AppError } = require('../utils/errors');
  * Assets can be vehicles, appliances, HVAC units, equipment, etc.
  */
 
-const assignIfProvided = (target, source, key, transform) => {
-  if (!source || !Object.prototype.hasOwnProperty.call(source, key)) return;
-  const value = source[key];
-  if (value === undefined) return;
-  if (value === null || value === '') {
-    target[key] = null;
-    return;
-  }
-  target[key] = transform ? transform(value) : value;
-};
-
 /**
  * Create or update an asset based on payload
  */
@@ -29,8 +18,8 @@ const resolveAsset = async (tx, clientId, assetPayload, fallbackId, organization
     asset = await tx.asset.findFirst({
       where: {
         id: fallbackId,
-        organizationId
-      }
+        organizationId,
+      },
     });
     if (!asset) {
       throw new AppError('Asset-ul nu a fost gasit.', 404);
@@ -41,8 +30,8 @@ const resolveAsset = async (tx, clientId, assetPayload, fallbackId, organization
     asset = await tx.asset.findFirst({
       where: {
         id: assetPayload.id,
-        organizationId
-      }
+        organizationId,
+      },
     });
     if (!asset) {
       throw new AppError('Asset-ul specificat nu a fost gasit.', 404);
@@ -55,8 +44,8 @@ const resolveAsset = async (tx, clientId, assetPayload, fallbackId, organization
       where: {
         clientId,
         identifier: assetPayload.identifier,
-        organizationId
-      }
+        organizationId,
+      },
     });
   }
 
@@ -136,7 +125,7 @@ const resolveAsset = async (tx, clientId, assetPayload, fallbackId, organization
     if (Object.keys(data).length > 0) {
       asset = await tx.asset.update({
         where: { id: asset.id },
-        data
+        data,
       });
     }
     return asset;
@@ -174,14 +163,18 @@ const resolveAsset = async (tx, clientId, assetPayload, fallbackId, organization
       ...data,
       clientId,
       organizationId,
-    }
+    },
   });
 };
 
 /**
  * List assets with pagination and filtering
  */
-const listAssets = async (prisma, { clientId, type, search, page = 1, limit = 50 }, options = {}) => {
+const listAssets = async (
+  prisma,
+  { clientId, type, search, page = 1, limit = 50 },
+  options = {}
+) => {
   const { locationFilter = {} } = options;
   // Parse pagination params as integers
   const pageNum = parseInt(page, 10) || 1;

@@ -26,7 +26,15 @@ const createTicket = async ({ organizationId, createdById, subject, category, me
   return ticket;
 };
 
-const listTickets = async ({ organizationId, page = 1, limit = 20, status, category, priority, search }) => {
+const listTickets = async ({
+  organizationId,
+  page = 1,
+  limit = 20,
+  status,
+  category,
+  priority,
+  search,
+}) => {
   const skip = (page - 1) * limit;
 
   const where = { organizationId };

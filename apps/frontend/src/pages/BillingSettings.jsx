@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   CreditCard,
@@ -51,14 +51,19 @@ function UsageMeter({ label, icon: Icon, current, max, suffix = '', addonBoost =
   const isAtLimit = percentage >= 100;
 
   return (
-    <div className={`rounded-lg border p-4 ${isAtLimit ? 'border-red-200 bg-red-50' : isNearLimit ? 'border-orange-200 bg-orange-50' : 'border-gray-200 bg-white'}`}>
+    <div
+      className={`rounded-lg border p-4 ${isAtLimit ? 'border-red-200 bg-red-50' : isNearLimit ? 'border-orange-200 bg-orange-50' : 'border-gray-200 bg-white'}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${isAtLimit ? 'text-red-500' : isNearLimit ? 'text-orange-500' : 'text-gray-500'}`} />
+          <Icon
+            className={`h-4 w-4 ${isAtLimit ? 'text-red-500' : isNearLimit ? 'text-orange-500' : 'text-gray-500'}`}
+          />
           <span className="text-sm font-medium text-gray-700">{label}</span>
         </div>
         <span className={`text-sm ${isAtLimit ? 'font-semibold text-red-600' : 'text-gray-500'}`}>
-          {current} / {isUnlimited ? 'Nelimitat' : max}{suffix}
+          {current} / {isUnlimited ? 'Nelimitat' : max}
+          {suffix}
         </span>
       </div>
       {!isUnlimited && (
@@ -92,9 +97,7 @@ function UpgradeCard({ plan, interval, onSelect, currentPlan, displayPrices }) {
   return (
     <div
       className={`rounded-lg border p-4 ${
-        plan === 'PROFESSIONAL'
-          ? 'border-blue-500 ring-1 ring-blue-500'
-          : 'border-gray-200'
+        plan === 'PROFESSIONAL' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'
       }`}
     >
       <h4 className="text-sm font-bold text-gray-900">{PLAN_NAMES[plan]}</h4>
@@ -124,11 +127,15 @@ function UpgradeCard({ plan, interval, onSelect, currentPlan, displayPrices }) {
           isCurrentPlan
             ? 'cursor-default bg-gray-100 text-gray-400'
             : PLAN_RANK[plan] > PLAN_RANK[currentPlan]
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
         }`}
       >
-        {isCurrentPlan ? 'Plan curent' : PLAN_RANK[plan] > PLAN_RANK[currentPlan] ? 'Upgrade' : 'Downgrade'}
+        {isCurrentPlan
+          ? 'Plan curent'
+          : PLAN_RANK[plan] > PLAN_RANK[currentPlan]
+            ? 'Upgrade'
+            : 'Downgrade'}
       </button>
     </div>
   );
@@ -147,7 +154,9 @@ function PlanComparisonTable({ currentPlan }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
       <h3 className="text-base font-bold text-gray-900 mb-1">Comparatie planuri</h3>
-      <p className="text-sm text-gray-500 mb-5">Vezi ce include fiecare plan si alege cel potrivit pentru tine.</p>
+      <p className="text-sm text-gray-500 mb-5">
+        Vezi ce include fiecare plan si alege cel potrivit pentru tine.
+      </p>
 
       {/* Mobile: Card layout */}
       <div className="sm:hidden space-y-4">
@@ -158,11 +167,17 @@ function PlanComparisonTable({ currentPlan }) {
             <div
               key={plan}
               className={`rounded-lg border p-4 ${
-                isCurrent ? 'border-blue-300 bg-blue-50/50' : isPopular ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'
+                isCurrent
+                  ? 'border-blue-300 bg-blue-50/50'
+                  : isPopular
+                    ? 'border-blue-500 ring-1 ring-blue-500'
+                    : 'border-gray-200'
               }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className={`text-sm font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900'}`}>
+                <span
+                  className={`text-sm font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900'}`}
+                >
                   {PLAN_NAMES[plan]}
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -189,7 +204,9 @@ function PlanComparisonTable({ currentPlan }) {
                         <Icon className="h-3.5 w-3.5 text-gray-400" />
                         <span>{label}</span>
                       </div>
-                      <span className={`font-semibold ${val === -1 ? 'text-green-600' : 'text-gray-900'}`}>
+                      <span
+                        className={`font-semibold ${val === -1 ? 'text-green-600' : 'text-gray-900'}`}
+                      >
                         {val === -1 ? 'Nelimitat' : val.toLocaleString('ro-RO')}
                       </span>
                     </div>
@@ -208,7 +225,9 @@ function PlanComparisonTable({ currentPlan }) {
                       ) : (
                         <span className="h-3.5 w-3.5 text-center text-gray-300 shrink-0">-</span>
                       )}
-                      <span className={included ? 'text-gray-700' : 'text-gray-400'}>{feature}</span>
+                      <span className={included ? 'text-gray-700' : 'text-gray-400'}>
+                        {feature}
+                      </span>
                     </div>
                   );
                 })}
@@ -238,7 +257,9 @@ function PlanComparisonTable({ currentPlan }) {
                           Popular
                         </span>
                       )}
-                      <span className={`text-sm font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900'}`}>
+                      <span
+                        className={`text-sm font-bold ${isCurrent ? 'text-blue-700' : 'text-gray-900'}`}
+                      >
                         {PLAN_NAMES[plan]}
                       </span>
                       {isCurrent && (
@@ -256,7 +277,9 @@ function PlanComparisonTable({ currentPlan }) {
             {/* Section: Quotas */}
             <tr>
               <td colSpan={plans.length + 1} className="pt-4 pb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Limite</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Limite
+                </span>
               </td>
             </tr>
             {quotaRows.map(({ label, key, icon: Icon }) => (
@@ -271,8 +294,13 @@ function PlanComparisonTable({ currentPlan }) {
                   const val = PLAN_QUOTAS[plan][key];
                   const isCurrent = currentPlan === plan;
                   return (
-                    <td key={plan} className={`px-4 py-3 text-center ${isCurrent ? 'bg-blue-50/50' : ''}`}>
-                      <span className={`font-semibold ${val === -1 ? 'text-green-600' : 'text-gray-900'}`}>
+                    <td
+                      key={plan}
+                      className={`px-4 py-3 text-center ${isCurrent ? 'bg-blue-50/50' : ''}`}
+                    >
+                      <span
+                        className={`font-semibold ${val === -1 ? 'text-green-600' : 'text-gray-900'}`}
+                      >
                         {val === -1 ? 'Nelimitat' : val.toLocaleString('ro-RO')}
                       </span>
                     </td>
@@ -284,7 +312,9 @@ function PlanComparisonTable({ currentPlan }) {
             {/* Section: Features */}
             <tr>
               <td colSpan={plans.length + 1} className="pt-6 pb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Functionalitati</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                  Functionalitati
+                </span>
               </td>
             </tr>
             {allFeatures.map((feature) => (
@@ -294,7 +324,10 @@ function PlanComparisonTable({ currentPlan }) {
                   const included = PLAN_FEATURES_FLAT[plan].includes(feature);
                   const isCurrent = currentPlan === plan;
                   return (
-                    <td key={plan} className={`px-4 py-2.5 text-center ${isCurrent ? 'bg-blue-50/50' : ''}`}>
+                    <td
+                      key={plan}
+                      className={`px-4 py-2.5 text-center ${isCurrent ? 'bg-blue-50/50' : ''}`}
+                    >
                       {included ? (
                         <CheckCircle className="mx-auto h-4 w-4 text-green-500" />
                       ) : (
@@ -326,7 +359,7 @@ export default function BillingSettings() {
 
   const orgStatus = user?.orgStatus || status?.status;
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
       const [billingData, usage, addons, active] = await Promise.all([
@@ -348,7 +381,7 @@ export default function BillingSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
 
   // Handle redirect status from Stripe Checkout (use ref to prevent duplicate toasts)
   const handledStatusRef = useRef(null);
@@ -421,7 +454,7 @@ export default function BillingSettings() {
       });
       fetchAll();
     }
-  }, [searchParams]);
+  }, [fetchAll, searchParams, setSearchParams, showToast]);
 
   const handleUpgrade = async (plan) => {
     try {
@@ -583,7 +616,11 @@ export default function BillingSettings() {
                 })}
               </p>
               <p className="text-xs text-blue-700 mt-0.5">
-                {Math.max(0, Math.ceil((new Date(status.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24)))} zile ramase
+                {Math.max(
+                  0,
+                  Math.ceil((new Date(status.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24))
+                )}{' '}
+                zile ramase
               </p>
             </div>
           )}
@@ -667,7 +704,9 @@ export default function BillingSettings() {
                   {addon.permanent ? 'Permanent' : 'Valabil luna curenta'}
                 </p>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-lg font-extrabold text-gray-900">{addon.priceFormatted}</span>
+                  <span className="text-lg font-extrabold text-gray-900">
+                    {addon.priceFormatted}
+                  </span>
                   <span className="text-xs text-gray-500">o singura data</span>
                 </div>
                 <button
@@ -688,7 +727,10 @@ export default function BillingSettings() {
               <h4 className="text-sm font-semibold text-gray-700 mb-2">Pachete active</h4>
               <div className="space-y-2">
                 {activeAddonList.map((addon) => (
-                  <div key={addon.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
+                  <div
+                    key={addon.id}
+                    className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                  >
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
                       <span className="font-medium text-gray-700">
@@ -699,7 +741,11 @@ export default function BillingSettings() {
                       {addon.expiresAt ? (
                         <>
                           <Clock className="inline h-3 w-3 mr-0.5" />
-                          Expira {new Date(addon.expiresAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' })}
+                          Expira{' '}
+                          {new Date(addon.expiresAt).toLocaleDateString('ro-RO', {
+                            day: 'numeric',
+                            month: 'short',
+                          })}
                         </>
                       ) : (
                         'Permanent'
@@ -797,7 +843,8 @@ export default function BillingSettings() {
       {!status.planOverride && status.plan !== 'FREE' && !status.subscriptionId && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-center text-sm text-blue-700">
           <p>
-            Planul curent a fost activat manual. Alege un plan de mai sus pentru a activa facturarea automata si gestionarea abonamentului.
+            Planul curent a fost activat manual. Alege un plan de mai sus pentru a activa facturarea
+            automata si gestionarea abonamentului.
           </p>
         </div>
       )}

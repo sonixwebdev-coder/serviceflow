@@ -20,14 +20,12 @@ const useTasks = (initialFilters = {}, options = {}) => {
     return params;
   }, [initialFilters, overrides, page, enablePagination]);
 
-  const queryKey = useMemo(() => ['tasks', queryParams, { locationId: currentLocationId }], [queryParams, currentLocationId]);
+  const queryKey = useMemo(
+    () => ['tasks', queryParams, { locationId: currentLocationId }],
+    [queryParams, currentLocationId]
+  );
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: () => fetchTasks(queryParams),
   });

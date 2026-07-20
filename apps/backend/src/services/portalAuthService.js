@@ -2,10 +2,15 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
-const { signAccessToken, verifyAccessToken, generateRefreshToken, REFRESH_TOKEN_TTL_DAYS } = require('../utils/token');
+const { signAccessToken, verifyAccessToken, generateRefreshToken } = require('../utils/token');
 const { getSectorConfig } = require('../constants/activitySectors');
-const { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationEmail } = require('./email/emailService');
+const {
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+  sendVerificationEmail,
+} = require('./email/emailService');
 const { getCompanySettings } = require('./companySettingService');
+const { getPlatformConfig } = require('../config/platform');
 
 const SALT_ROUNDS = 10;
 
@@ -64,10 +69,7 @@ const registerClient = async (prisma, { email, password, clientId, referralCode 
   // Check if account already exists
   const existingAccount = await prisma.clientAccount.findFirst({
     where: {
-      OR: [
-        { email: email.toLowerCase() },
-        { clientId },
-      ],
+      OR: [{ email: email.toLowerCase() }, { clientId }],
     },
   });
 
@@ -122,22 +124,26 @@ const registerClient = async (prisma, { email, password, clientId, referralCode 
       where: { id: account.client.organizationId },
       select: { slug: true },
     });
-    const portalUrl = process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
+    const portalUrl =
+      process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
     const verificationLink = `${portalUrl}/${orgSlug?.slug || ''}/verify-email?token=${verificationToken}`;
 
-    const clientName = account.client.type === 'SRL'
-      ? account.client.companyName
-      : `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
+    const clientName =
+      account.client.type === 'SRL'
+        ? account.client.companyName
+        : `${account.client.firstName || ''} ${account.client.lastName || ''}`.trim() || 'Client';
 
-    getCompanySettings(account.client.organizationId).then((companySettings) => {
-      sendVerificationEmail(prisma, {
-        email: email.toLowerCase(),
-        clientName,
-        verificationLink,
-        companySettings,
-        organizationId: account.client.organizationId,
-      }).catch((err) => logger.error('[EMAIL] Verification email failed:', err.message));
-    }).catch(() => {});
+    getCompanySettings(account.client.organizationId)
+      .then((companySettings) => {
+        sendVerificationEmail(prisma, {
+          email: email.toLowerCase(),
+          clientName,
+          verificationLink,
+          companySettings,
+          organizationId: account.client.organizationId,
+        }).catch((err) => logger.error('[EMAIL] Verification email failed:', err.message));
+      })
+      .catch(() => {});
   }
 
   return {
@@ -212,15 +218,22 @@ const loginClient = async (prisma, { email, password, userAgent, ipAddress }) =>
 
   // Reset failed attempts on successful login
   if (account.failedLoginAttempts > 0 || account.lockedUntil) {
-    prisma.clientAccount.update({
-      where: { id: account.id },
-      data: { failedLoginAttempts: 0, lockedUntil: null },
-    }).catch(() => {});
+    prisma.clientAccount
+      .update({
+        where: { id: account.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      })
+      .catch(() => {});
   }
 
   // Check email verification
   if (!account.isVerified) {
-    throw new AppError('Adresa de email nu a fost verificata. Verificati email-ul pentru linkul de confirmare.', 403, null, 'EMAIL_NOT_VERIFIED');
+    throw new AppError(
+      'Adresa de email nu a fost verificata. Verificati email-ul pentru linkul de confirmare.',
+      403,
+      null,
+      'EMAIL_NOT_VERIFIED'
+    );
   }
 
   // Check organization status
@@ -394,13 +407,17 @@ const verifyEmail = async (prisma, verificationToken) => {
 
   // Send welcome email after verification (fire-and-forget)
   if (account.client?.email && account.client?.organizationId) {
-    getCompanySettings(account.client.organizationId).then((companySettings) => {
-      sendWelcomeEmail(prisma, {
-        client: account.client,
-        companySettings,
-        organizationId: account.client.organizationId,
-      }).catch((err) => logger.error('[EMAIL] Post-verification welcome email failed:', err.message));
-    }).catch(() => {});
+    getCompanySettings(account.client.organizationId)
+      .then((companySettings) => {
+        sendWelcomeEmail(prisma, {
+          client: account.client,
+          companySettings,
+          organizationId: account.client.organizationId,
+        }).catch((err) =>
+          logger.error('[EMAIL] Post-verification welcome email failed:', err.message)
+        );
+      })
+      .catch(() => {});
   }
 
   return { success: true };
@@ -444,14 +461,16 @@ const requestPasswordReset = async (prisma, email, organizationSlug) => {
   });
 
   // Build reset link
-  const portalUrl = process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
+  const portalUrl =
+    process.env.CLIENT_PORTAL_URL || process.env.PORTAL_URL || 'http://localhost:5174';
   const resetLink = `${portalUrl}/${organizationSlug}/reset-password?token=${resetToken}`;
 
   // Get client name
   const client = account.client;
-  const clientName = client?.type === 'SRL'
-    ? client.companyName
-    : `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || 'Client';
+  const clientName =
+    client?.type === 'SRL'
+      ? client.companyName
+      : `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || 'Client';
 
   // Send password reset email
   try {
@@ -461,7 +480,7 @@ const requestPasswordReset = async (prisma, email, organizationSlug) => {
       resetLink,
       expiresIn: '1 ora',
       companySettings: {
-        name: organization?.name || 'ForjaIt',
+        name: organization?.name || getPlatformConfig().name,
         phone: organization?.settings?.phone,
       },
       organizationId: organization?.id,

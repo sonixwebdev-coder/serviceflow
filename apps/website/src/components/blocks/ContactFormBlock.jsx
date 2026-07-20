@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Send, Phone, MapPin, Mail, Clock, CheckCircle, Navigation, ExternalLink } from 'lucide-react';
+import {
+  Send,
+  Phone,
+  MapPin,
+  Mail,
+  Clock,
+  CheckCircle,
+  Navigation,
+  ExternalLink,
+} from 'lucide-react';
 import { websiteService } from '@/services/websiteService';
 
 function getMapEmbedUrl(address) {
@@ -9,12 +18,11 @@ function getMapEmbedUrl(address) {
 }
 
 function getDirectionsUrl(location) {
-  const query = [location.address, location.city, location.county]
-    .filter(Boolean).join(', ');
+  const query = [location.address, location.city, location.county].filter(Boolean).join(', ');
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
 }
 
-export default function ContactFormBlock({ data, subdomain, branding }) {
+export default function ContactFormBlock({ data, subdomain, branding, organization }) {
   const {
     title,
     subtitle,
@@ -43,9 +51,21 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
     enabled: showLocations,
   });
 
-  const locations = showLocations ? (crmLocations || []) : [];
+  const locations = showLocations ? crmLocations || [] : [];
+  const organizationContact = organization?.profile || {};
+  const primaryLocation = organization?.primaryLocation || {};
+  const resolvedContactInfo = {
+    ...contactInfo,
+    phone: organizationContact.phone || primaryLocation.phone || contactInfo.phone,
+    email: organizationContact.email || primaryLocation.email || contactInfo.email,
+    address: organizationContact.address || primaryLocation.address || contactInfo.address,
+  };
 
-  const hasContactInfo = (showPhone && contactInfo.phone) || (showAddress && contactInfo.address) || contactInfo.email || contactInfo.schedule;
+  const hasContactInfo =
+    (showPhone && resolvedContactInfo.phone) ||
+    (showAddress && resolvedContactInfo.address) ||
+    resolvedContactInfo.email ||
+    resolvedContactInfo.schedule;
 
   const mutation = useMutation({
     mutationFn: (data) => websiteService.submitLead(subdomain, data),
@@ -93,7 +113,9 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
           <CheckCircle className="h-8 w-8" style={{ color: primaryColor }} />
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">Mesaj trimis!</h3>
-        <p className="text-gray-600 mb-6">Va multumim pentru mesaj. Va vom contacta in cel mai scurt timp.</p>
+        <p className="text-gray-600 mb-6">
+          Va multumim pentru mesaj. Va vom contacta in cel mai scurt timp.
+        </p>
         <button
           onClick={() => setSubmitted(false)}
           className="font-medium hover:underline"
@@ -115,76 +137,88 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
         </div>
       )}
 
-      <div className={`grid gap-10 ${hasContactInfo ? 'lg:grid-cols-5' : 'lg:grid-cols-1 max-w-2xl mx-auto'}`}>
+      <div
+        className={`grid gap-10 ${hasContactInfo ? 'lg:grid-cols-5' : 'lg:grid-cols-1 max-w-2xl mx-auto'}`}
+      >
         {/* Form - takes more space */}
         <div className={hasContactInfo ? 'lg:col-span-3' : ''}>
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900">Trimite-ne un mesaj</h3>
-              <p className="text-sm text-gray-500 mt-1">Completeaza formularul si te vom contacta in cel mai scurt timp.</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Completeaza formularul si te vom contacta in cel mai scurt timp.
+              </p>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
-                {fields.filter(f => f.key === 'firstName' || f.key === 'lastName').map((field) => (
-                  <div key={field.key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {field.label} {field.required && <span style={{ color: primaryColor }}>*</span>}
-                    </label>
-                    <input
-                      type={field.type}
-                      required={field.required}
-                      value={formData[field.key] || ''}
-                      onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
-                      onFocus={inputFocusStyle}
-                      onBlur={inputBlurStyle}
-                    />
-                  </div>
-                ))}
+                {fields
+                  .filter((f) => f.key === 'firstName' || f.key === 'lastName')
+                  .map((field) => (
+                    <div key={field.key}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        {field.label}{' '}
+                        {field.required && <span style={{ color: primaryColor }}>*</span>}
+                      </label>
+                      <input
+                        type={field.type}
+                        required={field.required}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
+                        onFocus={inputFocusStyle}
+                        onBlur={inputBlurStyle}
+                      />
+                    </div>
+                  ))}
               </div>
 
-              {fields.filter(f => f.key !== 'firstName' && f.key !== 'lastName').map((field) => (
-                <div key={field.key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {field.label} {field.required && <span style={{ color: primaryColor }}>*</span>}
-                  </label>
-                  {field.type === 'textarea' ? (
-                    <textarea
-                      required={field.required}
-                      value={formData[field.key] || ''}
-                      onChange={(e) => handleChange(field.key, e.target.value)}
-                      rows={4}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow resize-none"
-                      onFocus={inputFocusStyle}
-                      onBlur={inputBlurStyle}
-                    />
-                  ) : field.type === 'select' ? (
-                    <select
-                      required={field.required}
-                      value={formData[field.key] || ''}
-                      onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
-                      onFocus={inputFocusStyle}
-                      onBlur={inputBlurStyle}
-                    >
-                      <option value="">Selecteaza...</option>
-                      {field.options?.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type={field.type}
-                      required={field.required}
-                      value={formData[field.key] || ''}
-                      onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
-                      onFocus={inputFocusStyle}
-                      onBlur={inputBlurStyle}
-                    />
-                  )}
-                </div>
-              ))}
+              {fields
+                .filter((f) => f.key !== 'firstName' && f.key !== 'lastName')
+                .map((field) => (
+                  <div key={field.key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      {field.label}{' '}
+                      {field.required && <span style={{ color: primaryColor }}>*</span>}
+                    </label>
+                    {field.type === 'textarea' ? (
+                      <textarea
+                        required={field.required}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        rows={4}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow resize-none"
+                        onFocus={inputFocusStyle}
+                        onBlur={inputBlurStyle}
+                      />
+                    ) : field.type === 'select' ? (
+                      <select
+                        required={field.required}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
+                        onFocus={inputFocusStyle}
+                        onBlur={inputBlurStyle}
+                      >
+                        <option value="">Selecteaza...</option>
+                        {field.options?.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type={field.type}
+                        required={field.required}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => handleChange(field.key, e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
+                        onFocus={inputFocusStyle}
+                        onBlur={inputBlurStyle}
+                      />
+                    )}
+                  </div>
+                ))}
 
               {mutation.isError && (
                 <p className="text-red-600 text-sm">
@@ -216,7 +250,7 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
           <div className="lg:col-span-2 space-y-6">
             <h3 className="text-xl font-semibold text-gray-900">Informatii de contact</h3>
 
-            {showPhone && contactInfo.phone && (
+            {showPhone && resolvedContactInfo.phone && (
               <div className="flex items-center gap-4">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
@@ -226,14 +260,17 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Telefon</p>
-                  <a href={`tel:${contactInfo.phone}`} className="text-gray-900 font-medium hover:underline">
-                    {contactInfo.phone}
+                  <a
+                    href={`tel:${resolvedContactInfo.phone}`}
+                    className="text-gray-900 font-medium hover:underline"
+                  >
+                    {resolvedContactInfo.phone}
                   </a>
                 </div>
               </div>
             )}
 
-            {contactInfo.email && (
+            {resolvedContactInfo.email && (
               <div className="flex items-center gap-4">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
@@ -243,14 +280,17 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Email</p>
-                  <a href={`mailto:${contactInfo.email}`} className="text-gray-900 font-medium hover:underline">
-                    {contactInfo.email}
+                  <a
+                    href={`mailto:${resolvedContactInfo.email}`}
+                    className="text-gray-900 font-medium hover:underline"
+                  >
+                    {resolvedContactInfo.email}
                   </a>
                 </div>
               </div>
             )}
 
-            {showAddress && contactInfo.address && (
+            {showAddress && resolvedContactInfo.address && (
               <div className="flex items-start gap-4">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
@@ -260,12 +300,12 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Adresa</p>
-                  <p className="text-gray-900">{contactInfo.address}</p>
+                  <p className="text-gray-900">{resolvedContactInfo.address}</p>
                 </div>
               </div>
             )}
 
-            {contactInfo.schedule && (
+            {resolvedContactInfo.schedule && (
               <div className="flex items-start gap-4">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
@@ -275,16 +315,18 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Program</p>
-                  <p className="text-gray-900 whitespace-pre-line">{contactInfo.schedule}</p>
+                  <p className="text-gray-900 whitespace-pre-line">
+                    {resolvedContactInfo.schedule}
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Map embed */}
-            {showMap && contactInfo.address && (
+            {showMap && resolvedContactInfo.address && (
               <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200">
                 <iframe
-                  src={getMapEmbedUrl(contactInfo.address)}
+                  src={getMapEmbedUrl(resolvedContactInfo.address)}
                   className="w-full h-[200px]"
                   style={{ border: 0 }}
                   allowFullScreen
@@ -308,7 +350,9 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
             <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 mb-6">
               <iframe
                 src={getMapEmbedUrl(
-                  [locations[0].address, locations[0].city, locations[0].county].filter(Boolean).join(', ')
+                  [locations[0].address, locations[0].city, locations[0].county]
+                    .filter(Boolean)
+                    .join(', ')
                 )}
                 className="w-full h-[300px] md:h-[350px]"
                 style={{ border: 0 }}
@@ -320,14 +364,19 @@ export default function ContactFormBlock({ data, subdomain, branding }) {
             </div>
           )}
 
-          <div className={`grid gap-6 ${locations.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+          <div
+            className={`grid gap-6 ${locations.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'md:grid-cols-2 lg:grid-cols-3'}`}
+          >
             {locations.map((location, index) => (
               <div
                 key={location.id || index}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <MapPin className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                  <MapPin
+                    className="h-5 w-5 flex-shrink-0 mt-0.5"
+                    style={{ color: primaryColor }}
+                  />
                   <div>
                     <h4 className="font-semibold text-gray-900">{location.name}</h4>
                     {location.address && (

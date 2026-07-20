@@ -10,7 +10,11 @@ const {
   deleteAsset,
   getAssetsByClientId,
 } = require('../services/assetService');
-const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
+const {
+  logFromRequest,
+  ENTITY_TYPES,
+  getActionDescription,
+} = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();

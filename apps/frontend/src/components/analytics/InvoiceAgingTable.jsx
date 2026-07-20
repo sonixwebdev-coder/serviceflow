@@ -62,18 +62,14 @@ export default function InvoiceAgingTable({ buckets = {}, summary = {}, isLoadin
           <p className="text-2xl font-bold text-gray-900">
             {formatCurrency(summary.totalOutstanding || 0)}
           </p>
-          <p className="text-sm text-gray-500">
-            {summary.totalInvoices || 0} facturi
-          </p>
+          <p className="text-sm text-gray-500">{summary.totalInvoices || 0} facturi</p>
         </div>
         <div className="bg-red-50 rounded-lg p-4">
           <p className="text-sm text-red-600">Total restant</p>
           <p className="text-2xl font-bold text-red-700">
             {formatCurrency(summary.totalOverdue || 0)}
           </p>
-          <p className="text-sm text-red-600">
-            {summary.overdueInvoices || 0} facturi
-          </p>
+          <p className="text-sm text-red-600">{summary.overdueInvoices || 0} facturi</p>
         </div>
       </div>
 
@@ -100,9 +96,7 @@ export default function InvoiceAgingTable({ buckets = {}, summary = {}, isLoadin
                   </p>
                 </div>
               </div>
-              <p className={`text-lg font-bold ${config.color}`}>
-                {formatCurrency(bucket.total)}
-              </p>
+              <p className={`text-lg font-bold ${config.color}`}>{formatCurrency(bucket.total)}</p>
             </div>
           );
         })}
@@ -110,9 +104,7 @@ export default function InvoiceAgingTable({ buckets = {}, summary = {}, isLoadin
 
       {/* No outstanding invoices message */}
       {(!summary.totalInvoices || summary.totalInvoices === 0) && (
-        <div className="text-center py-8 text-gray-500">
-          Nu exista facturi neincasate
-        </div>
+        <div className="text-center py-8 text-gray-500">Nu exista facturi neincasate</div>
       )}
     </div>
   );

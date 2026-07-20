@@ -1,11 +1,12 @@
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { runtimeConfig } from '../config/runtime';
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-const FILE_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+const FILE_BASE_URL = runtimeConfig.serverUrl;
 
 /**
  * Resolve a relative file path (e.g. /files/logos/img.png) to a full URL

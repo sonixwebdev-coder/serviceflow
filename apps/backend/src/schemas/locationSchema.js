@@ -2,25 +2,58 @@ const { z } = require('zod');
 
 // Helper to transform empty strings to undefined for optional fields
 const optionalString = (maxLength) =>
-  z.string().max(maxLength).optional().transform((val) => (val === '' ? undefined : val));
+  z
+    .string()
+    .max(maxLength)
+    .optional()
+    .transform((val) => (val === '' ? undefined : val));
 
 const optionalEmail = () =>
-  z.string().optional().transform((val) => (val === '' ? undefined : val))
+  z
+    .string()
+    .optional()
+    .transform((val) => (val === '' ? undefined : val))
     .pipe(z.string().email().optional());
 
 const optionalSlug = () =>
-  z.string().optional().transform((val) => (val === '' ? undefined : val))
-    .pipe(z.string().min(1).max(50).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens').optional());
+  z
+    .string()
+    .optional()
+    .transform((val) => (val === '' ? undefined : val))
+    .pipe(
+      z
+        .string()
+        .min(1)
+        .max(50)
+        .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens')
+        .optional()
+    );
 
-const operatingHoursSchema = z.object({
-  monday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().optional() }).optional(),
-  tuesday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().optional() }).optional(),
-  wednesday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().optional() }).optional(),
-  thursday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().optional() }).optional(),
-  friday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().optional() }).optional(),
-  saturday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().optional() }).optional(),
-  sunday: z.object({ open: z.string(), close: z.string(), closed: z.boolean().optional() }).optional(),
-}).optional();
+const operatingHoursSchema = z
+  .object({
+    monday: z
+      .object({ open: z.string(), close: z.string(), closed: z.boolean().optional() })
+      .optional(),
+    tuesday: z
+      .object({ open: z.string(), close: z.string(), closed: z.boolean().optional() })
+      .optional(),
+    wednesday: z
+      .object({ open: z.string(), close: z.string(), closed: z.boolean().optional() })
+      .optional(),
+    thursday: z
+      .object({ open: z.string(), close: z.string(), closed: z.boolean().optional() })
+      .optional(),
+    friday: z
+      .object({ open: z.string(), close: z.string(), closed: z.boolean().optional() })
+      .optional(),
+    saturday: z
+      .object({ open: z.string(), close: z.string(), closed: z.boolean().optional() })
+      .optional(),
+    sunday: z
+      .object({ open: z.string(), close: z.string(), closed: z.boolean().optional() })
+      .optional(),
+  })
+  .optional();
 
 const baseLocationSchema = z.object({
   name: z.string().min(1).max(100),

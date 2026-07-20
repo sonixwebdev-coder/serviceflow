@@ -2,19 +2,31 @@ const webpush = require('web-push');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
+const { getPlatformConfig } = require('../config/platform');
+const {
+  serializePushPayload,
+  summarizeSubscriptionDeliveries,
+  summarizeUserDeliveries,
+  toWebPushSubscription,
+} = require('./pushNotification/delivery');
+const {
+  buildAppointmentMessagePayload,
+  buildAppointmentNotification,
+  buildChatMessagePayload,
+  buildLeaveRequestPayload,
+  buildReminderPayload,
+  buildTaskNotification,
+} = require('./pushNotification/payloads');
+const { isNotificationTypeEnabled, isPushEnabled } = require('./pushNotification/preferences');
 
 // VAPID keys should be generated once and stored in environment variables
 // For now, we'll generate them if not set (you should generate permanent keys)
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@forja.it.com';
+const vapidSubject = process.env.VAPID_SUBJECT || `mailto:${getPlatformConfig().contactEmail}`;
 
 if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(
-    vapidSubject,
-    vapidPublicKey,
-    vapidPrivateKey
-  );
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 }
 
 /**
@@ -159,7 +171,7 @@ const updateNotificationPreferences = async (userId, updates) => {
 const sendPushToUser = async (userId, payload) => {
   // Check if user has push enabled
   const preferences = await getNotificationPreferences(userId);
-  if (!preferences.enablePushNotifications) {
+  if (!isPushEnabled(preferences)) {
     return { sent: 0, failed: 0 };
   }
 
@@ -178,13 +190,7 @@ const sendPushToUser = async (userId, payload) => {
   const results = await Promise.allSettled(
     subscriptions.map(async (sub) => {
       try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: sub.keys,
-          },
-          JSON.stringify(payload)
-        );
+        await webpush.sendNotification(toWebPushSubscription(sub), serializePushPayload(payload));
         return { success: true, subscriptionId: sub.id };
       } catch (error) {
         // If subscription is invalid (410 Gone), mark it as inactive
@@ -199,10 +205,7 @@ const sendPushToUser = async (userId, payload) => {
     })
   );
 
-  const sent = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
-  const failed = results.length - sent;
-
-  return { sent, failed, total: results.length };
+  return summarizeSubscriptionDeliveries(results);
 };
 
 /**
@@ -213,79 +216,24 @@ const sendPushToUsers = async (userIds, payload) => {
     userIds.map((userId) => sendPushToUser(userId, payload))
   );
 
-  const summary = results.reduce(
-    (acc, result) => {
-      if (result.status === 'fulfilled') {
-        acc.sent += result.value.sent;
-        acc.failed += result.value.failed;
-      } else {
-        acc.errors.push(result.reason.message);
-      }
-      return acc;
-    },
-    { sent: 0, failed: 0, errors: [] }
-  );
-
-  return summary;
+  return summarizeUserDeliveries(results);
 };
 
 /**
  * Send notification for new appointment
  */
 const sendAppointmentNotification = async (appointment, type = 'created') => {
-  // Determine recipients based on type
-  let recipientIds = [];
-  let title = '';
-  let body = '';
-  let icon = '/icons/appointment.png';
-
-  switch (type) {
-    case 'created':
-      // Notify assignees
-      recipientIds = appointment.assignees?.map(a => a.userId || a.user?.id).filter(Boolean) || [];
-      title = 'Programare noua';
-      body = `Ai fost alocat la: ${appointment.title}`;
-      break;
-    case 'updated':
-      recipientIds = appointment.assignees?.map(a => a.userId || a.user?.id).filter(Boolean) || [];
-      title = 'Programare actualizata';
-      body = `Programarea "${appointment.title}" a fost modificata`;
-      break;
-    case 'cancelled':
-      recipientIds = appointment.assignees?.map(a => a.userId || a.user?.id).filter(Boolean) || [];
-      title = 'Programare anulata';
-      body = `Programarea "${appointment.title}" a fost anulata`;
-      break;
-    case 'message':
-      recipientIds = appointment.assignees?.map(a => a.userId || a.user?.id).filter(Boolean) || [];
-      title = 'Mesaj nou';
-      body = `Mesaj nou la programarea "${appointment.title}"`;
-      icon = '/icons/message.png';
-      break;
-    default:
-      return;
-  }
-
-  if (recipientIds.length === 0) return;
+  const notification = buildAppointmentNotification(appointment, type);
+  if (!notification || notification.recipientIds.length === 0) return;
 
   // Check preferences for each recipient
-  for (const userId of recipientIds) {
+  for (const userId of notification.recipientIds) {
     const preferences = await getNotificationPreferences(userId);
-    if (!preferences.enablePushNotifications || !preferences.enableAppointments) {
+    if (!isNotificationTypeEnabled(preferences, 'enableAppointments')) {
       continue;
     }
 
-    await sendPushToUser(userId, {
-      title,
-      body,
-      icon,
-      badge: '/icons/badge.png',
-      data: {
-        type: 'appointment',
-        appointmentId: appointment.id,
-        url: `/appointments?id=${appointment.id}`,
-      },
-    });
+    await sendPushToUser(userId, notification.payload);
   }
 };
 
@@ -293,46 +241,17 @@ const sendAppointmentNotification = async (appointment, type = 'created') => {
  * Send notification for leave request
  */
 const sendLeaveRequestNotification = async (request, type = 'created', recipientIds = []) => {
-  let title = '';
-  let body = '';
-  const icon = '/icons/leave.png';
-
-  switch (type) {
-    case 'created':
-      title = 'Cerere de concediu noua';
-      body = `${request.employee?.firstName} ${request.employee?.lastName} a solicitat concediu`;
-      break;
-    case 'approved':
-      title = 'Cerere aprobata';
-      body = 'Cererea ta de concediu a fost aprobata';
-      break;
-    case 'rejected':
-      title = 'Cerere respinsa';
-      body = 'Cererea ta de concediu a fost respinsa';
-      break;
-    default:
-      return;
-  }
-
+  const payload = buildLeaveRequestPayload(request, type);
+  if (!payload) return;
   if (recipientIds.length === 0) return;
 
   for (const userId of recipientIds) {
     const preferences = await getNotificationPreferences(userId);
-    if (!preferences.enablePushNotifications || !preferences.enableLeaveRequests) {
+    if (!isNotificationTypeEnabled(preferences, 'enableLeaveRequests')) {
       continue;
     }
 
-    await sendPushToUser(userId, {
-      title,
-      body,
-      icon,
-      badge: '/icons/badge.png',
-      data: {
-        type: 'leave',
-        leaveRequestId: request.id,
-        url: '/leave-requests',
-      },
-    });
+    await sendPushToUser(userId, payload);
   }
 };
 
@@ -340,50 +259,16 @@ const sendLeaveRequestNotification = async (request, type = 'created', recipient
  * Send notification for task
  */
 const sendTaskNotification = async (task, type = 'assigned') => {
-  let recipientIds = [];
-  let title = '';
-  let body = '';
-  const icon = '/icons/task.png';
+  const notification = buildTaskNotification(task, type);
+  if (!notification || notification.recipientIds.length === 0) return;
 
-  switch (type) {
-    case 'assigned':
-      recipientIds = task.assignees?.map(a => a.userId).filter(Boolean) || [];
-      title = 'Task nou alocat';
-      body = `Ai fost alocat la: ${task.title}`;
-      break;
-    case 'updated':
-      recipientIds = task.assignees?.map(a => a.userId).filter(Boolean) || [];
-      title = 'Task actualizat';
-      body = `Task-ul "${task.title}" a fost modificat`;
-      break;
-    case 'comment':
-      recipientIds = task.assignees?.map(a => a.userId).filter(Boolean) || [];
-      title = 'Comentariu nou';
-      body = `Comentariu nou la task-ul "${task.title}"`;
-      break;
-    default:
-      return;
-  }
-
-  if (recipientIds.length === 0) return;
-
-  for (const userId of recipientIds) {
+  for (const userId of notification.recipientIds) {
     const preferences = await getNotificationPreferences(userId);
-    if (!preferences.enablePushNotifications || !preferences.enableTasks) {
+    if (!isNotificationTypeEnabled(preferences, 'enableTasks')) {
       continue;
     }
 
-    await sendPushToUser(userId, {
-      title,
-      body,
-      icon,
-      badge: '/icons/badge.png',
-      data: {
-        type: 'task',
-        taskId: task.id,
-        url: `/tasks?id=${task.id}`,
-      },
-    });
+    await sendPushToUser(userId, notification.payload);
   }
 };
 
@@ -392,21 +277,11 @@ const sendTaskNotification = async (task, type = 'assigned') => {
  */
 const sendReminderNotification = async (todo) => {
   const preferences = await getNotificationPreferences(todo.userId);
-  if (!preferences.enablePushNotifications || !preferences.enableReminders) {
+  if (!isNotificationTypeEnabled(preferences, 'enableReminders')) {
     return;
   }
 
-  await sendPushToUser(todo.userId, {
-    title: 'Reminder',
-    body: todo.title,
-    icon: '/icons/reminder.png',
-    badge: '/icons/badge.png',
-    data: {
-      type: 'reminder',
-      todoId: todo.id,
-      url: '/dashboard',
-    },
-  });
+  await sendPushToUser(todo.userId, buildReminderPayload(todo));
 };
 
 /**
@@ -417,67 +292,19 @@ const sendReminderNotification = async (todo) => {
  */
 const sendChatMessageNotification = async (message, channel, recipientIds) => {
   if (!recipientIds || recipientIds.length === 0) return;
-
-  const authorName = `${message.author?.firstName || ''} ${message.author?.lastName || ''}`.trim() || 'Cineva';
-  const channelName = channel.name || (channel.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
-
-  let title = '';
-  let body = '';
-  const icon = '/icons/message.png';
-
-  // Customize message based on channel type
-  if (channel.type === 'DIRECT') {
-    title = authorName;
-    body = message.type === 'TEXT' ? message.body : getMessageTypeLabel(message.type);
-  } else {
-    title = `${channelName}`;
-    body = `${authorName}: ${message.type === 'TEXT' ? message.body : getMessageTypeLabel(message.type)}`;
-  }
-
-  // Truncate body if too long
-  if (body.length > 100) {
-    body = body.substring(0, 97) + '...';
-  }
+  const payload = buildChatMessagePayload(message, channel);
 
   for (const userId of recipientIds) {
     try {
       const preferences = await getNotificationPreferences(userId);
-      if (!preferences.enablePushNotifications || !preferences.enableMessages) {
+      if (!isNotificationTypeEnabled(preferences, 'enableMessages')) {
         continue;
       }
 
-      await sendPushToUser(userId, {
-        title,
-        body,
-        icon,
-        badge: '/icons/badge.png',
-        tag: `chat-${channel.id}`, // Group notifications from same channel
-        data: {
-          type: 'chat',
-          channelId: channel.id,
-          messageId: message.id,
-          url: `/chat?channel=${channel.id}`,
-        },
-      });
+      await sendPushToUser(userId, payload);
     } catch (error) {
       logger.error('Failed to send chat notification', { userId, error: error.message });
     }
-  }
-};
-
-/**
- * Get human-readable label for message type
- */
-const getMessageTypeLabel = (type) => {
-  switch (type) {
-    case 'IMAGE':
-      return 'A trimis o imagine';
-    case 'FILE':
-      return 'A trimis un fișier';
-    case 'VOICE':
-      return 'A trimis un mesaj vocal';
-    default:
-      return 'A trimis un mesaj';
   }
 };
 
@@ -502,53 +329,28 @@ const sendAppointmentMessageNotification = async ({
   isFromClient = false,
 }) => {
   if (!recipientIds || recipientIds.length === 0) return;
-
-  const authorName = isFromClient
-    ? (author?.companyName || `${author?.firstName || ''} ${author?.lastName || ''}`.trim() || 'Client')
-    : (`${author?.firstName || ''} ${author?.lastName || ''}`.trim() || 'Utilizator');
-
-  const title = isFromClient ? 'Mesaj de la client' : 'Mesaj nou';
-
-  let body = '';
-  if (messageType === 'TEXT') {
-    body = `${authorName} in "${appointmentTitle}": ${messageBody}`;
-  } else if (messageType === 'FILE') {
-    const isVoice = messageBody?.toLowerCase().includes('voice') || messageBody?.toLowerCase().includes('audio');
-    body = isVoice
-      ? `${authorName} a trimis un mesaj vocal in "${appointmentTitle}"`
-      : `${authorName} a trimis un fisier in "${appointmentTitle}"`;
-  } else {
-    body = `${authorName} a trimis un mesaj in "${appointmentTitle}"`;
-  }
-
-  // Truncate body if too long
-  if (body.length > 120) {
-    body = body.substring(0, 117) + '...';
-  }
-
-  const icon = '/icons/message.png';
+  const payload = buildAppointmentMessagePayload({
+    appointmentId,
+    appointmentTitle,
+    author,
+    messageBody,
+    messageType,
+    isFromClient,
+  });
 
   for (const userId of recipientIds) {
     try {
       const preferences = await getNotificationPreferences(userId);
-      if (!preferences.enablePushNotifications || !preferences.enableMessages) {
+      if (!isNotificationTypeEnabled(preferences, 'enableMessages')) {
         continue;
       }
 
-      await sendPushToUser(userId, {
-        title,
-        body,
-        icon,
-        badge: '/icons/badge.png',
-        tag: `appointment-message-${appointmentId}`,
-        data: {
-          type: 'appointment-message',
-          appointmentId,
-          url: `/appointments?id=${appointmentId}&tab=messages`,
-        },
-      });
+      await sendPushToUser(userId, payload);
     } catch (error) {
-      logger.error('Failed to send appointment message notification', { userId, error: error.message });
+      logger.error('Failed to send appointment message notification', {
+        userId,
+        error: error.message,
+      });
     }
   }
 };

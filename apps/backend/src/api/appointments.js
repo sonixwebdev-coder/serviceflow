@@ -23,10 +23,24 @@ const {
   recordFinalPayment,
   getPaymentStatus,
 } = require('../services/appointmentService');
-const { listMessages, createMessage, markMessagesAsRead, getUnreadMessageCount, createFileMessage } = require('../services/messageService');
+const {
+  listMessages,
+  createMessage,
+  markMessagesAsRead,
+  getUnreadMessageCount,
+  createFileMessage,
+} = require('../services/messageService');
 const { broadcastTyping } = require('../realtime/events');
-const { getServiceOrder, upsertServiceOrder, generateServiceOrderPdf } = require('../services/serviceOrderService');
-const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
+const {
+  getServiceOrder,
+  upsertServiceOrder,
+  generateServiceOrderPdf,
+} = require('../services/serviceOrderService');
+const {
+  logFromRequest,
+  ENTITY_TYPES,
+  getActionDescription,
+} = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 const { createMessageSchema } = require('../schemas/messageSchema');
 const { z } = require('zod');
@@ -101,7 +115,11 @@ router.get(
     const paginate = Boolean(req.query.page || req.query.limit);
     const locationFilter = await req.getLocationFilter({ includeNull: true });
     const minimal = req.query.fields === 'calendar';
-    const appointments = await listAppointments(req.tenantPrisma, req.query, { paginate, locationFilter, minimal });
+    const appointments = await listAppointments(req.tenantPrisma, req.query, {
+      paginate,
+      locationFilter,
+      minimal,
+    });
     return ok(res, appointments);
   })
 );
@@ -122,7 +140,11 @@ router.post(
       action: 'CREATE',
       entityType: ENTITY_TYPES.APPOINTMENT,
       entityId: appointment.id,
-      description: getActionDescription('CREATE', ENTITY_TYPES.APPOINTMENT, appointment.title || 'Programare'),
+      description: getActionDescription(
+        'CREATE',
+        ENTITY_TYPES.APPOINTMENT,
+        appointment.title || 'Programare'
+      ),
       metadata: { clientId: appointment.clientId, locationId: appointment.locationId },
     });
 
@@ -145,14 +167,23 @@ router.patch(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(updateAppointmentSchema),
   asyncHandler(async (req, res) => {
-    const appointment = await updateAppointment(req.tenantPrisma, req.params.appointmentId, req.body, req.user);
+    const appointment = await updateAppointment(
+      req.tenantPrisma,
+      req.params.appointmentId,
+      req.body,
+      req.user
+    );
 
     // Log the update
     await logFromRequest(req, {
       action: 'UPDATE',
       entityType: ENTITY_TYPES.APPOINTMENT,
       entityId: appointment.id,
-      description: getActionDescription('UPDATE', ENTITY_TYPES.APPOINTMENT, appointment.title || 'Programare'),
+      description: getActionDescription(
+        'UPDATE',
+        ENTITY_TYPES.APPOINTMENT,
+        appointment.title || 'Programare'
+      ),
       metadata: { clientId: appointment.clientId, changes: Object.keys(req.body) },
     });
 
@@ -166,7 +197,12 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(z.object({ reason: z.string().optional() })),
   asyncHandler(async (req, res) => {
-    const appointment = await cancelAppointment(req.tenantPrisma, req.params.appointmentId, req.body.reason, req.user);
+    const appointment = await cancelAppointment(
+      req.tenantPrisma,
+      req.params.appointmentId,
+      req.body.reason,
+      req.user
+    );
 
     // Log the cancellation
     await logFromRequest(req, {
@@ -195,7 +231,12 @@ router.post(
   authenticate,
   validate(createMessageSchema),
   asyncHandler(async (req, res) => {
-    const message = await createMessage(req.tenantPrisma, req.params.appointmentId, req.user, req.body);
+    const message = await createMessage(
+      req.tenantPrisma,
+      req.params.appointmentId,
+      req.user,
+      req.body
+    );
     return created(res, message, 'Message sent');
   })
 );
@@ -239,12 +280,17 @@ router.post(
 
     try {
       const fileUrl = `/uploads/messages/${req.file.filename}`;
-      const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
-        fileName: req.file.originalname,
-        fileUrl,
-        fileType: req.file.mimetype,
-        fileSize: req.file.size,
-      });
+      const message = await createFileMessage(
+        req.tenantPrisma,
+        req.params.appointmentId,
+        req.user,
+        {
+          fileName: req.file.originalname,
+          fileUrl,
+          fileType: req.file.mimetype,
+          fileSize: req.file.size,
+        }
+      );
 
       return created(res, message, 'File uploaded');
     } catch (err) {
@@ -265,14 +311,19 @@ router.post(
 
     try {
       const fileUrl = `/uploads/messages/${req.file.filename}`;
-      const message = await createFileMessage(req.tenantPrisma, req.params.appointmentId, req.user, {
-        fileName: req.file.originalname || 'voice-message',
-        fileUrl,
-        fileType: req.file.mimetype,
-        fileSize: req.file.size,
-        isVoice: true,
-        duration: req.body.duration ? parseInt(req.body.duration, 10) : null,
-      });
+      const message = await createFileMessage(
+        req.tenantPrisma,
+        req.params.appointmentId,
+        req.user,
+        {
+          fileName: req.file.originalname || 'voice-message',
+          fileUrl,
+          fileType: req.file.mimetype,
+          fileSize: req.file.size,
+          isVoice: true,
+          duration: req.body.duration ? parseInt(req.body.duration, 10) : null,
+        }
+      );
 
       return created(res, message, 'Voice message uploaded');
     } catch (err) {
@@ -296,10 +347,17 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const refresh = ['1', 'true', 'yes'].includes(String(req.query.refresh || '').toLowerCase());
-    const { buffer, filename } = await generateServiceOrderPdf(req.tenantPrisma, req.params.appointmentId, { refresh });
+    const { buffer, filename } = await generateServiceOrderPdf(
+      req.tenantPrisma,
+      req.params.appointmentId,
+      { refresh }
+    );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0'
+    );
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     // Remove CSP to allow iframe embedding from frontend
@@ -366,14 +424,23 @@ router.post(
   authorize({ roles: ['admin', 'sales'] }),
   validate(recordPaymentSchema),
   asyncHandler(async (req, res) => {
-    const result = await recordAdvancePayment(req.tenantPrisma, req.params.appointmentId, req.body.amount, req.user.id);
+    const result = await recordAdvancePayment(
+      req.tenantPrisma,
+      req.params.appointmentId,
+      req.body.amount,
+      req.user.id
+    );
 
     await logFromRequest(req, {
       action: 'CREATE',
       entityType: ENTITY_TYPES.PAYMENT,
       entityId: result.payment?.id || req.params.appointmentId,
       description: `Inregistrat avans: ${req.body.amount} RON`,
-      metadata: { appointmentId: req.params.appointmentId, amount: req.body.amount, type: 'advance' },
+      metadata: {
+        appointmentId: req.params.appointmentId,
+        amount: req.body.amount,
+        type: 'advance',
+      },
     });
 
     return ok(res, result, 'Advance payment recorded successfully');
@@ -386,7 +453,12 @@ router.post(
   authorize({ roles: ['admin', 'sales'] }),
   validate(recordPaymentSchema),
   asyncHandler(async (req, res) => {
-    const result = await recordFinalPayment(req.tenantPrisma, req.params.appointmentId, req.body.amount, req.user.id);
+    const result = await recordFinalPayment(
+      req.tenantPrisma,
+      req.params.appointmentId,
+      req.body.amount,
+      req.user.id
+    );
 
     await logFromRequest(req, {
       action: 'CREATE',

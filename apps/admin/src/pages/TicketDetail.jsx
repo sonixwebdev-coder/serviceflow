@@ -38,17 +38,33 @@ export default function TicketDetail() {
   const { showToast } = useToast();
 
   const handleStatusChange = (status) => {
-    updateTicket({ id, status }, {
-      onSuccess: () => showToast({ title: 'Status actualizat', type: 'success' }),
-      onError: () => showToast({ title: 'Eroare', description: 'Nu s-a putut actualiza statusul.', type: 'error' }),
-    });
+    updateTicket(
+      { id, status },
+      {
+        onSuccess: () => showToast({ title: 'Status actualizat', type: 'success' }),
+        onError: () =>
+          showToast({
+            title: 'Eroare',
+            description: 'Nu s-a putut actualiza statusul.',
+            type: 'error',
+          }),
+      }
+    );
   };
 
   const handlePriorityChange = (priority) => {
-    updateTicket({ id, priority }, {
-      onSuccess: () => showToast({ title: 'Prioritate actualizata', type: 'success' }),
-      onError: () => showToast({ title: 'Eroare', description: 'Nu s-a putut actualiza prioritatea.', type: 'error' }),
-    });
+    updateTicket(
+      { id, priority },
+      {
+        onSuccess: () => showToast({ title: 'Prioritate actualizata', type: 'success' }),
+        onError: () =>
+          showToast({
+            title: 'Eroare',
+            description: 'Nu s-a putut actualiza prioritatea.',
+            type: 'error',
+          }),
+      }
+    );
   };
 
   const handleSend = (e) => {
@@ -62,7 +78,12 @@ export default function TicketDetail() {
           setReply('');
           showToast({ title: 'Mesaj trimis', type: 'success' });
         },
-        onError: () => showToast({ title: 'Eroare', description: 'Nu s-a putut trimite mesajul.', type: 'error' }),
+        onError: () =>
+          showToast({
+            title: 'Eroare',
+            description: 'Nu s-a putut trimite mesajul.',
+            type: 'error',
+          }),
       }
     );
   };
@@ -105,13 +126,17 @@ export default function TicketDetail() {
             <div className="flex flex-wrap items-center gap-2 mt-1.5">
               <span className="text-xs font-medium text-gray-700">{ticket.organization?.name}</span>
               <span className="text-gray-300">&middot;</span>
-              <span className="text-xs text-gray-500">{ticket.createdBy?.firstName} {ticket.createdBy?.lastName}</span>
+              <span className="text-xs text-gray-500">
+                {ticket.createdBy?.firstName} {ticket.createdBy?.lastName}
+              </span>
               <span className="text-gray-300">&middot;</span>
               <span className="inline-flex rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
                 {CATEGORY_LABELS[ticket.category]}
               </span>
               <span className="text-gray-300">&middot;</span>
-              <span className="text-[11px] text-gray-400">{new Date(ticket.createdAt).toLocaleDateString('ro-RO')}</span>
+              <span className="text-[11px] text-gray-400">
+                {new Date(ticket.createdAt).toLocaleDateString('ro-RO')}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -121,7 +146,9 @@ export default function TicketDetail() {
               className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${STATUS_COLORS[ticket.status]}`}
             >
               {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                <option key={s} value={s}>
+                  {s.replace('_', ' ')}
+                </option>
               ))}
             </select>
             <select
@@ -130,7 +157,9 @@ export default function TicketDetail() {
               className={`rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs font-medium transition-colors ${PRIORITY_COLORS[ticket.priority]}`}
             >
               {PRIORITY_OPTIONS.map((p) => (
-                <option key={p} value={p}>{p}</option>
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
           </div>
@@ -158,9 +187,13 @@ export default function TicketDetail() {
                     <span className="text-xs font-semibold text-gray-900">
                       {msg.author?.firstName} {msg.author?.lastName}
                     </span>
-                    <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-medium ${
-                      isSuperAdmin ? 'bg-primary-100 text-primary-700' : 'bg-gray-200 text-gray-600'
-                    }`}>
+                    <span
+                      className={`text-[10px] rounded-full px-1.5 py-0.5 font-medium ${
+                        isSuperAdmin
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
                       {isSuperAdmin ? 'Admin' : 'Utilizator'}
                     </span>
                   </div>

@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { runtimeConfig } from '../config/runtime';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = runtimeConfig.apiUrl;
 
 const api = axios.create({
   baseURL: API_BASE,

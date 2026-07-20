@@ -65,7 +65,9 @@ export const updateSettings = async (settings) => {
  * @param {string} [locationId] - Optional location ID
  */
 export const syncAll = async (locationId) => {
-  const response = await API.post('/integrations/google/sync', { locationId: locationId || undefined });
+  const response = await API.post('/integrations/google/sync', {
+    locationId: locationId || undefined,
+  });
   return response.data?.data || response.data;
 };
 

@@ -22,7 +22,8 @@ const toLegacyId = (entity) => {
     : { ...entity, _id: entity.id };
 };
 
-const formatEnum = (value) => (typeof value === 'string' ? value.toLowerCase().replace(/_/g, '-') : value);
+const formatEnum = (value) =>
+  typeof value === 'string' ? value.toLowerCase().replace(/_/g, '-') : value;
 
 const mapUser = (user) => {
   if (!user) return null;
@@ -91,13 +92,14 @@ const mapTask = (task) => {
   if (!task) return null;
 
   const assignedTo = task.assignments?.map((assignment) => mapUser(assignment.user)) || [];
-  const comments = task.comments?.map((comment) => ({
-    id: comment.id,
-    _id: comment.id,
-    text: comment.text,
-    createdAt: comment.createdAt,
-    user: mapUser(comment.author),
-  })) || [];
+  const comments =
+    task.comments?.map((comment) => ({
+      id: comment.id,
+      _id: comment.id,
+      text: comment.text,
+      createdAt: comment.createdAt,
+      user: mapUser(comment.author),
+    })) || [];
 
   // Get comment count from _count or from comments array length
   const commentCount = task._count?.comments ?? comments.length;
@@ -117,13 +119,14 @@ const mapTask = (task) => {
     customerName: task.customerName,
     customerPhone: task.customerPhone,
     customerVehicle: task.customerVehicle,
-    products: task.products?.map((product) => ({
-      id: product.id,
-      _id: product.id,
-      productName: product.productName,
-      sku: product.sku,
-      quantity: product.quantity,
-    })) || [],
+    products:
+      task.products?.map((product) => ({
+        id: product.id,
+        _id: product.id,
+        productName: product.productName,
+        sku: product.sku,
+        quantity: product.quantity,
+      })) || [],
     comments,
     commentCount,
     createdBy: mapUser(task.createdBy),

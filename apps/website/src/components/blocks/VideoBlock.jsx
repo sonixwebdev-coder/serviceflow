@@ -21,14 +21,7 @@ function getThumbnail(url) {
 }
 
 export default function VideoBlock({ data, branding }) {
-  const {
-    title,
-    subtitle,
-    url,
-    thumbnail,
-    aspectRatio = '16:9',
-    autoplay = false,
-  } = data;
+  const { title, subtitle, url, thumbnail, aspectRatio = '16:9', autoplay = false } = data;
 
   const primaryColor = branding?.primaryColor || '#2563eb';
   const [playing, setPlaying] = useState(autoplay);
@@ -60,10 +53,12 @@ export default function VideoBlock({ data, branding }) {
         </div>
       )}
 
-      <div className={cn(
-        'relative rounded-xl overflow-hidden shadow-lg mx-auto max-w-4xl',
-        aspectClasses[aspectRatio] || aspectClasses['16:9']
-      )}>
+      <div
+        className={cn(
+          'relative rounded-xl overflow-hidden shadow-lg mx-auto max-w-4xl',
+          aspectClasses[aspectRatio] || aspectClasses['16:9']
+        )}
+      >
         {embedUrl && (playing || autoplay) ? (
           <iframe
             src={`${embedUrl}?autoplay=1&rel=0`}
@@ -74,12 +69,13 @@ export default function VideoBlock({ data, branding }) {
             title={title || 'Video'}
           />
         ) : (
-          <button
-            onClick={() => setPlaying(true)}
-            className="absolute inset-0 w-full h-full group"
-          >
+          <button onClick={() => setPlaying(true)} className="absolute inset-0 w-full h-full group">
             {thumbUrl ? (
-              <img src={thumbUrl} alt={title || 'Video thumbnail'} className="w-full h-full object-cover" />
+              <img
+                src={thumbUrl}
+                alt={title || 'Video thumbnail'}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-gray-900" />
             )}

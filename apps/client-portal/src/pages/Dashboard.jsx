@@ -12,7 +12,10 @@ export default function Dashboard() {
   const { data: upcomingAppointments, isLoading: appointmentsLoading } = useUpcomingAppointments();
   const { data: invoiceSummary, isLoading: summaryLoading } = useInvoiceSummary();
 
-  const clientName = client?.companyName || `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || 'Client';
+  const clientName =
+    client?.companyName ||
+    `${client?.firstName || ''} ${client?.lastName || ''}`.trim() ||
+    'Client';
 
   return (
     <div className="space-y-6">
@@ -108,7 +111,9 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{appointment.title}</p>
-                      <p className="text-sm text-gray-500">{formatDateTime(appointment.scheduledStart)}</p>
+                      <p className="text-sm text-gray-500">
+                        {formatDateTime(appointment.scheduledStart)}
+                      </p>
                     </div>
                   </div>
                   <StatusBadge status={appointment.status} />

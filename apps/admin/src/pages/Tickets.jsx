@@ -53,12 +53,39 @@ export default function Tickets() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Deschise', value: stats.OPEN || 0, icon: AlertCircle, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'In progres', value: stats.IN_PROGRESS || 0, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Rezolvate', value: stats.RESOLVED || 0, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Inchise', value: stats.CLOSED || 0, icon: MessageSquare, color: 'text-gray-500', bg: 'bg-gray-100' },
+            {
+              label: 'Deschise',
+              value: stats.OPEN || 0,
+              icon: AlertCircle,
+              color: 'text-blue-600',
+              bg: 'bg-blue-50',
+            },
+            {
+              label: 'In progres',
+              value: stats.IN_PROGRESS || 0,
+              icon: Clock,
+              color: 'text-amber-600',
+              bg: 'bg-amber-50',
+            },
+            {
+              label: 'Rezolvate',
+              value: stats.RESOLVED || 0,
+              icon: CheckCircle,
+              color: 'text-emerald-600',
+              bg: 'bg-emerald-50',
+            },
+            {
+              label: 'Inchise',
+              value: stats.CLOSED || 0,
+              icon: MessageSquare,
+              color: 'text-gray-500',
+              bg: 'bg-gray-100',
+            },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm">
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm"
+            >
               <div className="flex items-center gap-3">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}>
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />
@@ -86,9 +113,36 @@ export default function Tickets() {
           />
         </div>
         {[
-          { key: 'status', options: [['', 'Toate statusurile'], ['OPEN', 'Deschis'], ['IN_PROGRESS', 'In progres'], ['RESOLVED', 'Rezolvat'], ['CLOSED', 'Inchis']] },
-          { key: 'category', options: [['', 'Toate categoriile'], ['BUG', 'Bug'], ['FEATURE_REQUEST', 'Feature Request'], ['BILLING', 'Billing'], ['GENERAL_QUESTION', 'General']] },
-          { key: 'priority', options: [['', 'Toate prioritatile'], ['LOW', 'Low'], ['MEDIUM', 'Medium'], ['HIGH', 'High'], ['URGENT', 'Urgent']] },
+          {
+            key: 'status',
+            options: [
+              ['', 'Toate statusurile'],
+              ['OPEN', 'Deschis'],
+              ['IN_PROGRESS', 'In progres'],
+              ['RESOLVED', 'Rezolvat'],
+              ['CLOSED', 'Inchis'],
+            ],
+          },
+          {
+            key: 'category',
+            options: [
+              ['', 'Toate categoriile'],
+              ['BUG', 'Bug'],
+              ['FEATURE_REQUEST', 'Feature Request'],
+              ['BILLING', 'Billing'],
+              ['GENERAL_QUESTION', 'General'],
+            ],
+          },
+          {
+            key: 'priority',
+            options: [
+              ['', 'Toate prioritatile'],
+              ['LOW', 'Low'],
+              ['MEDIUM', 'Medium'],
+              ['HIGH', 'High'],
+              ['URGENT', 'Urgent'],
+            ],
+          },
         ].map((f) => (
           <select
             key={f.key}
@@ -96,7 +150,11 @@ export default function Tickets() {
             onChange={(e) => handleFilter(f.key, e.target.value)}
             className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
           >
-            {f.options.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+            {f.options.map(([val, label]) => (
+              <option key={val} value={val}>
+                {label}
+              </option>
+            ))}
           </select>
         ))}
       </div>
@@ -117,13 +175,27 @@ export default function Tickets() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50 text-left">
-                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Subiect</th>
-                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Organizatie</th>
-                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Categorie</th>
-                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Prioritate</th>
-                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Creat</th>
-                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Mesaje</th>
+                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Subiect
+                  </th>
+                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Organizatie
+                  </th>
+                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Categorie
+                  </th>
+                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Status
+                  </th>
+                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Prioritate
+                  </th>
+                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Creat
+                  </th>
+                  <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Mesaje
+                  </th>
                   <th className="w-10" />
                 </tr>
               </thead>
@@ -134,23 +206,35 @@ export default function Tickets() {
                     onClick={() => navigate(`/tickets/${ticket.id}`)}
                     className="group cursor-pointer transition-colors hover:bg-primary-50/30"
                   >
-                    <td className="px-5 py-3.5 font-medium text-gray-900 max-w-xs truncate">{ticket.subject}</td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs">{ticket.organization?.name || '-'}</td>
-                    <td className="px-5 py-3.5 text-gray-500 text-xs">{CATEGORY_LABELS[ticket.category]}</td>
+                    <td className="px-5 py-3.5 font-medium text-gray-900 max-w-xs truncate">
+                      {ticket.subject}
+                    </td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">
+                      {ticket.organization?.name || '-'}
+                    </td>
+                    <td className="px-5 py-3.5 text-gray-500 text-xs">
+                      {CATEGORY_LABELS[ticket.category]}
+                    </td>
                     <td className="px-5 py-3.5">
-                      <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[ticket.status]}`}>
+                      <span
+                        className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[ticket.status]}`}
+                      >
                         {ticket.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${PRIORITY_COLORS[ticket.priority]}`}>
+                      <span
+                        className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${PRIORITY_COLORS[ticket.priority]}`}
+                      >
                         {ticket.priority}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-xs text-gray-500 whitespace-nowrap">
                       {new Date(ticket.createdAt).toLocaleDateString('ro-RO')}
                     </td>
-                    <td className="px-5 py-3.5 text-gray-500 tabular-nums">{ticket._count?.messages || 0}</td>
+                    <td className="px-5 py-3.5 text-gray-500 tabular-nums">
+                      {ticket._count?.messages || 0}
+                    </td>
                     <td className="px-3 py-3.5">
                       <ChevronRight className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-500" />
                     </td>

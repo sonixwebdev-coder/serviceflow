@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Hash, Lock, Search, Users } from 'lucide-react';
 import { useCreateChannel } from '../../hooks/useChat';
 import { useChatStore } from '../../state/useChatStore';
@@ -188,9 +188,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
           <div className="p-4 flex-shrink-0">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium text-gray-700">
-                Adaugă membri (opțional)
-              </label>
+              <label className="text-sm font-medium text-gray-700">Adaugă membri (opțional)</label>
               {selectedMembers.length > 0 && (
                 <span className="text-xs text-primary font-medium">
                   {selectedMembers.length} selectat(i)
@@ -243,7 +241,9 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
           {/* User List */}
           <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0">
             {loadingUsers ? (
-              <div className="py-4 text-center text-sm text-gray-500">Se încarcă utilizatorii...</div>
+              <div className="py-4 text-center text-sm text-gray-500">
+                Se încarcă utilizatorii...
+              </div>
             ) : filteredUsers.length === 0 ? (
               <div className="py-4 text-center text-sm text-gray-500">Niciun utilizator găsit</div>
             ) : (
@@ -279,8 +279,18 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                       {isSelected && (
                         <div className="flex-shrink-0">
                           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                            <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            <svg
+                              className="h-3 w-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
                           </div>
                         </div>
@@ -290,7 +300,8 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                 })}
                 {filteredUsers.length > 10 && (
                   <p className="py-2 text-center text-xs text-gray-500">
-                    Afișând primii 10 din {filteredUsers.length} utilizatori. Folosește căutarea pentru a găsi mai mulți.
+                    Afișând primii 10 din {filteredUsers.length} utilizatori. Folosește căutarea
+                    pentru a găsi mai mulți.
                   </p>
                 )}
               </div>

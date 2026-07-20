@@ -2,7 +2,6 @@ const express = require('express');
 const { z } = require('zod');
 const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
-const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
 const { ok, created, noContent } = require('../utils/http');
 const {
@@ -13,7 +12,11 @@ const {
   addTaskComment,
   deleteTask,
 } = require('../services/taskService');
-const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
+const {
+  logFromRequest,
+  ENTITY_TYPES,
+  getActionDescription,
+} = require('../services/auditLogService');
 
 const listQuerySchema = z.object({
   status: z.string().optional(),
@@ -62,7 +65,10 @@ router.get(
     // Enable pagination if page or limit is provided
     const paginate = Boolean(req.query.page || req.query.limit);
     const locationFilter = await req.getLocationFilter({ includeNull: true });
-    const tasks = await listTasks(req.tenantPrisma, req.query, req.user, { paginate, locationFilter });
+    const tasks = await listTasks(req.tenantPrisma, req.query, req.user, {
+      paginate,
+      locationFilter,
+    });
     return ok(res, tasks);
   })
 );

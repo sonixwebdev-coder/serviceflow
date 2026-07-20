@@ -28,7 +28,7 @@ const sanitizeForFormulaInjection = (value) => {
   const dangerousChars = ['=', '+', '-', '@', '\t', '\r', '\n'];
 
   // Check if value starts with any dangerous character
-  if (dangerousChars.some(char => stringValue.startsWith(char))) {
+  if (dangerousChars.some((char) => stringValue.startsWith(char))) {
     // Prepend single quote to escape the formula
     return `'${stringValue}`;
   }
@@ -114,9 +114,9 @@ const flattenObject = (obj, prefix = '') => {
     } else if (typeof value === 'object' && !Array.isArray(value)) {
       Object.assign(flattened, flattenObject(value, newKey));
     } else if (Array.isArray(value)) {
-      flattened[newKey] = value.map(item =>
-        typeof item === 'object' ? JSON.stringify(item) : item
-      ).join('; ');
+      flattened[newKey] = value
+        .map((item) => (typeof item === 'object' ? JSON.stringify(item) : item))
+        .join('; ');
     } else {
       flattened[newKey] = value;
     }
@@ -134,7 +134,7 @@ const applyFilters = (data, filters = {}) => {
   // Date range filter
   if (filters.startDate && filters.dateField) {
     const startDate = new Date(filters.startDate);
-    filtered = filtered.filter(item => {
+    filtered = filtered.filter((item) => {
       const itemDate = new Date(item[filters.dateField]);
       return itemDate >= startDate;
     });
@@ -142,7 +142,7 @@ const applyFilters = (data, filters = {}) => {
 
   if (filters.endDate && filters.dateField) {
     const endDate = new Date(filters.endDate);
-    filtered = filtered.filter(item => {
+    filtered = filtered.filter((item) => {
       const itemDate = new Date(item[filters.dateField]);
       return itemDate <= endDate;
     });
@@ -150,16 +150,16 @@ const applyFilters = (data, filters = {}) => {
 
   // Status filter
   if (filters.status) {
-    filtered = filtered.filter(item =>
-      item.status && item.status.toLowerCase() === filters.status.toLowerCase()
+    filtered = filtered.filter(
+      (item) => item.status && item.status.toLowerCase() === filters.status.toLowerCase()
     );
   }
 
   // Search filter (searches in all string fields)
   if (filters.search) {
     const searchTerm = filters.search.toLowerCase();
-    filtered = filtered.filter(item => {
-      return Object.values(item).some(value => {
+    filtered = filtered.filter((item) => {
+      return Object.values(item).some((value) => {
         if (typeof value === 'string') {
           return value.toLowerCase().includes(searchTerm);
         }
@@ -218,7 +218,9 @@ const getEntityNameRO = (entityKey) => {
 /**
  * Validate export format
  */
-const VALID_FORMATS = ['csv', 'excel', 'json', 'pdf', 'xml', 'anaf-xml'];
+// Formats supported by every generic entity export. PDF and ANAF XML use
+// dedicated endpoints because they have entity-specific document contracts.
+const VALID_FORMATS = ['csv', 'excel', 'json', 'xml'];
 
 const validateFormat = (format) => {
   const normalized = (format || '').toLowerCase();

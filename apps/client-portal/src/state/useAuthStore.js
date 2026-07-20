@@ -8,12 +8,15 @@ export const useAuthStore = create((set, get) => ({
 
   setAuth: ({ accessToken, client }) => {
     // Only cache minimal display fields in localStorage (no sensitive data)
-    localStorage.setItem('portal-client', JSON.stringify({
-      id: client.id,
-      firstName: client.firstName,
-      lastName: client.lastName,
-      companyName: client.companyName,
-    }));
+    localStorage.setItem(
+      'portal-client',
+      JSON.stringify({
+        id: client.id,
+        firstName: client.firstName,
+        lastName: client.lastName,
+        companyName: client.companyName,
+      })
+    );
 
     set({
       accessToken,
@@ -40,12 +43,15 @@ export const useAuthStore = create((set, get) => ({
     set((state) => {
       const updatedClient = { ...state.client, ...clientData };
       // Update localStorage cache with only display fields
-      localStorage.setItem('portal-client', JSON.stringify({
-        id: updatedClient.id,
-        firstName: updatedClient.firstName,
-        lastName: updatedClient.lastName,
-        companyName: updatedClient.companyName,
-      }));
+      localStorage.setItem(
+        'portal-client',
+        JSON.stringify({
+          id: updatedClient.id,
+          firstName: updatedClient.firstName,
+          lastName: updatedClient.lastName,
+          companyName: updatedClient.companyName,
+        })
+      );
       return { client: updatedClient };
     });
   },

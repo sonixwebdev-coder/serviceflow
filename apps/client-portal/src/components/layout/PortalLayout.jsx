@@ -1,6 +1,6 @@
-import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
-import { Calendar, FileText, User, LogOut, Home, Menu, X, Bell, Check, Compass, Gift } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Calendar, FileText, User, LogOut, Home, Menu, X, Bell, Compass, Gift } from 'lucide-react';
+import { useState } from 'react';
 import { useAuthStore } from '@/state/useAuthStore';
 import { useLogout } from '@/hooks/useAuth';
 import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
@@ -36,18 +36,16 @@ export default function PortalLayout() {
     markingAllRead,
   } = useNotifications();
 
-  const unreadNotifications = useMemo(
-    () => notifications.filter((n) => !n.isRead),
-    [notifications]
-  );
-
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => navigate('/login'),
     });
   };
 
-  const clientName = client?.companyName || `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || 'Client';
+  const clientName =
+    client?.companyName ||
+    `${client?.firstName || ''} ${client?.lastName || ''}`.trim() ||
+    'Client';
 
   const formatRelativeTime = (date) => {
     const now = new Date();
@@ -211,10 +209,7 @@ export default function PortalLayout() {
       {/* Notification dropdown */}
       {notificationsOpen && (
         <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setNotificationsOpen(false)}
-          />
+          <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
           <div className="fixed right-4 top-16 lg:top-20 z-50 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-gray-200 max-h-[calc(100vh-100px)] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Notificari</h3>
@@ -258,10 +253,12 @@ export default function PortalLayout() {
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            'text-sm',
-                            notification.isRead ? 'text-gray-900' : 'text-gray-900 font-semibold'
-                          )}>
+                          <p
+                            className={cn(
+                              'text-sm',
+                              notification.isRead ? 'text-gray-900' : 'text-gray-900 font-semibold'
+                            )}
+                          >
                             {notification.title}
                           </p>
                           <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">

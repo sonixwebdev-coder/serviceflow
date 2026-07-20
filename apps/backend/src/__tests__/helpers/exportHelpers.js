@@ -6,6 +6,7 @@
 const ExcelJS = require('exceljs');
 const { PDFDocument } = require('pdf-lib');
 const AdmZip = require('adm-zip');
+const Papa = require('papaparse');
 
 /**
  * Mock Prisma client with common export queries
@@ -57,30 +58,18 @@ const validateCSV = (buffer) => {
     const csvString = buffer.toString('utf8');
 
     // Check for UTF-8 BOM
-    const hasBOM = buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF;
+    const hasBOM = buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf;
     if (!hasBOM) {
       errors.push('Missing UTF-8 BOM');
     }
 
-    // Parse CSV lines
-    const lines = csvString.trim().split('\n');
-
-    if (lines.length < 1) {
-      errors.push('CSV is empty');
-      return { isValid: false, headers, rowCount, errors };
-    }
-
-    // Extract headers
-    headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    rowCount = lines.length - 1; // Exclude header row
-
-    // Validate each data row has same number of columns
-    for (let i = 1; i < lines.length; i++) {
-      const columns = lines[i].split(',');
-      if (columns.length !== headers.length) {
-        errors.push(`Row ${i} has ${columns.length} columns, expected ${headers.length}`);
-      }
-    }
+    const parsed = Papa.parse(csvString.replace(/^\uFEFF/, ''), {
+      header: true,
+      skipEmptyLines: true,
+    });
+    headers = parsed.meta.fields || [];
+    rowCount = parsed.data.length;
+    errors.push(...parsed.errors.map((error) => error.message));
 
     return {
       isValid: errors.length === 0,
@@ -113,7 +102,7 @@ const validateExcel = async (buffer) => {
     }
 
     // Validate each worksheet
-    workbook.worksheets.forEach((worksheet, index) => {
+    workbook.worksheets.forEach((worksheet) => {
       const sheetInfo = {
         name: worksheet.name,
         rowCount: worksheet.rowCount,
@@ -254,7 +243,7 @@ const validateZIP = (buffer) => {
     }
 
     // List all files
-    zipEntries.forEach(entry => {
+    zipEntries.forEach((entry) => {
       files.push({
         name: entry.entryName,
         size: entry.header.size,
@@ -316,31 +305,34 @@ const generateTestFile = async (format, options = {}) => {
     case 'csv':
       return exportToCSV(testData, options);
 
-    case 'excel':
+    case 'excel': {
       const columns = options.columns || [
         { header: 'ID', key: 'id', width: 10 },
         { header: 'Name', key: 'name', width: 20 },
         { header: 'Value', key: 'value', width: 15 },
       ];
       return exportToExcel(testData, { columns });
+    }
 
     case 'json':
       return exportToJSON(testData, options);
 
-    case 'pdf':
+    case 'pdf': {
       const pdfColumns = options.columns || [
         { header: 'ID', key: 'id', width: 1 },
         { header: 'Name', key: 'name', width: 2 },
         { header: 'Value', key: 'value', width: 2 },
       ];
       return exportToPDF(testData, { columns: pdfColumns });
+    }
 
-    case 'zip':
+    case 'zip': {
       const files = options.files || [
         { name: 'test1.txt', buffer: Buffer.from('Content 1', 'utf8') },
         { name: 'test2.txt', buffer: Buffer.from('Content 2', 'utf8') },
       ];
       return createZipArchive(files);
+    }
 
     default:
       throw new Error(`Unsupported format: ${format}`);
@@ -382,45 +374,57 @@ const assertValidExportFile = async (buffer, format) => {
   expect(buffer.length).toBeGreaterThan(0);
 
   switch (format) {
-    case 'csv':
+    case 'csv': {
       const csvResult = validateCSV(buffer);
       expect(csvResult.isValid).toBe(true);
       if (!csvResult.isValid) {
         console.error('CSV validation errors:', csvResult.errors);
       }
       break;
+    }
 
-    case 'excel':
+    case 'xml': {
+      const xml = buffer.toString('utf8');
+      expect(xml).toMatch(/^<\?xml/);
+      expect(xml).toMatch(/<Export[\s>]/);
+      break;
+    }
+
+    case 'excel': {
       const excelResult = await validateExcel(buffer);
       expect(excelResult.isValid).toBe(true);
       if (!excelResult.isValid) {
         console.error('Excel validation errors:', excelResult.errors);
       }
       break;
+    }
 
-    case 'json':
+    case 'json': {
       const jsonResult = validateJSON(buffer);
       expect(jsonResult.isValid).toBe(true);
       if (!jsonResult.isValid) {
         console.error('JSON validation errors:', jsonResult.errors);
       }
       break;
+    }
 
-    case 'pdf':
+    case 'pdf': {
       const pdfResult = await validatePDF(buffer);
       expect(pdfResult.isValid).toBe(true);
       if (!pdfResult.isValid) {
         console.error('PDF validation errors:', pdfResult.errors);
       }
       break;
+    }
 
-    case 'zip':
+    case 'zip': {
       const zipResult = validateZIP(buffer);
       expect(zipResult.isValid).toBe(true);
       if (!zipResult.isValid) {
         console.error('ZIP validation errors:', zipResult.errors);
       }
       break;
+    }
 
     default:
       throw new Error(`Unknown format: ${format}`);
@@ -430,7 +434,7 @@ const assertValidExportFile = async (buffer, format) => {
 /**
  * Wait for async operation (useful for testing timeouts)
  */
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 module.exports = {
   createMockPrisma,

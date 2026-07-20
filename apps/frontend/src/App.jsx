@@ -4,7 +4,6 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { TerminologyProvider } from './context/TerminologyContext.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import DashboardLayout from './components/layout/DashboardLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { USER_ROLES } from './utils/constants';
 import AuthenticatedProviders from './components/auth/AuthenticatedProviders.jsx';
@@ -19,7 +18,6 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
-
 // Root: landing page if not logged in, dashboard redirect if logged in
 const SmartHome = () => {
   const { loading, isAuthenticated } = useAuth();
@@ -33,6 +31,7 @@ const BusinessLanding = lazy(() => import('./pages/BusinessLanding.jsx'));
 const TermeniConditii = lazy(() => import('./pages/TermeniConditii.jsx'));
 const Confidentialitate = lazy(() => import('./pages/Confidentialitate.jsx'));
 const Preturi = lazy(() => import('./pages/Preturi.jsx'));
+const DashboardLayout = lazy(() => import('./components/layout/DashboardLayout.jsx'));
 
 // Protected pages (lazy-loaded - only fetched when navigated to)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -75,356 +74,358 @@ const PageLoader = () => (
 function App() {
   return (
     <ErrorBoundary>
-    <BrowserRouter>
-      <ScrollToTop />
-      <ToastProvider>
-        <AuthProvider>
-          <TerminologyProvider>
-            <AuthenticatedProviders />
-            <DataPreferences />
-            <Suspense fallback={<PageLoader />}>
-            <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/business" element={<Navigate to="/" replace />} />
-          <Route path="/terms" element={<TermeniConditii />} />
-          <Route path="/privacy" element={<Confidentialitate />} />
-          <Route path="/pricing" element={<Preturi />} />
+      <BrowserRouter>
+        <ScrollToTop />
+        <ToastProvider>
+          <AuthProvider>
+            <TerminologyProvider>
+              <AuthenticatedProviders />
+              <DataPreferences />
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/business" element={<Navigate to="/" replace />} />
+                  <Route path="/terms" element={<TermeniConditii />} />
+                  <Route path="/privacy" element={<Confidentialitate />} />
+                  <Route path="/pricing" element={<Preturi />} />
 
-          {/* Onboarding (protected, no DashboardLayout) */}
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <Onboarding />
-              </ProtectedRoute>
-            }
-          />
+                  {/* Onboarding (protected, no DashboardLayout) */}
+                  <Route
+                    path="/onboarding"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <Onboarding />
+                      </ProtectedRoute>
+                    }
+                  />
 
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Dashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  {/* Protected Routes */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Dashboard />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/tasks"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Tasks />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/tasks"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Tasks />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/personal-todos"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <PersonalTodos />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/personal-todos"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <PersonalTodos />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/leaves"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <LeaveRequests />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/leaves"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <LeaveRequests />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/time-tracking"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <TimeTracking />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/time-tracking"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <TimeTracking />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/crm/clients"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Clients />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/crm/clients"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Clients />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/crm/online-clients"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <OnlineClients />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/crm/online-clients"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <OnlineClients />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/crm/assets"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Assets />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/crm/assets"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Assets />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/crm/resources"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Resources />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/crm/resources"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Resources />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/crm/appointments"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Appointments />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/crm/appointments"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Appointments />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/crm/invoices"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.SALES]}>
-                <DashboardLayout>
-                  <Invoices />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/crm/invoices"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER, USER_ROLES.SALES]}
+                      >
+                        <DashboardLayout>
+                          <Invoices />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/crm/loyalty"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
-                <DashboardLayout>
-                  <LoyaltyDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/crm/loyalty"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
+                        <DashboardLayout>
+                          <LoyaltyDashboard />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Profile />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Profile />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Chat />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/chat"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <Chat />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/activity"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
-                <DashboardLayout>
-                  <ActivityTimeline />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/activity"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
+                        <DashboardLayout>
+                          <ActivityTimeline />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
-                <DashboardLayout>
-                  <Analytics />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.MANAGER]}>
+                        <DashboardLayout>
+                          <Analytics />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/employees"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <Employees />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/employees"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <Employees />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          {/* Admin Only Routes */}
-          <Route
-            path="/settings/locations"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <Locations />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  {/* Admin Only Routes */}
+                  <Route
+                    path="/settings/locations"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <Locations />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/services"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <Services />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/services"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <Services />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/company"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <CompanySettings />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/company"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <CompanySettings />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/organization"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <OrganizationSettings />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/organization"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <OrganizationSettings />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/email-templates"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <EmailTemplates />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/email-templates"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <EmailTemplates />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/website"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <WebsiteBuilder />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/website"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <WebsiteBuilder />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/website/leads"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <WebsiteLeads />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/website/leads"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <WebsiteLeads />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/billing"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <BillingSettings />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/billing"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <BillingSettings />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/settings/loyalty"
-            element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <DashboardLayout>
-                  <LoyaltySettings />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/settings/loyalty"
+                    element={
+                      <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                        <DashboardLayout>
+                          <LoyaltySettings />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/support"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <SupportTickets />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/support"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <SupportTickets />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          <Route
-            path="/support/:id"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <SupportTicketDetail />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  <Route
+                    path="/support/:id"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayout>
+                          <SupportTicketDetail />
+                        </DashboardLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-          {/* Landing / Dashboard redirect */}
-          <Route path="/" element={<SmartHome />} />
+                  {/* Landing / Dashboard redirect */}
+                  <Route path="/" element={<SmartHome />} />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-            </Routes>
-            </Suspense>
-          </TerminologyProvider>
-        </AuthProvider>
-      </ToastProvider>
-    </BrowserRouter>
+                  {/* 404 */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </TerminologyProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

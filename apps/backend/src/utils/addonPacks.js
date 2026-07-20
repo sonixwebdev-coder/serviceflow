@@ -65,7 +65,7 @@ const resolveAddonPack = (type, settings) => {
 const getAddonPack = (type, settings) => resolveAddonPack(type, settings);
 
 const getAvailableAddons = (settings) =>
-  Object.entries(DEFAULT_ADDON_PACKS).map(([type, pack]) => {
+  Object.keys(DEFAULT_ADDON_PACKS).map((type) => {
     const resolved = resolveAddonPack(type, settings);
     return {
       type,

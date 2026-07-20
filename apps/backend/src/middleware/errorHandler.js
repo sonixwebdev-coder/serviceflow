@@ -25,7 +25,11 @@ const sanitizeErrorMessage = (err) => {
     switch (err.code) {
       case 'P2002': {
         const fields = err.meta?.target;
-        if (fields && (fields.includes('email') || (Array.isArray(fields) && fields.some(f => f.includes('email'))))) {
+        if (
+          fields &&
+          (fields.includes('email') ||
+            (Array.isArray(fields) && fields.some((f) => f.includes('email'))))
+        ) {
           return 'Această adresă de email este deja înregistrată. Te rugăm să folosești o altă adresă de email.';
         }
         return 'Această înregistrare există deja. Te rugăm să verifici datele introduse.';
@@ -42,7 +46,10 @@ const sanitizeErrorMessage = (err) => {
   }
 
   // JWT/Authentication errors
-  if (originalMessage.toLowerCase().includes('jwt') || originalMessage.toLowerCase().includes('token')) {
+  if (
+    originalMessage.toLowerCase().includes('jwt') ||
+    originalMessage.toLowerCase().includes('token')
+  ) {
     return 'Sesiunea a expirat. Te rugăm să te autentifici din nou.';
   }
 
@@ -52,7 +59,10 @@ const sanitizeErrorMessage = (err) => {
   }
 
   // Validation errors
-  if (originalMessage.toLowerCase().includes('validation') || originalMessage.toLowerCase().includes('invalid')) {
+  if (
+    originalMessage.toLowerCase().includes('validation') ||
+    originalMessage.toLowerCase().includes('invalid')
+  ) {
     return 'Datele introduse nu sunt valide. Te rugăm să verifici și să încerci din nou.';
   }
 
@@ -127,13 +137,15 @@ const errorHandler = (err, req, res, next) => {
     ...(err instanceof AppError && err.code ? { code: err.code } : {}),
     ...(err.details ? { errors: err.details } : {}),
     // Only include technical details in development
-    ...(process.env.NODE_ENV === 'development' ? {
-      _debug: {
-        originalMessage: err.message,
-        stack: err.stack,
-        code: err.code,
-      }
-    } : {}),
+    ...(process.env.NODE_ENV === 'development'
+      ? {
+          _debug: {
+            originalMessage: err.message,
+            stack: err.stack,
+            code: err.code,
+          },
+        }
+      : {}),
   });
 };
 

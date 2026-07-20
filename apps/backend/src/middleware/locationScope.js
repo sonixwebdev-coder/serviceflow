@@ -59,10 +59,11 @@ const getLocationData = async (req) => {
   // Fetch user's location assignments (Redis-cached across requests to avoid a DB hit per request)
   const userLocations = await cache.wrap(
     `user:locations:${req.user.id}`,
-    () => prisma.userLocation.findMany({
-      where: { userId: req.user.id },
-      select: { locationId: true, isPrimary: true },
-    }),
+    () =>
+      prisma.userLocation.findMany({
+        where: { userId: req.user.id },
+        select: { locationId: true, isPrimary: true },
+      }),
     cache.TTL.MEDIUM // 5 minutes - invalidate via cache.del(`user:locations:${userId}`) on assignment changes
   );
 

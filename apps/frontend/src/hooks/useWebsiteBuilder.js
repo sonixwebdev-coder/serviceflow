@@ -81,19 +81,23 @@ export const useWebsiteMutations = () => {
   return {
     createWebsite: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
-    createError: createMutation.error?.response?.data?.message || createMutation.error?.message || null,
+    createError:
+      createMutation.error?.response?.data?.message || createMutation.error?.message || null,
 
     updateWebsite: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
-    updateError: updateMutation.error?.response?.data?.message || updateMutation.error?.message || null,
+    updateError:
+      updateMutation.error?.response?.data?.message || updateMutation.error?.message || null,
 
     deleteWebsite: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
-    deleteError: deleteMutation.error?.response?.data?.message || deleteMutation.error?.message || null,
+    deleteError:
+      deleteMutation.error?.response?.data?.message || deleteMutation.error?.message || null,
 
     publishWebsite: publishMutation.mutateAsync,
     isPublishing: publishMutation.isPending,
-    publishError: publishMutation.error?.response?.data?.message || publishMutation.error?.message || null,
+    publishError:
+      publishMutation.error?.response?.data?.message || publishMutation.error?.message || null,
   };
 };
 
@@ -212,19 +216,23 @@ export const usePageMutations = (websiteId) => {
   return {
     createPage: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
-    createError: createMutation.error?.response?.data?.message || createMutation.error?.message || null,
+    createError:
+      createMutation.error?.response?.data?.message || createMutation.error?.message || null,
 
     updatePage: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
-    updateError: updateMutation.error?.response?.data?.message || updateMutation.error?.message || null,
+    updateError:
+      updateMutation.error?.response?.data?.message || updateMutation.error?.message || null,
 
     deletePage: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
-    deleteError: deleteMutation.error?.response?.data?.message || deleteMutation.error?.message || null,
+    deleteError:
+      deleteMutation.error?.response?.data?.message || deleteMutation.error?.message || null,
 
     reorderPages: reorderMutation.mutateAsync,
     isReordering: reorderMutation.isPending,
-    reorderError: reorderMutation.error?.response?.data?.message || reorderMutation.error?.message || null,
+    reorderError:
+      reorderMutation.error?.response?.data?.message || reorderMutation.error?.message || null,
   };
 };
 
@@ -295,15 +303,18 @@ export const useLeadMutations = (websiteId) => {
   return {
     updateLead: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
-    updateError: updateMutation.error?.response?.data?.message || updateMutation.error?.message || null,
+    updateError:
+      updateMutation.error?.response?.data?.message || updateMutation.error?.message || null,
 
     deleteLead: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
-    deleteError: deleteMutation.error?.response?.data?.message || deleteMutation.error?.message || null,
+    deleteError:
+      deleteMutation.error?.response?.data?.message || deleteMutation.error?.message || null,
 
     convertToClient: convertMutation.mutateAsync,
     isConverting: convertMutation.isPending,
-    convertError: convertMutation.error?.response?.data?.message || convertMutation.error?.message || null,
+    convertError:
+      convertMutation.error?.response?.data?.message || convertMutation.error?.message || null,
 
     approveReview: approveMutation.mutateAsync,
     isApproving: approveMutation.isPending,
@@ -362,17 +373,13 @@ export const useBlockEditor = (initialBlocks = []) => {
   }, []);
 
   const updateBlock = useCallback((blockId, updates) => {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === blockId ? { ...b, ...updates } : b))
-    );
+    setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, ...updates } : b)));
     setIsDirty(true);
   }, []);
 
   const updateBlockData = useCallback((blockId, dataUpdates) => {
     setBlocks((prev) =>
-      prev.map((b) =>
-        b.id === blockId ? { ...b, data: { ...b.data, ...dataUpdates } } : b
-      )
+      prev.map((b) => (b.id === blockId ? { ...b, data: { ...b.data, ...dataUpdates } } : b))
     );
     setIsDirty(true);
   }, []);
@@ -380,21 +387,22 @@ export const useBlockEditor = (initialBlocks = []) => {
   const updateBlockSettings = useCallback((blockId, settingsUpdates) => {
     setBlocks((prev) =>
       prev.map((b) =>
-        b.id === blockId
-          ? { ...b, settings: { ...b.settings, ...settingsUpdates } }
-          : b
+        b.id === blockId ? { ...b, settings: { ...b.settings, ...settingsUpdates } } : b
       )
     );
     setIsDirty(true);
   }, []);
 
-  const removeBlock = useCallback((blockId) => {
-    setBlocks((prev) => prev.filter((b) => b.id !== blockId));
-    if (selectedBlockId === blockId) {
-      setSelectedBlockId(null);
-    }
-    setIsDirty(true);
-  }, [selectedBlockId]);
+  const removeBlock = useCallback(
+    (blockId) => {
+      setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+      if (selectedBlockId === blockId) {
+        setSelectedBlockId(null);
+      }
+      setIsDirty(true);
+    },
+    [selectedBlockId]
+  );
 
   const moveBlock = useCallback((fromIndex, toIndex) => {
     setBlocks((prev) => {

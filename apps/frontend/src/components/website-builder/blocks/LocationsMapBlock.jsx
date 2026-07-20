@@ -35,14 +35,16 @@ const LocationsMapBlock = ({ data, settings, isEditing = false, onClick, crmData
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const dayLabels = ['Luni', 'Marti', 'Miercuri', 'Joi', 'Vineri', 'Sambata', 'Duminica'];
 
-    return days.map((day, index) => {
-      const dayHours = hours[day];
-      if (!dayHours) return null;
-      if (dayHours.closed) {
-        return { day: dayLabels[index], hours: 'Inchis' };
-      }
-      return { day: dayLabels[index], hours: `${dayHours.open} - ${dayHours.close}` };
-    }).filter(Boolean);
+    return days
+      .map((day, index) => {
+        const dayHours = hours[day];
+        if (!dayHours) return null;
+        if (dayHours.closed) {
+          return { day: dayLabels[index], hours: 'Inchis' };
+        }
+        return { day: dayLabels[index], hours: `${dayHours.open} - ${dayHours.close}` };
+      })
+      .filter(Boolean);
   };
 
   return (
@@ -63,26 +65,21 @@ const LocationsMapBlock = ({ data, settings, isEditing = false, onClick, crmData
         {(title || subtitle) && (
           <div className="text-center mb-12">
             {title && (
-              <h2
-                className="text-3xl font-bold mb-4"
-                style={{ color: textColor }}
-              >
+              <h2 className="text-3xl font-bold mb-4" style={{ color: textColor }}>
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 
         {/* Locations */}
-        <div className={cn(
-          'grid gap-6',
-          displayLocations.length === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
-        )}>
+        <div
+          className={cn(
+            'grid gap-6',
+            displayLocations.length === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
+          )}
+        >
           {displayLocations.length > 0 ? (
             displayLocations.map((location, index) => (
               <div key={location.id || index} className="bg-white rounded-lg border shadow-sm">
@@ -94,9 +91,7 @@ const LocationsMapBlock = ({ data, settings, isEditing = false, onClick, crmData
                 </div>
                 <div className="p-6 space-y-4">
                   {/* Address */}
-                  {location.address && (
-                    <p className="text-gray-600">{location.address}</p>
-                  )}
+                  {location.address && <p className="text-gray-600">{location.address}</p>}
 
                   {/* Contact */}
                   {showContact && (location.phone || location.email) && (
@@ -151,9 +146,7 @@ const LocationsMapBlock = ({ data, settings, isEditing = false, onClick, crmData
             ))
           ) : (
             <div className="col-span-full text-center py-12 text-gray-500">
-              {autoSync
-                ? 'Nu exista locatii configurate'
-                : 'Adaugati locatii din setari'}
+              {autoSync ? 'Nu exista locatii configurate' : 'Adaugati locatii din setari'}
             </div>
           )}
         </div>

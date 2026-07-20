@@ -20,7 +20,11 @@ export const useRealtimeEvents = () => {
     const socket = connectSocket(accessToken);
     if (!socket) return;
 
-    const authErrorCodes = new Set(['AUTH_MISSING_TOKEN', 'AUTH_INVALID_TOKEN', 'AUTH_TOKEN_EXPIRED']);
+    const authErrorCodes = new Set([
+      'AUTH_MISSING_TOKEN',
+      'AUTH_INVALID_TOKEN',
+      'AUTH_TOKEN_EXPIRED',
+    ]);
     const invalidate = (keys) => {
       keys.forEach((key) => {
         queryClient.invalidateQueries({ queryKey: key });
@@ -58,7 +62,10 @@ export const useRealtimeEvents = () => {
         }
       } catch (refreshError) {
         authFailureCount++;
-        console.error(`Socket authentication refresh failed (${authFailureCount}/${MAX_AUTH_FAILURES})`, refreshError);
+        console.error(
+          `Socket authentication refresh failed (${authFailureCount}/${MAX_AUTH_FAILURES})`,
+          refreshError
+        );
 
         if (authFailureCount >= MAX_AUTH_FAILURES) {
           disconnectSocket();
@@ -110,7 +117,6 @@ export const useRealtimeEvents = () => {
     };
 
     const handleDisconnect = (reason) => {
-
       if (authErrorCodes.has(reason) || reason === 'client namespace disconnect') {
         lastAuthError = null;
         return;
@@ -168,7 +174,9 @@ export const useRealtimeEvents = () => {
         if (!exists) {
           return [appointment, ...current];
         }
-        return current.map((item) => (item.id === appointmentId ? { ...item, ...appointment } : item));
+        return current.map((item) =>
+          item.id === appointmentId ? { ...item, ...appointment } : item
+        );
       });
       if (appointment.serviceOrder) {
         queryClient.setQueryData(['service-order', appointmentId], appointment.serviceOrder);
@@ -262,7 +270,7 @@ export const useRealtimeEvents = () => {
       // Update appointment invoices if appointmentId exists
       if (invoice.appointmentId) {
         queryClient.invalidateQueries({
-          queryKey: ['invoices', 'appointment', invoice.appointmentId]
+          queryKey: ['invoices', 'appointment', invoice.appointmentId],
         });
       }
     };
@@ -289,7 +297,9 @@ export const useRealtimeEvents = () => {
         const isFromClient = !!message.clientAuthorId;
         const authorName = message.author?.firstName
           ? `${message.author.firstName} ${message.author.lastName || ''}`.trim()
-          : (isFromClient ? 'Client' : 'Utilizator');
+          : isFromClient
+            ? 'Client'
+            : 'Utilizator';
 
         // Get message preview
         let messagePreview = message.body || '';
@@ -328,7 +338,8 @@ export const useRealtimeEvents = () => {
         useChatStore.getState().incrementUnreadCount(channelId);
 
         // Show toast notification for chat message
-        const authorName = `${message.author?.firstName || ''} ${message.author?.lastName || ''}`.trim() || 'Cineva';
+        const authorName =
+          `${message.author?.firstName || ''} ${message.author?.lastName || ''}`.trim() || 'Cineva';
         const channels = useChatStore.getState().channels;
         const channel = channels.find((c) => c.id === channelId);
         const channelName = channel?.name || (channel?.type === 'DIRECT' ? 'Mesaj direct' : 'Chat');
@@ -348,7 +359,8 @@ export const useRealtimeEvents = () => {
         // Show toast
         showToast({
           title: channel?.type === 'DIRECT' ? authorName : channelName,
-          description: channel?.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
+          description:
+            channel?.type === 'DIRECT' ? messagePreview : `${authorName}: ${messagePreview}`,
           type: 'info',
         });
       }
@@ -423,7 +435,9 @@ export const useRealtimeEvents = () => {
 
     const handleChatChannelCreated = (channel) => {
       // Check if user is a member of this channel
-      const isMember = channel.members?.some((m) => m.user?.id === user?.id || m.userId === user?.id);
+      const isMember = channel.members?.some(
+        (m) => m.user?.id === user?.id || m.userId === user?.id
+      );
       const isPublic = channel.type === 'PUBLIC';
 
       // Add channel to store if user is a member or it's public
@@ -456,7 +470,8 @@ export const useRealtimeEvents = () => {
       const clientName = `${client.firstName} ${client.lastName}`;
       let assetInfo = '';
       if (vehicle) {
-        assetInfo = ` - ${vehicle.make || ''} ${vehicle.model || ''} ${vehicle.plateNumber || ''}`.trim();
+        assetInfo =
+          ` - ${vehicle.make || ''} ${vehicle.model || ''} ${vehicle.plateNumber || ''}`.trim();
       } else if (asset) {
         assetInfo = ` - ${asset.name || asset.identifier || ''}`.trim();
       }
@@ -496,7 +511,8 @@ export const useRealtimeEvents = () => {
 
       // Only show toast if update came from portal
       if (data.source === 'portal') {
-        const clientName = data.companyName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Client';
+        const clientName =
+          data.companyName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'Client';
         showToast({
           title: 'Client actualizat din portal',
           description: `${clientName} și-a actualizat profilul`,

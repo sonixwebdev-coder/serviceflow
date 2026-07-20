@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle, Navigation } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle } from 'lucide-react';
 
 const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData = [] }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -41,7 +41,11 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
     full: 'max-w-full',
   };
 
-  const hasContactSidebar = (showPhone && contactInfo?.phone) || (showAddress && contactInfo?.address) || contactInfo?.email || contactInfo?.schedule;
+  const hasContactSidebar =
+    (showPhone && contactInfo?.phone) ||
+    (showAddress && contactInfo?.address) ||
+    contactInfo?.email ||
+    contactInfo?.schedule;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -71,16 +75,16 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 
-        <div className={cn(
-          'grid gap-10',
-          hasContactSidebar ? 'lg:grid-cols-5' : 'lg:grid-cols-1 max-w-2xl mx-auto'
-        )}>
+        <div
+          className={cn(
+            'grid gap-10',
+            hasContactSidebar ? 'lg:grid-cols-5' : 'lg:grid-cols-1 max-w-2xl mx-auto'
+          )}
+        >
           {/* Form */}
           <div className={hasContactSidebar ? 'lg:col-span-3' : ''}>
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -99,63 +103,75 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid sm:grid-cols-2 gap-4">
-                      {fields.filter(f => f.key === 'firstName' || f.key === 'lastName').map((field) => (
+                      {fields
+                        .filter((f) => f.key === 'firstName' || f.key === 'lastName')
+                        .map((field) => (
+                          <div key={field.key}>
+                            <label
+                              htmlFor={field.key}
+                              className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                              {field.label}
+                              {field.required && <span className="text-red-500 ml-1">*</span>}
+                            </label>
+                            <input
+                              id={field.key}
+                              type={field.type}
+                              placeholder={field.label}
+                              required={field.required}
+                              disabled={isEditing}
+                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                            />
+                          </div>
+                        ))}
+                    </div>
+
+                    {fields
+                      .filter((f) => f.key !== 'firstName' && f.key !== 'lastName')
+                      .map((field) => (
                         <div key={field.key}>
-                          <label htmlFor={field.key} className="block text-sm font-medium text-gray-700 mb-1">
+                          <label
+                            htmlFor={field.key}
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
                             {field.label}
                             {field.required && <span className="text-red-500 ml-1">*</span>}
                           </label>
-                          <input
-                            id={field.key}
-                            type={field.type}
-                            placeholder={field.label}
-                            required={field.required}
-                            disabled={isEditing}
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                          />
+                          {field.type === 'textarea' ? (
+                            <textarea
+                              id={field.key}
+                              placeholder={field.label}
+                              required={field.required}
+                              disabled={isEditing}
+                              rows={4}
+                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
+                            />
+                          ) : field.type === 'select' ? (
+                            <select
+                              id={field.key}
+                              required={field.required}
+                              disabled={isEditing}
+                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                            >
+                              <option value="">-- Selectati --</option>
+                              {field.options?.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              id={field.key}
+                              type={field.type}
+                              placeholder={field.label}
+                              required={field.required}
+                              disabled={isEditing}
+                              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                            />
+                          )}
                         </div>
                       ))}
-                    </div>
-
-                    {fields.filter(f => f.key !== 'firstName' && f.key !== 'lastName').map((field) => (
-                      <div key={field.key}>
-                        <label htmlFor={field.key} className="block text-sm font-medium text-gray-700 mb-1">
-                          {field.label}
-                          {field.required && <span className="text-red-500 ml-1">*</span>}
-                        </label>
-                        {field.type === 'textarea' ? (
-                          <textarea
-                            id={field.key}
-                            placeholder={field.label}
-                            required={field.required}
-                            disabled={isEditing}
-                            rows={4}
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
-                          />
-                        ) : field.type === 'select' ? (
-                          <select
-                            id={field.key}
-                            required={field.required}
-                            disabled={isEditing}
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                          >
-                            <option value="">-- Selectati --</option>
-                            {field.options?.map((option) => (
-                              <option key={option} value={option}>{option}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            id={field.key}
-                            type={field.type}
-                            placeholder={field.label}
-                            required={field.required}
-                            disabled={isEditing}
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                          />
-                        )}
-                      </div>
-                    ))}
 
                     <button
                       type="submit"
@@ -243,13 +259,22 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
         {/* CRM Locations section */}
         {showLocations && displayLocations.length > 0 && (
           <div className="mt-10">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Locatiile noastre</h3>
-            <div className={cn(
-              'grid gap-6',
-              displayLocations.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' : 'grid-cols-1 md:grid-cols-2'
-            )}>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+              Locatiile noastre
+            </h3>
+            <div
+              className={cn(
+                'grid gap-6',
+                displayLocations.length === 1
+                  ? 'grid-cols-1 max-w-lg mx-auto'
+                  : 'grid-cols-1 md:grid-cols-2'
+              )}
+            >
               {displayLocations.map((location, index) => (
-                <div key={location.id || index} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                <div
+                  key={location.id || index}
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-5"
+                >
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div>

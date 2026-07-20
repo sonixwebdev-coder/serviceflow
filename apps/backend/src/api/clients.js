@@ -9,12 +9,21 @@ const {
   updateClientSchema,
   listClientQuerySchema,
 } = require('../schemas/clientSchema');
-const { listClients, createClient, getClientById, updateClient, searchClients } = require('../services/clientService');
+const {
+  listClients,
+  createClient,
+  getClientById,
+  updateClient,
+  searchClients,
+} = require('../services/clientService');
 const { importClientsFromCSV, generateCSVTemplate } = require('../services/clientImportService');
-const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
+const {
+  logFromRequest,
+  ENTITY_TYPES,
+  getActionDescription,
+} = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 const { AppError } = require('../utils/errors');
-const prisma = require('../../lib/prisma');
 
 const router = express.Router();
 
@@ -26,10 +35,12 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     // Accept CSV files
-    if (file.mimetype === 'text/csv' ||
-        file.mimetype === 'application/csv' ||
-        file.mimetype === 'application/vnd.ms-excel' ||
-        file.originalname.toLowerCase().endsWith('.csv')) {
+    if (
+      file.mimetype === 'text/csv' ||
+      file.mimetype === 'application/csv' ||
+      file.mimetype === 'application/vnd.ms-excel' ||
+      file.originalname.toLowerCase().endsWith('.csv')
+    ) {
       cb(null, true);
     } else {
       cb(new AppError('Doar fisiere CSV sunt permise', 400), false);
@@ -114,9 +125,10 @@ router.post(
     });
 
     // Log audit action
-    const clientName = client.type === 'PF'
-      ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
-      : client.companyName;
+    const clientName =
+      client.type === 'PF'
+        ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
+        : client.companyName;
     await logFromRequest(req, {
       action: 'CREATE',
       entityType: ENTITY_TYPES.CLIENT,
@@ -147,9 +159,10 @@ router.patch(
     const client = await updateClient(req.tenantPrisma, req.params.clientId, req.body);
 
     // Log audit action
-    const clientName = client.type === 'PF'
-      ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
-      : client.companyName;
+    const clientName =
+      client.type === 'PF'
+        ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
+        : client.companyName;
     await logFromRequest(req, {
       action: 'UPDATE',
       entityType: ENTITY_TYPES.CLIENT,
@@ -178,9 +191,10 @@ router.delete(
 
     // Log audit action
     if (client) {
-      const clientName = client.type === 'PF'
-        ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
-        : client.companyName;
+      const clientName =
+        client.type === 'PF'
+          ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
+          : client.companyName;
       await logFromRequest(req, {
         action: 'DELETE',
         entityType: ENTITY_TYPES.CLIENT,

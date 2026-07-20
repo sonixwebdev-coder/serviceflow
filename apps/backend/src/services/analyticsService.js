@@ -1,4 +1,14 @@
-const { subDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, format, differenceInDays } = require('date-fns');
+const {
+  subDays,
+  startOfDay,
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  format,
+  differenceInDays,
+} = require('date-fns');
 
 /**
  * Get revenue trends over time
@@ -6,7 +16,10 @@ const { subDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfWeek, en
  * @param {Object} options - Query options
  * @returns {Promise<Object>} Revenue data grouped by period
  */
-const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}) => {
+const getRevenueTrends = async (
+  prisma,
+  { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}
+) => {
   const now = new Date();
   const start = startDate ? new Date(startDate) : subDays(now, 30);
   const end = endDate ? new Date(endDate) : now;
@@ -56,7 +69,8 @@ const getRevenueTrends = async (prisma, { startDate, endDate, groupBy = 'day', l
 
   // Group invoices by period
   const groupedRevenue = {};
-  const dateFormat = groupBy === 'month' ? 'yyyy-MM' : groupBy === 'week' ? 'yyyy-ww' : 'yyyy-MM-dd';
+  const dateFormat =
+    groupBy === 'month' ? 'yyyy-MM' : groupBy === 'week' ? 'yyyy-ww' : 'yyyy-MM-dd';
 
   invoices.forEach((invoice) => {
     // Use paidAt if available, otherwise fall back to issueDate
@@ -168,7 +182,7 @@ const getAppointmentStats = async (prisma, { startDate, endDate, locationFilter 
   };
 
   appointments.forEach((apt) => {
-    if (statusCounts.hasOwnProperty(apt.status)) {
+    if (Object.prototype.hasOwnProperty.call(statusCounts, apt.status)) {
       statusCounts[apt.status]++;
     }
   });
@@ -214,7 +228,8 @@ const getAppointmentStats = async (prisma, { startDate, endDate, locationFilter 
     where: prevWhere,
   });
 
-  const appointmentChange = prevAppointments > 0 ? ((total - prevAppointments) / prevAppointments) * 100 : 0;
+  const appointmentChange =
+    prevAppointments > 0 ? ((total - prevAppointments) / prevAppointments) * 100 : 0;
 
   return {
     data: Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date)),
@@ -242,7 +257,10 @@ const getAppointmentStats = async (prisma, { startDate, endDate, locationFilter 
  * @param {Object} options - Query options
  * @returns {Promise<Object>} Client growth data
  */
-const getClientAcquisition = async (prisma, { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}) => {
+const getClientAcquisition = async (
+  prisma,
+  { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}
+) => {
   const now = new Date();
   const start = startDate ? new Date(startDate) : subDays(now, 30);
   const end = endDate ? new Date(endDate) : now;
@@ -276,7 +294,8 @@ const getClientAcquisition = async (prisma, { startDate, endDate, groupBy = 'day
 
   // Group by period
   const groupedClients = {};
-  const dateFormat = groupBy === 'month' ? 'yyyy-MM' : groupBy === 'week' ? 'yyyy-ww' : 'yyyy-MM-dd';
+  const dateFormat =
+    groupBy === 'month' ? 'yyyy-MM' : groupBy === 'week' ? 'yyyy-ww' : 'yyyy-MM-dd';
 
   clients.forEach((client) => {
     const periodKey = format(new Date(client.createdAt), dateFormat);
@@ -289,7 +308,8 @@ const getClientAcquisition = async (prisma, { startDate, endDate, groupBy = 'day
   });
 
   // Get total client count (with location filter)
-  const totalClientWhere = locationFilter && Object.keys(locationFilter).length > 0 ? locationFilter : undefined;
+  const totalClientWhere =
+    locationFilter && Object.keys(locationFilter).length > 0 ? locationFilter : undefined;
   const totalClients = await prisma.client.count({ where: totalClientWhere });
 
   // Get previous period for comparison
@@ -462,7 +482,8 @@ const getDashboardOverview = async (prisma, { locationFilter = {} } = {}) => {
   const endOfLastMonth = endOfMonth(startOfLastMonth);
 
   // Build location-filtered where clauses
-  const clientWhere = locationFilter && Object.keys(locationFilter).length > 0 ? locationFilter : undefined;
+  const clientWhere =
+    locationFilter && Object.keys(locationFilter).length > 0 ? locationFilter : undefined;
   const appointmentWhere = (dateFilter) => {
     const where = { ...dateFilter };
     if (locationFilter && Object.keys(locationFilter).length > 0) {
@@ -639,7 +660,8 @@ const getDashboardOverview = async (prisma, { locationFilter = {} } = {}) => {
   // Calculate percentage change
   let changePercent = null;
   if (lastMonthTotal > 0) {
-    changePercent = Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 * 10) / 10;
+    changePercent =
+      Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 * 10) / 10;
   } else if (thisMonthTotal > 0) {
     changePercent = 100; // If last month was 0, show 100% increase
   }
@@ -675,7 +697,10 @@ const getDashboardOverview = async (prisma, { locationFilter = {} } = {}) => {
  * @param {Object} options - Query options
  * @returns {Promise<Array>} Top clients
  */
-const getTopClients = async (prisma, { startDate, endDate, limit = 10, locationFilter = {} } = {}) => {
+const getTopClients = async (
+  prisma,
+  { startDate, endDate, limit = 10, locationFilter = {} } = {}
+) => {
   const now = new Date();
   const start = startDate ? new Date(startDate) : subDays(now, 90);
   const end = endDate ? new Date(endDate) : now;
@@ -816,46 +841,49 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
     }),
 
     // Revenue per location via appointment join - aggregate per appointment locationId
-    prisma.invoice.groupBy({
-      by: ['appointmentId'],
-      where: {
-        status: 'PAID',
-        OR: [
-          { paidAt: { gte: startOfPeriod, lte: endOfPeriod } },
-          { paidAt: null, issueDate: { gte: startOfPeriod, lte: endOfPeriod } },
-        ],
-      },
-      _sum: { total: true },
-    }).then(async (invoiceSums) => {
-      // Resolve locationId for each appointmentId
-      const appointmentIds = invoiceSums.map(r => r.appointmentId).filter(Boolean);
-      if (appointmentIds.length === 0) return [];
-      const appts = await prisma.appointment.findMany({
-        where: { id: { in: appointmentIds } },
-        select: { id: true, locationId: true },
-        take: 5000,
-      });
-      const apptLocationMap = Object.fromEntries(appts.map(a => [a.id, a.locationId]));
-      // Aggregate revenue by locationId
-      const revenueMap = {};
-      for (const row of invoiceSums) {
-        const locId = apptLocationMap[row.appointmentId];
-        if (!locId) continue;
-        revenueMap[locId] = (revenueMap[locId] || 0) + Number(row._sum.total || 0);
-      }
-      return Object.entries(revenueMap).map(([locationId, revenue]) => ({ locationId, revenue }));
-    }),
+    prisma.invoice
+      .groupBy({
+        by: ['appointmentId'],
+        where: {
+          status: 'PAID',
+          OR: [
+            { paidAt: { gte: startOfPeriod, lte: endOfPeriod } },
+            { paidAt: null, issueDate: { gte: startOfPeriod, lte: endOfPeriod } },
+          ],
+        },
+        _sum: { total: true },
+      })
+      .then(async (invoiceSums) => {
+        // Resolve locationId for each appointmentId
+        const appointmentIds = invoiceSums.map((r) => r.appointmentId).filter(Boolean);
+        if (appointmentIds.length === 0) return [];
+        const appts = await prisma.appointment.findMany({
+          where: { id: { in: appointmentIds } },
+          select: { id: true, locationId: true },
+          take: 5000,
+        });
+        const apptLocationMap = Object.fromEntries(appts.map((a) => [a.id, a.locationId]));
+        // Aggregate revenue by locationId
+        const revenueMap = {};
+        for (const row of invoiceSums) {
+          const locId = apptLocationMap[row.appointmentId];
+          if (!locId) continue;
+          revenueMap[locId] = (revenueMap[locId] || 0) + Number(row._sum.total || 0);
+        }
+        return Object.entries(revenueMap).map(([locationId, revenue]) => ({ locationId, revenue }));
+      }),
   ]);
 
   // Build lookup maps for O(1) access
-  const toMap = (arr, key = 'locationId') => Object.fromEntries(arr.map(r => [r[key], r._count?.id ?? 0]));
+  const toMap = (arr, key = 'locationId') =>
+    Object.fromEntries(arr.map((r) => [r[key], r._count?.id ?? 0]));
   const apptMap = toMap(apptCountsByLocation);
   const completedApptMap = toMap(completedApptsByLocation);
   const clientMap = toMap(clientCountsByLocation);
   const newClientMap = toMap(newClientsByLocation);
   const taskMap = toMap(taskCountsByLocation);
   const completedTaskMap = toMap(completedTasksByLocation);
-  const revenueMap = Object.fromEntries(revenueByLocation.map(r => [r.locationId, r.revenue]));
+  const revenueMap = Object.fromEntries(revenueByLocation.map((r) => [r.locationId, r.revenue]));
 
   const locationMetrics = locations.map((location) => {
     const lid = location.id;
@@ -878,9 +906,8 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
         appointments: {
           total: appointmentCount,
           completed: completedAppointments,
-          completionRate: appointmentCount > 0
-            ? Math.round((completedAppointments / appointmentCount) * 100)
-            : 0,
+          completionRate:
+            appointmentCount > 0 ? Math.round((completedAppointments / appointmentCount) * 100) : 0,
         },
         clients: {
           total: clientCount,
@@ -896,11 +923,7 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
   });
 
   // Get unassigned records (null locationId) - legacy data
-  const [
-    unassignedClients,
-    unassignedNewClients,
-    unassignedTasks,
-  ] = await Promise.all([
+  const [unassignedClients, unassignedNewClients, unassignedTasks] = await Promise.all([
     prisma.client.count({
       where: { locationId: null },
     }),
@@ -935,7 +958,15 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
       tasks: acc.tasks + loc.metrics.tasks.total,
       completedTasks: acc.completedTasks + loc.metrics.tasks.completed,
     }),
-    { appointments: 0, completedAppointments: 0, clients: 0, newClients: 0, revenue: 0, tasks: 0, completedTasks: 0 }
+    {
+      appointments: 0,
+      completedAppointments: 0,
+      clients: 0,
+      newClients: 0,
+      revenue: 0,
+      tasks: 0,
+      completedTasks: 0,
+    }
   );
 
   // Add unassigned to totals
@@ -962,9 +993,10 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
       appointments: {
         total: totals.appointments,
         completed: totals.completedAppointments,
-        completionRate: totals.appointments > 0
-          ? Math.round((totals.completedAppointments / totals.appointments) * 100)
-          : 0,
+        completionRate:
+          totals.appointments > 0
+            ? Math.round((totals.completedAppointments / totals.appointments) * 100)
+            : 0,
       },
       clients: {
         total: totals.clients,
@@ -985,7 +1017,10 @@ const getLocationComparison = async (prisma, { startDate, endDate } = {}) => {
  * @param {Object} options - Query options
  * @returns {Promise<Object>} Payment data grouped by period
  */
-const getPaymentTrends = async (prisma, { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}) => {
+const getPaymentTrends = async (
+  prisma,
+  { startDate, endDate, groupBy = 'day', locationFilter = {} } = {}
+) => {
   const now = new Date();
   const start = startDate ? new Date(startDate) : subDays(now, 30);
   const end = endDate ? new Date(endDate) : now;
@@ -1015,7 +1050,8 @@ const getPaymentTrends = async (prisma, { startDate, endDate, groupBy = 'day', l
   });
 
   const groupedPayments = {};
-  const dateFormat = groupBy === 'month' ? 'yyyy-MM' : groupBy === 'week' ? 'yyyy-ww' : 'yyyy-MM-dd';
+  const dateFormat =
+    groupBy === 'month' ? 'yyyy-MM' : groupBy === 'week' ? 'yyyy-ww' : 'yyyy-MM-dd';
 
   payments.forEach((payment) => {
     const periodKey = format(new Date(payment.paymentDate), dateFormat);
@@ -1051,7 +1087,10 @@ const getPaymentTrends = async (prisma, { startDate, endDate, groupBy = 'day', l
   });
 
   const previousPeriodAmount = prevPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const changePercent = previousPeriodAmount > 0 ? ((totalAmount - previousPeriodAmount) / previousPeriodAmount) * 100 : 0;
+  const changePercent =
+    previousPeriodAmount > 0
+      ? ((totalAmount - previousPeriodAmount) / previousPeriodAmount) * 100
+      : 0;
 
   return {
     data: Object.values(groupedPayments).sort((a, b) => a.period.localeCompare(b.period)),

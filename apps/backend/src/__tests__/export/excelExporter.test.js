@@ -4,6 +4,7 @@
  */
 
 const ExcelJS = require('exceljs');
+const { Readable } = require('node:stream');
 const {
   exportToExcel,
   exportEntityToExcel,
@@ -40,7 +41,7 @@ describe('Excel Exporter - exportToExcel', () => {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
 
-    expect(workbook.creator).toBe('ViperX CRM');
+    expect(workbook.creator).toBe('ServiceFlow');
     expect(workbook.created).toBeInstanceOf(Date);
   });
 
@@ -83,7 +84,7 @@ describe('Excel Exporter - exportToExcel', () => {
 
     // Find metadata row (contains "Export data:" and "Total inregistrari:")
     let foundMetadata = false;
-    worksheet.eachRow((row, rowNumber) => {
+    worksheet.eachRow((row) => {
       const cellValue = row.getCell(1).value;
       if (cellValue && String(cellValue).includes('Export data:')) {
         foundMetadata = true;
@@ -131,8 +132,8 @@ describe('Excel Exporter - exportToExcel', () => {
     // Row 3 should have white background (odd index 1)
     const row3 = worksheet.getRow(3);
     const fill3 = row3.getCell(1).fill;
-    // White rows might not have fill or have white fill
-    expect(!fill3 || fill3.fgColor?.argb === 'FFFFFFFF').toBe(true);
+    expect(fill3.type).toBe('pattern');
+    expect(fill3.fgColor.argb).toBe('FFFFFFFF');
   });
 
   it('formats currency columns correctly', async () => {
@@ -158,22 +159,22 @@ describe('Excel Exporter - exportToExcel', () => {
     await workbook.xlsx.load(buffer);
     const worksheet = workbook.worksheets[0];
 
-    worksheet.columns.forEach(column => {
+    worksheet.columns.forEach((column) => {
       expect(column.width).toBeGreaterThanOrEqual(10);
       expect(column.width).toBeLessThanOrEqual(50);
     });
   });
 
   it('throws error for empty array', async () => {
-    await expect(
-      exportToExcel([], { columns: mockColumns })
-    ).rejects.toThrow('Data must be a non-empty array');
+    await expect(exportToExcel([], { columns: mockColumns })).rejects.toThrow(
+      'Data must be a non-empty array'
+    );
   });
 
   it('throws error for non-array input', async () => {
-    await expect(
-      exportToExcel(null, { columns: mockColumns })
-    ).rejects.toThrow('Data must be a non-empty array');
+    await expect(exportToExcel(null, { columns: mockColumns })).rejects.toThrow(
+      'Data must be a non-empty array'
+    );
   });
 
   it('handles nested object values', async () => {
@@ -190,7 +191,10 @@ describe('Excel Exporter - exportToExcel', () => {
       { header: 'Email', key: 'user.contact.email', width: 30 },
     ];
 
-    const buffer = await exportToExcel(nestedData, { columns: nestedColumns });
+    const buffer = await exportToExcel(nestedData, {
+      columns: nestedColumns,
+      includeMetadata: false,
+    });
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
     const worksheet = workbook.worksheets[0];
@@ -200,9 +204,7 @@ describe('Excel Exporter - exportToExcel', () => {
   });
 
   it('formats date columns', async () => {
-    const dateData = [
-      { id: 1, name: 'Test', createdAt: new Date('2024-01-15T10:30:00Z') },
-    ];
+    const dateData = [{ id: 1, name: 'Test', createdAt: new Date('2024-01-15T10:30:00Z') }];
 
     const dateColumns = [
       { header: 'ID', key: 'id', width: 10 },
@@ -215,9 +217,7 @@ describe('Excel Exporter - exportToExcel', () => {
   });
 
   it('formats datetime columns', async () => {
-    const dateData = [
-      { id: 1, name: 'Test', updatedAt: new Date('2024-01-15T10:30:00Z') },
-    ];
+    const dateData = [{ id: 1, name: 'Test', updatedAt: new Date('2024-01-15T10:30:00Z') }];
 
     const dateColumns = [
       { header: 'ID', key: 'id', width: 10 },
@@ -229,9 +229,7 @@ describe('Excel Exporter - exportToExcel', () => {
   });
 
   it('handles null and undefined values', async () => {
-    const dataWithNulls = [
-      { id: 1, name: 'John', email: null, phone: undefined },
-    ];
+    const dataWithNulls = [{ id: 1, name: 'John', email: null, phone: undefined }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 10 },
@@ -250,11 +248,13 @@ describe('Excel Exporter - exportToExcel', () => {
   });
 
   it('handles large datasets', async () => {
-    const largeData = Array(5000).fill(null).map((_, i) => ({
-      id: i,
-      name: `User ${i}`,
-      email: `user${i}@example.com`,
-    }));
+    const largeData = Array(5000)
+      .fill(null)
+      .map((_, i) => ({
+        id: i,
+        name: `User ${i}`,
+        email: `user${i}@example.com`,
+      }));
 
     const buffer = await exportToExcel(largeData, { columns: mockColumns.slice(0, 3) });
     expect(buffer).toBeInstanceOf(Buffer);
@@ -262,16 +262,14 @@ describe('Excel Exporter - exportToExcel', () => {
   });
 
   it('handles Romanian characters', async () => {
-    const romanianData = [
-      { name: 'Ștefan Țăran', city: 'București' },
-    ];
+    const romanianData = [{ name: 'Ștefan Țăran', city: 'București' }];
 
     const columns = [
       { header: 'Nume', key: 'name', width: 20 },
       { header: 'Oraș', key: 'city', width: 20 },
     ];
 
-    const buffer = await exportToExcel(romanianData, { columns });
+    const buffer = await exportToExcel(romanianData, { columns, includeMetadata: false });
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
     const worksheet = workbook.worksheets[0];
@@ -355,9 +353,7 @@ describe('Excel Exporter - fieldConfigToColumns', () => {
   });
 
   it('detects datetime fields', () => {
-    const fieldConfig = [
-      { label: 'Timestamp', value: 'timestamp' },
-    ];
+    const fieldConfig = [{ label: 'Timestamp', value: 'timestamp' }];
 
     const columns = fieldConfigToColumns(fieldConfig);
 
@@ -375,15 +371,13 @@ describe('Excel Exporter - fieldConfigToColumns', () => {
 
     const columns = fieldConfigToColumns(fieldConfig);
 
-    columns.forEach(col => {
+    columns.forEach((col) => {
       expect(col.type).toBe('currency');
     });
   });
 
   it('detects status fields', () => {
-    const fieldConfig = [
-      { label: 'Status', value: 'status' },
-    ];
+    const fieldConfig = [{ label: 'Status', value: 'status' }];
 
     const columns = fieldConfigToColumns(fieldConfig);
 
@@ -400,15 +394,13 @@ describe('Excel Exporter - fieldConfigToColumns', () => {
 
     const columns = fieldConfigToColumns(fieldConfig);
 
-    columns.forEach(col => {
+    columns.forEach((col) => {
       expect(col.type).toBe('number');
     });
   });
 
   it('handles fields without specific types', () => {
-    const fieldConfig = [
-      { label: 'Description', value: 'description' },
-    ];
+    const fieldConfig = [{ label: 'Description', value: 'description' }];
 
     const columns = fieldConfigToColumns(fieldConfig);
 
@@ -473,9 +465,9 @@ describe('Excel Exporter - exportEntityToExcel', () => {
   it('throws error for unknown entity without custom columns', async () => {
     const data = [{ id: 1 }];
 
-    await expect(
-      exportEntityToExcel('unknown_entity', data)
-    ).rejects.toThrow('No field configuration found');
+    await expect(exportEntityToExcel('unknown_entity', data)).rejects.toThrow(
+      'No field configuration found'
+    );
   });
 
   it('uses custom columns when provided', async () => {
@@ -510,17 +502,13 @@ describe('Excel Exporter - Edge Cases', () => {
   });
 
   it('handles special characters', async () => {
-    const data = [
-      { id: 1, value: 'Line1\nLine2\tTab' },
-    ];
+    const data = [{ id: 1, value: 'Line1\nLine2\tTab' }];
     const buffer = await exportToExcel(data, { columns: mockColumns });
     expect(buffer).toBeInstanceOf(Buffer);
   });
 
   it('handles boolean values', async () => {
-    const data = [
-      { id: 1, isActive: true, isDeleted: false },
-    ];
+    const data = [{ id: 1, isActive: true, isDeleted: false }];
 
     const columns = [
       { header: 'ID', key: 'id', width: 10 },
@@ -528,7 +516,7 @@ describe('Excel Exporter - Edge Cases', () => {
       { header: 'Deleted', key: 'isDeleted', width: 10 },
     ];
 
-    const buffer = await exportToExcel(data, { columns });
+    const buffer = await exportToExcel(data, { columns, includeMetadata: false });
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
     const worksheet = workbook.worksheets[0];
@@ -539,11 +527,35 @@ describe('Excel Exporter - Edge Cases', () => {
 
   it('handles numeric zero', async () => {
     const data = [{ id: 0, value: 0 }];
-    const buffer = await exportToExcel(data, { columns: mockColumns });
+    const buffer = await exportToExcel(data, { columns: mockColumns, includeMetadata: false });
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
     const worksheet = workbook.worksheets[0];
 
     expect(worksheet.getRow(2).getCell(1).value).toBe(0);
+  });
+});
+
+describe('ExcelJS dependency compatibility', () => {
+  it('streams generated workbooks through the maintained unzipper override', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Compatibility');
+    worksheet.addRow(['Name', 'Status']);
+    worksheet.addRow(['ServiceFlow', 'ready']);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const rows = [];
+    const reader = new ExcelJS.stream.xlsx.WorkbookReader(Readable.from([Buffer.from(buffer)]), {
+      worksheets: 'emit',
+      sharedStrings: 'cache',
+    });
+
+    for await (const streamedWorksheet of reader) {
+      for await (const row of streamedWorksheet) rows.push(row.values.slice(1));
+    }
+
+    expect(rows).toEqual([
+      ['Name', 'Status'],
+      ['ServiceFlow', 'ready'],
+    ]);
   });
 });

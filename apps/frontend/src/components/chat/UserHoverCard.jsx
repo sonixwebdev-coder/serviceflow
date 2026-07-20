@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Mail, Calendar, Circle } from 'lucide-react';
 import { useChatStore } from '../../state/useChatStore';
 import { useCreateDM } from '../../hooks/useChat';
@@ -19,7 +19,7 @@ export default function UserHoverCard({ user, children, disabled = false }) {
   const leaveTimeoutRef = useRef(null);
 
   const { user: currentUser } = useAuthStore();
-  const { isUserOnline, onlineUsers, setActiveChannelId, addChannel } = useChatStore();
+  const { onlineUsers, setActiveChannelId, addChannel } = useChatStore();
   const createDMMutation = useCreateDM();
 
   // Check if user is online

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Search, UserPlus } from 'lucide-react';
 import { useAddMembers, useChannel } from '../../hooks/useChat';
 import useUsers from '../../hooks/useUsers';
@@ -176,9 +176,7 @@ export default function AddMembersDialog({ isOpen, onClose, channelId }) {
                       <p className="truncate font-medium text-gray-900">
                         {user.firstName} {user.lastName}
                       </p>
-                      {user.email && (
-                        <p className="truncate text-sm text-gray-500">{user.email}</p>
-                      )}
+                      {user.email && <p className="truncate text-sm text-gray-500">{user.email}</p>}
                     </div>
 
                     {/* Checkmark */}
@@ -223,7 +221,9 @@ export default function AddMembersDialog({ isOpen, onClose, channelId }) {
               disabled={selectedUsers.length === 0 || isAdding}
               className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isAdding ? 'Se adaugă...' : `Adaugă ${selectedUsers.length > 0 ? `(${selectedUsers.length})` : ''}`}
+              {isAdding
+                ? 'Se adaugă...'
+                : `Adaugă ${selectedUsers.length > 0 ? `(${selectedUsers.length})` : ''}`}
             </button>
           </div>
         </div>

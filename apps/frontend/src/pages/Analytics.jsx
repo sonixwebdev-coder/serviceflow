@@ -50,13 +50,48 @@ export default function Analytics() {
   );
 
   // Fetch all analytics data
-  const { data: overview, isLoading: overviewLoading, isFetching: overviewFetching, refetch: refetchOverview } = useOverview();
-  const { data: revenue, isLoading: revenueLoading, isFetching: revenueFetching, refetch: refetchRevenue } = useRevenueTrends(queryParams);
-  const { data: payments, isLoading: paymentsLoading, isFetching: paymentsFetching, refetch: refetchPayments } = usePaymentTrends(queryParams);
-  const { data: appointments, isLoading: appointmentsLoading, isFetching: appointmentsFetching, refetch: refetchAppointments } = useAppointmentStats(queryParams);
-  const { data: clients, isLoading: clientsLoading, isFetching: clientsFetching, refetch: refetchClients } = useClientAcquisition(queryParams);
-  const { data: invoiceAging, isLoading: agingLoading, isFetching: agingFetching, refetch: refetchAging } = useInvoiceAging();
-  const { data: topClients, isLoading: topClientsLoading, isFetching: topClientsFetching, refetch: refetchTopClients } = useTopClients(queryParams);
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+    isFetching: overviewFetching,
+    refetch: refetchOverview,
+  } = useOverview();
+  const {
+    data: revenue,
+    isLoading: revenueLoading,
+    isFetching: revenueFetching,
+    refetch: refetchRevenue,
+  } = useRevenueTrends(queryParams);
+  const {
+    data: payments,
+    isLoading: paymentsLoading,
+    isFetching: paymentsFetching,
+    refetch: refetchPayments,
+  } = usePaymentTrends(queryParams);
+  const {
+    data: appointments,
+    isLoading: appointmentsLoading,
+    isFetching: appointmentsFetching,
+    refetch: refetchAppointments,
+  } = useAppointmentStats(queryParams);
+  const {
+    data: clients,
+    isLoading: clientsLoading,
+    isFetching: clientsFetching,
+    refetch: refetchClients,
+  } = useClientAcquisition(queryParams);
+  const {
+    data: invoiceAging,
+    isLoading: agingLoading,
+    isFetching: agingFetching,
+    refetch: refetchAging,
+  } = useInvoiceAging();
+  const {
+    data: topClients,
+    isLoading: topClientsLoading,
+    isFetching: topClientsFetching,
+    refetch: refetchTopClients,
+  } = useTopClients(queryParams);
 
   const handleRefreshAll = () => {
     refetchOverview();
@@ -69,14 +104,6 @@ export default function Analytics() {
   };
 
   // isLoading = true only on initial load (no cached data)
-  const isAnyLoading =
-    overviewLoading ||
-    revenueLoading ||
-    paymentsLoading ||
-    appointmentsLoading ||
-    clientsLoading ||
-    agingLoading ||
-    topClientsLoading;
 
   // isFetching = true on initial load AND refetches
   const isAnyFetching =
@@ -97,9 +124,7 @@ export default function Analytics() {
             <BarChart3 className="h-6 w-6 text-primary" />
             Statistici
           </h1>
-          <p className="page-subtitle">
-            Metrici si analize pentru afacerea ta
-          </p>
+          <p className="page-subtitle">Metrici si analize pentru afacerea ta</p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -109,9 +134,7 @@ export default function Analytics() {
             className="p-2.5 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 hover:shadow-md transition-all disabled:opacity-50"
             title="Reincarca datele"
           >
-            <RefreshCw
-              className={`h-4 w-4 text-gray-600 ${isAnyFetching ? 'animate-spin' : ''}`}
-            />
+            <RefreshCw className={`h-4 w-4 text-gray-600 ${isAnyFetching ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -136,10 +159,7 @@ export default function Analytics() {
         />
 
         {/* Payment Card - all payments */}
-        <PaymentCard
-          data={payments?.summary}
-          isLoading={paymentsLoading || paymentsFetching}
-        />
+        <PaymentCard data={payments?.summary} isLoading={paymentsLoading || paymentsFetching} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -181,10 +201,7 @@ export default function Analytics() {
 
       {/* Location Comparison (admin/manager only) */}
       {canViewLocationComparison && (
-        <LocationComparisonChart
-          startDate={dateRange.startDate}
-          endDate={dateRange.endDate}
-        />
+        <LocationComparisonChart startDate={dateRange.startDate} endDate={dateRange.endDate} />
       )}
 
       {/* Charts Row 1 */}
@@ -218,9 +235,7 @@ export default function Analytics() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total programari</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {appointments.summary.total}
-                </p>
+                <p className="text-xl font-bold text-gray-900">{appointments.summary.total}</p>
               </div>
             </div>
           )}
@@ -246,9 +261,7 @@ export default function Analytics() {
             <div className="flex items-center gap-4 mb-4">
               <div>
                 <p className="text-sm text-gray-500">In perioada selectata</p>
-                <p className="text-xl font-bold text-gray-900">
-                  +{clients.summary.newClients}
-                </p>
+                <p className="text-xl font-bold text-gray-900">+{clients.summary.newClients}</p>
               </div>
               {clients.summary.growthRate !== undefined && (
                 <div

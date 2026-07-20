@@ -1,13 +1,13 @@
 const { AppError } = require('../utils/errors');
-const { ACTIVITY_SECTORS, getSectorConfig } = require('../constants/activitySectors');
+const { getSectorConfig } = require('../constants/activitySectors');
 
 /**
  * Default public booking settings
  */
 const DEFAULT_PUBLIC_BOOKING = {
   workingHours: {
-    start: 9,  // 9 AM
-    end: 18,   // 6 PM
+    start: 9, // 9 AM
+    end: 18, // 6 PM
   },
   slotDuration: 60, // minutes
   allowWeekends: false,
@@ -114,8 +114,14 @@ const updatePublicBooking = async (prisma, organizationId, publicBooking) => {
         ...(currentSettings.publicBooking?.workingHours || {}),
         ...(publicBooking.workingHours || {}),
       },
-      slotDuration: publicBooking.slotDuration ?? currentSettings.publicBooking?.slotDuration ?? DEFAULT_PUBLIC_BOOKING.slotDuration,
-      allowWeekends: publicBooking.allowWeekends ?? currentSettings.publicBooking?.allowWeekends ?? DEFAULT_PUBLIC_BOOKING.allowWeekends,
+      slotDuration:
+        publicBooking.slotDuration ??
+        currentSettings.publicBooking?.slotDuration ??
+        DEFAULT_PUBLIC_BOOKING.slotDuration,
+      allowWeekends:
+        publicBooking.allowWeekends ??
+        currentSettings.publicBooking?.allowWeekends ??
+        DEFAULT_PUBLIC_BOOKING.allowWeekends,
     },
   };
 

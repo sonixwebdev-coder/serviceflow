@@ -2,16 +2,44 @@ import { subDays, subMonths, startOfMonth, endOfMonth, format, parseISO } from '
 import DatePicker from '../ui/DatePicker';
 
 const PRESET_RANGES = [
-  { label: '7 zile', value: '7d', getDates: () => ({ startDate: subDays(new Date(), 7), endDate: new Date() }) },
-  { label: '30 zile', value: '30d', getDates: () => ({ startDate: subDays(new Date(), 30), endDate: new Date() }) },
-  { label: '90 zile', value: '90d', getDates: () => ({ startDate: subDays(new Date(), 90), endDate: new Date() }) },
-  { label: 'Luna aceasta', value: 'this_month', getDates: () => ({ startDate: startOfMonth(new Date()), endDate: new Date() }) },
-  { label: 'Luna trecuta', value: 'last_month', getDates: () => {
-    const lastMonth = subMonths(new Date(), 1);
-    return { startDate: startOfMonth(lastMonth), endDate: endOfMonth(lastMonth) };
-  }},
-  { label: '6 luni', value: '6m', getDates: () => ({ startDate: subMonths(new Date(), 6), endDate: new Date() }) },
-  { label: '1 an', value: '1y', getDates: () => ({ startDate: subMonths(new Date(), 12), endDate: new Date() }) },
+  {
+    label: '7 zile',
+    value: '7d',
+    getDates: () => ({ startDate: subDays(new Date(), 7), endDate: new Date() }),
+  },
+  {
+    label: '30 zile',
+    value: '30d',
+    getDates: () => ({ startDate: subDays(new Date(), 30), endDate: new Date() }),
+  },
+  {
+    label: '90 zile',
+    value: '90d',
+    getDates: () => ({ startDate: subDays(new Date(), 90), endDate: new Date() }),
+  },
+  {
+    label: 'Luna aceasta',
+    value: 'this_month',
+    getDates: () => ({ startDate: startOfMonth(new Date()), endDate: new Date() }),
+  },
+  {
+    label: 'Luna trecuta',
+    value: 'last_month',
+    getDates: () => {
+      const lastMonth = subMonths(new Date(), 1);
+      return { startDate: startOfMonth(lastMonth), endDate: endOfMonth(lastMonth) };
+    },
+  },
+  {
+    label: '6 luni',
+    value: '6m',
+    getDates: () => ({ startDate: subMonths(new Date(), 6), endDate: new Date() }),
+  },
+  {
+    label: '1 an',
+    value: '1y',
+    getDates: () => ({ startDate: subMonths(new Date(), 12), endDate: new Date() }),
+  },
 ];
 
 export default function DateRangeFilter({
@@ -62,14 +90,18 @@ export default function DateRangeFilter({
         <div className="flex items-center gap-2 sm:ml-2">
           <DatePicker
             value={startDate ? parseISO(startDate) : null}
-            onChange={(date) => handleCustomChange('startDate', date ? format(date, 'yyyy-MM-dd') : '')}
+            onChange={(date) =>
+              handleCustomChange('startDate', date ? format(date, 'yyyy-MM-dd') : '')
+            }
             maxDate={new Date()}
             placeholder="De la"
           />
           <span className="text-gray-400">-</span>
           <DatePicker
             value={endDate ? parseISO(endDate) : null}
-            onChange={(date) => handleCustomChange('endDate', date ? format(date, 'yyyy-MM-dd') : '')}
+            onChange={(date) =>
+              handleCustomChange('endDate', date ? format(date, 'yyyy-MM-dd') : '')
+            }
             minDate={startDate ? parseISO(startDate) : undefined}
             maxDate={new Date()}
             placeholder="Pana la"

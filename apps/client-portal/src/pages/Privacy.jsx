@@ -1,123 +1,93 @@
 import SEOHead from '@/components/landing/SEOHead';
+import { runtimeConfig } from '@/config/runtime';
 
 export default function Privacy() {
+  const contactEmail = runtimeConfig.platformContactEmail;
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <SEOHead
-        title="Politica de Confidentialitate - ForjaIt"
-        description="Afla cum ForjaIt colecteaza, prelucreaza si protejeaza datele tale personale. Conformitate GDPR, criptare si drepturi de acces."
-        canonical="https://portal.forja.it.com/privacy"
+        title={`Politica de Confidentialitate - ${runtimeConfig.platformName}`}
+        description={`Informatii despre datele prelucrate prin portalul ${runtimeConfig.platformName} si responsabilitatile operatorului instalarii.`}
+        canonical={`${runtimeConfig.portalUrl}/privacy`}
       />
       <div className="mb-10">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">Legal</p>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Politica de Confidentialitate</h1>
-        <p className="mt-3 text-sm text-gray-400">Ultima actualizare: 8 Martie 2026</p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+          Politica de Confidentialitate
+        </h1>
+        <p className="mt-3 text-sm text-gray-400">Ultima actualizare: 20 iulie 2026</p>
       </div>
 
       <div className="prose prose-gray max-w-none space-y-6 text-gray-600 text-sm leading-relaxed">
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">1. Date Colectate</h2>
-          <p>In cadrul utilizarii platformei ForjaIt, colectam urmatoarele categorii de date personale:</p>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">
+            1. Operatorul instalarii
+          </h2>
+          <p>
+            Portalul este administrat de organizatia sau operatorul care v-a oferit accesul.
+            ServiceFlow este software open-source si nu stabileste automat scopurile, temeiurile sau
+            perioadele de pastrare pentru fiecare instalare.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">2. Date prelucrate</h2>
+          <p>In functie de functiile utilizate, portalul poate prelucra:</p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li>Date de identificare: nume, prenume, adresa de email, numar de telefon</li>
-            <li>Date de cont: adresa de email, parola (stocata criptat)</li>
-            <li>Date de utilizare: programari, mesaje, interactiuni cu platforma</li>
-            <li>Date de fidelitate: puncte acumulate, tranzactii in programul de loialitate</li>
-            <li>Date tehnice: adresa IP, tipul dispozitivului, browser-ul utilizat</li>
-            <li>Date de notificari: token-uri push, preferinte de notificari</li>
+            <li>date de identificare, contact, cont si autentificare;</li>
+            <li>programari, servicii, facturi, mesaje si fisiere;</li>
+            <li>puncte de fidelitate si preferinte de notificare;</li>
+            <li>jurnale de activitate, adresa IP si informatii despre dispozitiv.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">2. Scopul Prelucrarii</h2>
-          <p>Datele personale sunt prelucrate in urmatoarele scopuri:</p>
-          <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li>Crearea si gestionarea contului de utilizator</li>
-            <li>Facilitarea programarilor si comunicarii cu furnizorii de servicii</li>
-            <li>Generarea si gestionarea facturilor</li>
-            <li>Trimiterea de notificari relevante (programari, mesaje, facturi)</li>
-            <li>Administrarea programului de fidelitate si a punctelor de loialitate</li>
-            <li>Imbunatatirea platformei si a experientei utilizatorului</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">3. Temeiul Legal</h2>
-          <p>Prelucrarea datelor personale se bazeaza pe:</p>
-          <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li>Executarea contractului - pentru furnizarea serviciilor platformei</li>
-            <li>Consimtamant - pentru comunicari de marketing (optional)</li>
-            <li>Interes legitim - pentru imbunatatirea si securizarea platformei</li>
-            <li>Obligatie legala - pentru conformitate fiscala si contabila</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">4. Durata Stocarii</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">
+            3. Scop, temei si retentie
+          </h2>
           <p>
-            Datele personale sunt stocate pe durata existentei contului si pentru o perioada de
-            maxim 3 ani dupa stergerea contului, conform obligatiilor legale. Datele de facturare
-            sunt pastrate conform legislatiei fiscale in vigoare (minim 10 ani).
+            Operatorul foloseste datele pentru furnizarea contului, programari, comunicare,
+            facturare si celelalte functii activate. Operatorul trebuie sa stabileasca temeiurile
+            legale, furnizorii, transferurile, copiile de siguranta si perioadele de retentie
+            aplicabile si sa vi le comunice separat.
           </p>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Drepturile Dumneavoastra</h2>
-          <p>Conform Regulamentului GDPR, aveti urmatoarele drepturi:</p>
-          <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li><strong>Dreptul de acces</strong> - puteti solicita o copie a datelor personale prelucrate</li>
-            <li><strong>Dreptul la rectificare</strong> - puteti solicita corectarea datelor inexacte</li>
-            <li><strong>Dreptul la stergere</strong> - puteti solicita stergerea datelor personale</li>
-            <li><strong>Dreptul la portabilitate</strong> - puteti solicita transferul datelor catre alt operator</li>
-            <li><strong>Dreptul la opozitie</strong> - va puteti opune prelucrarii in anumite situatii</li>
-            <li><strong>Dreptul la restrictionarea prelucrarii</strong> - puteti solicita limitarea prelucrarii</li>
-          </ul>
-          <p className="mt-3">
-            Pentru exercitarea acestor drepturi, va rugam sa ne contactati la adresa:{' '}
-            <a href="mailto:contact@forja.it.com" className="text-primary hover:underline">contact@forja.it.com</a>
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">6. Cookie-uri</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">
+            4. Cookie-uri si masuri disponibile
+          </h2>
           <p>
-            Platforma utilizeaza cookie-uri esentiale pentru functionarea corecta a aplicatiei
-            (autentificare, sesiune). Nu utilizam cookie-uri de tracking sau publicitate
-            fara consimtamantul dumneavoastra explicit.
+            Aplicatia foloseste mecanisme necesare autentificarii, protectiei formularelor si
+            preferintelor. Software-ul include parole hashuite, 2FA optionala, control al accesului
+            si suport HTTPS. Protectia efectiva depinde si de configuratia si practicile
+            operatorului.
           </p>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">7. Securitatea Datelor</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Drepturi si contact</h2>
           <p>
-            Implementam masuri tehnice si organizatorice adecvate pentru protectia datelor personale,
-            inclusiv criptarea parolelor, comunicatii securizate (HTTPS) si acces restrictionat
-            la bazele de date.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">8. Contact</h2>
-          <p>
-            Pentru intrebari legate de prelucrarea datelor personale sau pentru exercitarea drepturilor
-            dumneavoastra, ne puteti contacta la:{' '}
-            <a href="mailto:contact@forja.it.com" className="text-primary hover:underline">contact@forja.it.com</a>
-          </p>
-          <p className="mt-2">
-            De asemenea, aveti dreptul de a depune o plangere la Autoritatea Nationala de Supraveghere
-            a Prelucrarii Datelor cu Caracter Personal (ANSPDCP).
+            Puteti avea drepturi de acces, rectificare, stergere, restrictionare, portabilitate si
+            opozitie, in conditiile legislatiei aplicabile. Trimiteti solicitarile operatorului la{' '}
+            <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
+              {contactEmail}
+            </a>
+            . Puteti contacta si autoritatea de supraveghere competenta.
           </p>
         </section>
       </div>
 
       <div className="mt-12 border-t border-gray-200 pt-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-          Solutionarea alternativa a litigiilor
-        </p>
-        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
-          <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 font-medium transition hover:bg-white hover:text-gray-700 hover:border-gray-300">ANPC - SAL</a>
-          <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 font-medium transition hover:bg-white hover:text-gray-700 hover:border-gray-300">Platforma SOL</a>
-        </div>
+        <a
+          href="https://anpc.ro/ce-este-sal/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-white hover:text-gray-700 hover:border-gray-300"
+        >
+          ANPC - SAL
+        </a>
       </div>
     </div>
   );

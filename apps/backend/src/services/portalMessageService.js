@@ -1,6 +1,6 @@
 const { AppError } = require('../utils/errors');
 const { mapUser } = require('../utils/transform');
-const { broadcastMessage, broadcastMessageToClient } = require('../realtime/events');
+const { broadcastMessage } = require('../realtime/events');
 const { createNotification } = require('./notificationService');
 const { sendAppointmentMessageNotification } = require('./pushNotificationService');
 const logger = require('../utils/logger');
@@ -34,9 +34,8 @@ const includeConfig = {
 const mapClientAuthor = (client) => {
   if (!client) return null;
 
-  const displayName = client.companyName ||
-    [client.firstName, client.lastName].filter(Boolean).join(' ') ||
-    'Client';
+  const displayName =
+    client.companyName || [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Client';
 
   return {
     id: client.id,
@@ -67,19 +66,21 @@ const mapMessage = (message, currentClientId = null) => {
     body: message.body,
     type: message.type?.toLowerCase() || 'text',
     metadata: message.metadata,
-    attachments: message.attachments?.map(att => ({
-      id: att.id,
-      fileName: att.fileName,
-      fileUrl: att.fileUrl,
-      fileType: att.fileType,
-      fileSize: att.fileSize,
-    })) || [],
-    readReceipts: message.readReceipts?.map((receipt) => ({
-      id: receipt.id,
-      userId: receipt.userId,
-      clientId: receipt.clientId,
-      readAt: receipt.readAt,
-    })) || [],
+    attachments:
+      message.attachments?.map((att) => ({
+        id: att.id,
+        fileName: att.fileName,
+        fileUrl: att.fileUrl,
+        fileType: att.fileType,
+        fileSize: att.fileSize,
+      })) || [],
+    readReceipts:
+      message.readReceipts?.map((receipt) => ({
+        id: receipt.id,
+        userId: receipt.userId,
+        clientId: receipt.clientId,
+        readAt: receipt.readAt,
+      })) || [],
     isRead: currentClientId
       ? message.readReceipts?.some((receipt) => receipt.clientId === currentClientId)
       : false,
@@ -203,7 +204,8 @@ const createMessage = async (prisma, clientId, appointmentId, { body, type, meta
       });
     }
 
-    const clientName = client?.companyName ||
+    const clientName =
+      client?.companyName ||
       [client?.firstName, client?.lastName].filter(Boolean).join(' ') ||
       'Un client';
     const appointmentTitle = appointment.title || 'Programare';
@@ -324,7 +326,12 @@ const getUnreadMessageCount = async (prisma, clientId, appointmentId) => {
 /**
  * Create a file attachment message
  */
-const createFileMessage = async (prisma, clientId, appointmentId, { fileName, fileUrl, fileType, fileSize }) => {
+const createFileMessage = async (
+  prisma,
+  clientId,
+  appointmentId,
+  { fileName, fileUrl, fileType, fileSize }
+) => {
   const appointment = await ensureClientOwnsAppointment(prisma, clientId, appointmentId);
 
   const message = await prisma.message.create({
@@ -393,19 +400,24 @@ const createFileMessage = async (prisma, clientId, appointmentId, { fileName, fi
       const appointmentTitle = appointment.title || 'Programare';
 
       const recipientList = Array.from(recipientIds);
-      const clientName = client?.companyName || `${client?.firstName || ''} ${client?.lastName || ''}`.trim() || 'Client';
+      const clientName =
+        client?.companyName ||
+        `${client?.firstName || ''} ${client?.lastName || ''}`.trim() ||
+        'Client';
 
       // Create in-app notifications
-      await Promise.all(recipientList.map((recipientId) =>
-        createNotification({
-          recipientId,
-          title: 'Fisier de la client',
-          message: `${clientName} a trimis un fisier in "${appointmentTitle}"`,
-          type: 'MESSAGE',
-          entityType: 'appointment',
-          entityId: appointmentId,
-        }).catch(() => {})
-      ));
+      await Promise.all(
+        recipientList.map((recipientId) =>
+          createNotification({
+            recipientId,
+            title: 'Fisier de la client',
+            message: `${clientName} a trimis un fisier in "${appointmentTitle}"`,
+            type: 'MESSAGE',
+            entityType: 'appointment',
+            entityId: appointmentId,
+          }).catch(() => {})
+        )
+      );
 
       // Send push notifications
       await sendAppointmentMessageNotification({

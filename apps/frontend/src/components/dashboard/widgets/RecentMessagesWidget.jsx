@@ -6,7 +6,7 @@ import { useAuthStore } from '../../../state/useAuthStore';
 
 const ListSkeleton = () => (
   <div className="space-y-2">
-    {[1, 2, 3].map(i => (
+    {[1, 2, 3].map((i) => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
         <div className="flex-1 space-y-1">
@@ -36,19 +36,24 @@ export default function RecentMessagesWidget() {
   const getChannelName = (channel) => {
     if (channel.name) return channel.name;
     if (channel.type === 'DIRECT') {
-      const other = channel.members?.find(m => m.user?.id !== currentUser?.id);
+      const other = channel.members?.find((m) => m.user?.id !== currentUser?.id);
       return other?.user ? `${other.user.firstName} ${other.user.lastName}` : 'Chat';
     }
     if (channel.type === 'GROUP') {
-      const others = channel.members?.filter(m => m.user?.id !== currentUser?.id) || [];
-      return others.slice(0, 2).map(m => m.user?.firstName).join(', ') || 'Grup';
+      const others = channel.members?.filter((m) => m.user?.id !== currentUser?.id) || [];
+      return (
+        others
+          .slice(0, 2)
+          .map((m) => m.user?.firstName)
+          .join(', ') || 'Grup'
+      );
     }
     return 'Canal';
   };
 
   const getChannelInitials = (channel) => {
     if (channel.type === 'DIRECT') {
-      const other = channel.members?.find(m => m.user?.id !== currentUser?.id);
+      const other = channel.members?.find((m) => m.user?.id !== currentUser?.id);
       if (other?.user) {
         return `${other.user.firstName?.[0] || ''}${other.user.lastName?.[0] || ''}`;
       }
@@ -79,7 +84,7 @@ export default function RecentMessagesWidget() {
 
   return (
     <div className="space-y-2">
-      {recentChannels.map(channel => {
+      {recentChannels.map((channel) => {
         const unread = unreadCounts[channel.id] || 0;
         return (
           <div
@@ -89,13 +94,17 @@ export default function RecentMessagesWidget() {
               unread > 0 ? 'bg-purple-50 hover:bg-purple-100' : 'bg-gray-50 hover:bg-gray-100'
             }`}
           >
-            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
-              unread > 0 ? 'bg-purple-200 text-purple-700' : 'bg-gray-200 text-gray-600'
-            }`}>
+            <div
+              className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
+                unread > 0 ? 'bg-purple-200 text-purple-700' : 'bg-gray-200 text-gray-600'
+              }`}
+            >
               {getChannelInitials(channel)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm truncate ${unread > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+              <p
+                className={`text-sm truncate ${unread > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}
+              >
                 {getChannelName(channel)}
               </p>
               {channel.lastMessage && (

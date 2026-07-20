@@ -19,8 +19,13 @@ export const createInvoice = async (payload) => {
   return response.data?.data || response.data;
 };
 
-export const createInvoiceFromServiceOrder = async (serviceOrderId, { applyLoyaltyDiscount = true } = {}) => {
-  const response = await API.post(`/invoices/from-service-order/${serviceOrderId}`, { applyLoyaltyDiscount });
+export const createInvoiceFromServiceOrder = async (
+  serviceOrderId,
+  { applyLoyaltyDiscount = true } = {}
+) => {
+  const response = await API.post(`/invoices/from-service-order/${serviceOrderId}`, {
+    applyLoyaltyDiscount,
+  });
   return response.data?.data || response.data;
 };
 

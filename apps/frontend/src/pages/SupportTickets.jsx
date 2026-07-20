@@ -45,9 +45,14 @@ export default function SupportTickets() {
       onSuccess: () => {
         setShowModal(false);
         setForm({ subject: '', category: 'GENERAL_QUESTION', message: '' });
-        showToast({ title: 'Tichet creat', description: 'Tichetul a fost trimis cu succes.', type: 'success' });
+        showToast({
+          title: 'Tichet creat',
+          description: 'Tichetul a fost trimis cu succes.',
+          type: 'success',
+        });
       },
-      onError: () => showToast({ title: 'Eroare', description: 'Nu s-a putut crea tichetul.', type: 'error' }),
+      onError: () =>
+        showToast({ title: 'Eroare', description: 'Nu s-a putut crea tichetul.', type: 'error' }),
     });
   };
 
@@ -81,7 +86,9 @@ export default function SupportTickets() {
         </div>
         <select
           value={filters.status || ''}
-          onChange={(e) => setFilters((prev) => ({ ...prev, page: 1, status: e.target.value || undefined }))}
+          onChange={(e) =>
+            setFilters((prev) => ({ ...prev, page: 1, status: e.target.value || undefined }))
+          }
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
         >
           <option value="">Toate statusurile</option>
@@ -121,16 +128,18 @@ export default function SupportTickets() {
                   <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">
                     {ticket.subject}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {CATEGORY_LABELS[ticket.category]}
-                  </td>
+                  <td className="px-4 py-3 text-gray-600">{CATEGORY_LABELS[ticket.category]}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[ticket.status]}`}>
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[ticket.status]}`}
+                    >
                       {ticket.status.replace('_', ' ')}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_COLORS[ticket.priority]}`}>
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_COLORS[ticket.priority]}`}
+                    >
                       {ticket.priority}
                     </span>
                   </td>
@@ -176,7 +185,10 @@ export default function SupportTickets() {
           <div className="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Tichet nou</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -233,7 +245,9 @@ export default function SupportTickets() {
                   disabled={creating}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors"
                 >
-                  {creating && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+                  {creating && (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
                   Trimite
                 </button>
               </div>

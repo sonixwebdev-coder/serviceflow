@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Paperclip, X, FileText, Image as ImageIcon, File } from 'lucide-react';
 import { useUploadFile } from '../../hooks/useChat';
 import useToast from '../../context/useToast';
@@ -80,7 +80,8 @@ export default function FileUploadButton({ channelId, onUploadComplete }) {
       console.error('Failed to upload file:', error);
       showToast({
         title: 'Eroare',
-        description: error?.message || 'Nu s-a putut încărca fișierul. Te rugăm să încerci din nou.',
+        description:
+          error?.message || 'Nu s-a putut încărca fișierul. Te rugăm să încerci din nou.',
         type: 'error',
       });
     } finally {
@@ -173,12 +174,8 @@ export default function FileUploadButton({ channelId, onUploadComplete }) {
 
             {/* File Info */}
             <div className="mb-4 rounded-lg bg-gray-50 p-3">
-              <p className="truncate text-sm font-medium text-gray-900">
-                {selectedFile.name}
-              </p>
-              <p className="text-xs text-gray-500">
-                {formatFileSize(selectedFile.size)}
-              </p>
+              <p className="truncate text-sm font-medium text-gray-900">{selectedFile.name}</p>
+              <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
             </div>
 
             {/* Upload Progress */}

@@ -1,13 +1,18 @@
-const { getAuthenticatedCalendarClient, getCalendarConfig, getAllCalendarConfigs } = require('./googleOAuthService');
+const {
+  getAuthenticatedCalendarClient,
+  getCalendarConfig,
+  getAllCalendarConfigs,
+} = require('./googleOAuthService');
 const logger = require('../../utils/logger');
 
 /**
  * Convert appointment to Google Calendar event
  */
 const appointmentToGoogleEvent = (appointment, client) => {
-  const clientName = client?.type === 'SRL'
-    ? client.companyName
-    : `${client?.firstName || ''} ${client?.lastName || ''}`.trim();
+  const clientName =
+    client?.type === 'SRL'
+      ? client.companyName
+      : `${client?.firstName || ''} ${client?.lastName || ''}`.trim();
 
   return {
     summary: appointment.title || `Programare - ${clientName}`,
@@ -15,7 +20,9 @@ const appointmentToGoogleEvent = (appointment, client) => {
       appointment.description,
       client?.phone ? `Tel: ${client.phone}` : null,
       client?.email ? `Email: ${client.email}` : null,
-    ].filter(Boolean).join('\n'),
+    ]
+      .filter(Boolean)
+      .join('\n'),
     location: appointment.location,
     start: {
       dateTime: new Date(appointment.scheduledStart).toISOString(),
@@ -41,11 +48,11 @@ const appointmentToGoogleEvent = (appointment, client) => {
  */
 const getColorByStatus = (status) => {
   const colorMap = {
-    PENDING: '5',      // Yellow
-    PREZENTAT: '9',    // Blue
-    IN_PROGRESS: '3',  // Purple
-    COMPLETED: '10',   // Green
-    CANCELLED: '11',   // Red
+    PENDING: '5', // Yellow
+    PREZENTAT: '9', // Blue
+    IN_PROGRESS: '3', // Purple
+    COMPLETED: '10', // Green
+    CANCELLED: '11', // Red
   };
   return colorMap[status] || '1';
 };
@@ -105,7 +112,9 @@ const createEvent = async (prisma, userId, appointment, client, locationId) => {
       },
     });
 
-    logger.info(`Created Google Calendar event ${response.data.id} for appointment ${appointment.id}`);
+    logger.info(
+      `Created Google Calendar event ${response.data.id} for appointment ${appointment.id}`
+    );
     return syncRecord;
   } catch (error) {
     logger.error(`Failed to create Google Calendar event:`, error);
@@ -186,7 +195,9 @@ const updateEvent = async (prisma, userId, appointment, client, locationId) => {
       },
     });
 
-    logger.info(`Updated Google Calendar event ${response.data.id} for appointment ${appointment.id}`);
+    logger.info(
+      `Updated Google Calendar event ${response.data.id} for appointment ${appointment.id}`
+    );
     return syncRecord;
   } catch (error) {
     logger.error(`Failed to update Google Calendar event:`, error);
@@ -256,7 +267,9 @@ const deleteEvent = async (prisma, userId, appointmentId, locationId) => {
       where: { id: syncRecord.id },
     });
 
-    logger.info(`Deleted Google Calendar event ${syncRecord.googleEventId} for appointment ${appointmentId}`);
+    logger.info(
+      `Deleted Google Calendar event ${syncRecord.googleEventId} for appointment ${appointmentId}`
+    );
     return { success: true };
   } catch (error) {
     logger.error(`Failed to delete Google Calendar event:`, error);
@@ -278,9 +291,10 @@ const syncAllAppointments = async (prisma, userId, locationId) => {
   }
 
   // If a specific locationId is provided, only sync that config
-  const enabledConfigs = locationId !== undefined && locationId !== null
-    ? allConfigs.filter((c) => c.locationId === locationId && c.syncEnabled)
-    : allConfigs.filter((c) => c.syncEnabled);
+  const enabledConfigs =
+    locationId !== undefined && locationId !== null
+      ? allConfigs.filter((c) => c.locationId === locationId && c.syncEnabled)
+      : allConfigs.filter((c) => c.syncEnabled);
 
   if (enabledConfigs.length === 0) {
     return { success: false, error: 'Calendar sync not enabled' };
@@ -303,10 +317,7 @@ const syncAllAppointments = async (prisma, userId, locationId) => {
         organizationId: user.organizationId,
         scheduledStart: { gte: new Date() },
         status: { not: 'CANCELLED' },
-        OR: [
-          { createdById: userId },
-          { assignees: { some: { userId } } },
-        ],
+        OR: [{ createdById: userId }, { assignees: { some: { userId } } }],
       },
       include: {
         client: true,
@@ -349,11 +360,23 @@ const syncAllAppointments = async (prisma, userId, locationId) => {
       });
 
       if (existing?.googleEventId) {
-        const result = await updateEvent(prisma, userId, appointment, appointment.client, config.locationId);
+        const result = await updateEvent(
+          prisma,
+          userId,
+          appointment,
+          appointment.client,
+          config.locationId
+        );
         if (result) results.updated++;
         else results.errors++;
       } else {
-        const result = await createEvent(prisma, userId, appointment, appointment.client, config.locationId);
+        const result = await createEvent(
+          prisma,
+          userId,
+          appointment,
+          appointment.client,
+          config.locationId
+        );
         if (result) results.created++;
         else results.errors++;
       }
@@ -398,7 +421,11 @@ const listCalendars = async (prisma, userId, locationId = null) => {
 /**
  * Update sync settings
  */
-const updateSyncSettings = async (prisma, userId, { calendarId, syncEnabled, locationId = null }) => {
+const updateSyncSettings = async (
+  prisma,
+  userId,
+  { calendarId, syncEnabled, locationId = null }
+) => {
   const config = await getCalendarConfig(prisma, userId, locationId);
 
   if (!config) {
@@ -517,7 +544,9 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
         });
 
         const googleEvents = response.data.items || [];
-        logger.info(`[GCAL] Fetched ${googleEvents.length} events from config ${config.id} (location: ${config.locationId || 'default'}) for user ${userId}`);
+        logger.info(
+          `[GCAL] Fetched ${googleEvents.length} events from config ${config.id} (location: ${config.locationId || 'default'}) for user ${userId}`
+        );
         results.total += googleEvents.length;
 
         // Get all existing sync records for this config
@@ -603,7 +632,9 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
             // Track this event as imported so other configs don't re-import it
             importedGoogleEventIds.add(event.id);
 
-            logger.info(`[GCAL] Imported event "${event.summary}" as appointment ${appointment.id}`);
+            logger.info(
+              `[GCAL] Imported event "${event.summary}" as appointment ${appointment.id}`
+            );
           } catch (err) {
             logger.error(`[GCAL] Failed to import event "${event.summary}":`, err);
             results.errors++;
@@ -616,12 +647,17 @@ const importEventsFromGoogle = async (prisma, userId, options = {}) => {
           data: { lastSyncAt: new Date() },
         });
       } catch (configError) {
-        logger.error(`[GCAL] Failed to import from config ${config.id} (location: ${config.locationId || 'default'}):`, configError);
+        logger.error(
+          `[GCAL] Failed to import from config ${config.id} (location: ${config.locationId || 'default'}):`,
+          configError
+        );
         results.errors++;
       }
     }
 
-    logger.info(`[GCAL] Import complete for user ${userId}: ${results.imported} imported, ${results.skipped} skipped, ${results.errors} errors`);
+    logger.info(
+      `[GCAL] Import complete for user ${userId}: ${results.imported} imported, ${results.skipped} skipped, ${results.errors} errors`
+    );
     return { success: true, results };
   } catch (error) {
     logger.error(`[GCAL] Failed to import events from Google Calendar for user ${userId}:`, error);

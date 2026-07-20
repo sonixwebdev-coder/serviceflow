@@ -29,7 +29,7 @@ const searchClients = async (query, options = {}) => {
     params: {
       q: query,
       limit: options.limit || 20,
-    }
+    },
   });
   return response.data?.data || response.data;
 };

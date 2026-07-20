@@ -39,24 +39,27 @@ export const ToastProvider = ({ children }) => {
     }
   }, []);
 
-  const showToast = useCallback(({ title, description, type = 'info', duration = 4000 } = {}) => {
-    toastCounter += 1;
-    const id = toastCounter;
-    setToasts((current) => [
-      ...current,
-      { id, title, description, type },
-    ]);
+  const showToast = useCallback(
+    ({ title, description, type = 'info', duration = 4000 } = {}) => {
+      toastCounter += 1;
+      const id = toastCounter;
+      setToasts((current) => [...current, { id, title, description, type }]);
 
-    if (duration > 0) {
-      const timer = setTimeout(() => removeToast(id), duration);
-      timers.current.set(id, timer);
-    }
-  }, [removeToast]);
+      if (duration > 0) {
+        const timer = setTimeout(() => removeToast(id), duration);
+        timers.current.set(id, timer);
+      }
+    },
+    [removeToast]
+  );
 
-  useEffect(() => () => {
-    timers.current.forEach((timer) => clearTimeout(timer));
-    timers.current.clear();
-  }, []);
+  useEffect(
+    () => () => {
+      timers.current.forEach((timer) => clearTimeout(timer));
+      timers.current.clear();
+    },
+    []
+  );
 
   const value = useMemo(() => ({ showToast, removeToast }), [removeToast, showToast]);
 
@@ -72,13 +75,15 @@ export const ToastProvider = ({ children }) => {
               className={`pointer-events-auto animate-slide-in-right rounded-xl border px-4 py-3 shadow-xl backdrop-blur-sm transition-all ${TYPE_CLASSES[toast.type] || TYPE_CLASSES.info}`}
             >
               <div className="flex items-start gap-3">
-                <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${ICON_CLASSES[toast.type] || ICON_CLASSES.info}`} />
+                <Icon
+                  className={`mt-0.5 h-5 w-5 shrink-0 ${ICON_CLASSES[toast.type] || ICON_CLASSES.info}`}
+                />
                 <div className="flex-1 min-w-0">
-                  {toast.title && (
-                    <p className="text-sm font-semibold">{toast.title}</p>
-                  )}
+                  {toast.title && <p className="text-sm font-semibold">{toast.title}</p>}
                   {toast.description && (
-                    <p className="mt-0.5 text-[13px] opacity-80 whitespace-pre-line">{toast.description}</p>
+                    <p className="mt-0.5 text-[13px] opacity-80 whitespace-pre-line">
+                      {toast.description}
+                    </p>
                   )}
                 </div>
                 <button

@@ -97,31 +97,38 @@ const WebsiteLeads = () => {
 
   const isReviewTab = sourceTab === 'review';
 
-  const handleToggleDropdown = useCallback((leadId, event) => {
-    if (openDropdownId === leadId) {
-      setOpenDropdownId(null);
-      return;
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    setDropdownPos({
-      top: rect.bottom + 4,
-      right: window.innerWidth - rect.right,
-    });
-    setOpenDropdownId(leadId);
-  }, [openDropdownId]);
+  const handleToggleDropdown = useCallback(
+    (leadId, event) => {
+      if (openDropdownId === leadId) {
+        setOpenDropdownId(null);
+        return;
+      }
+      const rect = event.currentTarget.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+      setOpenDropdownId(leadId);
+    },
+    [openDropdownId]
+  );
 
   const {
     leads,
     pagination,
     loading: leadsLoading,
     refresh: refreshLeads,
-  } = useWebsiteLeads(website?.id, {
-    search: searchQuery || undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    source: sourceTab !== 'all' ? sourceTab : undefined,
-    page,
-    limit: 20,
-  }, { enabled: !!website?.id });
+  } = useWebsiteLeads(
+    website?.id,
+    {
+      search: searchQuery || undefined,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      source: sourceTab !== 'all' ? sourceTab : undefined,
+      page,
+      limit: 20,
+    },
+    { enabled: !!website?.id }
+  );
 
   const {
     updateLead,
@@ -129,7 +136,6 @@ const WebsiteLeads = () => {
     convertToClient,
     approveReview,
     rejectReview,
-    isUpdating,
     isDeleting,
     isConverting,
     isApproving,
@@ -210,10 +216,10 @@ const WebsiteLeads = () => {
   const leadStats = useMemo(() => {
     if (!leads.length) return { new: 0, contacted: 0, qualified: 0, converted: 0 };
     return {
-      new: leads.filter(l => l.status === 'NEW').length,
-      contacted: leads.filter(l => l.status === 'CONTACTED').length,
-      qualified: leads.filter(l => l.status === 'QUALIFIED').length,
-      converted: leads.filter(l => l.status === 'CONVERTED').length,
+      new: leads.filter((l) => l.status === 'NEW').length,
+      contacted: leads.filter((l) => l.status === 'CONTACTED').length,
+      qualified: leads.filter((l) => l.status === 'QUALIFIED').length,
+      converted: leads.filter((l) => l.status === 'CONVERTED').length,
     };
   }, [leads]);
 
@@ -428,22 +434,36 @@ const WebsiteLeads = () => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nume</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nume
+                </th>
                 {isReviewTab && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rating
+                  </th>
                 )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {isReviewTab ? 'Email' : 'Contact'}
                 </th>
                 {!isReviewTab && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sursa</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sursa
+                  </th>
                 )}
                 {isReviewTab && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mesaj</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Mesaj
+                  </th>
                 )}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actiuni</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Data
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actiuni
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -517,27 +537,36 @@ const WebsiteLeads = () => {
                       )}
                       {isReviewTab && (
                         <td className="px-6 py-4">
-                          <p className="text-sm text-gray-700 max-w-xs truncate" title={review.content}>
+                          <p
+                            className="text-sm text-gray-700 max-w-xs truncate"
+                            title={review.content}
+                          >
                             {review.content}
                           </p>
                         </td>
                       )}
                       <td className="px-6 py-4">
-                        {isReviewTab ? (() => {
-                          const status = getApprovalStatus(lead.isApproved);
-                          return (
-                            <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${approvalColors[status]}`}>
-                              {approvalLabels[status]}
-                            </span>
-                          );
-                        })() : (
+                        {isReviewTab ? (
+                          (() => {
+                            const status = getApprovalStatus(lead.isApproved);
+                            return (
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${approvalColors[status]}`}
+                              >
+                                {approvalLabels[status]}
+                              </span>
+                            );
+                          })()
+                        ) : (
                           <select
                             value={lead.status}
                             onChange={(e) => handleStatusChange(lead.id, e.target.value)}
                             className={`px-2 py-1 rounded-md text-xs font-medium border-0 cursor-pointer ${statusColors[lead.status]}`}
                           >
                             {Object.entries(statusLabels).map(([value, label]) => (
-                              <option key={value} value={value}>{label}</option>
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
                             ))}
                           </select>
                         )}
@@ -581,10 +610,7 @@ const WebsiteLeads = () => {
       {/* Actions dropdown - rendered outside table with fixed positioning */}
       {openDropdownId && (
         <>
-          <div
-            className="fixed inset-0 z-30"
-            onClick={() => setOpenDropdownId(null)}
-          />
+          <div className="fixed inset-0 z-30" onClick={() => setOpenDropdownId(null)} />
           <div
             className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-40"
             style={{ top: dropdownPos.top, right: dropdownPos.right }}
@@ -685,56 +711,66 @@ const WebsiteLeads = () => {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            {selectedLead && (() => {
-              const review = selectedLead.source === 'review' ? parseReviewMessage(selectedLead.message) : null;
-              return (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Nume</label>
-                      <p className="font-medium">{selectedLead.firstName} {selectedLead.lastName}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Status</label>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${statusColors[selectedLead.status]}`}>
-                        {statusLabels[selectedLead.status]}
-                      </span>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Email</label>
-                      <p>{selectedLead.email}</p>
-                    </div>
-                    {selectedLead.source !== 'review' && (
+            {selectedLead &&
+              (() => {
+                const review =
+                  selectedLead.source === 'review'
+                    ? parseReviewMessage(selectedLead.message)
+                    : null;
+                return (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm text-gray-500">Telefon</label>
-                        <p>{selectedLead.phone || '-'}</p>
+                        <label className="text-sm text-gray-500">Nume</label>
+                        <p className="font-medium">
+                          {selectedLead.firstName} {selectedLead.lastName}
+                        </p>
                       </div>
-                    )}
-                    {review && (
                       <div>
-                        <label className="text-sm text-gray-500">Rating</label>
-                        <StarRating rating={review.rating} />
+                        <label className="text-sm text-gray-500">Status</label>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${statusColors[selectedLead.status]}`}
+                        >
+                          {statusLabels[selectedLead.status]}
+                        </span>
                       </div>
-                    )}
-                    <div>
-                      <label className="text-sm text-gray-500">Data</label>
-                      <p>{formatDate(selectedLead.createdAt)}</p>
+                      <div>
+                        <label className="text-sm text-gray-500">Email</label>
+                        <p>{selectedLead.email}</p>
+                      </div>
+                      {selectedLead.source !== 'review' && (
+                        <div>
+                          <label className="text-sm text-gray-500">Telefon</label>
+                          <p>{selectedLead.phone || '-'}</p>
+                        </div>
+                      )}
+                      {review && (
+                        <div>
+                          <label className="text-sm text-gray-500">Rating</label>
+                          <StarRating rating={review.rating} />
+                        </div>
+                      )}
+                      <div>
+                        <label className="text-sm text-gray-500">Data</label>
+                        <p>{formatDate(selectedLead.createdAt)}</p>
+                      </div>
                     </div>
+                    {review ? (
+                      <div>
+                        <label className="text-sm text-gray-500">Recenzie</label>
+                        <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">{review.content}</p>
+                      </div>
+                    ) : selectedLead.message ? (
+                      <div>
+                        <label className="text-sm text-gray-500">Mesaj</label>
+                        <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
+                          {selectedLead.message}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
-                  {review ? (
-                    <div>
-                      <label className="text-sm text-gray-500">Recenzie</label>
-                      <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">{review.content}</p>
-                    </div>
-                  ) : selectedLead.message ? (
-                    <div>
-                      <label className="text-sm text-gray-500">Mesaj</label>
-                      <p className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">{selectedLead.message}</p>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })()}
+                );
+              })()}
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowDetailsDialog(false)}
@@ -742,18 +778,21 @@ const WebsiteLeads = () => {
               >
                 Inchide
               </button>
-              {selectedLead && selectedLead.source !== 'review' && selectedLead.status !== 'CONVERTED' && !selectedLead.clientId && (
-                <button
-                  onClick={() => {
-                    handleConvert(selectedLead);
-                    setShowDetailsDialog(false);
-                  }}
-                  className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Converteste in client
-                </button>
-              )}
+              {selectedLead &&
+                selectedLead.source !== 'review' &&
+                selectedLead.status !== 'CONVERTED' &&
+                !selectedLead.clientId && (
+                  <button
+                    onClick={() => {
+                      handleConvert(selectedLead);
+                      setShowDetailsDialog(false);
+                    }}
+                    className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Converteste in client
+                  </button>
+                )}
             </div>
           </div>
         </div>
@@ -764,7 +803,9 @@ const WebsiteLeads = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowDeleteDialog(false)} />
           <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-2">Sterge {selectedLead?.source === 'review' ? 'recenzie' : 'lead'}</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              Sterge {selectedLead?.source === 'review' ? 'recenzie' : 'lead'}
+            </h3>
             <p className="text-gray-500 mb-6">
               Esti sigur ca vrei sa stergi? Aceasta actiune nu poate fi anulata.
             </p>

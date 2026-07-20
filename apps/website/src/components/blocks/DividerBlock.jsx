@@ -19,10 +19,7 @@ export default function DividerBlock({ data, branding }) {
   return (
     <div className="flex justify-center py-4">
       <hr
-        className={cn(
-          'border-0',
-          widthClasses[width] || widthClasses.full
-        )}
+        className={cn('border-0', widthClasses[width] || widthClasses.full)}
         style={{
           borderTopStyle: style,
           borderTopWidth: `${thickness}px`,

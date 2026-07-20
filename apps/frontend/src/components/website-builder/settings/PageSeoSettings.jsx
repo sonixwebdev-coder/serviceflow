@@ -28,7 +28,10 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
   };
 
   const handleRemoveKeyword = (keyword) => {
-    handleChange('keywords', localSeo.keywords.filter((k) => k !== keyword));
+    handleChange(
+      'keywords',
+      localSeo.keywords.filter((k) => k !== keyword)
+    );
   };
 
   const handleKeyDown = (e) => {
@@ -43,7 +46,8 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
   };
 
   const hasChanges =
-    JSON.stringify(localSeo) !== JSON.stringify({
+    JSON.stringify(localSeo) !==
+    JSON.stringify({
       title: pageSeo.title || '',
       description: pageSeo.description || '',
       keywords: pageSeo.keywords || [],
@@ -75,9 +79,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
             <div className="text-blue-800 text-lg hover:underline cursor-pointer">
               {localSeo.title || 'Titlul paginii'}
             </div>
-            <div className="text-green-700 text-sm mt-1">
-              www.exemplu.ro/pagina
-            </div>
+            <div className="text-green-700 text-sm mt-1">www.exemplu.ro/pagina</div>
             <div className="text-gray-600 text-sm mt-1 line-clamp-2">
               {localSeo.description || 'Descrierea paginii va aparea aici.'}
             </div>
@@ -260,7 +262,9 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
             />
             <div>
               <span className="text-sm font-medium text-gray-900">Permite indexarea</span>
-              <p className="text-xs text-gray-500">Aceasta pagina va aparea in rezultatele cautarii</p>
+              <p className="text-xs text-gray-500">
+                Aceasta pagina va aparea in rezultatele cautarii
+              </p>
             </div>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
@@ -271,8 +275,12 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
-              <span className="text-sm font-medium text-gray-900">Permite urmarirea link-urilor</span>
-              <p className="text-xs text-gray-500">Motoarele de cautare vor urma link-urile de pe aceasta pagina</p>
+              <span className="text-sm font-medium text-gray-900">
+                Permite urmarirea link-urilor
+              </span>
+              <p className="text-xs text-gray-500">
+                Motoarele de cautare vor urma link-urile de pe aceasta pagina
+              </p>
             </div>
           </label>
         </div>
@@ -293,7 +301,9 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
           <textarea
             value={localSeo.customSchema}
             onChange={(e) => handleChange('customSchema', e.target.value)}
-            placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "Service",\n  "name": "Numele serviciului"\n}'}
+            placeholder={
+              '{\n  "@context": "https://schema.org",\n  "@type": "Service",\n  "name": "Numele serviciului"\n}'
+            }
             rows={8}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
           />

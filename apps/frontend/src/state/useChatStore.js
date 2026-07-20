@@ -77,7 +77,9 @@ export const useChatStore = create((set, get) => ({
     set((state) => ({
       messagesByChannel: {
         ...state.messagesByChannel,
-        [channelId]: (state.messagesByChannel[channelId] || []).filter((msg) => msg.id !== messageId),
+        [channelId]: (state.messagesByChannel[channelId] || []).filter(
+          (msg) => msg.id !== messageId
+        ),
       },
     })),
 
@@ -96,7 +98,9 @@ export const useChatStore = create((set, get) => ({
     set((state) => ({
       pendingMessages: {
         ...state.pendingMessages,
-        [channelId]: (state.pendingMessages[channelId] || []).filter((msg) => msg.tempId !== tempId),
+        [channelId]: (state.pendingMessages[channelId] || []).filter(
+          (msg) => msg.tempId !== tempId
+        ),
       },
     })),
 

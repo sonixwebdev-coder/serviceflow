@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Gift, Users, TrendingUp, Search, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { useLoyaltyAnalytics, useLoyaltyTransactions, useLoyaltyAccounts } from '../hooks/useLoyalty';
+import { useLoyaltyAnalytics, useLoyaltyTransactions } from '../hooks/useLoyalty';
 import { lookupByQR } from '../services/loyaltyService';
 import TierBadge from '../components/loyalty/TierBadge';
 import useToast from '../context/useToast';
@@ -20,8 +20,11 @@ export default function LoyaltyDashboard() {
   const [qrInput, setQrInput] = useState('');
   const [qrResult, setQrResult] = useState(null);
 
-  const { data: analyticsData, isLoading: analyticsLoading } = useLoyaltyAnalytics();
-  const { data: txData, isLoading: txLoading } = useLoyaltyTransactions({ page: txPage, limit: 15 });
+  const { data: analyticsData } = useLoyaltyAnalytics();
+  const { data: txData, isLoading: txLoading } = useLoyaltyTransactions({
+    page: txPage,
+    limit: 15,
+  });
   const { showToast } = useToast();
 
   const analytics = analyticsData?.data || analyticsData;
@@ -67,7 +70,9 @@ export default function LoyaltyDashboard() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Puncte in circulatie</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.pointsInCirculation?.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {analytics.pointsInCirculation?.toLocaleString()}
+                </p>
               </div>
             </div>
           </div>
@@ -78,7 +83,9 @@ export default function LoyaltyDashboard() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Puncte totale emise</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.totalLifetimePoints?.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {analytics.totalLifetimePoints?.toLocaleString()}
+                </p>
               </div>
             </div>
           </div>
@@ -105,7 +112,10 @@ export default function LoyaltyDashboard() {
               {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map((tier) => {
                 const item = analytics.tierDistribution.find((t) => t.tier === tier);
                 const count = item?.count || 0;
-                const pct = analytics.totalAccounts > 0 ? Math.round((count / analytics.totalAccounts) * 100) : 0;
+                const pct =
+                  analytics.totalAccounts > 0
+                    ? Math.round((count / analytics.totalAccounts) * 100)
+                    : 0;
                 return (
                   <div key={tier} className="flex items-center gap-3">
                     <TierBadge tier={tier} />
@@ -117,7 +127,9 @@ export default function LoyaltyDashboard() {
                         />
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-gray-700 w-12 text-right">{count}</span>
+                    <span className="text-sm font-medium text-gray-700 w-12 text-right">
+                      {count}
+                    </span>
                   </div>
                 );
               })}
@@ -152,7 +164,9 @@ export default function LoyaltyDashboard() {
               {qrResult.loyaltyAccount && (
                 <div className="flex items-center gap-2 mt-2">
                   <TierBadge tier={qrResult.loyaltyAccount.currentTier} />
-                  <span className="text-sm text-gray-600">{qrResult.loyaltyAccount.currentPoints} puncte</span>
+                  <span className="text-sm text-gray-600">
+                    {qrResult.loyaltyAccount.currentPoints} puncte
+                  </span>
                 </div>
               )}
             </div>
@@ -168,9 +182,13 @@ export default function LoyaltyDashboard() {
                 <div key={r.clientId} className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-gray-400 w-5">{i + 1}.</span>
-                    <span className="text-sm font-medium text-gray-900">{r.clientName || 'Client'}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {r.clientName || 'Client'}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold text-indigo-600">{r.referralCount} ref.</span>
+                  <span className="text-sm font-semibold text-indigo-600">
+                    {r.referralCount} ref.
+                  </span>
                 </div>
               ))}
             </div>
@@ -192,12 +210,24 @@ export default function LoyaltyDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-t border-gray-100 bg-gray-50">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tip</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puncte</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sold</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descriere</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Client
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tip
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Puncte
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Sold
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Descriere
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Data
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -214,11 +244,14 @@ export default function LoyaltyDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right">
-                      <span className={`inline-flex items-center gap-0.5 font-semibold ${
-                        tx.points > 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center gap-0.5 font-semibold ${
+                          tx.points > 0 ? 'text-green-600' : 'text-red-600'
+                        }`}
+                      >
                         {tx.points > 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                        {tx.points > 0 ? '+' : ''}{tx.points}
+                        {tx.points > 0 ? '+' : ''}
+                        {tx.points}
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right text-gray-700">{tx.balanceAfter}</td>

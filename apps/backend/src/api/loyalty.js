@@ -9,7 +9,11 @@ const { ok } = require('../utils/http');
 router.use(authenticate, authorize({ permissions: ['loyalty:read'] }));
 const prisma = require('../../lib/prisma');
 const loyaltyService = require('../services/loyaltyService');
-const { loyaltyProgramSchema, manualAdjustSchema, transactionListSchema } = require('../schemas/loyaltySchema');
+const {
+  loyaltyProgramSchema,
+  manualAdjustSchema,
+  transactionListSchema,
+} = require('../schemas/loyaltySchema');
 
 /**
  * GET /api/loyalty/program
@@ -53,7 +57,8 @@ router.get(
     const { page = 1, limit = 20 } = req.query;
     const program = await loyaltyService.getProgram(prisma, req.user.organizationId);
 
-    if (!program) return ok(res, { items: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 } });
+    if (!program)
+      return ok(res, { items: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 } });
 
     const where = { programId: program.id };
     const skip = (Number(page) - 1) * Number(limit);
@@ -64,8 +69,14 @@ router.get(
         include: {
           client: {
             select: {
-              id: true, firstName: true, lastName: true, email: true, phone: true,
-              companyName: true, type: true, fidelityCardSerie: true,
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              companyName: true,
+              type: true,
+              fidelityCardSerie: true,
             },
           },
         },
@@ -119,7 +130,11 @@ router.post(
     const program = await loyaltyService.getProgram(prisma, req.user.organizationId);
     if (!program) return res.status(400).json({ error: 'Loyalty program not configured' });
 
-    const account = await loyaltyService.getOrCreateAccount(prisma, req.params.clientId, program.id);
+    const account = await loyaltyService.getOrCreateAccount(
+      prisma,
+      req.params.clientId,
+      program.id
+    );
     const result = await loyaltyService.manualAdjustPoints(prisma, {
       accountId: account.id,
       points: parsed.points,
@@ -141,7 +156,8 @@ router.get(
     const parsed = transactionListSchema.parse(req.query);
     const program = await loyaltyService.getProgram(prisma, req.user.organizationId);
 
-    if (!program) return ok(res, { items: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 } });
+    if (!program)
+      return ok(res, { items: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 } });
 
     const where = { account: { programId: program.id } };
     if (parsed.type) where.type = parsed.type;
@@ -191,7 +207,10 @@ router.get(
   authenticate,
   asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
-    const analytics = await loyaltyService.getLoyaltyAnalytics(prisma, req.user.organizationId, { startDate, endDate });
+    const analytics = await loyaltyService.getLoyaltyAnalytics(prisma, req.user.organizationId, {
+      startDate,
+      endDate,
+    });
     return ok(res, analytics);
   })
 );

@@ -4,10 +4,10 @@ const { mapUser } = require('../utils/transform');
 const { normalizeEmploymentType } = require('../utils/normalize');
 const { ensureRole, normalizeRoleKey } = require('./roleService');
 const cache = require('../utils/cache');
-const globalPrisma = require('../../lib/prisma');
 const logger = require('../utils/logger');
 
-const normalizeKey = (value) => (typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '');
+const normalizeKey = (value) =>
+  typeof value === 'string' ? value.toLowerCase().replace(/\s+/g, '-') : '';
 const ADMIN_ROLE = 'admin';
 const TECHNICIAN_ROLE = 'technician';
 
@@ -27,7 +27,13 @@ const listUsers = async (prisma, { search, role, isActive }, currentUser, option
   const isManager = hasRole(currentUser, 'manager');
 
   // Build cache key with organizationId to ensure tenant isolation
-  const filters = { search, role, isActive, organizationId: currentUser.organizationId, locationId };
+  const filters = {
+    search,
+    role,
+    isActive,
+    organizationId: currentUser.organizationId,
+    locationId,
+  };
   const cacheKey = cache.userListKey(filters);
 
   // Try cache first (only for non-search queries and non-location filtered queries)
@@ -120,8 +126,8 @@ const listUsers = async (prisma, { search, role, isActive }, currentUser, option
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const result = users.map(user => {
-    const isOnLeave = user.timeOffRequests.some(leave => {
+  const result = users.map((user) => {
+    const isOnLeave = user.timeOffRequests.some((leave) => {
       const startDate = new Date(leave.startDate);
       const endDate = new Date(leave.endDate);
       startDate.setHours(0, 0, 0, 0);
@@ -132,7 +138,7 @@ const listUsers = async (prisma, { search, role, isActive }, currentUser, option
     const mapped = mapUser(user);
 
     // Map user locations
-    const userLocations = (user.locations || []).map(ul => ({
+    const userLocations = (user.locations || []).map((ul) => ({
       id: ul.location.id,
       name: ul.location.name,
       isActive: ul.location.isActive,
@@ -307,9 +313,7 @@ const createUser = async (prisma, payload, organizationId) => {
         },
       });
 
-      const userWhere = organizationId
-        ? { id: user.id, organizationId }
-        : { id: user.id };
+      const userWhere = organizationId ? { id: user.id, organizationId } : { id: user.id };
       return tx.user.findFirst({
         where: userWhere,
         include: {
@@ -323,10 +327,7 @@ const createUser = async (prisma, payload, organizationId) => {
     });
 
     // Invalidate user list and roles caches when new user is created
-    await Promise.all([
-      cache.delPattern('users:list:*'),
-      cache.del(cache.rolesKey()),
-    ]);
+    await Promise.all([cache.delPattern('users:list:*'), cache.del(cache.rolesKey())]);
 
     return mapUser(data);
   } catch (error) {
@@ -392,13 +393,14 @@ const updateUser = async (prisma, userId, payload, organizationId) => {
       };
 
       if (password) {
-        updates.password = await bcrypt.hash(password, parseInt(process.env.HASH_SALT_ROUNDS || '10', 10));
+        updates.password = await bcrypt.hash(
+          password,
+          parseInt(process.env.HASH_SALT_ROUNDS || '10', 10)
+        );
       }
 
-      const updateWhere = organizationId
-        ? { id: userId, organizationId }
-        : { id: userId };
-      const user = await tx.user.updateMany({
+      const updateWhere = organizationId ? { id: userId, organizationId } : { id: userId };
+      await tx.user.updateMany({
         where: updateWhere,
         data: updates,
       });
@@ -409,9 +411,7 @@ const updateUser = async (prisma, userId, payload, organizationId) => {
         await tx.userRole.create({ data: { userId, roleId: roleRecord.id } });
       }
 
-      const userWhere = organizationId
-        ? { id: userId, organizationId }
-        : { id: userId };
+      const userWhere = organizationId ? { id: userId, organizationId } : { id: userId };
       return tx.user.findFirst({
         where: userWhere,
         include: {
@@ -515,10 +515,7 @@ const updateProfile = async (prisma, userId, payload) => {
   });
 
   // Invalidate user cache and user list caches
-  await Promise.all([
-    cache.del(cache.userWithRolesKey(userId)),
-    cache.delPattern('users:list:*'),
-  ]);
+  await Promise.all([cache.del(cache.userWithRolesKey(userId)), cache.delPattern('users:list:*')]);
 
   return mapUser(user);
 };
@@ -536,8 +533,14 @@ const changePassword = async (prisma, userId, { currentPassword, newPassword }) 
   const lockoutExpiry = await cache.get(lockoutKey);
   if (lockoutExpiry) {
     const remainingTime = Math.ceil((lockoutExpiry - Date.now()) / 60000);
-    logger.warn('Password change blocked - account locked', { userId, remainingMinutes: remainingTime });
-    throw new AppError(`Account temporarily locked due to multiple failed attempts. Try again in ${remainingTime} minutes.`, 429);
+    logger.warn('Password change blocked - account locked', {
+      userId,
+      remainingMinutes: remainingTime,
+    });
+    throw new AppError(
+      `Account temporarily locked due to multiple failed attempts. Try again in ${remainingTime} minutes.`,
+      429
+    );
   }
 
   // Fetch user with password
@@ -567,14 +570,23 @@ const changePassword = async (prisma, userId, { currentPassword, newPassword }) 
     let failedAttempts = (await cache.get(failedAttemptsKey)) || 0;
     failedAttempts++;
 
-    logger.warn('Failed password change attempt', { userId, email: user.email, attempt: failedAttempts, maxAttempts: 5 });
+    logger.warn('Failed password change attempt', {
+      userId,
+      email: user.email,
+      attempt: failedAttempts,
+      maxAttempts: 5,
+    });
 
     if (failedAttempts >= 5) {
       // Lock account for 15 minutes
-      const lockoutExpires = Date.now() + (15 * 60 * 1000);
+      const lockoutExpires = Date.now() + 15 * 60 * 1000;
       await cache.set(lockoutKey, lockoutExpires, 15 * 60); // 15 minutes in seconds
       await cache.del(failedAttemptsKey);
-      logger.error('Account locked due to failed password change attempts', { userId, email: user.email, failedAttempts: 5 });
+      logger.error('Account locked due to failed password change attempts', {
+        userId,
+        email: user.email,
+        failedAttempts: 5,
+      });
       throw new AppError('Too many failed attempts. Account locked for 15 minutes.', 429);
     }
 

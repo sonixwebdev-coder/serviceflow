@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import useAuth from '../context/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { runtimeConfig } from '../config/runtime';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -67,7 +68,7 @@ const Login = () => {
       <header className="border-b border-gray-200/60 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/" className="text-lg font-bold tracking-tight text-gray-900">
-            ForjaIt
+            {runtimeConfig.platformName}
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -87,9 +88,11 @@ const Login = () => {
             {!twoFactorRequired ? (
               <>
                 <div className="text-center mb-6">
-                  <h1 className="text-2xl font-bold tracking-tight text-gray-900">Bine ai revenit</h1>
+                  <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                    Bine ai revenit
+                  </h1>
                   <p className="mt-2 text-sm text-gray-500">
-                    Conecteaza-te la contul tau ForjaIt
+                    Conecteaza-te la contul tau {runtimeConfig.platformName}
                   </p>
                 </div>
 
@@ -101,7 +104,10 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 mb-1.5"
+                    >
                       Email
                     </label>
                     <input
@@ -152,7 +158,10 @@ const Login = () => {
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-500">
                     Nu ai un cont?{' '}
-                    <Link to="/signup" className="font-semibold text-primary hover:text-primary-800 transition-colors">
+                    <Link
+                      to="/signup"
+                      className="font-semibold text-primary hover:text-primary-800 transition-colors"
+                    >
                       Creeaza cont gratuit
                     </Link>
                   </p>
@@ -164,7 +173,9 @@ const Login = () => {
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50">
                     <ShieldCheck className="h-6 w-6 text-primary" />
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight text-gray-900">Verificare 2FA</h1>
+                  <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                    Verificare 2FA
+                  </h1>
                   <p className="mt-2 text-sm text-gray-500">
                     Introdu codul din aplicatia de autentificare
                   </p>
@@ -178,7 +189,10 @@ const Login = () => {
 
                 <form onSubmit={handleTwoFactorSubmit} className="space-y-5">
                   <div>
-                    <label htmlFor="twoFactorCode" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label
+                      htmlFor="twoFactorCode"
+                      className="block text-sm font-medium text-gray-700 mb-1.5"
+                    >
                       Cod de verificare
                     </label>
                     <input
@@ -229,18 +243,26 @@ const Login = () => {
       <footer className="border-t border-gray-100">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-3 text-xs text-gray-500">
-            <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               ANPC
             </a>
-            <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/ce-este-sal/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               SAL
-            </a>
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
-              SOL
             </a>
           </div>
           <p className="text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+            &copy; {new Date().getFullYear()} {runtimeConfig.platformName}. Toate drepturile
+            rezervate.
           </p>
         </div>
       </footer>

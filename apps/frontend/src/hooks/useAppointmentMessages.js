@@ -41,7 +41,8 @@ export const useAppointmentMessages = (appointmentId) => {
   }, [appointmentId, queryClient]);
 
   const sendMutation = useMutation({
-    mutationFn: ({ body, type, metadata }) => sendAppointmentMessage(appointmentId, { body, type, metadata }),
+    mutationFn: ({ body, type, metadata }) =>
+      sendAppointmentMessage(appointmentId, { body, type, metadata }),
     onSuccess: (newMessage) => {
       queryClient.setQueryData(['appointment-messages', appointmentId], (current = []) => {
         const exists = current.some((entry) => entry.id === newMessage.id);

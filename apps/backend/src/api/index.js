@@ -1,8 +1,8 @@
 const express = require('express');
 const asyncHandler = require('../middleware/asyncHandler');
-const { ok } = require('../utils/http');
 const tenantScope = require('../middleware/tenantScope');
 const { locationScope } = require('../middleware/locationScope');
+const { createApiHealthHandler } = require('../health/apiHealth');
 
 const authRouter = require('./auth');
 const organizationsRouter = require('./organizations');
@@ -38,15 +38,9 @@ const supportRouter = require('./support');
 const contactRouter = require('./contact');
 const pricingRouter = require('./pricing');
 
-
 const router = express.Router();
 
-router.get(
-  '/health',
-  asyncHandler(async (req, res) => {
-    return ok(res, { timestamp: new Date().toISOString() }, 'ForjaIt API is healthy');
-  })
-);
+router.get('/health', asyncHandler(createApiHealthHandler()));
 
 // Tenant scoping middleware - automatically filters queries by organizationId
 // Must run after authenticate middleware in individual routes
@@ -89,6 +83,5 @@ router.use('/loyalty', loyaltyRouter);
 router.use('/support', supportRouter);
 router.use('/contact', contactRouter);
 router.use('/pricing', pricingRouter);
-
 
 module.exports = router;

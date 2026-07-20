@@ -5,8 +5,9 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const logger = require('../utils/logger');
+const { getPlatformConfig } = require('../config/platform');
 
-const APP_NAME = 'ForjaIt';
+const APP_NAME = getPlatformConfig().name;
 const BACKUP_CODE_COUNT = 8;
 const MAX_2FA_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
@@ -16,7 +17,10 @@ const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
  * Does NOT enable 2FA - the user must verify a code first.
  */
 async function generateSetup(userId) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, twoFactorEnabled: true } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, twoFactorEnabled: true },
+  });
   if (!user) throw new AppError('User not found', 404);
   if (user.twoFactorEnabled) throw new AppError('2FA este deja activat', 400);
 

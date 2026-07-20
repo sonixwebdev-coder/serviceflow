@@ -171,7 +171,8 @@ const clockOut = async (prisma, entryId, payload = {}, currentUser) => {
   }
 
   const clockOutTime = new Date();
-  const breakDuration = typeof payload.breakDuration === 'number' ? payload.breakDuration : entry.breakDuration;
+  const breakDuration =
+    typeof payload.breakDuration === 'number' ? payload.breakDuration : entry.breakDuration;
 
   const totalMinutes = Math.max(
     Math.round((clockOutTime.getTime() - entry.clockIn.getTime()) / 60000) - (breakDuration || 0),

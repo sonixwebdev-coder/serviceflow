@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../state/useAuthStore.js';
 import { updateSocketToken } from '../lib/socket.js';
 import useLocationStore from '../state/useLocationStore.js';
+import { runtimeConfig } from '../config/runtime.js';
 
 const normalizeBaseUrl = (baseUrl) => {
   const fallback = 'http://localhost:5000/api';
@@ -9,7 +10,7 @@ const normalizeBaseUrl = (baseUrl) => {
   return value.endsWith('/') ? value.slice(0, -1) : value;
 };
 
-const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL);
+const API_BASE_URL = normalizeBaseUrl(runtimeConfig.apiUrl);
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -62,13 +63,16 @@ const performTokenRefresh = async () => {
 
   setSession({ user, accessToken: nextAccessToken });
   // Only cache minimal display fields in localStorage (no sensitive data)
-  localStorage.setItem('user', JSON.stringify({
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    avatarUrl: user.avatarUrl,
-    role: user.role,
-  }));
+  localStorage.setItem(
+    'user',
+    JSON.stringify({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+    })
+  );
 
   updateSocketToken(nextAccessToken);
 
@@ -143,16 +147,21 @@ API.interceptors.response.use(
           config._csrfRetry = true;
 
           // Retry request with new token
-          if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+          if (
+            csrfToken &&
+            ['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())
+          ) {
             config.headers['x-csrf-token'] = csrfToken;
           }
 
           return API(config);
         } catch {
-          return Promise.reject(response.data || {
-            message: 'Security validation failed. Please refresh the page and try again.',
-            code: 'CSRF_VALIDATION_FAILED'
-          });
+          return Promise.reject(
+            response.data || {
+              message: 'Security validation failed. Please refresh the page and try again.',
+              code: 'CSRF_VALIDATION_FAILED',
+            }
+          );
         }
       }
     }
@@ -163,7 +172,9 @@ API.interceptors.response.use(
       if (user && user.orgStatus !== 'PAYMENT_REQUIRED') {
         setSession({ user: { ...user, orgStatus: 'PAYMENT_REQUIRED' }, accessToken });
       }
-      return Promise.reject(response.data || { message: 'Plata necesara', code: 'PAYMENT_REQUIRED' });
+      return Promise.reject(
+        response.data || { message: 'Plata necesara', code: 'PAYMENT_REQUIRED' }
+      );
     }
 
     if (response.status !== 401 || config._retry) {

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Play, Circle, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Play, Circle, CheckCircle2, ChevronRight } from 'lucide-react';
 import useTasks from '../../../hooks/useTasks';
 import { TASK_STATUS } from '../../../utils/constants';
 
@@ -11,7 +11,7 @@ const STATUS_LABELS = {
 
 const ListSkeleton = () => (
   <div className="space-y-2">
-    {[1, 2, 3].map(i => (
+    {[1, 2, 3].map((i) => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="h-9 w-9 animate-pulse rounded-lg bg-gray-200" />
         <div className="flex-1 space-y-2">
@@ -29,7 +29,9 @@ export default function ActiveTasksWidget() {
 
   const activeTasks = useMemo(() => {
     return tasks
-      .filter(task => task.status !== TASK_STATUS.COMPLETED && task.status !== TASK_STATUS.CANCELLED)
+      .filter(
+        (task) => task.status !== TASK_STATUS.COMPLETED && task.status !== TASK_STATUS.CANCELLED
+      )
       .sort((a, b) => {
         if (a.status === TASK_STATUS.IN_PROGRESS && b.status !== TASK_STATUS.IN_PROGRESS) return -1;
         if (b.status === TASK_STATUS.IN_PROGRESS && a.status !== TASK_STATUS.IN_PROGRESS) return 1;
@@ -56,7 +58,7 @@ export default function ActiveTasksWidget() {
 
   return (
     <div className="space-y-2">
-      {activeTasks.map(task => {
+      {activeTasks.map((task) => {
         const isInProgress = task.status === TASK_STATUS.IN_PROGRESS;
         return (
           <div
@@ -64,9 +66,11 @@ export default function ActiveTasksWidget() {
             onClick={() => navigate('/tasks')}
             className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition"
           >
-            <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
-              isInProgress ? 'bg-blue-100' : 'bg-gray-200'
-            }`}>
+            <div
+              className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
+                isInProgress ? 'bg-blue-100' : 'bg-gray-200'
+              }`}
+            >
               {isInProgress ? (
                 <Play className="h-4 w-4 text-blue-600 fill-blue-600" />
               ) : (
@@ -77,9 +81,11 @@ export default function ActiveTasksWidget() {
               <p className="font-medium text-sm text-gray-900 truncate">{task.title}</p>
               <p className="text-xs text-gray-500 capitalize">{task.taskType}</p>
             </div>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-              isInProgress ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'
-            }`}>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                isInProgress ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'
+              }`}
+            >
               {STATUS_LABELS[task.status]}
             </span>
           </div>

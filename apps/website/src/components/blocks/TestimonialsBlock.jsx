@@ -24,9 +24,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
   });
 
   // Use API reviews on public site, fallback to template data in editor preview
-  const testimonials = subdomain
-    ? (apiReviews || [])
-    : templateTestimonials;
+  const testimonials = subdomain ? apiReviews || [] : templateTestimonials;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -55,7 +53,13 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
 
   const handleSubmitReview = (e) => {
     e.preventDefault();
-    if (!reviewForm.name || !reviewForm.email || !reviewForm.content || reviewForm.content.length < 10) return;
+    if (
+      !reviewForm.name ||
+      !reviewForm.email ||
+      !reviewForm.content ||
+      reviewForm.content.length < 10
+    )
+      return;
     reviewMutation.mutate(reviewForm);
   };
 
@@ -82,9 +86,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
     >
       <Quote className="h-10 w-10 mb-4 opacity-20" style={{ color: primaryColor }} />
       {showRating && testimonial.rating && (
-        <div className="mb-4">
-          {renderStars(testimonial.rating)}
-        </div>
+        <div className="mb-4">{renderStars(testimonial.rating)}</div>
       )}
       <p className="text-gray-700 mb-6 text-lg leading-relaxed italic">"{testimonial.content}"</p>
       <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
@@ -104,9 +106,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
         )}
         <div>
           <p className="font-semibold text-gray-900">{testimonial.name}</p>
-          {testimonial.role && (
-            <p className="text-sm text-gray-500">{testimonial.role}</p>
-          )}
+          {testimonial.role && <p className="text-sm text-gray-500">{testimonial.role}</p>}
         </div>
       </div>
     </div>
@@ -132,7 +132,9 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
           {testimonials.length > 1 && (
             <>
               <button
-                onClick={() => setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
+                onClick={() =>
+                  setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+                }
                 className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -230,7 +232,9 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
                     <input
                       type="email"
                       value={reviewForm.email}
-                      onChange={(e) => setReviewForm((prev) => ({ ...prev, email: e.target.value }))}
+                      onChange={(e) =>
+                        setReviewForm((prev) => ({ ...prev, email: e.target.value }))
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
                       placeholder="email@exemplu.ro"
                       required
@@ -239,10 +243,14 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Recenzia ta *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Recenzia ta *
+                  </label>
                   <textarea
                     value={reviewForm.content}
-                    onChange={(e) => setReviewForm((prev) => ({ ...prev, content: e.target.value }))}
+                    onChange={(e) =>
+                      setReviewForm((prev) => ({ ...prev, content: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent min-h-[100px]"
                     placeholder="Spune-ne experienta ta (minim 10 caractere)"
                     required
@@ -252,7 +260,8 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
 
                 {reviewMutation.isError && (
                   <p className="text-sm text-red-600">
-                    {reviewMutation.error?.response?.data?.message || 'A aparut o eroare. Incearca din nou.'}
+                    {reviewMutation.error?.response?.data?.message ||
+                      'A aparut o eroare. Incearca din nou.'}
                   </p>
                 )}
 
@@ -266,7 +275,12 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
                   </button>
                   <button
                     type="submit"
-                    disabled={reviewMutation.isPending || !reviewForm.name || !reviewForm.email || reviewForm.content.length < 10}
+                    disabled={
+                      reviewMutation.isPending ||
+                      !reviewForm.name ||
+                      !reviewForm.email ||
+                      reviewForm.content.length < 10
+                    }
                     className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-medium transition-all hover:opacity-90 disabled:opacity-50"
                     style={{ backgroundColor: primaryColor }}
                   >

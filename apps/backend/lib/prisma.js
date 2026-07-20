@@ -40,7 +40,8 @@ const getSlowQueryStream = () => {
 
 const logSlowQuery = (e) => {
   const timestamp = new Date().toISOString();
-  const line = `[${timestamp}] ${e.duration}ms | ${e.query}` +
+  const line =
+    `[${timestamp}] ${e.duration}ms | ${e.query}` +
     (e.params && e.params !== '[]' ? ` | params: ${e.params}` : '') +
     '\n';
   getSlowQueryStream().write(line);
@@ -48,14 +49,16 @@ const logSlowQuery = (e) => {
 
 // --- Prisma client ---
 
-const prisma = global.__prisma || new PrismaClient({
-  datasources: {
-    db: {
-      url: buildDbUrl(),
+const prisma =
+  global.__prisma ||
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: buildDbUrl(),
+      },
     },
-  },
-  log: [{ level: 'query', emit: 'event' }],
-});
+    log: [{ level: 'query', emit: 'event' }],
+  });
 
 // Log slow queries to dedicated file (all environments)
 prisma.$on('query', (e) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
 import { useChannels } from '../../hooks/useChat';
@@ -71,7 +71,10 @@ export default function ChatSidebar({ isMobile = false }) {
     // For group DMs, show participant names (excluding current user)
     if (channel.type === 'GROUP') {
       const otherMembers = channel.members?.filter((m) => m.user?.id !== currentUser?.id) || [];
-      const names = otherMembers.slice(0, 3).map((m) => m.user.firstName).join(', ');
+      const names = otherMembers
+        .slice(0, 3)
+        .map((m) => m.user.firstName)
+        .join(', ');
       const remaining = otherMembers.length - 3;
       if (remaining > 0) {
         return `${names} +${remaining}`;
@@ -137,7 +140,9 @@ export default function ChatSidebar({ isMobile = false }) {
   };
 
   return (
-    <div className={`flex h-full flex-col border-r border-gray-200 bg-white ${isMobile ? 'w-full' : 'w-64'}`}>
+    <div
+      className={`flex h-full flex-col border-r border-gray-200 bg-white ${isMobile ? 'w-full' : 'w-64'}`}
+    >
       {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-200 p-4">
         <h2 className="text-lg font-semibold text-gray-900">Chat</h2>

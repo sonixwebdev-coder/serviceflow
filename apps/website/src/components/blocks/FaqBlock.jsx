@@ -3,12 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function FaqBlock({ data, branding }) {
-  const {
-    title,
-    subtitle,
-    items = [],
-    allowMultiple = false,
-  } = data;
+  const { title, subtitle, items = [], allowMultiple = false } = data;
 
   const primaryColor = branding?.primaryColor || '#2563eb';
   const [openItems, setOpenItems] = useState([]);
@@ -62,9 +57,7 @@ export default function FaqBlock({ data, branding }) {
                   )}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-6 pb-5 text-gray-600 leading-relaxed">
-                      {item.answer}
-                    </div>
+                    <div className="px-6 pb-5 text-gray-600 leading-relaxed">{item.answer}</div>
                   </div>
                 </div>
               </div>

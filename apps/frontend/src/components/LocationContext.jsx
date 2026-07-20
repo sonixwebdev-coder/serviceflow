@@ -1,4 +1,4 @@
-import { MapPin, Building2 } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import useLocationStore from '../state/useLocationStore';
 import { useAuth } from '../context/useAuth';
 
@@ -19,11 +19,11 @@ const LocationContext = ({ className = '' }) => {
   }
 
   return (
-    <div className={`inline-flex items-center gap-2 rounded-lg bg-orange-50 border border-orange-200 px-3 py-1.5 ${className}`}>
+    <div
+      className={`inline-flex items-center gap-2 rounded-lg bg-orange-50 border border-orange-200 px-3 py-1.5 ${className}`}
+    >
       <MapPin size={14} className="text-orange-600" />
-      <span className="text-sm font-medium text-orange-700">
-        {currentLocation.name}
-      </span>
+      <span className="text-sm font-medium text-orange-700">{currentLocation.name}</span>
     </div>
   );
 };

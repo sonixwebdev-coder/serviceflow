@@ -26,13 +26,17 @@ export default function TeamGridBlock({ data, subdomain, branding }) {
   const primaryColor = branding?.primaryColor || '#2563eb';
 
   // Fetch team from CRM if autoSync is enabled
-  const { data: crmMembers, isLoading, isError } = useQuery({
+  const {
+    data: crmMembers,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['crm-team', subdomain],
     queryFn: () => websiteService.getCrmData(subdomain, 'team'),
     enabled: autoSync,
   });
 
-  const members = autoSync ? (crmMembers || []) : staticMembers;
+  const members = autoSync ? crmMembers || [] : staticMembers;
 
   const gridCols = {
     2: 'grid-cols-1 sm:grid-cols-2',
@@ -56,7 +60,9 @@ export default function TeamGridBlock({ data, subdomain, branding }) {
           ))}
         </div>
       ) : autoSync && isError ? (
-        <p className="text-center text-gray-500">Nu s-au putut incarca membrii echipei. Incercati mai tarziu.</p>
+        <p className="text-center text-gray-500">
+          Nu s-au putut incarca membrii echipei. Incercati mai tarziu.
+        </p>
       ) : members.length === 0 ? (
         <p className="text-center text-gray-500">Nu exista membri ai echipei.</p>
       ) : (

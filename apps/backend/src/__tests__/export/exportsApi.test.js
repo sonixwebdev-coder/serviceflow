@@ -7,14 +7,13 @@ const request = require('supertest');
 const express = require('express');
 const exportsRouter = require('../../api/exports');
 const { AppError } = require('../../utils/errors');
-const asyncHandler = require('../../middleware/asyncHandler');
-const authenticate = require('../../middleware/authenticate');
 const exportService = require('../../services/exportService');
 
 // Mock dependencies
 jest.mock('../../services/exportService');
 jest.mock('../../middleware/authenticate', () => (req, res, next) => {
-  req.user = { id: 'test-user', email: 'test@example.com' };
+  req.user = { id: 'test-user', email: 'test@example.com', roles: ['admin'] };
+  req.tenantPrisma = {};
   next();
 });
 
@@ -24,9 +23,9 @@ app.use(express.json());
 app.use('/api/exports', exportsRouter);
 
 // Error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    return res.status(err.status).json({
       success: false,
       message: err.message,
     });
@@ -50,9 +49,7 @@ describe('Export API - GET /api/exports/appointments', () => {
       contentType: 'text/csv; charset=utf-8',
     });
 
-    const response = await request(app)
-      .get('/api/exports/appointments?format=csv')
-      .expect(200);
+    const response = await request(app).get('/api/exports/appointments?format=csv').expect(200);
 
     expect(response.headers['content-type']).toContain('text/csv');
     expect(response.headers['content-disposition']).toContain('attachment');
@@ -67,9 +64,7 @@ describe('Export API - GET /api/exports/appointments', () => {
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
 
-    const response = await request(app)
-      .get('/api/exports/appointments?format=excel')
-      .expect(200);
+    const response = await request(app).get('/api/exports/appointments?format=excel').expect(200);
 
     expect(response.headers['content-type']).toContain('spreadsheetml');
   });
@@ -82,13 +77,14 @@ describe('Export API - GET /api/exports/appointments', () => {
     });
 
     await request(app)
-      .get('/api/exports/appointments?format=csv&status=completed&startDate=2024-01-01')
+      .get('/api/exports/appointments?format=csv&status=COMPLETED&startDate=2024-01-01')
       .expect(200);
 
     expect(exportService.exportAppointments).toHaveBeenCalledWith(
+      expect.any(Object),
       'csv',
       expect.objectContaining({
-        status: 'completed',
+        status: 'COMPLETED',
         startDate: '2024-01-01',
       }),
       expect.any(String),
@@ -97,9 +93,7 @@ describe('Export API - GET /api/exports/appointments', () => {
   });
 
   it('returns 400 for invalid format', async () => {
-    await request(app)
-      .get('/api/exports/appointments?format=invalid')
-      .expect(400);
+    await request(app).get('/api/exports/appointments?format=invalid').expect(400);
   });
 
   it('returns 404 when no data found', async () => {
@@ -107,9 +101,7 @@ describe('Export API - GET /api/exports/appointments', () => {
       new AppError('No appointments found matching the criteria', 404)
     );
 
-    await request(app)
-      .get('/api/exports/appointments?format=csv')
-      .expect(404);
+    await request(app).get('/api/exports/appointments?format=csv').expect(404);
   });
 
   it('sets cache control headers', async () => {
@@ -119,11 +111,9 @@ describe('Export API - GET /api/exports/appointments', () => {
       contentType: 'text/csv',
     });
 
-    const response = await request(app)
-      .get('/api/exports/appointments?format=csv')
-      .expect(200);
+    const response = await request(app).get('/api/exports/appointments?format=csv').expect(200);
 
-    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.headers['cache-control']).toContain('no-store');
     expect(response.headers['pragma']).toBe('no-cache');
   });
 });
@@ -136,13 +126,12 @@ describe('Export API - GET /api/exports/invoices', () => {
       contentType: 'text/csv',
     });
 
-    await request(app)
-      .get('/api/exports/invoices?format=csv&status=paid')
-      .expect(200);
+    await request(app).get('/api/exports/invoices?format=csv&status=PAID').expect(200);
 
     expect(exportService.exportInvoices).toHaveBeenCalledWith(
+      expect.any(Object),
       'csv',
-      expect.objectContaining({ status: 'paid' }),
+      expect.objectContaining({ status: 'PAID' }),
       expect.any(String),
       expect.anything()
     );
@@ -152,16 +141,15 @@ describe('Export API - GET /api/exports/invoices', () => {
 describe('Export API - GET /api/exports/clients', () => {
   it('exports clients with type filter', async () => {
     exportService.exportClients.mockResolvedValue({
-      buffer: Buffer.from('data'),
+      buffer: Buffer.from('{"data":[]}'),
       filename: 'clients.json',
       contentType: 'application/json',
     });
 
-    await request(app)
-      .get('/api/exports/clients?format=json&type=PF')
-      .expect(200);
+    await request(app).get('/api/exports/clients?format=json&type=PF').expect(200);
 
     expect(exportService.exportClients).toHaveBeenCalledWith(
+      expect.any(Object),
       'json',
       expect.objectContaining({ type: 'PF' }),
       expect.any(String),
@@ -174,13 +162,11 @@ describe('Export API - GET /api/exports/users', () => {
   it('exports users', async () => {
     exportService.exportUsers.mockResolvedValue({
       buffer: Buffer.from('data'),
-      filename: 'users.pdf',
-      contentType: 'application/pdf',
+      filename: 'users.xml',
+      contentType: 'application/xml',
     });
 
-    await request(app)
-      .get('/api/exports/users?format=pdf')
-      .expect(200);
+    await request(app).get('/api/exports/users?format=xml').expect(200);
   });
 
   it('filters by active status', async () => {
@@ -190,11 +176,10 @@ describe('Export API - GET /api/exports/users', () => {
       contentType: 'text/csv',
     });
 
-    await request(app)
-      .get('/api/exports/users?format=csv&isActive=true')
-      .expect(200);
+    await request(app).get('/api/exports/users?format=csv&isActive=true').expect(200);
 
     expect(exportService.exportUsers).toHaveBeenCalledWith(
+      expect.any(Object),
       'csv',
       expect.objectContaining({ isActive: 'true' }),
       expect.any(String),
@@ -211,9 +196,7 @@ describe('Export API - GET /api/exports/leave-requests', () => {
       contentType: 'text/csv',
     });
 
-    await request(app)
-      .get('/api/exports/leave-requests?format=csv&status=approved')
-      .expect(200);
+    await request(app).get('/api/exports/leave-requests?format=csv&status=APPROVED').expect(200);
   });
 });
 
@@ -230,6 +213,7 @@ describe('Export API - GET /api/exports/time-tracking', () => {
       .expect(200);
 
     expect(exportService.exportTimeTracking).toHaveBeenCalledWith(
+      expect.any(Object),
       'excel',
       expect.objectContaining({
         startDate: '2024-01-01',
@@ -250,14 +234,15 @@ describe('Export API - GET /api/exports/tasks', () => {
     });
 
     await request(app)
-      .get('/api/exports/tasks?format=csv&status=completed&priority=high')
+      .get('/api/exports/tasks?format=csv&status=COMPLETED&priority=HIGH')
       .expect(200);
 
     expect(exportService.exportTasks).toHaveBeenCalledWith(
+      expect.any(Object),
       'csv',
       expect.objectContaining({
-        status: 'completed',
-        priority: 'high',
+        status: 'COMPLETED',
+        priority: 'HIGH',
       }),
       expect.any(String),
       expect.anything()
@@ -273,9 +258,7 @@ describe('Export API - POST /api/exports/all-data', () => {
       contentType: 'application/zip',
     });
 
-    const response = await request(app)
-      .post('/api/exports/all-data')
-      .expect(200);
+    const response = await request(app).post('/api/exports/all-data').expect(200);
 
     expect(response.headers['content-type']).toContain('application/zip');
     expect(response.headers['content-disposition']).toContain('export_complet.zip');
@@ -286,31 +269,25 @@ describe('Export API - POST /api/exports/all-data', () => {
       new AppError('Only administrators can export all data', 403)
     );
 
-    await request(app)
-      .post('/api/exports/all-data')
-      .expect(403);
+    await request(app).post('/api/exports/all-data').expect(403);
   });
 });
 
 describe('Export API - GET /api/exports/formats', () => {
   it('returns available export formats', async () => {
-    const response = await request(app)
-      .get('/api/exports/formats')
-      .expect(200);
+    const response = await request(app).get('/api/exports/formats').expect(200);
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.formats).toHaveLength(4);
-    expect(response.body.data.formats.map(f => f.key)).toEqual(
-      expect.arrayContaining(['csv', 'excel', 'json', 'pdf'])
+    expect(response.body.data.formats.map((f) => f.key)).toEqual(
+      expect.arrayContaining(['csv', 'excel', 'json', 'xml'])
     );
   });
 });
 
 describe('Export API - GET /api/exports/entities', () => {
   it('returns available entities', async () => {
-    const response = await request(app)
-      .get('/api/exports/entities')
-      .expect(200);
+    const response = await request(app).get('/api/exports/entities').expect(200);
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.entities).toBeDefined();
@@ -318,12 +295,10 @@ describe('Export API - GET /api/exports/entities', () => {
   });
 
   it('includes entity information', async () => {
-    const response = await request(app)
-      .get('/api/exports/entities')
-      .expect(200);
+    const response = await request(app).get('/api/exports/entities').expect(200);
 
     const entities = response.body.data.entities;
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       expect(entity).toHaveProperty('key');
       expect(entity).toHaveProperty('name');
       expect(entity).toHaveProperty('endpoint');
@@ -334,19 +309,13 @@ describe('Export API - GET /api/exports/entities', () => {
 
 describe('Export API - Error Handling', () => {
   it('handles service errors gracefully', async () => {
-    exportService.exportAppointments.mockRejectedValue(
-      new Error('Database connection failed')
-    );
+    exportService.exportAppointments.mockRejectedValue(new Error('Database connection failed'));
 
-    await request(app)
-      .get('/api/exports/appointments?format=csv')
-      .expect(500);
+    await request(app).get('/api/exports/appointments?format=csv').expect(500);
   });
 
   it('validates format parameter', async () => {
-    await request(app)
-      .get('/api/exports/appointments?format=xml')
-      .expect(400);
+    await request(app).get('/api/exports/appointments?format=pdf').expect(400);
   });
 
   it('uses default format when not specified', async () => {
@@ -356,12 +325,11 @@ describe('Export API - Error Handling', () => {
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
 
-    await request(app)
-      .get('/api/exports/appointments')
-      .expect(200);
+    await request(app).get('/api/exports/appointments').expect(200);
 
     // Default format should be 'excel'
     expect(exportService.exportAppointments).toHaveBeenCalledWith(
+      expect.any(Object),
       'excel',
       expect.anything(),
       expect.anything(),

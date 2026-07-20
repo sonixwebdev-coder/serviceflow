@@ -34,7 +34,11 @@ function formatCleanupResults(data) {
 
   if (data.sessions) {
     const s = data.sessions;
-    const total = (s.refreshTokens || 0) + (s.clientSessions || 0) + (s.clientRefreshTokens || 0) + (s.typingIndicators || 0);
+    const total =
+      (s.refreshTokens || 0) +
+      (s.clientSessions || 0) +
+      (s.clientRefreshTokens || 0) +
+      (s.typingIndicators || 0);
     if (total > 0) {
       parts.push(`Sesiuni: ${total} sterse`);
     } else {
@@ -44,8 +48,14 @@ function formatCleanupResults(data) {
 
   if (data.retention) {
     const r = data.retention;
-    const total = (r.notifications || 0) + (r.auditLogs || 0) + (r.emailLogs || 0) +
-      (r.chatMessages || 0) + (r.chatAttachments || 0) + (r.messages || 0) + (r.messageAttachments || 0);
+    const total =
+      (r.notifications || 0) +
+      (r.auditLogs || 0) +
+      (r.emailLogs || 0) +
+      (r.chatMessages || 0) +
+      (r.chatAttachments || 0) +
+      (r.messages || 0) +
+      (r.messageAttachments || 0);
     const orgInfo = r.orgsProcessed ? ` (${r.orgsProcessed} org.)` : '';
     if (total > 0) {
       parts.push(`Retentie${orgInfo}: ${total} inregistrari sterse`);
@@ -104,7 +114,11 @@ function CleanupButton({ label, type, mutation, showToast }) {
       disabled={loading || mutation.isPending}
       className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow disabled:opacity-50"
     >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-gray-400" />}
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Trash2 className="h-4 w-4 text-gray-400" />
+      )}
       {label}
     </button>
   );
@@ -128,35 +142,99 @@ export default function Maintenance() {
       {/* Storage */}
       <Section title="Stocare">
         <div className="grid gap-4 sm:grid-cols-3">
-          <StatCard icon={HardDrive} label="Fisiere Chat" value={formatBytes(stats?.storage?.chatFiles)} />
-          <StatCard icon={HardDrive} label="Fisiere Upload" value={formatBytes(stats?.storage?.uploadFiles)} />
-          <StatCard icon={HardDrive} label="Total Stocare" value={formatBytes(stats?.storage?.total)} />
+          <StatCard
+            icon={HardDrive}
+            label="Fisiere Chat"
+            value={formatBytes(stats?.storage?.chatFiles)}
+          />
+          <StatCard
+            icon={HardDrive}
+            label="Fisiere Upload"
+            value={formatBytes(stats?.storage?.uploadFiles)}
+          />
+          <StatCard
+            icon={HardDrive}
+            label="Total Stocare"
+            value={formatBytes(stats?.storage?.total)}
+          />
         </div>
       </Section>
 
       {/* Records */}
       <Section title="Inregistrari">
         <div className="grid gap-4 sm:grid-cols-4">
-          <StatCard icon={Database} label="Mesaje Chat" value={stats?.records?.chatMessages?.toLocaleString('ro-RO') || 0} />
-          <StatCard icon={Database} label="Mesaje Programari" value={stats?.records?.messages?.toLocaleString('ro-RO') || 0} />
-          <StatCard icon={Database} label="Notificari" value={stats?.records?.notifications?.toLocaleString('ro-RO') || 0} />
-          <StatCard icon={Database} label="Loguri Audit" value={stats?.records?.auditLogs?.toLocaleString('ro-RO') || 0} />
+          <StatCard
+            icon={Database}
+            label="Mesaje Chat"
+            value={stats?.records?.chatMessages?.toLocaleString('ro-RO') || 0}
+          />
+          <StatCard
+            icon={Database}
+            label="Mesaje Programari"
+            value={stats?.records?.messages?.toLocaleString('ro-RO') || 0}
+          />
+          <StatCard
+            icon={Database}
+            label="Notificari"
+            value={stats?.records?.notifications?.toLocaleString('ro-RO') || 0}
+          />
+          <StatCard
+            icon={Database}
+            label="Loguri Audit"
+            value={stats?.records?.auditLogs?.toLocaleString('ro-RO') || 0}
+          />
         </div>
         <div className="mt-3 grid gap-4 sm:grid-cols-4">
-          <StatCard icon={Database} label="Loguri Email" value={stats?.records?.emailLogs?.toLocaleString('ro-RO') || 0} />
-          <StatCard icon={Database} label="Loguri Sistem" value={stats?.records?.systemLogs?.toLocaleString('ro-RO') || 0} />
-          <StatCard icon={Database} label="Atasamente Chat" value={stats?.records?.chatAttachments?.toLocaleString('ro-RO') || 0} />
-          <StatCard icon={Database} label="Atasamente Mesaje" value={stats?.records?.messageAttachments?.toLocaleString('ro-RO') || 0} />
+          <StatCard
+            icon={Database}
+            label="Loguri Email"
+            value={stats?.records?.emailLogs?.toLocaleString('ro-RO') || 0}
+          />
+          <StatCard
+            icon={Database}
+            label="Loguri Sistem"
+            value={stats?.records?.systemLogs?.toLocaleString('ro-RO') || 0}
+          />
+          <StatCard
+            icon={Database}
+            label="Atasamente Chat"
+            value={stats?.records?.chatAttachments?.toLocaleString('ro-RO') || 0}
+          />
+          <StatCard
+            icon={Database}
+            label="Atasamente Mesaje"
+            value={stats?.records?.messageAttachments?.toLocaleString('ro-RO') || 0}
+          />
         </div>
       </Section>
 
       {/* Cleanup */}
       <Section title="Actiuni Curatare">
         <div className="flex flex-wrap gap-3">
-          <CleanupButton label="Sesiuni Expirate" type="sessions" mutation={cleanupMutation} showToast={showToast} />
-          <CleanupButton label="Retentie Date" type="retention" mutation={cleanupMutation} showToast={showToast} />
-          <CleanupButton label="Fisiere Orfane" type="orphans" mutation={cleanupMutation} showToast={showToast} />
-          <CleanupButton label="Toate" type="all" mutation={cleanupMutation} showToast={showToast} />
+          <CleanupButton
+            label="Sesiuni Expirate"
+            type="sessions"
+            mutation={cleanupMutation}
+            showToast={showToast}
+          />
+          <CleanupButton
+            label="Retentie Date"
+            type="retention"
+            mutation={cleanupMutation}
+            showToast={showToast}
+          />
+          <CleanupButton
+            label="Fisiere Orfane"
+            type="orphans"
+            mutation={cleanupMutation}
+            showToast={showToast}
+          />
+          <CleanupButton
+            label="Toate"
+            type="all"
+            mutation={cleanupMutation}
+            showToast={showToast}
+          />
         </div>
       </Section>
 
@@ -167,7 +245,9 @@ export default function Maintenance() {
             <div className="flex flex-wrap gap-5 text-sm">
               {Object.entries(stats.jobs.cleanup || {}).map(([name, status]) => (
                 <div key={name} className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${status === 'running' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <div
+                    className={`h-2 w-2 rounded-full ${status === 'running' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`}
+                  />
                   <span className="text-gray-700 capitalize font-medium">{name}</span>
                   <span className="text-[11px] text-gray-400">{status}</span>
                 </div>
@@ -192,10 +272,18 @@ export default function Maintenance() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/50 text-left">
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Organizatie</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Plan</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Utilizatori</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Ultima Autentificare</th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Organizatie
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Plan
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Utilizatori
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Ultima Autentificare
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -212,7 +300,9 @@ export default function Maintenance() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-xs text-gray-500">
-                        {acc.lastLogin ? new Date(acc.lastLogin).toLocaleDateString('ro-RO') : 'Niciodata'}
+                        {acc.lastLogin
+                          ? new Date(acc.lastLogin).toLocaleDateString('ro-RO')
+                          : 'Niciodata'}
                       </td>
                     </tr>
                   ))}

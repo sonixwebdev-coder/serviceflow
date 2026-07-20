@@ -8,12 +8,7 @@ const useLeaveRequests = (initialFilters = {}) => {
   const [filters, setFilters] = useState(initialFilters);
   const queryKey = useMemo(() => ['timeoff', filters], [filters]);
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: () => fetchLeaveRequests(filters),
   });

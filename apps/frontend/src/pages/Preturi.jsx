@@ -6,16 +6,35 @@ import { fetchPricing } from '../services/organizationService';
 import PublicHeader from '../components/landing/PublicHeader';
 import PublicFooter from '../components/landing/PublicFooter';
 import SectionHeading from '../components/landing/SectionHeading';
-import AnimatedSection, { StaggerContainer, StaggerItem } from '../components/landing/AnimatedSection';
+import AnimatedSection, {
+  StaggerContainer,
+  StaggerItem,
+} from '../components/landing/AnimatedSection';
 import FAQAccordion from '../components/landing/FAQAccordion';
 import SEOHead from '../components/landing/SEOHead';
+import { runtimeConfig } from '../config/runtime';
 
 const FAQ_ITEMS = [
-  { q: 'Pot schimba planul oricand?', a: 'Da. Poti face upgrade sau downgrade oricand. La upgrade, diferenta se calculeaza pro-rata. La downgrade, noul pret se aplica la urmatoarea factura.' },
-  { q: 'Ce se intampla dupa cele 14 zile gratuite?', a: 'Daca nu alegi un plan platit, contul revine automat la planul Gratuit. Nu pierzi datele doar accesul la functiile premium.' },
-  { q: 'Exista contracte pe termen lung?', a: 'Nu. Toate planurile sunt fara angajament. Plata anuala ofera o reducere de 20%, dar poti anula oricand.' },
-  { q: 'Ce metode de plata acceptati?', a: 'Card bancar (Visa, Mastercard), transfer bancar si factura fiscala pentru persoane juridice.' },
-  { q: 'Datele mele sunt in siguranta?', a: 'Absolut. Comunicatii criptate (HTTPS), parole hashuite, backup-uri automate si conformitate GDPR.' },
+  {
+    q: 'Pot schimba planul oricand?',
+    a: 'Da. Poti face upgrade sau downgrade oricand. La upgrade, diferenta se calculeaza pro-rata. La downgrade, noul pret se aplica la urmatoarea factura.',
+  },
+  {
+    q: 'Ce se intampla dupa cele 14 zile gratuite?',
+    a: 'Daca nu alegi un plan platit, contul revine automat la planul Gratuit. Nu pierzi datele doar accesul la functiile premium.',
+  },
+  {
+    q: 'Exista contracte pe termen lung?',
+    a: 'Nu. Toate planurile sunt fara angajament. Plata anuala ofera o reducere de 20%, dar poti anula oricand.',
+  },
+  {
+    q: 'Ce metode de plata acceptati?',
+    a: 'Card bancar (Visa, Mastercard), transfer bancar si factura fiscala pentru persoane juridice.',
+  },
+  {
+    q: 'Datele mele sunt in siguranta?',
+    a: 'Folosim HTTPS, parole hashuite si optiuni de backup. Operatorul fiecarei instalari ramane responsabil pentru configurare, politici si obligatiile sale privind protectia datelor.',
+  },
 ];
 
 export default function Preturi() {
@@ -23,7 +42,9 @@ export default function Preturi() {
   const [dynamicPrices, setDynamicPrices] = useState(null);
 
   useEffect(() => {
-    fetchPricing().then(setDynamicPrices).catch(() => {});
+    fetchPricing()
+      .then(setDynamicPrices)
+      .catch(() => {});
   }, []);
 
   const tiers = useMemo(() => {
@@ -32,7 +53,13 @@ export default function Preturi() {
     return PLAN_TIERS.map((tier) => {
       const remote = dynamicPrices[keyMap[tier.key]];
       if (!remote) return tier;
-      return { ...tier, price: { monthly: remote.monthly ?? tier.price.monthly, annual: remote.annual ?? tier.price.annual } };
+      return {
+        ...tier,
+        price: {
+          monthly: remote.monthly ?? tier.price.monthly,
+          annual: remote.annual ?? tier.price.annual,
+        },
+      };
     });
   }, [dynamicPrices]);
 
@@ -49,13 +76,14 @@ export default function Preturi() {
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="Preturi ForjaIt - Planuri de la 0 RON/luna | Fara contract"
+        title={`Preturi ${runtimeConfig.platformName} - Planuri de la 0 RON/luna | Fara contract`}
         description="Planuri flexibile pentru orice afacere de servicii. Starter 99 RON/luna, Professional 249 RON/luna. 14 zile gratuit, fara card de credit."
-        canonical="https://app.forja.it.com/pricing"
+        canonical={`${runtimeConfig.platformUrl}/pricing`}
         og={{
-          title: 'Preturi ForjaIt - Costa mai putin decat un client pierdut',
-          description: 'Planuri de la 0 RON/luna. 14 zile gratuit pe orice plan. Fara contract, fara penalizari.',
-          url: 'https://app.forja.it.com/pricing',
+          title: `Preturi ${runtimeConfig.platformName} - Costa mai putin decat un client pierdut`,
+          description:
+            'Planuri de la 0 RON/luna. 14 zile gratuit pe orice plan. Fara contract, fara penalizari.',
+          url: `${runtimeConfig.platformUrl}/pricing`,
         }}
         schema={faqSchema}
       />
@@ -69,7 +97,8 @@ export default function Preturi() {
               Costa mai putin decat un client pierdut.
             </h1>
             <p className="mt-4 text-lg text-gray-500">
-              Alege planul care ti se potriveste. 14 zile gratuit pe orice plan. Schimba sau anuleaza oricand.
+              Alege planul care ti se potriveste. 14 zile gratuit pe orice plan. Schimba sau
+              anuleaza oricand.
             </p>
 
             {/* Billing toggle */}
@@ -85,7 +114,9 @@ export default function Preturi() {
                 className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all ${annual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Anual
-                <span className="ml-1.5 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">-20%</span>
+                <span className="ml-1.5 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                  -20%
+                </span>
               </button>
             </div>
           </AnimatedSection>
@@ -94,12 +125,17 @@ export default function Preturi() {
 
       {/* Pricing cards */}
       <section className="pb-24">
-        <StaggerContainer className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-4" stagger={0.08}>
+        <StaggerContainer
+          className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-4"
+          stagger={0.08}
+        >
           {tiers.map((tier) => {
             const price = annual ? tier.price.annual : tier.price.monthly;
             return (
               <StaggerItem key={tier.key}>
-                <div className={`relative flex flex-col rounded-2xl border p-7 h-full ${tier.highlight ? 'border-primary shadow-xl shadow-primary/10 ring-1 ring-primary' : 'border-gray-200 hover:shadow-lg transition-shadow'}`}>
+                <div
+                  className={`relative flex flex-col rounded-2xl border p-7 h-full ${tier.highlight ? 'border-primary shadow-xl shadow-primary/10 ring-1 ring-primary' : 'border-gray-200 hover:shadow-lg transition-shadow'}`}
+                >
                   {tier.badge && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-white shadow-sm">
                       {tier.badge}
@@ -122,15 +158,25 @@ export default function Preturi() {
                       </div>
                     )}
                     {annual && tier.price.monthly > 0 && (
-                      <p className="mt-1 text-xs text-gray-400">{tier.price.monthly * 12} RON / an facturat anual</p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        {tier.price.monthly * 12} RON / an facturat anual
+                      </p>
                     )}
                     {!annual && tier.price.monthly > 0 && (
-                      <p className="mt-1 text-xs text-gray-400">sau {tier.price.annual} RON / luna la plata anuala</p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        sau {tier.price.annual} RON / luna la plata anuala
+                      </p>
                     )}
                   </div>
 
                   <Link
-                    to={tier.key === 'ENTERPRISE' ? '/#contact' : tier.key === 'FREE' ? '/signup' : `/signup?plan=${tier.key.toLowerCase()}`}
+                    to={
+                      tier.key === 'ENTERPRISE'
+                        ? '/#contact'
+                        : tier.key === 'FREE'
+                          ? '/signup'
+                          : `/signup?plan=${tier.key.toLowerCase()}`
+                    }
                     className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-sm font-semibold transition-colors ${tier.ctaStyle}`}
                   >
                     {tier.cta}
@@ -181,8 +227,14 @@ export default function Preturi() {
           </AnimatedSection>
           <StaggerContainer className="grid gap-5 sm:grid-cols-3" stagger={0.08}>
             {[
-              { title: 'Securitate', text: 'Criptare HTTPS, parole hashuite, GDPR compliant' },
-              { title: '14 zile trial', text: 'Testeaza orice plan platit gratuit, fara card bancar' },
+              {
+                title: 'Protectia datelor',
+                text: 'HTTPS, parole hashuite si controale de acces configurabile',
+              },
+              {
+                title: '14 zile trial',
+                text: 'Testeaza orice plan platit gratuit, fara card bancar',
+              },
               { title: 'Fara angajament', text: 'Anuleaza oricand, fara penalizari sau contracte' },
             ].map((item) => (
               <StaggerItem key={item.title}>
@@ -212,9 +264,16 @@ export default function Preturi() {
       <section className="border-t border-gray-100 py-20">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
           <AnimatedSection>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Incepe acum. Platesti doar daca ramai.</h2>
-            <p className="mt-3 text-sm text-gray-500">14 zile gratuit pe orice plan. Fara card de credit. Fara obligatii.</p>
-            <Link to="/signup" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-semibold text-white shadow-sm shadow-primary/25 hover:bg-primary-700 transition-colors">
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+              Incepe acum. Platesti doar daca ramai.
+            </h2>
+            <p className="mt-3 text-sm text-gray-500">
+              14 zile gratuit pe orice plan. Fara card de credit. Fara obligatii.
+            </p>
+            <Link
+              to="/signup"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-semibold text-white shadow-sm shadow-primary/25 hover:bg-primary-700 transition-colors"
+            >
               Activeaza contul gratuit <ArrowRight className="h-4 w-4" />
             </Link>
           </AnimatedSection>

@@ -33,38 +33,56 @@ export default function Organizations() {
             type="text"
             placeholder="Cauta dupa nume sau slug..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="w-full rounded-lg border border-gray-200 bg-gray-50/50 py-2 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
           />
         </div>
         <select
           value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
           className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate statusurile</option>
           {STATUS_OPTIONS.filter(Boolean).map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
         <select
           value={plan}
-          onChange={(e) => { setPlan(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setPlan(e.target.value);
+            setPage(1);
+          }}
           className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate planurile</option>
           {PLAN_OPTIONS.filter(Boolean).map((p) => (
-            <option key={p} value={p}>{p}</option>
+            <option key={p} value={p}>
+              {p}
+            </option>
           ))}
         </select>
         <select
           value={sector}
-          onChange={(e) => { setSector(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setSector(e.target.value);
+            setPage(1);
+          }}
           className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate sectoarele</option>
           {SECTOR_OPTIONS.filter(Boolean).map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
       </div>
@@ -89,13 +107,27 @@ export default function Organizations() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/50 text-left">
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Nume</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Slug</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Plan</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Sector</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Utilizatori</th>
-                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Data crearii</th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Nume
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Slug
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Plan
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Status
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Sector
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Utilizatori
+                    </th>
+                    <th className="whitespace-nowrap px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Data crearii
+                    </th>
                     <th className="w-10" />
                   </tr>
                 </thead>
@@ -106,16 +138,24 @@ export default function Organizations() {
                       onClick={() => navigate(`/organizations/${org.id}`)}
                       className="group cursor-pointer transition-colors hover:bg-primary-50/30"
                     >
-                      <td className="whitespace-nowrap px-5 py-3.5 font-medium text-gray-900">{org.name}</td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 font-mono text-xs">/{org.slug}</td>
+                      <td className="whitespace-nowrap px-5 py-3.5 font-medium text-gray-900">
+                        {org.name}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 font-mono text-xs">
+                        /{org.slug}
+                      </td>
                       <td className="whitespace-nowrap px-5 py-3.5">
                         <PlanBadge plan={org.plan} />
                       </td>
                       <td className="whitespace-nowrap px-5 py-3.5">
                         <StatusBadge status={org.status} />
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 text-xs">{org.activitySector || '-'}</td>
-                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-600 tabular-nums">{org._count?.users || 0}</td>
+                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 text-xs">
+                        {org.activitySector || '-'}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3.5 text-gray-600 tabular-nums">
+                        {org._count?.users || 0}
+                      </td>
                       <td className="whitespace-nowrap px-5 py-3.5 text-gray-500 text-xs">
                         {new Date(org.createdAt).toLocaleDateString('ro-RO')}
                       </td>
@@ -131,9 +171,7 @@ export default function Organizations() {
             {/* Pagination */}
             {data.pagination?.totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
-                <p className="text-xs text-gray-500">
-                  {data.pagination.total} rezultate
-                </p>
+                <p className="text-xs text-gray-500">{data.pagination.total} rezultate</p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -170,7 +208,9 @@ function StatusBadge({ status }) {
     CANCELLED: 'bg-gray-100 text-gray-600 border-gray-200',
   };
   return (
-    <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[status] || styles.ACTIVE}`}>
+    <span
+      className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[status] || styles.ACTIVE}`}
+    >
       {status}
     </span>
   );
@@ -184,7 +224,9 @@ function PlanBadge({ plan }) {
     ENTERPRISE: 'bg-amber-50 text-amber-700 border-amber-200',
   };
   return (
-    <span className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[plan] || styles.FREE}`}>
+    <span
+      className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold ${styles[plan] || styles.FREE}`}
+    >
       {plan}
     </span>
   );

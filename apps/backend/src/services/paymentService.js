@@ -112,19 +112,23 @@ const createPayment = async (prisma, data, options = {}) => {
 
   // Send payment confirmation email to client (fire-and-forget)
   if (payment.appointment?.clientId) {
-    const paymentClient = await prisma.client.findUnique({ where: { id: payment.appointment.clientId } });
+    const paymentClient = await prisma.client.findUnique({
+      where: { id: payment.appointment.clientId },
+    });
     if (paymentClient?.email) {
-      getCompanySettings(payment.appointment?.organizationId).then((companySettings) => {
-        sendPaymentReceivedEmail(prisma, {
-          client: paymentClient,
-          amount: roundedAmount,
-          paymentDate,
-          paymentMethod,
-          invoiceNumber: payment.invoice?.invoiceNumber,
-          companySettings,
-          organizationId: payment.appointment?.organizationId,
-        }).catch((err) => logger.error('[EMAIL] Payment received email failed:', err.message));
-      }).catch(() => {});
+      getCompanySettings(payment.appointment?.organizationId)
+        .then((companySettings) => {
+          sendPaymentReceivedEmail(prisma, {
+            client: paymentClient,
+            amount: roundedAmount,
+            paymentDate,
+            paymentMethod,
+            invoiceNumber: payment.invoice?.invoiceNumber,
+            companySettings,
+            organizationId: payment.appointment?.organizationId,
+          }).catch((err) => logger.error('[EMAIL] Payment received email failed:', err.message));
+        })
+        .catch(() => {});
     }
   }
 
@@ -190,9 +194,7 @@ const calculateTotalPaid = async (prisma, appointmentId, options = {}) => {
   const { tx, organizationId } = options;
   const client = tx || prisma;
 
-  const where = organizationId
-    ? { appointmentId, organizationId }
-    : { appointmentId };
+  const where = organizationId ? { appointmentId, organizationId } : { appointmentId };
 
   const result = await client.payment.aggregate({
     where,
@@ -269,9 +271,10 @@ const updateAppointmentPaymentStatus = async (prisma, appointmentId, options = {
   });
 
   const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
-  const finalPaidAt = paymentStatus === 'PAID' && payments.length > 0
-    ? payments[payments.length - 1].paymentDate
-    : null;
+  const finalPaidAt =
+    paymentStatus === 'PAID' && payments.length > 0
+      ? payments[payments.length - 1].paymentDate
+      : null;
 
   // Update appointment
   const updated = await client.appointment.update({
@@ -328,9 +331,10 @@ const updateInvoicePaymentStatus = async (prisma, invoiceId, options = {}) => {
   });
 
   const advancePaidAt = payments.length > 0 ? payments[0].paymentDate : null;
-  const finalPaidAt = paymentStatus === 'PAID' && payments.length > 0
-    ? payments[payments.length - 1].paymentDate
-    : null;
+  const finalPaidAt =
+    paymentStatus === 'PAID' && payments.length > 0
+      ? payments[payments.length - 1].paymentDate
+      : null;
 
   // Update invoice
   const updated = await client.invoice.update({

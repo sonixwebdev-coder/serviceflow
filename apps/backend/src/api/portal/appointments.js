@@ -54,7 +54,11 @@ const getAvailableDatesForClient = async (organizationId, days = 30) => {
     dates.push({
       date: `${year}-${month}-${day}`,
       dayOfWeek: date.toLocaleDateString('ro-RO', { weekday: 'long', timeZone: DEFAULT_TIMEZONE }),
-      formatted: date.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', timeZone: DEFAULT_TIMEZONE }),
+      formatted: date.toLocaleDateString('ro-RO', {
+        day: 'numeric',
+        month: 'short',
+        timeZone: DEFAULT_TIMEZONE,
+      }),
     });
   }
 
@@ -64,7 +68,12 @@ const getAvailableDatesForClient = async (organizationId, days = 30) => {
 /**
  * Get available time slots for a specific date
  */
-const getAvailableSlotsForClient = async (organizationId, date, duration = DEFAULT_SLOT_DURATION, locationId = null) => {
+const getAvailableSlotsForClient = async (
+  organizationId,
+  date,
+  duration = DEFAULT_SLOT_DURATION,
+  locationId = null
+) => {
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },
     select: { settings: true },
@@ -313,7 +322,16 @@ router.post(
   asyncHandler(async (req, res) => {
     const client = req.client;
     const organizationId = client.organizationId;
-    const { title, description, scheduledStart, scheduledEnd, location, assetId, asset, locationId } = req.body;
+    const {
+      title,
+      description,
+      scheduledStart,
+      scheduledEnd,
+      location,
+      assetId,
+      asset,
+      locationId,
+    } = req.body;
 
     // Validate dates
     const start = new Date(scheduledStart);
@@ -333,7 +351,8 @@ router.post(
     const availability = await checkAvailability(organizationId, start, end);
     if (!availability.available) {
       return res.status(409).json({
-        error: 'Nu exista locuri disponibile in intervalul orar selectat. Va rugam alegeti alt interval.',
+        error:
+          'Nu exista locuri disponibile in intervalul orar selectat. Va rugam alegeti alt interval.',
         availability,
       });
     }
@@ -368,13 +387,7 @@ router.post(
     let resolvedAssetId = assetId || null;
     if (asset && !assetId) {
       try {
-        const resolvedAsset = await resolveAsset(
-          prisma,
-          client.id,
-          asset,
-          null,
-          organizationId
-        );
+        const resolvedAsset = await resolveAsset(prisma, client.id, asset, null, organizationId);
         resolvedAssetId = resolvedAsset?.id || null;
       } catch (error) {
         logger.warn('Failed to resolve asset for portal appointment', { error: error.message });
@@ -431,7 +444,9 @@ router.post(
         },
       });
     } catch (soError) {
-      logger.warn('Failed to create service order for portal appointment', { error: soError.message });
+      logger.warn('Failed to create service order for portal appointment', {
+        error: soError.message,
+      });
     }
 
     logger.info('Portal appointment created', {
@@ -441,12 +456,17 @@ router.post(
     });
 
     // Get client name for notifications
-    const clientName = client.type === 'SRL'
-      ? client.companyName
-      : `${client.firstName || ''} ${client.lastName || ''}`.trim() || 'Client';
+    const clientName =
+      client.type === 'SRL'
+        ? client.companyName
+        : `${client.firstName || ''} ${client.lastName || ''}`.trim() || 'Client';
 
     // Format date for notification
-    const dateStr = start.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dateStr = start.toLocaleDateString('ro-RO', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
     const timeStr = start.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
 
     // Broadcast to CRM users (real-time update)
@@ -510,14 +530,18 @@ router.post(
 
     // Send confirmation email to client (fire-and-forget)
     if (client?.email) {
-      getCompanySettings(organizationId).then((companySettings) => {
-        sendAppointmentReminder(prisma, {
-          appointment,
-          client,
-          companySettings,
-          organizationId,
-        }).catch((err) => logger.error('[EMAIL] Confirmarea programarii din portal a esuat:', err.message));
-      }).catch(() => {});
+      getCompanySettings(organizationId)
+        .then((companySettings) => {
+          sendAppointmentReminder(prisma, {
+            appointment,
+            client,
+            companySettings,
+            organizationId,
+          }).catch((err) =>
+            logger.error('[EMAIL] Confirmarea programarii din portal a esuat:', err.message)
+          );
+        })
+        .catch(() => {});
     }
 
     res.status(201).json(appointment);

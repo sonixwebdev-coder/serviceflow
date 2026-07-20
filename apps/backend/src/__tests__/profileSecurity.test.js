@@ -1,10 +1,11 @@
-const { updateProfile, changePassword } = require('../services/userService');
+const userService = require('../services/userService');
 const prisma = require('../../lib/prisma');
 const bcrypt = require('bcryptjs');
 const { AppError } = require('../utils/errors');
 const cache = require('../utils/cache');
 
 jest.mock('../../lib/prisma', () => ({
+  refreshToken: { updateMany: jest.fn() },
   user: {
     findUnique: jest.fn(),
     update: jest.fn(),
@@ -17,6 +18,8 @@ jest.mock('bcryptjs', () => ({
 }));
 
 jest.mock('../utils/cache', () => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue(true),
   del: jest.fn(),
   delPattern: jest.fn(),
   userWithRolesKey: jest.fn((userId) => `user:${userId}:roles`),
@@ -33,6 +36,9 @@ jest.mock('../utils/transform', () => ({
     roles: user.roles || [],
   })),
 }));
+
+const updateProfile = (...args) => userService.updateProfile(prisma, ...args);
+const changePassword = (...args) => userService.changePassword(prisma, ...args);
 
 describe('Profile Security Tests', () => {
   beforeEach(() => {
@@ -327,13 +333,7 @@ describe('Profile Security Tests', () => {
     it('prevents setting weak password through validation', async () => {
       // This test verifies the schema validation (tested at schema level)
       // Here we ensure the service layer doesn't bypass validation
-      const weakPasswords = [
-        'short',
-        '12345678',
-        'NoNumber',
-        'nouppercase123',
-        'NOLOWERCASE123',
-      ];
+      const weakPasswords = ['short', '12345678', 'NoNumber', 'nouppercase123', 'NOLOWERCASE123'];
 
       // Each of these should be caught by schema validation before reaching service
       // This test documents the security requirement
@@ -356,7 +356,7 @@ describe('Profile Security Tests', () => {
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: user1.id },
-          data: { email: updates.email },
+          data: { email: updates.email.toLowerCase() },
         })
       );
     });
@@ -455,14 +455,10 @@ describe('Profile Security Tests', () => {
         email: 'taken@example.com',
       });
 
-      try {
-        await updateProfile(user1.id, updates);
-        fail('Should have thrown error');
-      } catch (error) {
-        // Error message should not reveal specific user details
-        expect(error.message).not.toContain('other-user-id');
-        expect(error.message).toContain('already in use');
-      }
+      await expect(updateProfile(user1.id, updates)).rejects.toMatchObject({
+        message: expect.not.stringContaining('other-user-id'),
+      });
+      await expect(updateProfile(user1.id, updates)).rejects.toThrow('already in use');
     });
 
     it('provides generic error for incorrect password', async () => {
@@ -478,14 +474,10 @@ describe('Profile Security Tests', () => {
       });
       bcrypt.compare.mockResolvedValue(false);
 
-      try {
-        await changePassword(user1.id, passwordData);
-        fail('Should have thrown error');
-      } catch (error) {
-        // Error should not reveal password details or timing information
-        expect(error.message).toBe('Current password is incorrect');
-        expect(error.status).toBe(401);
-      }
+      await expect(changePassword(user1.id, passwordData)).rejects.toMatchObject({
+        message: 'Current password is incorrect',
+        status: 401,
+      });
     });
 
     it('does not expose user existence in error messages', async () => {
@@ -496,13 +488,10 @@ describe('Profile Security Tests', () => {
 
       prisma.user.findUnique.mockResolvedValue(null); // User doesn't exist
 
-      try {
-        await changePassword('non-existent-user', passwordData);
-        fail('Should have thrown error');
-      } catch (error) {
-        expect(error.message).toBe('User not found');
-        expect(error.status).toBe(404);
-      }
+      await expect(changePassword('non-existent-user', passwordData)).rejects.toMatchObject({
+        message: 'User not found',
+        status: 404,
+      });
     });
   });
 

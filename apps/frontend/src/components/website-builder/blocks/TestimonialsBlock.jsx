@@ -42,10 +42,7 @@ const TestimonialsBlock = ({ data, settings, isEditing = false, onClick }) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={cn(
-          'h-4 w-4',
-          i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-        )}
+        className={cn('h-4 w-4', i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300')}
       />
     ));
   };
@@ -53,48 +50,44 @@ const TestimonialsBlock = ({ data, settings, isEditing = false, onClick }) => {
   const TestimonialCard = ({ testimonial, className }) => {
     const displayName = testimonial.name || testimonial.author || '';
     return (
-    <div className={cn('bg-white rounded-lg border shadow-sm p-6', className)}>
-      <Quote className="h-8 w-8 text-blue-200 mb-4" />
+      <div className={cn('bg-white rounded-lg border shadow-sm p-6', className)}>
+        <Quote className="h-8 w-8 text-blue-200 mb-4" />
 
-      <p className="text-gray-600 mb-6 italic">
-        "{testimonial.content}"
-      </p>
+        <p className="text-gray-600 mb-6 italic">"{testimonial.content}"</p>
 
-      <div className="flex items-center gap-4">
-        {(testimonial.image || testimonial.avatar) ? (
-          <img
-            src={getFileUrl(testimonial.image || testimonial.avatar)}
-            alt={displayName}
-            className="w-12 h-12 rounded-full object-cover"
-          />
-        ) : displayName ? (
-          <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-            {displayName[0].toUpperCase()}
+        <div className="flex items-center gap-4">
+          {testimonial.image || testimonial.avatar ? (
+            <img
+              src={getFileUrl(testimonial.image || testimonial.avatar)}
+              alt={displayName}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          ) : displayName ? (
+            <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+              {displayName[0].toUpperCase()}
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+              <User className="h-6 w-6 text-gray-400" />
+            </div>
+          )}
+          <div>
+            <p className="font-semibold" style={{ color: textColor }}>
+              {displayName}
+            </p>
+            {testimonial.role && <p className="text-sm text-gray-500">{testimonial.role}</p>}
           </div>
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-            <User className="h-6 w-6 text-gray-400" />
-          </div>
-        )}
-        <div>
-          <p className="font-semibold" style={{ color: textColor }}>
-            {displayName}
-          </p>
-          {testimonial.role && (
-            <p className="text-sm text-gray-500">{testimonial.role}</p>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          {showRating && testimonial.rating && (
+            <div className="flex">{renderStars(testimonial.rating)}</div>
+          )}
+          {showDate && testimonial.date && (
+            <span className="text-sm text-gray-400">{testimonial.date}</span>
           )}
         </div>
       </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        {showRating && testimonial.rating && (
-          <div className="flex">{renderStars(testimonial.rating)}</div>
-        )}
-        {showDate && testimonial.date && (
-          <span className="text-sm text-gray-400">{testimonial.date}</span>
-        )}
-      </div>
-    </div>
     );
   };
 
@@ -116,18 +109,11 @@ const TestimonialsBlock = ({ data, settings, isEditing = false, onClick }) => {
         {(title || subtitle) && (
           <div className="text-center mb-12">
             {title && (
-              <h2
-                className="text-3xl font-bold mb-4"
-                style={{ color: textColor }}
-              >
+              <h2 className="text-3xl font-bold mb-4" style={{ color: textColor }}>
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 

@@ -22,16 +22,7 @@ router.get(
   '/',
   authenticate,
   asyncHandler(async (req, res) => {
-    const {
-      entityType,
-      entityId,
-      actorId,
-      action,
-      dateFrom,
-      dateTo,
-      page,
-      limit,
-    } = req.query;
+    const { entityType, entityId, actorId, action, dateFrom, dateTo, page, limit } = req.query;
 
     const result = await listAuditLogs(req.tenantPrisma, {
       entityType,

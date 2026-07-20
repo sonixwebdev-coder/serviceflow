@@ -54,7 +54,7 @@ const imageStorage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const ext = path.extname(file.originalname);
     cb(null, `img-${uniqueSuffix}${ext}`);
   },
@@ -181,7 +181,11 @@ router.delete(
   authenticate,
   authorize({ roles: ['admin'] }),
   asyncHandler(async (req, res) => {
-    const result = await deleteWebsite(req.tenantPrisma, req.params.websiteId, req.user.organizationId);
+    const result = await deleteWebsite(
+      req.tenantPrisma,
+      req.params.websiteId,
+      req.user.organizationId
+    );
 
     await logFromRequest(req, {
       action: 'DELETE',
@@ -218,7 +222,11 @@ router.post(
       description: req.body.isPublished ? 'Website publicat' : 'Website retras din publicare',
     });
 
-    return ok(res, website, req.body.isPublished ? 'Website-ul a fost publicat' : 'Website-ul a fost retras');
+    return ok(
+      res,
+      website,
+      req.body.isPublished ? 'Website-ul a fost publicat' : 'Website-ul a fost retras'
+    );
   })
 );
 

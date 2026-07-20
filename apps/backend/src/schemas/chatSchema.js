@@ -31,7 +31,10 @@ const updateMemberRoleSchema = z.object({
 // List channels query schema
 const listChannelsQuerySchema = z.object({
   type: z.enum(['PUBLIC', 'PRIVATE', 'DIRECT', 'GROUP']).optional(),
-  archived: z.string().transform((val) => val === 'true').optional(),
+  archived: z
+    .string()
+    .transform((val) => val === 'true')
+    .optional(),
 });
 
 // List messages query schema
@@ -45,7 +48,9 @@ const listMessagesQuerySchema = z.object({
 const createMessageSchema = z.object({
   body: z.string().min(1).max(10000),
   type: z.enum(['TEXT', 'FILE', 'VOICE', 'IMAGE']).optional().default('TEXT'),
-  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  metadata: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .optional(),
 });
 
 // Update message schema

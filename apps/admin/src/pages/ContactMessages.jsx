@@ -1,13 +1,26 @@
 import { useState } from 'react';
 import { Mail, MailOpen, Reply, Archive, Trash2, Eye, ChevronDown } from 'lucide-react';
-import { useContactMessages, useContactMessageStats, useUpdateContactMessage, useDeleteContactMessage } from '@/hooks/useContactMessages';
+import {
+  useContactMessages,
+  useContactMessageStats,
+  useUpdateContactMessage,
+  useDeleteContactMessage,
+} from '@/hooks/useContactMessages';
 import useToast from '@/context/useToast';
 
 const STATUS_CONFIG = {
   NEW: { label: 'Nou', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Mail },
   READ: { label: 'Citit', color: 'bg-gray-100 text-gray-600 border-gray-200', icon: MailOpen },
-  REPLIED: { label: 'Raspuns', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: Reply },
-  ARCHIVED: { label: 'Arhivat', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Archive },
+  REPLIED: {
+    label: 'Raspuns',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    icon: Reply,
+  },
+  ARCHIVED: {
+    label: 'Arhivat',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    icon: Archive,
+  },
 };
 
 export default function ContactMessages() {
@@ -25,9 +38,16 @@ export default function ContactMessages() {
   const totalPages = Math.ceil(total / (filters.limit || 20));
 
   const handleStatusChange = (id, status) => {
-    updateMutation.mutate({ id, status }, {
-      onSuccess: () => showToast({ title: `Status actualizat: ${STATUS_CONFIG[status].label}`, type: 'success' }),
-    });
+    updateMutation.mutate(
+      { id, status },
+      {
+        onSuccess: () =>
+          showToast({
+            title: `Status actualizat: ${STATUS_CONFIG[status].label}`,
+            type: 'success',
+          }),
+      }
+    );
   };
 
   const handleDelete = (id) => {
@@ -50,12 +70,43 @@ export default function ContactMessages() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { key: 'new', label: 'Noi', value: stats.new || 0, color: 'text-blue-600', bg: 'bg-blue-50', icon: Mail },
-            { key: 'read', label: 'Citite', value: stats.read || 0, color: 'text-gray-500', bg: 'bg-gray-100', icon: MailOpen },
-            { key: 'replied', label: 'Raspunse', value: stats.replied || 0, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: Reply },
-            { key: 'archived', label: 'Arhivate', value: stats.archived || 0, color: 'text-amber-600', bg: 'bg-amber-50', icon: Archive },
+            {
+              key: 'new',
+              label: 'Noi',
+              value: stats.new || 0,
+              color: 'text-blue-600',
+              bg: 'bg-blue-50',
+              icon: Mail,
+            },
+            {
+              key: 'read',
+              label: 'Citite',
+              value: stats.read || 0,
+              color: 'text-gray-500',
+              bg: 'bg-gray-100',
+              icon: MailOpen,
+            },
+            {
+              key: 'replied',
+              label: 'Raspunse',
+              value: stats.replied || 0,
+              color: 'text-emerald-600',
+              bg: 'bg-emerald-50',
+              icon: Reply,
+            },
+            {
+              key: 'archived',
+              label: 'Arhivate',
+              value: stats.archived || 0,
+              color: 'text-amber-600',
+              bg: 'bg-amber-50',
+              icon: Archive,
+            },
           ].map((stat) => (
-            <div key={stat.key} className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm">
+            <div
+              key={stat.key}
+              className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm"
+            >
               <div className="flex items-center gap-3">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}>
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />
@@ -74,7 +125,9 @@ export default function ContactMessages() {
       <div className="flex items-center gap-3">
         <select
           value={filters.status || ''}
-          onChange={(e) => setFilters((prev) => ({ ...prev, page: 1, status: e.target.value || undefined }))}
+          onChange={(e) =>
+            setFilters((prev) => ({ ...prev, page: 1, status: e.target.value || undefined }))
+          }
           className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate ({total})</option>
@@ -112,12 +165,16 @@ export default function ContactMessages() {
                   className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-gray-50/50"
                   onClick={() => toggleExpand(msg.id, msg.status)}
                 >
-                  <div className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl border ${statusCfg.color}`}>
+                  <div
+                    className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl border ${statusCfg.color}`}
+                  >
                     <statusCfg.icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${msg.status === 'NEW' ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <span
+                        className={`text-sm font-semibold ${msg.status === 'NEW' ? 'text-gray-900' : 'text-gray-700'}`}
+                      >
                         {msg.name}
                       </span>
                       <span className="text-[11px] text-gray-400">&lt;{msg.email}&gt;</span>
@@ -125,14 +182,24 @@ export default function ContactMessages() {
                     <p className="text-sm text-gray-600 truncate">{msg.subject}</p>
                   </div>
                   <span className="text-[11px] text-gray-400 whitespace-nowrap">
-                    {new Date(msg.createdAt).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(msg.createdAt).toLocaleDateString('ro-RO', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </span>
-                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                  />
                 </div>
 
                 {isExpanded && (
                   <div className="animate-fade-in border-t border-gray-100 px-5 py-4">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-4">{msg.message}</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed mb-4">
+                      {msg.message}
+                    </p>
 
                     <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
                       <a

@@ -4,7 +4,7 @@
  */
 
 const { Parser } = require('json2csv');
-const { flattenObject, sanitizeForExport, sanitizeForFormulaInjection } = require('./exportUtils');
+const { flattenObject, sanitizeForFormulaInjection } = require('./exportUtils');
 
 /**
  * Export data to CSV format
@@ -22,12 +22,10 @@ const exportToCSV = (data, options = {}) => {
   const { fields, flatten = true } = options;
 
   // Flatten nested objects if requested
-  const processedData = flatten
-    ? data.map(item => flattenObject(item))
-    : data;
+  const processedData = flatten ? data.map((item) => flattenObject(item)) : data;
 
   // Sanitize all values to prevent formula injection
-  const sanitizedData = processedData.map(item => {
+  const sanitizedData = processedData.map((item) => {
     const sanitizedItem = {};
     for (const [key, value] of Object.entries(item)) {
       sanitizedItem[key] = sanitizeForFormulaInjection(value);
@@ -39,7 +37,7 @@ const exportToCSV = (data, options = {}) => {
   let csvFields = fields;
   if (!csvFields) {
     const firstRow = sanitizedData[0];
-    csvFields = Object.keys(firstRow).map(key => ({
+    csvFields = Object.keys(firstRow).map((key) => ({
       label: key,
       value: key,
     }));

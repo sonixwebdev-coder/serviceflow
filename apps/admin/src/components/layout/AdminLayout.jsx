@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Building2, CreditCard, ScrollText, LogOut,
-  Settings as SettingsIcon, LifeBuoy, Wrench, Menu, X, Mail,
+  LayoutDashboard,
+  Building2,
+  CreditCard,
+  ScrollText,
+  LogOut,
+  Settings as SettingsIcon,
+  LifeBuoy,
+  Wrench,
+  Menu,
+  X,
+  Mail,
   ChevronRight,
 } from 'lucide-react';
 import useAuthStore from '@/state/useAuthStore';
 import { useLogout } from '@/hooks/useAuth';
+import { runtimeConfig } from '@/config/runtime';
 
 const navGroups = [
   {
@@ -40,10 +50,12 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
-  const pageTitle = navGroups
-    .flatMap((g) => g.items)
-    .find((item) => item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to))
-    ?.label || 'Dashboard';
+  const pageTitle =
+    navGroups
+      .flatMap((g) => g.items)
+      .find((item) =>
+        item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
+      )?.label || 'Dashboard';
 
   const sidebarContent = (
     <>
@@ -53,8 +65,12 @@ export default function AdminLayout() {
           F
         </div>
         <div>
-          <span className="text-[15px] font-semibold tracking-tight">ForjaIt</span>
-          <span className="ml-1.5 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">Admin</span>
+          <span className="text-[15px] font-semibold tracking-tight">
+            {runtimeConfig.platformName}
+          </span>
+          <span className="ml-1.5 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
+            Admin
+          </span>
         </div>
       </div>
 
@@ -94,7 +110,8 @@ export default function AdminLayout() {
       <div className="border-t border-white/[0.06] p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-xs font-semibold text-white">
-            {user?.firstName?.[0]}{user?.lastName?.[0]}
+            {user?.firstName?.[0]}
+            {user?.lastName?.[0]}
           </div>
           <div className="flex-1 min-w-0">
             <p className="truncate text-[13px] font-medium text-gray-200">

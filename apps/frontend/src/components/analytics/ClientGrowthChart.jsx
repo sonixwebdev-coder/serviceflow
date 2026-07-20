@@ -21,9 +21,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       <p className="text-sm font-medium text-gray-600 mb-2">
         {format(parseISO(label), 'd MMM yyyy', { locale: roDateLocale })}
       </p>
-      <p className="text-lg font-bold text-emerald-600">
-        +{data.newClients} clienti noi
-      </p>
+      <p className="text-lg font-bold text-emerald-600">+{data.newClients} clienti noi</p>
       <div className="mt-1 flex gap-3 text-xs text-gray-500">
         <span>PF: {data.pf}</span>
         <span>SRL: {data.srl}</span>
@@ -94,11 +92,7 @@ export default function ClientGrowthChart({ data = [], byType = {}, isLoading })
             axisLine={{ stroke: '#e5e7eb' }}
             tickLine={false}
           />
-          <YAxis
-            tick={{ fontSize: 12, fill: '#6b7280' }}
-            axisLine={false}
-            tickLine={false}
-          />
+          <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
           <Tooltip content={<CustomTooltip />} />
           <Area
             type="monotone"

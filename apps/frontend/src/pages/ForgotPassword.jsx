@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail } from 'lucide-react';
 import API from '../utils/api';
+import { runtimeConfig } from '../config/runtime';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ const ForgotPassword = () => {
       <header className="border-b border-gray-200/60 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/" className="text-lg font-bold tracking-tight text-gray-900">
-            ForjaIt
+            {runtimeConfig.platformName}
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -50,7 +51,8 @@ const ForgotPassword = () => {
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold tracking-tight text-gray-900">Recuperare parola</h1>
               <p className="mt-2 text-sm text-gray-500">
-                Introdu adresa de email asociata contului tau si iti vom trimite un link pentru resetarea parolei.
+                Introdu adresa de email asociata contului tau si iti vom trimite un link pentru
+                resetarea parolei.
               </p>
             </div>
 
@@ -60,7 +62,8 @@ const ForgotPassword = () => {
                   <Mail className="h-6 w-6 text-green-600" />
                 </div>
                 <p className="text-sm text-gray-700">
-                  Daca exista un cont cu aceasta adresa de email, vei primi un link pentru resetarea parolei.
+                  Daca exista un cont cu aceasta adresa de email, vei primi un link pentru resetarea
+                  parolei.
                 </p>
                 <Link
                   to="/login"
@@ -80,7 +83,10 @@ const ForgotPassword = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 mb-1.5"
+                    >
                       Email
                     </label>
                     <input
@@ -123,18 +129,26 @@ const ForgotPassword = () => {
       <footer className="border-t border-gray-100">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-3 text-xs text-gray-500">
-            <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               ANPC
             </a>
-            <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/ce-este-sal/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               SAL
-            </a>
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
-              SOL
             </a>
           </div>
           <p className="text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+            &copy; {new Date().getFullYear()} {runtimeConfig.platformName}. Toate drepturile
+            rezervate.
           </p>
         </div>
       </footer>

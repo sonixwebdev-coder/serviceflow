@@ -3,7 +3,13 @@ const asyncHandler = require('../middleware/asyncHandler');
 const validate = require('../middleware/validate');
 const authenticate = require('../middleware/authenticate');
 const { loginSchema, forgotPasswordSchema, resetPasswordSchema } = require('../schemas/authSchema');
-const { loginUser, refreshSession, revokeRefreshToken, requestPasswordReset, resetPassword } = require('../services/authService');
+const {
+  loginUser,
+  refreshSession,
+  revokeRefreshToken,
+  requestPasswordReset,
+  resetPassword,
+} = require('../services/authService');
 const { ok, noContent } = require('../utils/http');
 const { setRefreshCookie, clearRefreshCookie } = require('../utils/cookies');
 const cache = require('../utils/cache');
@@ -17,11 +23,12 @@ const router = express.Router();
 router.use('/2fa', twoFactorRouter);
 
 // Cookie name per context: admin panel uses a separate cookie so sessions don't collide
-const getCookieName = (context) => context === 'admin' ? 'sf_admin_refresh' : 'sf_refresh';
+const getCookieName = (context) => (context === 'admin' ? 'sf_admin_refresh' : 'sf_refresh');
 
 // Resolve which cookie is present (for refresh/logout which don't receive context)
 const resolveRefreshCookie = (cookies) => {
-  if (cookies['sf_admin_refresh']) return { token: cookies['sf_admin_refresh'], cookieName: 'sf_admin_refresh' };
+  if (cookies['sf_admin_refresh'])
+    return { token: cookies['sf_admin_refresh'], cookieName: 'sf_admin_refresh' };
   if (cookies['sf_refresh']) return { token: cookies['sf_refresh'], cookieName: 'sf_refresh' };
   return { token: null, cookieName: 'sf_refresh' };
 };
@@ -56,7 +63,9 @@ router.post(
       ({ token, cookieName } = resolveRefreshCookie(req.cookies));
     }
     if (!token) {
-      return res.status(401).json({ success: false, message: 'No refresh token', code: 'AUTH_TOKEN_EXPIRED' });
+      return res
+        .status(401)
+        .json({ success: false, message: 'No refresh token', code: 'AUTH_TOKEN_EXPIRED' });
     }
     const auth = await refreshSession({ token });
     setRefreshCookie(res, auth.refreshToken, cookieName);

@@ -1,7 +1,4 @@
-/**
- * Cross-app URL configuration.
- * Values come from Vite env variables (VITE_*), falling back to localhost for dev.
- * In production these are set via Docker ARGs or .env files.
- */
-export const CLIENT_PORTAL_URL = import.meta.env.VITE_CLIENT_PORTAL_URL || 'http://localhost:5174';
-export const WEBSITE_BASE_URL = import.meta.env.VITE_WEBSITE_BASE_URL || 'http://localhost:5175';
+import { runtimeConfig } from './runtime';
+
+export const CLIENT_PORTAL_URL = runtimeConfig.portalUrl;
+export const WEBSITE_BASE_URL = runtimeConfig.websiteUrl;

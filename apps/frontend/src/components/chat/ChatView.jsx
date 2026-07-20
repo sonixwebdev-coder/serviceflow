@@ -1,9 +1,28 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import confirm from '../../utils/confirm';
 import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
-import { useChannel, useMessages, useMarkAsRead, useLeaveChannel, useArchiveChannel } from '../../hooks/useChat';
-import { Hash, Lock, MessageSquare, Users, MoreVertical, Settings, Menu, UserPlus, BellOff, LogOut, Archive, Copy, ArrowLeft } from 'lucide-react';
+import {
+  useChannel,
+  useMessages,
+  useMarkAsRead,
+  useLeaveChannel,
+  useArchiveChannel,
+} from '../../hooks/useChat';
+import {
+  Hash,
+  Lock,
+  MessageSquare,
+  Users,
+  MoreVertical,
+  Settings,
+  Menu,
+  UserPlus,
+  LogOut,
+  Archive,
+  Copy,
+  ArrowLeft,
+} from 'lucide-react';
 import MessageList from './MessageList';
 import MessageComposer from './MessageComposer';
 import AddMembersDialog from './AddMembersDialog';
@@ -27,7 +46,9 @@ const MessageSkeleton = ({ isOwn }) => (
     {!isOwn && <div className="mr-3 h-10 w-10 animate-pulse rounded-full bg-gray-200" />}
     <div className={`space-y-2 ${isOwn ? 'items-end' : 'items-start'}`}>
       {!isOwn && <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />}
-      <div className={`h-16 w-64 animate-pulse rounded-2xl ${isOwn ? 'bg-orange-200' : 'bg-gray-200'}`} />
+      <div
+        className={`h-16 w-64 animate-pulse rounded-2xl ${isOwn ? 'bg-orange-200' : 'bg-gray-200'}`}
+      />
     </div>
   </div>
 );
@@ -49,7 +70,17 @@ const MessagesLoadingSkeleton = () => (
  * Main conversation area with header, messages, and composer
  */
 export default function ChatView({ isMobile = false }) {
-  const { activeChannelId, setMessages, resetUnreadCount, toggleSidebar, toggleMemberList, isSidebarOpen, isMemberListOpen, removeChannel, setActiveChannelId } = useChatStore();
+  const {
+    activeChannelId,
+    setMessages,
+    resetUnreadCount,
+    toggleSidebar,
+    toggleMemberList,
+    isSidebarOpen,
+    isMemberListOpen,
+    removeChannel,
+    setActiveChannelId,
+  } = useChatStore();
   const { user: currentUser } = useAuthStore();
   const [isAddMembersOpen, setIsAddMembersOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -59,7 +90,7 @@ export default function ChatView({ isMobile = false }) {
 
   const { data: channel, isLoading: channelLoading } = useChannel(activeChannelId);
   const { data: messages, isLoading: messagesLoading } = useMessages(activeChannelId);
-  const markAsReadMutation = useMarkAsRead(activeChannelId);
+  const { mutate: markAsRead } = useMarkAsRead(activeChannelId);
   const leaveChannelMutation = useLeaveChannel();
   const archiveChannelMutation = useArchiveChannel();
 
@@ -88,13 +119,13 @@ export default function ChatView({ isMobile = false }) {
   useEffect(() => {
     if (activeChannelId) {
       const timer = setTimeout(() => {
-        markAsReadMutation.mutate();
+        markAsRead();
         resetUnreadCount(activeChannelId);
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [activeChannelId]);
+  }, [activeChannelId, markAsRead, resetUnreadCount]);
 
   if (!activeChannelId) {
     return null;
@@ -138,7 +169,10 @@ export default function ChatView({ isMobile = false }) {
     // For group DMs, show participant names (excluding current user)
     if (channel.type === 'GROUP') {
       const otherMembers = channel.members?.filter((m) => m.user?.id !== currentUser?.id) || [];
-      const names = otherMembers.slice(0, 3).map((m) => m.user.firstName).join(', ');
+      const names = otherMembers
+        .slice(0, 3)
+        .map((m) => m.user.firstName)
+        .join(', ');
       const remaining = otherMembers.length - 3;
       return remaining > 0 ? `${names} +${remaining}` : names || 'Chat Grup';
     }
@@ -175,7 +209,14 @@ export default function ChatView({ isMobile = false }) {
   };
 
   const handleLeaveChannel = async () => {
-    if (!await confirm({ title: 'Paraseste canal', text: 'Esti sigur ca vrei sa parasesti acest canal?', confirmText: 'Paraseste', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Paraseste canal',
+        text: 'Esti sigur ca vrei sa parasesti acest canal?',
+        confirmText: 'Paraseste',
+        danger: true,
+      }))
+    ) {
       setIsMenuOpen(false);
       return;
     }
@@ -200,7 +241,14 @@ export default function ChatView({ isMobile = false }) {
   };
 
   const handleArchiveChannel = async () => {
-    if (!await confirm({ title: 'Arhiveaza canal', text: 'Esti sigur ca vrei sa arhivezi acest canal? Toti membrii vor pierde accesul.', confirmText: 'Arhiveaza', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Arhiveaza canal',
+        text: 'Esti sigur ca vrei sa arhivezi acest canal? Toti membrii vor pierde accesul.',
+        confirmText: 'Arhiveaza',
+        danger: true,
+      }))
+    ) {
       setIsMenuOpen(false);
       return;
     }

@@ -4,7 +4,13 @@
  */
 
 const ExcelJS = require('exceljs');
-const { formatDate, formatDateTime, formatCurrency, getStatusLabelRO, sanitizeForFormulaInjection } = require('./exportUtils');
+const { getPlatformConfig } = require('../../config/platform');
+const {
+  formatDate,
+  formatDateTime,
+  getStatusLabelRO,
+  sanitizeForFormulaInjection,
+} = require('./exportUtils');
 const { FIELD_CONFIGS } = require('./csvExporter');
 
 /**
@@ -21,16 +27,11 @@ const exportToExcel = async (data, options = {}) => {
     throw new Error('Data must be a non-empty array');
   }
 
-  const {
-    columns,
-    sheetName = 'Date',
-    title = null,
-    includeMetadata = true,
-  } = options;
+  const { columns, sheetName = 'Date', title = null, includeMetadata = true } = options;
 
   // Create workbook and worksheet
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'ForjaIt CRM';
+  workbook.creator = getPlatformConfig().name;
   workbook.created = new Date();
   workbook.modified = new Date();
 
@@ -54,7 +55,7 @@ const exportToExcel = async (data, options = {}) => {
   // Add metadata (export date, record count)
   if (includeMetadata) {
     const metadataRow = worksheet.addRow([
-      `Export data: ${formatDateTime(new Date())} | Total inregistrari: ${data.length}`
+      `Export data: ${formatDateTime(new Date())} | Total inregistrari: ${data.length}`,
     ]);
     metadataRow.font = { size: 10, italic: true, color: { argb: 'FF666666' } };
     worksheet.mergeCells(`A${startRow}:${String.fromCharCode(65 + columns.length - 1)}${startRow}`);
@@ -65,15 +66,20 @@ const exportToExcel = async (data, options = {}) => {
     startRow++;
   }
 
-  // Configure columns
-  worksheet.columns = columns.map(col => ({
-    header: col.header || col.label || col.key,
+  // Configure keys and widths without ExcelJS' `header` option. Assigning
+  // headers through worksheet.columns always writes row 1 and would overwrite
+  // the title and metadata rows above it.
+  worksheet.columns = columns.map((col) => ({
     key: col.key || col.value,
     width: col.width || 15,
   }));
 
-  // Style header row
+  // Populate and style the actual header row.
   const headerRow = worksheet.getRow(startRow);
+  columns.forEach((column, index) => {
+    headerRow.getCell(index + 1).value =
+      column.header || column.label || column.key || column.value;
+  });
   headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   headerRow.fill = {
     type: 'pattern',
@@ -96,7 +102,7 @@ const exportToExcel = async (data, options = {}) => {
   // Add data rows
   data.forEach((item, index) => {
     const rowData = {};
-    columns.forEach(col => {
+    columns.forEach((col) => {
       const key = col.key || col.value;
       let value = getNestedValue(item, key);
 
@@ -126,14 +132,13 @@ const exportToExcel = async (data, options = {}) => {
 
     const row = worksheet.addRow(rowData);
 
-    // Alternate row colors
-    if (index % 2 === 0) {
-      row.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFF8F9FA' },
-      };
-    }
+    // Alternate row colors explicitly so spreadsheet viewers render the
+    // banding consistently after serialization.
+    row.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: index % 2 === 0 ? 'FFF8F9FA' : 'FFFFFFFF' },
+    };
 
     // Add borders
     row.eachCell((cell) => {
@@ -178,6 +183,8 @@ const exportToExcel = async (data, options = {}) => {
  * Get nested value from object using dot notation
  */
 const getNestedValue = (obj, path) => {
+  if (!path) return obj;
+
   return path.split('.').reduce((current, key) => {
     return current?.[key];
   }, obj);
@@ -186,8 +193,8 @@ const getNestedValue = (obj, path) => {
 /**
  * Convert field config to Excel columns
  */
-const fieldConfigToColumns = (fieldConfig, entityType) => {
-  return fieldConfig.map(field => {
+const fieldConfigToColumns = (fieldConfig) => {
+  return fieldConfig.map((field) => {
     const column = {
       header: field.label,
       key: field.value,
@@ -196,14 +203,30 @@ const fieldConfigToColumns = (fieldConfig, entityType) => {
 
     // Determine column type based on field name
     const fieldName = field.value.toLowerCase();
-    if (fieldName.includes('date') || fieldName.includes('at')) {
-      column.type = fieldName.includes('time') ? 'datetime' : 'date';
-    } else if (fieldName.includes('price') || fieldName.includes('total') || fieldName.includes('subtotal') || fieldName.includes('tax')) {
-      column.type = 'currency';
-    } else if (fieldName.includes('status')) {
+    if (fieldName.includes('status')) {
       column.type = 'status';
-    } else if (fieldName.includes('quantity') || fieldName.includes('hours') || fieldName.includes('minutes') || fieldName.includes('days')) {
+    } else if (
+      fieldName.includes('price') ||
+      fieldName.includes('total') ||
+      fieldName.includes('subtotal') ||
+      fieldName.includes('tax')
+    ) {
+      column.type = 'currency';
+    } else if (
+      fieldName.includes('quantity') ||
+      fieldName.includes('hours') ||
+      fieldName.includes('minutes') ||
+      fieldName.includes('days')
+    ) {
       column.type = 'number';
+    } else if (
+      fieldName.includes('datetime') ||
+      fieldName.includes('timestamp') ||
+      fieldName.includes('time')
+    ) {
+      column.type = 'datetime';
+    } else if (fieldName.includes('date') || fieldName.endsWith('at')) {
+      column.type = 'date';
     }
 
     return column;
@@ -252,7 +275,7 @@ const exportMultipleEntitiesToExcel = async (entities) => {
   }
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'ForjaIt CRM';
+  workbook.creator = getPlatformConfig().name;
   workbook.created = new Date();
   workbook.modified = new Date();
 
@@ -276,7 +299,7 @@ const exportMultipleEntitiesToExcel = async (entities) => {
 
     // Add metadata
     const metadataRow = worksheet.addRow([
-      `Export data: ${formatDateTime(new Date())} | Total: ${data.length}`
+      `Export data: ${formatDateTime(new Date())} | Total: ${data.length}`,
     ]);
     metadataRow.font = { size: 10, italic: true, color: { argb: 'FF666666' } };
     worksheet.mergeCells(`A3:${String.fromCharCode(65 + columns.length - 1)}3`);
@@ -284,11 +307,17 @@ const exportMultipleEntitiesToExcel = async (entities) => {
     // Add blank row
     worksheet.addRow([]);
 
-    // Configure columns
-    worksheet.columns = columns;
+    // Configure keys and widths without overwriting the title row.
+    worksheet.columns = columns.map((column) => ({
+      key: column.key,
+      width: column.width,
+    }));
 
-    // Style header row
+    // Populate and style header row
     const headerRow = worksheet.getRow(5);
+    columns.forEach((column, index) => {
+      headerRow.getCell(index + 1).value = column.header || column.label || column.key;
+    });
     headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     headerRow.fill = {
       type: 'pattern',
@@ -300,7 +329,7 @@ const exportMultipleEntitiesToExcel = async (entities) => {
     // Add data
     data.forEach((item, index) => {
       const rowData = {};
-      columns.forEach(col => {
+      columns.forEach((col) => {
         rowData[col.key] = getNestedValue(item, col.key) ?? '';
       });
 

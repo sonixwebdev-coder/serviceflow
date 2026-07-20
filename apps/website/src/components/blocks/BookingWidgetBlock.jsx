@@ -2,13 +2,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, Clock, ArrowRight, ListChecks } from 'lucide-react';
 
 export default function BookingWidgetBlock({ data, subdomain, branding }) {
-  const {
-    title,
-    subtitle,
-    showServices = true,
-    showEmployee = false,
-    buttonText = 'Programeaza acum',
-  } = data;
+  const { title, subtitle, buttonText = 'Programeaza acum' } = data;
 
   const primaryColor = branding?.primaryColor || '#2563eb';
 
@@ -35,14 +29,8 @@ export default function BookingWidgetBlock({ data, subdomain, branding }) {
           </div>
         </div>
 
-        {title && (
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-            {title}
-          </h2>
-        )}
-        {subtitle && (
-          <p className="text-gray-600 mb-10">{subtitle}</p>
-        )}
+        {title && <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">{title}</h2>}
+        {subtitle && <p className="text-gray-600 mb-10">{subtitle}</p>}
 
         <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-8 mb-10">
           {steps.map(({ icon: Icon, label, step }, index) => (

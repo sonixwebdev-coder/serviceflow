@@ -1,6 +1,18 @@
 import { useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { X, ChevronDown, Plus, Trash2, ChevronUp, Star, Info, Copy, Check, Upload, Loader2 } from 'lucide-react';
+import {
+  X,
+  ChevronDown,
+  Plus,
+  Trash2,
+  ChevronUp,
+  Star,
+  Info,
+  Copy,
+  Check,
+  Upload,
+  Loader2,
+} from 'lucide-react';
 import { blockTypes } from './blocks';
 import { uploadWebsiteImage } from '@/services/websiteService';
 
@@ -8,24 +20,27 @@ function ImageUploadField({ value, onChange, label, placeholder = 'https://...' 
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
 
-  const handleFile = useCallback(async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Imaginea nu poate depasi 5MB');
-      return;
-    }
-    setUploading(true);
-    try {
-      const url = await uploadWebsiteImage(file);
-      onChange(url);
-    } catch {
-      alert('Eroare la incarcarea imaginii');
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = '';
-    }
-  }, [onChange]);
+  const handleFile = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Imaginea nu poate depasi 5MB');
+        return;
+      }
+      setUploading(true);
+      try {
+        const url = await uploadWebsiteImage(file);
+        onChange(url);
+      } catch {
+        alert('Eroare la incarcarea imaginii');
+      } finally {
+        setUploading(false);
+        if (fileRef.current) fileRef.current.value = '';
+      }
+    },
+    [onChange]
+  );
 
   return (
     <div>
@@ -45,12 +60,29 @@ function ImageUploadField({ value, onChange, label, placeholder = 'https://...' 
           className="shrink-0 flex items-center gap-1 px-3 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-50 transition-colors"
           title="Incarca imagine"
         >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
         </button>
       </div>
-      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleFile} className="hidden" />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        onChange={handleFile}
+        className="hidden"
+      />
       {value && (
-        <img src={value} alt="" className="mt-2 h-16 w-auto rounded border object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+        <img
+          src={value}
+          alt=""
+          className="mt-2 h-16 w-auto rounded border object-cover"
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
       )}
     </div>
   );
@@ -118,7 +150,11 @@ const BLOCK_HELPERS = {
     ],
     advanced: {
       endpoints: [
-        { label: 'Trimitere formular', method: 'POST', path: '/api/portal/website/{subdomain}/lead' },
+        {
+          label: 'Trimitere formular',
+          method: 'POST',
+          path: '/api/portal/website/{subdomain}/lead',
+        },
       ],
     },
   },
@@ -133,7 +169,11 @@ const BLOCK_HELPERS = {
       endpoints: [
         { label: 'Info organizatie', method: 'GET', path: '/api/portal/public/{slug}' },
         { label: 'Date disponibile', method: 'GET', path: '/api/portal/public/{slug}/dates' },
-        { label: 'Sloturi disponibile', method: 'GET', path: '/api/portal/public/{slug}/slots?date={date}' },
+        {
+          label: 'Sloturi disponibile',
+          method: 'GET',
+          path: '/api/portal/public/{slug}/slots?date={date}',
+        },
         { label: 'Creare programare', method: 'POST', path: '/api/portal/public/{slug}/book' },
       ],
     },
@@ -206,12 +246,26 @@ const EndpointField = ({ endpoint }) => {
   };
   return (
     <div className="flex items-center gap-2">
-      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{endpoint.method}</span>
-      <code className="flex-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded truncate" title={endpoint.path}>
+      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+        {endpoint.method}
+      </span>
+      <code
+        className="flex-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded truncate"
+        title={endpoint.path}
+      >
         {endpoint.path}
       </code>
-      <button type="button" onClick={handleCopy} className="shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded" title="Copiaza">
-        {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded"
+        title="Copiaza"
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-green-500" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
       </button>
     </div>
   );
@@ -223,9 +277,7 @@ const Accordion = ({ children, defaultOpen = [] }) => {
 
   const toggleItem = (value) => {
     setOpenItems((prev) =>
-      prev.includes(value)
-        ? prev.filter((item) => item !== value)
-        : [...prev, value]
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
     );
   };
 
@@ -249,7 +301,7 @@ const Accordion = ({ children, defaultOpen = [] }) => {
   );
 };
 
-const AccordionItem = ({ children, value, isOpen, onToggle }) => {
+const AccordionItem = ({ children, isOpen, onToggle }) => {
   const trigger = Array.isArray(children)
     ? children.find((c) => c?.type === AccordionTrigger)
     : null;
@@ -273,10 +325,7 @@ const AccordionTrigger = ({ children, isOpen, onToggle }) => (
   >
     {children}
     <ChevronDown
-      className={cn(
-        'h-4 w-4 text-gray-500 transition-transform',
-        isOpen && 'transform rotate-180'
-      )}
+      className={cn('h-4 w-4 text-gray-500 transition-transform', isOpen && 'transform rotate-180')}
     />
   </button>
 );
@@ -362,10 +411,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <h3 className="font-semibold">{blockConfig?.name || block.type}</h3>
-        <button
-          onClick={onClose}
-          className="p-1 text-gray-400 hover:text-gray-600 rounded"
-        >
+        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -407,7 +453,8 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                   />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Opacitate overlay ({Math.round((block.data?.backgroundOverlay || 0.4) * 100)}%)
+                      Opacitate overlay ({Math.round((block.data?.backgroundOverlay || 0.4) * 100)}
+                      %)
                     </label>
                     <Slider
                       value={[block.data?.backgroundOverlay || 0.4]}
@@ -418,7 +465,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Text buton principal</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Text buton principal
+                    </label>
                     <input
                       type="text"
                       value={block.data?.ctaText || ''}
@@ -428,7 +477,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Link buton principal</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Link buton principal
+                    </label>
                     <input
                       type="text"
                       value={block.data?.ctaLink || ''}
@@ -438,7 +489,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Text buton secundar</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Text buton secundar
+                    </label>
                     <input
                       type="text"
                       value={block.data?.secondaryCtaText || ''}
@@ -448,7 +501,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Link buton secundar</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Link buton secundar
+                    </label>
                     <input
                       type="text"
                       value={block.data?.secondaryCtaLink || ''}
@@ -520,7 +575,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     onChange={(url) => updateData('src', url)}
                   />
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Text alternativ (ALT)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Text alternativ (ALT)
+                    </label>
                     <input
                       type="text"
                       value={block.data?.alt || ''}
@@ -553,7 +610,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aspect ratio</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Aspect ratio
+                    </label>
                     <select
                       value={block.data?.aspectRatio || 'auto'}
                       onChange={(e) => updateData('aspectRatio', e.target.value)}
@@ -572,7 +631,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
               {block.type === 'button' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Text buton</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Text buton
+                    </label>
                     <input
                       type="text"
                       value={block.data?.text || ''}
@@ -648,7 +709,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">Sincronizare automata cu CRM</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Sincronizare automata cu CRM
+                    </label>
                     <Switch
                       checked={block.data?.autoSync || false}
                       onCheckedChange={(v) => updateData('autoSync', v)}
@@ -657,7 +720,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                   {block.type === 'services-grid' && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Coloane</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Coloane
+                        </label>
                         <select
                           value={String(block.data?.columns || 3)}
                           onChange={(e) => updateData('columns', parseInt(e.target.value))}
@@ -670,7 +735,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                         </select>
                       </div>
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">Afiseaza preturi</label>
+                        <label className="text-sm font-medium text-gray-700">
+                          Afiseaza preturi
+                        </label>
                         <Switch
                           checked={block.data?.showPrices !== false}
                           onCheckedChange={(v) => updateData('showPrices', v)}
@@ -684,7 +751,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                         />
                       </div>
                       <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">Buton de programare</label>
+                        <label className="text-sm font-medium text-gray-700">
+                          Buton de programare
+                        </label>
                         <Switch
                           checked={block.data?.showBookButton !== false}
                           onCheckedChange={(v) => updateData('showBookButton', v)}
@@ -716,7 +785,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Text buton submit</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Text buton submit
+                    </label>
                     <input
                       type="text"
                       value={block.data?.submitText || ''}
@@ -725,7 +796,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mesaj de succes</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mesaj de succes
+                    </label>
                     <textarea
                       value={block.data?.successMessage || ''}
                       onChange={(e) => updateData('successMessage', e.target.value)}
@@ -755,7 +828,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">Afiseaza locatiile din CRM</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Afiseaza locatiile din CRM
+                    </label>
                     <Switch
                       checked={block.data?.showLocations || false}
                       onCheckedChange={(v) => updateData('showLocations', v)}
@@ -764,44 +839,74 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
 
                   {/* Contact info values */}
                   <div className="pt-2 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Informatii de contact</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                      Informatii de contact
+                    </p>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Telefon
+                        </label>
                         <input
                           type="tel"
                           value={block.data?.contactInfo?.phone || ''}
-                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, phone: e.target.value })}
+                          onChange={(e) =>
+                            updateData('contactInfo', {
+                              ...block.data?.contactInfo,
+                              phone: e.target.value,
+                            })
+                          }
                           placeholder="+40 700 000 000"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email
+                        </label>
                         <input
                           type="email"
                           value={block.data?.contactInfo?.email || ''}
-                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, email: e.target.value })}
+                          onChange={(e) =>
+                            updateData('contactInfo', {
+                              ...block.data?.contactInfo,
+                              email: e.target.value,
+                            })
+                          }
                           placeholder="contact@firma.ro"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Adresa</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Adresa
+                        </label>
                         <input
                           type="text"
                           value={block.data?.contactInfo?.address || ''}
-                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, address: e.target.value })}
+                          onChange={(e) =>
+                            updateData('contactInfo', {
+                              ...block.data?.contactInfo,
+                              address: e.target.value,
+                            })
+                          }
                           placeholder="Str. Exemplu, nr. 1, Cluj-Napoca"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Program
+                        </label>
                         <textarea
                           value={block.data?.contactInfo?.schedule || ''}
-                          onChange={(e) => updateData('contactInfo', { ...block.data?.contactInfo, schedule: e.target.value })}
-                          placeholder={"Luni - Vineri: 09:00 - 18:00\nSâmbătă: 10:00 - 14:00"}
+                          onChange={(e) =>
+                            updateData('contactInfo', {
+                              ...block.data?.contactInfo,
+                              schedule: e.target.value,
+                            })
+                          }
+                          placeholder={'Luni - Vineri: 09:00 - 18:00\nSâmbătă: 10:00 - 14:00'}
                           rows={3}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
                         />
@@ -833,14 +938,18 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">Afiseaza selectie servicii</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Afiseaza selectie servicii
+                    </label>
                     <Switch
                       checked={block.data?.showServices !== false}
                       onCheckedChange={(v) => updateData('showServices', v)}
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">Afiseaza selectie specialist</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Afiseaza selectie specialist
+                    </label>
                     <Switch
                       checked={block.data?.showEmployee || false}
                       onCheckedChange={(v) => updateData('showEmployee', v)}
@@ -941,7 +1050,10 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                   type="button"
                                   onClick={() => {
                                     const testimonials = [...(block.data?.testimonials || [])];
-                                    [testimonials[idx - 1], testimonials[idx]] = [testimonials[idx], testimonials[idx - 1]];
+                                    [testimonials[idx - 1], testimonials[idx]] = [
+                                      testimonials[idx],
+                                      testimonials[idx - 1],
+                                    ];
                                     updateData('testimonials', testimonials);
                                   }}
                                   className="p-1 text-gray-400 hover:text-gray-600 rounded"
@@ -954,7 +1066,10 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                   type="button"
                                   onClick={() => {
                                     const testimonials = [...(block.data?.testimonials || [])];
-                                    [testimonials[idx], testimonials[idx + 1]] = [testimonials[idx + 1], testimonials[idx]];
+                                    [testimonials[idx], testimonials[idx + 1]] = [
+                                      testimonials[idx + 1],
+                                      testimonials[idx],
+                                    ];
                                     updateData('testimonials', testimonials);
                                   }}
                                   className="p-1 text-gray-400 hover:text-gray-600 rounded"
@@ -1127,7 +1242,11 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               {image.src && (
-                                <img src={image.src} alt="" className="w-10 h-10 object-cover rounded" />
+                                <img
+                                  src={image.src}
+                                  alt=""
+                                  className="w-10 h-10 object-cover rounded"
+                                />
                               )}
                               <span className="text-xs font-medium text-gray-500">#{idx + 1}</span>
                             </div>
@@ -1219,7 +1338,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">Permite deschiderea multipla</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Permite deschiderea multipla
+                    </label>
                     <Switch
                       checked={block.data?.allowMultiple || false}
                       onCheckedChange={(v) => updateData('allowMultiple', v)}
@@ -1449,7 +1570,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">URL Video (YouTube sau Vimeo)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      URL Video (YouTube sau Vimeo)
+                    </label>
                     <input
                       type="text"
                       value={block.data?.url || ''}
@@ -1459,7 +1582,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail personalizat (URL)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Thumbnail personalizat (URL)
+                    </label>
                     <input
                       type="text"
                       value={block.data?.thumbnail || ''}
@@ -1469,7 +1594,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aspect ratio</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Aspect ratio
+                    </label>
                     <select
                       value={block.data?.aspectRatio || '16:9'}
                       onChange={(e) => updateData('aspectRatio', e.target.value)}
@@ -1512,7 +1639,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Text buton implicit</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Text buton implicit
+                    </label>
                     <input
                       type="text"
                       value={block.data?.ctaText || ''}
@@ -1539,7 +1668,14 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                         type="button"
                         onClick={() => {
                           const plans = [...(block.data?.plans || [])];
-                          plans.push({ name: '', price: '', currency: 'RON', period: 'luna', features: [], featured: false });
+                          plans.push({
+                            name: '',
+                            price: '',
+                            currency: 'RON',
+                            period: 'luna',
+                            features: [],
+                            featured: false,
+                          });
                           updateData('plans', plans);
                         }}
                         className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
@@ -1552,7 +1688,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                       {(block.data?.plans || []).map((plan, idx) => (
                         <div key={idx} className="border rounded-lg p-3 bg-gray-50 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-gray-500">Pachet #{idx + 1}</span>
+                            <span className="text-xs font-medium text-gray-500">
+                              Pachet #{idx + 1}
+                            </span>
                             <button
                               type="button"
                               onClick={() => {
@@ -1623,7 +1761,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                             />
                           </div>
                           <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium text-gray-600">Evidentiaza (featured)</label>
+                            <label className="text-xs font-medium text-gray-600">
+                              Evidentiaza (featured)
+                            </label>
                             <Switch
                               checked={plan.featured || false}
                               onCheckedChange={(v) => {
@@ -1638,10 +1778,15 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               Caracteristici (una per linie)
                             </label>
                             <textarea
-                              value={(plan.features || []).map((f) => typeof f === 'string' ? f : f.text).join('\n')}
+                              value={(plan.features || [])
+                                .map((f) => (typeof f === 'string' ? f : f.text))
+                                .join('\n')}
                               onChange={(e) => {
                                 const plans = [...(block.data?.plans || [])];
-                                const features = e.target.value.split('\n').filter(Boolean).map((text) => ({ text, included: true }));
+                                const features = e.target.value
+                                  .split('\n')
+                                  .filter(Boolean)
+                                  .map((text) => ({ text, included: true }));
                                 plans[idx] = { ...plans[idx], features };
                                 updateData('plans', plans);
                               }}
@@ -1693,7 +1838,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
             <AccordionTrigger>Stil</AccordionTrigger>
             <AccordionContent className="space-y-4 pt-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Culoare fundal</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Culoare fundal
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="color"
@@ -1755,7 +1902,9 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Latime maxima</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Latime maxima
+                </label>
                 <select
                   value={block.settings?.maxWidth || 'lg'}
                   onChange={(e) => updateSettings('maxWidth', e.target.value)}

@@ -4,6 +4,8 @@ const { createNotification } = require('./notificationService');
 const { sendPushToUser } = require('./pushNotificationService');
 const logger = require('../utils/logger');
 const cache = require('../utils/cache');
+const { getPlatformConfig } = require('../config/platform');
+const { buildWebsiteUrl } = require('../utils/websiteUrl');
 
 /**
  * Invalidate all public caches for a website
@@ -41,19 +43,7 @@ const isSubdomainAvailable = async (prisma, subdomain, excludeWebsiteId = null) 
   return !existing;
 };
 
-
 // ============== Website CRUD ==============
-
-/**
- * Build the public URL for a website
- */
-function buildWebsiteUrl(website) {
-  const baseUrl = process.env.WEBSITE_BASE_URL;
-  if (baseUrl) {
-    return `${baseUrl}/${website.subdomain}`;
-  }
-  return `https://${website.subdomain}.forja.it.com`;
-}
 
 /**
  * Get website for an organization
@@ -172,7 +162,10 @@ const updateWebsite = async (prisma, websiteId, data, organizationId) => {
 
     const canRemoveBranding = getPlanLimit(org.plan, 'removeBranding');
     if (!canRemoveBranding) {
-      throw new AppError('Planul dvs. nu permite eliminarea brand-ului ForjaIt', 403);
+      throw new AppError(
+        `Planul dvs. nu permite eliminarea brand-ului ${getPlatformConfig().name}`,
+        403
+      );
     }
   }
 
@@ -203,10 +196,24 @@ const updateWebsite = async (prisma, websiteId, data, organizationId) => {
       },
     });
 
+    const publicUrl = buildWebsiteUrl(updatedWebsite);
+    const subdomainChanged = data.subdomain !== undefined && data.subdomain !== website.subdomain;
+    const shouldSyncPublicUrl =
+      updatedWebsite.isPublished && (data.isPublished === true || subdomainChanged);
+
+    if (shouldSyncPublicUrl) {
+      await prisma.organizationProfile.upsert({
+        where: { organizationId },
+        create: { organizationId, website: publicUrl },
+        update: { website: publicUrl },
+      });
+      await cache.del(`company:settings:${organizationId}`);
+    }
+
     // Invalidate public caches
     await invalidateWebsiteCache(website.subdomain);
 
-    return { ...updatedWebsite, url: buildWebsiteUrl(updatedWebsite) };
+    return { ...updatedWebsite, url: publicUrl };
   } catch (error) {
     if (error.code === 'P2002') {
       throw new AppError('Subdomain-ul nu este disponibil', 409);
@@ -423,7 +430,6 @@ const bulkUpsertPages = async (prisma, websiteId, pages, organizationId) => {
   const maxPages = getPlanLimit(website.organization.plan, 'maxWebsitePages');
   const totalAfter = website.pages.length + newPages.length;
   if (totalAfter > maxPages) {
-    const available = Math.max(0, maxPages - website.pages.length);
     throw new AppError(
       `Planul ${website.organization.plan} permite maxim ${maxPages} pagini (ai ${website.pages.length}, template-ul necesita ${newPages.length} noi). Upgrade pentru mai multe pagini.`,
       403
@@ -723,7 +729,8 @@ const createLead = async (prisma, websiteId, data) => {
       await createNotification({
         recipientId: admin.id,
         title: 'Lead nou de pe website',
-        message: `${data.firstName} ${data.lastName || ''} a trimis un mesaj prin formularul de contact.`.trim(),
+        message:
+          `${data.firstName} ${data.lastName || ''} a trimis un mesaj prin formularul de contact.`.trim(),
         type: 'SYSTEM',
         entityType: 'websiteLead',
         entityId: lead.id,
@@ -932,7 +939,7 @@ const getApprovedReviews = async (prisma, websiteId) => {
     return {
       name: lead.firstName,
       rating: match ? parseInt(match[1], 10) : 5,
-      content: match ? match[2] : (lead.message || ''),
+      content: match ? match[2] : lead.message || '',
       createdAt: lead.createdAt,
     };
   });
@@ -1028,6 +1035,16 @@ const getWebsiteBySubdomain = async (prisma, subdomain) => {
           slug: true,
           activitySector: true,
           settings: true,
+          profile: {
+            select: {
+              companyName: true,
+              email: true,
+              phone: true,
+              address: true,
+              website: true,
+              logoUrl: true,
+            },
+          },
         },
       },
       pages: {
@@ -1074,7 +1091,6 @@ const getWebsiteBySubdomain = async (prisma, subdomain) => {
   await cache.set(cacheKey, website, cache.TTL.LONG);
   return website;
 };
-
 
 /**
  * Get public page content
@@ -1161,15 +1177,16 @@ const getCrmDataForBlocks = async (prisma, organizationId, dataType) => {
 
 const _fetchCrmData = async (prisma, organizationId, dataType) => {
   switch (dataType) {
-    case 'services':
+    case 'services': {
       // Get services from organization settings
       const org = await prisma.organization.findUnique({
         where: { id: organizationId },
         select: { settings: true },
       });
       return org?.settings?.services || [];
+    }
 
-    case 'team':
+    case 'team': {
       // Get active employees
       const users = await prisma.user.findMany({
         where: {
@@ -1192,14 +1209,15 @@ const _fetchCrmData = async (prisma, organizationId, dataType) => {
           },
         },
       });
-      return users.map(u => ({
+      return users.map((u) => ({
         id: u.id,
         name: `${u.firstName} ${u.lastName}`,
         role: u.roles[0]?.role?.name || 'Angajat',
         image: u.avatarUrl,
       }));
+    }
 
-    case 'locations':
+    case 'locations': {
       // Get active locations
       const locations = await prisma.location.findMany({
         where: {
@@ -1217,12 +1235,12 @@ const _fetchCrmData = async (prisma, organizationId, dataType) => {
         },
       });
       return locations;
+    }
 
     default:
       return [];
   }
 };
-
 
 /**
  * Generate sitemap data
@@ -1246,9 +1264,9 @@ const generateSitemapData = async (prisma, websiteId) => {
     throw new AppError('Website-ul nu a fost gasit', 404);
   }
 
-  const baseUrl = `https://${website.subdomain}.forja.it.com`;
+  const baseUrl = buildWebsiteUrl(website);
 
-  const urls = website.pages.map(page => ({
+  const urls = website.pages.map((page) => ({
     loc: page.slug === 'home' ? baseUrl : `${baseUrl}/${page.slug}`,
     lastmod: page.updatedAt.toISOString().split('T')[0],
     changefreq: page.pageType === 'HOME' ? 'weekly' : 'monthly',

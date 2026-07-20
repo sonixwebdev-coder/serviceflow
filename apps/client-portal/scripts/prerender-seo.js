@@ -16,25 +16,45 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, '..', 'dist');
-const SITE = 'https://portal.forja.it.com';
+const PLATFORM_NAME = process.env.VITE_PLATFORM_NAME || 'ServiceFlow';
+const CONTACT_EMAIL = process.env.VITE_PLATFORM_CONTACT_EMAIL || 'contact@example.com';
+const SITE = (process.env.VITE_CLIENT_PORTAL_URL || 'http://localhost:5174').replace(/\/+$/, '');
 
-const ROUTES = [
+const applyBranding = (value) => {
+  if (typeof value === 'string') {
+    return value
+      .replaceAll('ServiceFlow', PLATFORM_NAME)
+      .replaceAll('contact@example.com', CONTACT_EMAIL);
+  }
+  if (Array.isArray(value)) return value.map(applyBranding);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, applyBranding(item)])
+    );
+  }
+  return value;
+};
+
+const ROUTE_DEFINITIONS = [
   {
     path: '/',
-    title: 'ForjaIt - Programeaza-te online in 30 de secunde | Fara telefon',
-    description: 'Gaseste furnizori de servicii, programeaza online si tine evidenta programarilor si facturilor intr-un singur loc. 100% gratuit.',
+    title: 'ServiceFlow - Programeaza-te online in 30 de secunde | Fara telefon',
+    description:
+      'Gaseste furnizori de servicii, programeaza online si tine evidenta programarilor si facturilor intr-un singur loc. 100% gratuit.',
     canonical: `${SITE}/`,
     robots: 'index, follow',
     og: {
-      title: 'ForjaIt - Programeaza-te in 30 de secunde, fara telefon',
-      description: 'Alegi serviciul, alegi ora, confirmi. Programari, facturi si comunicare - totul intr-un singur portal gratuit.',
+      title: 'ServiceFlow - Programeaza-te in 30 de secunde, fara telefon',
+      description:
+        'Alegi serviciul, alegi ora, confirmi. Programari, facturi si comunicare - totul intr-un singur portal gratuit.',
     },
     schema: {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      name: 'ForjaIt Portal',
+      name: 'ServiceFlow Portal',
       url: SITE,
-      description: 'Portal de programari online - gaseste furnizori de servicii, programeaza si gestioneaza programari si facturi.',
+      description:
+        'Portal de programari online - gaseste furnizori de servicii, programeaza si gestioneaza programari si facturi.',
       potentialAction: {
         '@type': 'SearchAction',
         target: `${SITE}/marketplace?search={search_term_string}`,
@@ -42,7 +62,7 @@ const ROUTES = [
       },
     },
     body: `
-      <header><nav aria-label="Navigare principala"><a href="/">ForjaIt</a><a href="/marketplace">Descopera</a><a href="/login">Autentificare</a></nav></header>
+      <header><nav aria-label="Navigare principala"><a href="/">ServiceFlow</a><a href="/marketplace">Descopera</a><a href="/login">Autentificare</a></nav></header>
       <main>
         <h1>Programeaza-te online in 30 de secunde</h1>
         <p>Gaseste furnizori de servicii verificati, programeaza online si tine evidenta programarilor si facturilor intr-un singur loc. 100% gratuit.</p>
@@ -53,21 +73,24 @@ const ROUTES = [
   },
   {
     path: '/marketplace',
-    title: 'Descopera servicii - Programari online | ForjaIt',
-    description: 'Gaseste serviciul potrivit si programeaza online in cateva secunde. Companii verificate din auto, beauty, IT, servicii la domiciliu si digital.',
+    title: 'Descopera servicii - Programari online | ServiceFlow',
+    description:
+      'Gaseste serviciul potrivit si programeaza online in cateva secunde. Companii verificate din auto, beauty, IT, servicii la domiciliu si digital.',
     canonical: `${SITE}/marketplace`,
     robots: 'index, follow',
     og: {
-      title: 'Descopera servicii si programeaza online - ForjaIt',
-      description: 'Cauta printre companiile verificate si programeaza online. Service auto, saloane, reparatii, agentii digitale si multe altele.',
+      title: 'Descopera servicii si programeaza online - ServiceFlow',
+      description:
+        'Cauta printre companiile verificate si programeaza online. Service auto, saloane, reparatii, agentii digitale si multe altele.',
     },
     schema: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Marketplace ForjaIt - Servicii cu programare online',
+      name: 'Marketplace ServiceFlow - Servicii cu programare online',
       url: `${SITE}/marketplace`,
-      description: 'Director de companii cu programare online din Romania. Categorii: auto, beauty & wellness, IT & electronice, servicii digitale, home services.',
-      isPartOf: { '@type': 'WebSite', name: 'ForjaIt Portal', url: SITE },
+      description:
+        'Director de companii cu programare online din Romania. Categorii: auto, beauty & wellness, IT & electronice, servicii digitale, home services.',
+      isPartOf: { '@type': 'WebSite', name: 'ServiceFlow Portal', url: SITE },
     },
     body: `
       <main>
@@ -87,58 +110,64 @@ const ROUTES = [
   },
   {
     path: '/privacy',
-    title: 'Politica de Confidentialitate - ForjaIt',
-    description: 'Afla cum ForjaIt colecteaza, prelucreaza si protejeaza datele tale personale. Conformitate GDPR, criptare si drepturi de acces.',
+    title: 'Politica de Confidentialitate - ServiceFlow',
+    description:
+      'Afla cum ServiceFlow colecteaza, prelucreaza si protejeaza datele personale si ce optiuni de acces sunt disponibile.',
     canonical: `${SITE}/privacy`,
     robots: 'index, follow',
     body: `
       <main>
         <h1>Politica de Confidentialitate</h1>
-        <p>Aceasta politica descrie cum ForjaIt colecteaza, stocheaza si protejeaza datele tale personale, in conformitate cu GDPR si Legea nr. 190/2018.</p>
+        <p>Instanta este administrata de operatorul care ofera accesul. Operatorul stabileste scopurile, temeiurile si perioadele de pastrare aplicabile.</p>
       </main>`,
     sitemap: { priority: '0.3', changefreq: 'yearly' },
   },
   {
     path: '/terms',
-    title: 'Termeni si Conditii - ForjaIt',
-    description: 'Termenii si conditiile de utilizare a platformei ForjaIt. Drepturi, obligatii si reguli pentru utilizarea serviciului de programari online.',
+    title: 'Termeni si Conditii - ServiceFlow',
+    description:
+      'Termenii si conditiile de utilizare a platformei ServiceFlow. Drepturi, obligatii si reguli pentru utilizarea serviciului de programari online.',
     canonical: `${SITE}/terms`,
     robots: 'index, follow',
     body: `
       <main>
         <h1>Termeni si Conditii</h1>
-        <p>Acesti Termeni si Conditii reglementeaza utilizarea platformei ForjaIt. Prin accesarea si utilizarea platformei, acceptati acesti termeni.</p>
+        <p>Acesti termeni descriu regulile generale ale instalarii. Conditiile comerciale si identitatea legala trebuie comunicate de operator.</p>
       </main>`,
     sitemap: { priority: '0.3', changefreq: 'yearly' },
   },
   {
     path: '/contact',
-    title: 'Contact - ForjaIt',
-    description: 'Ai o intrebare sau nevoie de ajutor? Trimite-ne un mesaj si iti raspundem in cel mai scurt timp.',
+    title: 'Contact - ServiceFlow',
+    description:
+      'Ai o intrebare sau nevoie de ajutor? Trimite-ne un mesaj si iti raspundem in cel mai scurt timp.',
     canonical: `${SITE}/contact`,
     robots: 'index, follow',
     body: `
       <main>
         <h1>Contact</h1>
         <p>Ai o intrebare sau nevoie de ajutor? Trimite-ne un mesaj si iti raspundem in cel mai scurt timp.</p>
-        <p>Email: <a href="mailto:support@forja.it.com">support@forja.it.com</a></p>
+        <p>Email: <a href="mailto:contact@example.com">contact@example.com</a></p>
       </main>`,
     sitemap: { priority: '0.5', changefreq: 'monthly' },
   },
   {
     path: '/login',
-    title: 'Autentificare - ForjaIt Portal',
-    description: 'Conecteaza-te la portalul ForjaIt pentru a vedea programarile, facturile si a comunica cu furnizorii de servicii.',
+    title: 'Autentificare - ServiceFlow Portal',
+    description:
+      'Conecteaza-te la portalul ServiceFlow pentru a vedea programarile, facturile si a comunica cu furnizorii de servicii.',
     canonical: `${SITE}/login`,
     robots: 'noindex, follow',
     body: `
       <main>
         <h1>Autentificare</h1>
-        <p>Conecteaza-te la portalul tau ForjaIt.</p>
+        <p>Conecteaza-te la portalul tau ServiceFlow.</p>
       </main>`,
     sitemap: false,
   },
 ];
+
+const ROUTES = applyBranding(ROUTE_DEFINITIONS);
 
 // ---------------------------------------------------------------------------
 // Inject SEO into a single HTML file
@@ -268,19 +297,17 @@ for (const route of ROUTES) {
 // Generate sitemap.xml
 // ---------------------------------------------------------------------------
 const today = new Date().toISOString().split('T')[0];
-const sitemapUrls = ROUTES
-  .filter((r) => r.sitemap !== false)
-  .map((r) => {
-    const sm = r.sitemap || {};
-    const priority = sm.priority || '0.5';
-    const freq = sm.changefreq || 'monthly';
-    return `  <url>
+const sitemapUrls = ROUTES.filter((r) => r.sitemap !== false).map((r) => {
+  const sm = r.sitemap || {};
+  const priority = sm.priority || '0.5';
+  const freq = sm.changefreq || 'monthly';
+  return `  <url>
     <loc>${SITE}${r.path}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>${freq}</changefreq>
     <priority>${priority}</priority>
   </url>`;
-  });
+});
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

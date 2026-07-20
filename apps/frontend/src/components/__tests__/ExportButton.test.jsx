@@ -3,9 +3,9 @@
  * Tests UI interactions, accessibility, and export triggers
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import '@testing-library/user-event';
 import ExportButton from '../ExportButton';
 import * as exportService from '../../services/exportService';
 
@@ -24,6 +24,10 @@ vi.mock('../../services/exportService', () => ({
 const mockShowToast = vi.fn();
 vi.mock('../../context/useToast', () => ({
   default: () => ({ showToast: mockShowToast }),
+}));
+
+vi.mock('../../context/useAuth', () => ({
+  default: () => ({ hasRole: (role) => role === 'admin' }),
 }));
 
 describe('ExportButton', () => {
@@ -50,21 +54,19 @@ describe('ExportButton', () => {
 
     await waitFor(() => {
       expect(screen.getByText('CSV')).toBeInTheDocument();
-      expect(screen.getByText('Excel')).toBeInTheDocument();
       expect(screen.getByText('JSON')).toBeInTheDocument();
-      expect(screen.getByText('PDF')).toBeInTheDocument();
+      expect(screen.getByText('XML')).toBeInTheDocument();
     });
   });
 
-  it('displays all 4 format options', async () => {
+  it('displays all supported format options', async () => {
     render(<ExportButton entityType="appointments" />);
     fireEvent.click(screen.getByRole('button', { name: /exporta date/i }));
 
     await waitFor(() => {
       expect(screen.getByText('CSV')).toBeInTheDocument();
-      expect(screen.getByText('Excel')).toBeInTheDocument();
       expect(screen.getByText('JSON')).toBeInTheDocument();
-      expect(screen.getByText('PDF')).toBeInTheDocument();
+      expect(screen.getByText('XML')).toBeInTheDocument();
     });
   });
 
@@ -74,9 +76,8 @@ describe('ExportButton', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Comma Separated Values')).toBeInTheDocument();
-      expect(screen.getByText('Microsoft Excel (.xlsx)')).toBeInTheDocument();
       expect(screen.getByText('JavaScript Object Notation')).toBeInTheDocument();
-      expect(screen.getByText('Portable Document Format')).toBeInTheDocument();
+      expect(screen.getByText('Extensible Markup Language')).toBeInTheDocument();
     });
   });
 
@@ -138,19 +139,19 @@ describe('ExportButton', () => {
     });
   });
 
-  it('triggers Excel export when Excel option clicked', async () => {
-    const mockBlob = new Blob(['excel data'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  it('triggers XML export when XML option clicked', async () => {
+    const mockBlob = new Blob(['xml data'], { type: 'application/xml' });
     exportService.exportInvoices.mockResolvedValue(mockBlob);
 
     render(<ExportButton entityType="invoices" />);
 
     fireEvent.click(screen.getByRole('button', { name: /exporta date/i }));
-    await waitFor(() => screen.getByText('Excel'));
+    await waitFor(() => screen.getByText('XML'));
 
-    fireEvent.click(screen.getByText('Excel'));
+    fireEvent.click(screen.getByText('XML'));
 
     await waitFor(() => {
-      expect(exportService.exportInvoices).toHaveBeenCalledWith('excel', {});
+      expect(exportService.exportInvoices).toHaveBeenCalledWith('xml', {});
     });
   });
 
@@ -172,8 +173,8 @@ describe('ExportButton', () => {
 
   it('shows loading state during export', async () => {
     const mockBlob = new Blob(['data'], { type: 'text/csv' });
-    exportService.exportAppointments.mockImplementation(() =>
-      new Promise(resolve => setTimeout(() => resolve(mockBlob), 100))
+    exportService.exportAppointments.mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve(mockBlob), 100))
     );
 
     render(<ExportButton entityType="appointments" />);
@@ -186,9 +187,12 @@ describe('ExportButton', () => {
       expect(screen.getByText('Se descarca...')).toBeInTheDocument();
     });
 
-    await waitFor(() => {
-      expect(screen.queryByText('Se descarca...')).not.toBeInTheDocument();
-    }, { timeout: 200 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Se descarca...')).not.toBeInTheDocument();
+      },
+      { timeout: 200 }
+    );
   });
 
   it('shows success toast after export', async () => {
@@ -231,9 +235,7 @@ describe('ExportButton', () => {
   });
 
   it('handles 404 error with specific message', async () => {
-    exportService.exportAppointments.mockRejectedValue(
-      new Error('404: No data found')
-    );
+    exportService.exportAppointments.mockRejectedValue(new Error('404: No data found'));
 
     render(<ExportButton entityType="appointments" />);
 
@@ -251,9 +253,7 @@ describe('ExportButton', () => {
   });
 
   it('handles 403 permission error', async () => {
-    exportService.exportUsers.mockRejectedValue(
-      new Error('403: Forbidden')
-    );
+    exportService.exportUsers.mockRejectedValue(new Error('403: Forbidden'));
 
     render(<ExportButton entityType="users" />);
 
@@ -397,7 +397,7 @@ describe('ExportButton', () => {
 
     await waitFor(() => {
       const menuitems = screen.getAllByRole('menuitem');
-      expect(menuitems).toHaveLength(4);
+      expect(menuitems).toHaveLength(3);
     });
   });
 });

@@ -94,10 +94,12 @@ const loginUser = async ({ email, password, context }) => {
 
   // Reset failed attempts on successful login
   if (user.failedLoginAttempts > 0 || user.lockedUntil) {
-    prisma.user.update({
-      where: { id: user.id },
-      data: { failedLoginAttempts: 0, lockedUntil: null },
-    }).catch(() => {});
+    prisma.user
+      .update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      })
+      .catch(() => {});
   }
 
   // Context-based login separation
@@ -136,10 +138,7 @@ const loginUser = async ({ email, password, context }) => {
 
   // If 2FA is enabled, return a short-lived temp token instead of full session
   if (user.twoFactorEnabled) {
-    const tempToken = signAccessToken(
-      { sub: user.id, purpose: '2fa' },
-      { expiresIn: '5m' }
-    );
+    const tempToken = signAccessToken({ sub: user.id, purpose: '2fa' }, { expiresIn: '5m' });
     return { requiresTwoFactor: true, tempToken };
   }
 
@@ -201,7 +200,10 @@ const refreshSession = async ({ token }) => {
   if (!stored.user.isSuperAdmin && stored.user.organization) {
     const orgStatus = stored.user.organization.status;
     if (orgStatus === 'SUSPENDED' || orgStatus === 'CANCELLED') {
-      await prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: new Date() } });
+      await prisma.refreshToken.update({
+        where: { id: stored.id },
+        data: { revokedAt: new Date() },
+      });
       throw new AppError('Organizatia nu este activa', 403);
     }
   }

@@ -30,12 +30,7 @@ export const useInvoices = (initialFilters = {}, options = {}) => {
 
   const queryKey = useMemo(() => ['invoices', queryParams], [queryParams]);
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey,
     queryFn: () => fetchInvoices(queryParams),
   });
@@ -85,10 +80,10 @@ export const useCreateInvoice = () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       if (data?.appointmentId) {
         queryClient.invalidateQueries({
-          queryKey: ['invoices', 'appointment', data.appointmentId]
+          queryKey: ['invoices', 'appointment', data.appointmentId],
         });
         queryClient.invalidateQueries({
-          queryKey: ['appointment', data.appointmentId]
+          queryKey: ['appointment', data.appointmentId],
         });
       }
     },
@@ -111,7 +106,7 @@ export const useUpdateInvoice = () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       if (data?.appointmentId) {
         queryClient.invalidateQueries({
-          queryKey: ['invoices', 'appointment', data.appointmentId]
+          queryKey: ['invoices', 'appointment', data.appointmentId],
         });
       }
     },
@@ -155,7 +150,7 @@ export const useMarkInvoiceAsSent = () => {
       // Update appointment invoices if appointmentId exists
       if (data?.appointmentId) {
         queryClient.invalidateQueries({
-          queryKey: ['invoices', 'appointment', data.appointmentId]
+          queryKey: ['invoices', 'appointment', data.appointmentId],
         });
       }
     },
@@ -180,7 +175,7 @@ export const useMarkInvoiceAsPaid = () => {
       // Update appointment invoices if appointmentId exists
       if (data?.appointmentId) {
         queryClient.invalidateQueries({
-          queryKey: ['invoices', 'appointment', data.appointmentId]
+          queryKey: ['invoices', 'appointment', data.appointmentId],
         });
       }
     },

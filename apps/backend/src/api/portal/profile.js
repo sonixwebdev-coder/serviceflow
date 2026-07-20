@@ -243,7 +243,7 @@ router.delete(
 
     if (appointmentCount > 0) {
       return res.status(400).json({
-        error: `Echipamentul nu poate fi sters deoarece este asociat cu ${appointmentCount} programari`
+        error: `Echipamentul nu poate fi sters deoarece este asociat cu ${appointmentCount} programari`,
       });
     }
 

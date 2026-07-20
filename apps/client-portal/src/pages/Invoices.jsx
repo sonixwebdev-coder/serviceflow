@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Download, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { useInvoices, useInvoiceSummary } from '@/hooks/useInvoices';
@@ -57,21 +57,27 @@ export default function Invoices() {
           <CardContent className="py-5">
             <p className="text-sm text-gray-500">Neplatite</p>
             <p className="text-2xl font-bold text-gray-900">{summary?.unpaid?.count || 0}</p>
-            <p className="text-sm font-medium text-blue-600">{formatCurrency(summary?.unpaid?.total || 0)}</p>
+            <p className="text-sm font-medium text-blue-600">
+              {formatCurrency(summary?.unpaid?.total || 0)}
+            </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
           <CardContent className="py-5">
             <p className="text-sm text-gray-500">Restante</p>
             <p className="text-2xl font-bold text-red-600">{summary?.overdue?.count || 0}</p>
-            <p className="text-sm font-medium text-red-600">{formatCurrency(summary?.overdue?.total || 0)}</p>
+            <p className="text-sm font-medium text-red-600">
+              {formatCurrency(summary?.overdue?.total || 0)}
+            </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
           <CardContent className="py-5">
             <p className="text-sm text-gray-500">Platite</p>
             <p className="text-2xl font-bold text-green-600">{summary?.paid?.count || 0}</p>
-            <p className="text-sm font-medium text-green-600">{formatCurrency(summary?.paid?.total || 0)}</p>
+            <p className="text-sm font-medium text-green-600">
+              {formatCurrency(summary?.paid?.total || 0)}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -155,10 +161,11 @@ export default function Invoices() {
                         className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
                         title="Descarca PDF"
                       >
-                        {downloadingId === invoice.id
-                          ? <Loader2 className="h-5 w-5 animate-spin" />
-                          : <Download className="h-5 w-5" />
-                        }
+                        {downloadingId === invoice.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Download className="h-5 w-5" />
+                        )}
                       </button>
                     </td>
                   </tr>

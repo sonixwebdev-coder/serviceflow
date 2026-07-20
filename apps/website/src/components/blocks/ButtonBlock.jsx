@@ -8,7 +8,9 @@ const isSafeUrl = (url) => {
   try {
     const parsed = new URL(trimmed);
     return ['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol);
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 };
 
 export default function ButtonBlock({ data, subdomain, branding }) {
@@ -23,7 +25,8 @@ export default function ButtonBlock({ data, subdomain, branding }) {
     lg: 'px-8 py-4 text-lg',
   };
 
-  const isExternal = link.startsWith('http') || link.startsWith('mailto:') || link.startsWith('tel:');
+  const isExternal =
+    link.startsWith('http') || link.startsWith('mailto:') || link.startsWith('tel:');
   const href = isExternal ? link : `/${subdomain}${link}`;
 
   const className = cn(

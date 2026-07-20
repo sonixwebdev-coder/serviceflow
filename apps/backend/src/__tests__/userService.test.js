@@ -1,10 +1,11 @@
 const bcrypt = require('bcryptjs');
-const { updateProfile, changePassword } = require('../services/userService');
+const userService = require('../services/userService');
 const prisma = require('../../lib/prisma');
 const { AppError } = require('../utils/errors');
 const cache = require('../utils/cache');
 
 jest.mock('../../lib/prisma', () => ({
+  refreshToken: { updateMany: jest.fn() },
   user: {
     findUnique: jest.fn(),
     update: jest.fn(),
@@ -17,6 +18,8 @@ jest.mock('bcryptjs', () => ({
 }));
 
 jest.mock('../utils/cache', () => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue(true),
   del: jest.fn(),
   delPattern: jest.fn(),
   userWithRolesKey: jest.fn((userId) => `user:${userId}:roles`),
@@ -33,6 +36,9 @@ jest.mock('../utils/transform', () => ({
     roles: user.roles || [],
   })),
 }));
+
+const updateProfile = (...args) => userService.updateProfile(prisma, ...args);
+const changePassword = (...args) => userService.changePassword(prisma, ...args);
 
 describe('userService - Profile Management', () => {
   beforeEach(() => {
@@ -248,16 +254,19 @@ describe('userService - Profile Management', () => {
           id: true,
           password: true,
           email: true,
+          firstName: true,
+          lastName: true,
         },
       });
-      expect(bcrypt.compare).toHaveBeenCalledWith(
-        passwordData.currentPassword,
-        mockUser.password
-      );
+      expect(bcrypt.compare).toHaveBeenCalledWith(passwordData.currentPassword, mockUser.password);
       expect(bcrypt.hash).toHaveBeenCalledWith(passwordData.newPassword, 10);
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: userId },
         data: { password: 'hashed_new_password' },
+      });
+      expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
       });
       expect(result).toEqual({ message: 'Password changed successfully' });
       expect(cache.del).toHaveBeenCalledWith(`user:${userId}:roles`);
@@ -271,12 +280,15 @@ describe('userService - Profile Management', () => {
 
       prisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(changePassword(userId, passwordData)).rejects.toThrow(AppError);
-      await expect(changePassword(userId, passwordData)).rejects.toMatchObject({
+      const result = changePassword(userId, passwordData);
+      await expect(result).rejects.toMatchObject({
         message: 'User not found',
         status: 404,
       });
-      expect(bcrypt.compare).not.toHaveBeenCalled();
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        passwordData.currentPassword,
+        expect.stringMatching(/^\$2a\$12\$/)
+      );
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
 

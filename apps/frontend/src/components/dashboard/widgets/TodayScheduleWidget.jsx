@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, isToday, isTomorrow } from 'date-fns';
-import roDateLocale from 'date-fns/locale/ro';
+import 'date-fns/locale/ro';
 import { Calendar, Circle, ChevronRight } from 'lucide-react';
 import { useAppointments } from '../../../hooks/useAppointments';
 
 const TimelineSkeleton = () => (
   <div className="space-y-3">
-    {[1, 2, 3].map(i => (
+    {[1, 2, 3].map((i) => (
       <div key={i} className="flex gap-3">
         <div className="w-14 space-y-1">
           <div className="h-4 w-10 animate-pulse rounded bg-gray-200" />
@@ -28,17 +28,17 @@ export default function TodayScheduleWidget() {
 
   const todayTimeline = useMemo(() => {
     return appointments
-      .filter(apt => apt.scheduledStart && isToday(new Date(apt.scheduledStart)))
+      .filter((apt) => apt.scheduledStart && isToday(new Date(apt.scheduledStart)))
       .sort((a, b) => new Date(a.scheduledStart) - new Date(b.scheduledStart));
   }, [appointments]);
 
   const tomorrowFirst = useMemo(() => {
     return appointments
-      .filter(apt => apt.scheduledStart && isTomorrow(new Date(apt.scheduledStart)))
+      .filter((apt) => apt.scheduledStart && isTomorrow(new Date(apt.scheduledStart)))
       .sort((a, b) => new Date(a.scheduledStart) - new Date(b.scheduledStart))[0];
   }, [appointments]);
 
-  const currentAppointment = todayTimeline.find(item => {
+  const currentAppointment = todayTimeline.find((item) => {
     const start = new Date(item.scheduledStart);
     const end = item.scheduledEnd ? new Date(item.scheduledEnd) : null;
     return start <= now && end && end > now;
@@ -57,7 +57,8 @@ export default function TodayScheduleWidget() {
         <p className="font-medium text-gray-900">Nicio programare astazi</p>
         {tomorrowFirst && (
           <p className="text-sm text-gray-500 mt-1">
-            Maine: {tomorrowFirst.title} la {format(new Date(tomorrowFirst.scheduledStart), 'HH:mm')}
+            Maine: {tomorrowFirst.title} la{' '}
+            {format(new Date(tomorrowFirst.scheduledStart), 'HH:mm')}
           </p>
         )}
       </div>
@@ -79,7 +80,9 @@ export default function TodayScheduleWidget() {
             className={`flex gap-3 cursor-pointer group ${isPastItem && !isCurrent ? 'opacity-50' : ''}`}
           >
             <div className="w-14 text-right flex-shrink-0 pt-3">
-              <p className={`text-sm font-semibold ${isCurrent ? 'text-primary' : 'text-gray-700'}`}>
+              <p
+                className={`text-sm font-semibold ${isCurrent ? 'text-primary' : 'text-gray-700'}`}
+              >
                 {format(startTime, 'HH:mm')}
               </p>
             </div>
@@ -91,18 +94,24 @@ export default function TodayScheduleWidget() {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
                 </span>
               ) : (
-                <Circle className={`h-2.5 w-2.5 ${isPastItem ? 'text-gray-300 fill-gray-300' : 'text-primary fill-primary'}`} />
+                <Circle
+                  className={`h-2.5 w-2.5 ${isPastItem ? 'text-gray-300 fill-gray-300' : 'text-primary fill-primary'}`}
+                />
               )}
             </div>
 
-            <div className={`flex-1 p-3 rounded-lg transition ${
-              isCurrent
-                ? 'bg-primary/10 border border-primary'
-                : 'bg-gray-50 group-hover:bg-gray-100'
-            }`}>
+            <div
+              className={`flex-1 p-3 rounded-lg transition ${
+                isCurrent
+                  ? 'bg-primary/10 border border-primary'
+                  : 'bg-gray-50 group-hover:bg-gray-100'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className={`font-medium text-sm ${isCurrent ? 'text-primary' : 'text-gray-900'}`}>
+                  <p
+                    className={`font-medium text-sm ${isCurrent ? 'text-primary' : 'text-gray-900'}`}
+                  >
                     {item.title}
                   </p>
                   {item.client && (

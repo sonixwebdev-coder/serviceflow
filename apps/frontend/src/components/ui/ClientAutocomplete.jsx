@@ -19,7 +19,11 @@ import { useTerminology } from '../../context/TerminologyContext';
  * @param {string} props.placeholder - Input placeholder text
  * @param {string} props.className - Additional CSS classes
  */
-const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", className = "" }) => {
+const ClientAutocomplete = ({
+  onClientSelect,
+  placeholder = 'Cauta client...',
+  className = '',
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -88,26 +92,28 @@ const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", c
     }
   };
 
-  const handleClientSelect = useCallback((client) => {
-    // Format display value
-    const clientName = client.type === 'PF'
-      ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
-      : client.companyName || '';
+  const handleClientSelect = useCallback(
+    (client) => {
+      // Format display value
+      const clientName =
+        client.type === 'PF'
+          ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
+          : client.companyName || '';
 
-    setDisplayValue(clientName);
-    setSearchQuery('');
-    setIsOpen(false);
+      setDisplayValue(clientName);
+      setSearchQuery('');
+      setIsOpen(false);
 
-    // Get most recent asset
-    const mostRecentAsset = client.assets && client.assets.length > 0
-      ? client.assets[0]
-      : null;
+      // Get most recent asset
+      const mostRecentAsset = client.assets && client.assets.length > 0 ? client.assets[0] : null;
 
-    // Callback with client and most recent asset
-    if (onClientSelect) {
-      onClientSelect(client, mostRecentAsset);
-    }
-  }, [onClientSelect]);
+      // Callback with client and most recent asset
+      if (onClientSelect) {
+        onClientSelect(client, mostRecentAsset);
+      }
+    },
+    [onClientSelect]
+  );
 
   const handleKeyDown = (e) => {
     if (!isOpen || clients.length === 0) {
@@ -221,9 +227,7 @@ const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", c
             <div className="px-4 py-8 text-center">
               <User className="mx-auto h-12 w-12 text-gray-300 mb-2" />
               <p className="text-sm text-gray-500">Niciun client gasit</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Incercati un alt termen de cautare
-              </p>
+              <p className="text-xs text-gray-400 mt-1">Incercati un alt termen de cautare</p>
             </div>
           ) : (
             clients.map((client, index) => {
@@ -249,9 +253,7 @@ const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", c
                         {getClientDisplayName(client)}
                       </p>
                       {client.type === 'SRL' && client.contactName && (
-                        <p className="text-xs text-gray-500">
-                          Contact: {client.contactName}
-                        </p>
+                        <p className="text-xs text-gray-500">Contact: {client.contactName}</p>
                       )}
                     </div>
                   </div>
@@ -282,13 +284,20 @@ const ClientAutocomplete = ({ onClientSelect, placeholder = "Cauta client...", c
                   {client.assets && client.assets.length > 0 && (
                     <div className="ml-6 space-y-1">
                       {client.assets.slice(0, 2).map((asset) => (
-                        <div key={asset.id} className="flex items-center gap-1 text-xs text-gray-600">
+                        <div
+                          key={asset.id}
+                          className="flex items-center gap-1 text-xs text-gray-600"
+                        >
                           <Package className="h-3 w-3" />
-                          <span className="font-medium">{asset.identifier || asset.name || 'Fara identificator'}</span>
+                          <span className="font-medium">
+                            {asset.identifier || asset.name || 'Fara identificator'}
+                          </span>
                           {asset.manufacturer && (
                             <>
                               <span>-</span>
-                              <span>{asset.manufacturer} {asset.model}</span>
+                              <span>
+                                {asset.manufacturer} {asset.model}
+                              </span>
                             </>
                           )}
                           {asset.year && <span className="text-gray-400">({asset.year})</span>}

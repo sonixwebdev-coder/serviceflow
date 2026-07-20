@@ -1,10 +1,9 @@
-/* eslint-disable no-restricted-globals */
 // Service Worker for Push Notifications
 
-const CACHE_NAME = 'forjait-v1';
+const CACHE_NAME = 'serviceflow-v1';
 
 // Install event - cache essential assets
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   console.log('[Service Worker] Installing...');
   self.skipWaiting();
 });
@@ -13,16 +12,19 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[Service Worker] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('[Service Worker] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => self.clients.claim())
   );
 });
 
@@ -31,7 +33,7 @@ self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push received:', event);
 
   let data = {
-    title: 'ForjaIt CRM',
+    title: 'ServiceFlow CRM',
     body: 'You have a new notification',
     icon: '/logo192.png',
     badge: '/icons/badge.png',
@@ -69,9 +71,7 @@ self.addEventListener('push', (event) => {
     silent: false,
   };
 
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+  event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
 // Notification click event - handle user interaction

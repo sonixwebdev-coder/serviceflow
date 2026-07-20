@@ -30,11 +30,15 @@ router.get(
     }
 
     const locationFilter = await req.getLocationFilter({ includeNull: true });
-    const resources = await getAvailableResources(req.tenantPrisma, {
-      startTime,
-      endTime,
-      type,
-    }, { locationFilter });
+    const resources = await getAvailableResources(
+      req.tenantPrisma,
+      {
+        startTime,
+        endTime,
+        type,
+      },
+      { locationFilter }
+    );
 
     return ok(res, resources);
   })

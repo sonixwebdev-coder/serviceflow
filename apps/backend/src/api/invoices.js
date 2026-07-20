@@ -20,7 +20,11 @@ const {
   markInvoiceAsPaid,
   getInvoicesByAppointment,
 } = require('../services/invoiceService');
-const { logFromRequest, ENTITY_TYPES, getActionDescription } = require('../services/auditLogService');
+const {
+  logFromRequest,
+  ENTITY_TYPES,
+  getActionDescription,
+} = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 
 const router = express.Router();
@@ -46,7 +50,9 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(createInvoiceSchema),
   asyncHandler(async (req, res) => {
-    const invoice = await createInvoice(req.tenantPrisma, req.body, { organizationId: req.user.organizationId });
+    const invoice = await createInvoice(req.tenantPrisma, req.body, {
+      organizationId: req.user.organizationId,
+    });
 
     await logFromRequest(req, {
       action: 'CREATE',
@@ -67,7 +73,11 @@ router.post(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
     const applyLoyaltyDiscount = req.body?.applyLoyaltyDiscount !== false;
-    const invoice = await createInvoiceFromServiceOrder(req.tenantPrisma, req.params.serviceOrderId, { organizationId: req.user.organizationId, applyLoyaltyDiscount });
+    const invoice = await createInvoiceFromServiceOrder(
+      req.tenantPrisma,
+      req.params.serviceOrderId,
+      { organizationId: req.user.organizationId, applyLoyaltyDiscount }
+    );
 
     await logFromRequest(req, {
       action: 'CREATE',
@@ -99,7 +109,9 @@ router.put(
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   validate(updateInvoiceSchema),
   asyncHandler(async (req, res) => {
-    const invoice = await updateInvoice(req.tenantPrisma, req.params.id, req.body, { userId: req.user.id });
+    const invoice = await updateInvoice(req.tenantPrisma, req.params.id, req.body, {
+      userId: req.user.id,
+    });
 
     await logFromRequest(req, {
       action: 'UPDATE',
@@ -140,7 +152,9 @@ router.get(
   authorize({ roles: ['admin', 'manager'] }),
   asyncHandler(async (req, res) => {
     const refresh = ['1', 'true', 'yes'].includes(String(req.query.refresh || '').toLowerCase());
-    const { buffer, filename } = await generateInvoicePdf(req.tenantPrisma, req.params.id, { refresh });
+    const { buffer, filename } = await generateInvoicePdf(req.tenantPrisma, req.params.id, {
+      refresh,
+    });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Cache-Control', 'no-store');
@@ -175,7 +189,9 @@ router.post(
   authenticate,
   authorize({ roles: ['admin', 'manager', 'sales'] }),
   asyncHandler(async (req, res) => {
-    const invoice = await markInvoiceAsPaid(req.tenantPrisma, req.params.id, { userId: req.user.id });
+    const invoice = await markInvoiceAsPaid(req.tenantPrisma, req.params.id, {
+      userId: req.user.id,
+    });
 
     await logFromRequest(req, {
       action: 'UPDATE',

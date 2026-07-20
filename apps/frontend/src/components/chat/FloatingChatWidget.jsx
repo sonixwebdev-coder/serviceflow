@@ -1,5 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, ChevronLeft, Send, X, Maximize2, MessageCircle, Users, Hash, Clock, AlertCircle, FileText } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import {
+  MessageSquare,
+  ChevronLeft,
+  Send,
+  X,
+  Maximize2,
+  MessageCircle,
+  Users,
+  Hash,
+  Clock,
+  AlertCircle,
+  FileText,
+} from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -38,7 +50,7 @@ export default function FloatingChatWidget() {
     pendingMessages,
     addPendingMessage,
     removePendingMessage,
-    updatePendingMessage
+    updatePendingMessage,
   } = useChatStore();
   const { showToast } = useToast();
 
@@ -52,7 +64,8 @@ export default function FloatingChatWidget() {
   const sendMessageMutation = useSendMessage(selectedChannelId);
 
   // Mark as read mutation
-  const markAsReadMutation = useMarkAsRead(selectedChannelId);
+  const { mutate: markAsRead } = useMarkAsRead(selectedChannelId);
+  const selectedMessages = messagesByChannel[selectedChannelId];
 
   // Handle open/close with animation
   const handleOpen = () => {
@@ -84,15 +97,15 @@ export default function FloatingChatWidget() {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messagesByChannel[selectedChannelId]]);
+  }, [selectedMessages]);
 
   // Mark channel as read when viewing
   useEffect(() => {
     if (selectedChannelId && isOpen) {
-      markAsReadMutation.mutate();
+      markAsRead();
       useChatStore.getState().resetUnreadCount(selectedChannelId);
     }
-  }, [selectedChannelId, isOpen]);
+  }, [selectedChannelId, isOpen, markAsRead]);
 
   // Animation class
   useEffect(() => {
@@ -110,17 +123,19 @@ export default function FloatingChatWidget() {
   const totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
 
   // Get current messages (including pending)
-  const regularMessages = messagesByChannel[selectedChannelId] || messagesData || [];
-  const pending = selectedChannelId ? (pendingMessages[selectedChannelId] || []) : [];
+  const regularMessages = selectedMessages || messagesData || [];
+  const pending = selectedChannelId ? pendingMessages[selectedChannelId] || [] : [];
   const currentMessages = [...regularMessages, ...pending];
 
   // Get channel display name
   const getChannelName = (channel) => {
     if (channel.name) return channel.name;
     if (channel.type === 'DIRECT' || channel.type === 'GROUP') {
-      const otherMembers = channel.members?.filter(m => m.user?.id !== currentUser?.id) || [];
+      const otherMembers = channel.members?.filter((m) => m.user?.id !== currentUser?.id) || [];
       if (otherMembers.length === 0) return 'Conversație';
-      return otherMembers.map(m => `${m.user?.firstName || ''} ${m.user?.lastName || ''}`).join(', ');
+      return otherMembers
+        .map((m) => `${m.user?.firstName || ''} ${m.user?.lastName || ''}`)
+        .join(', ');
     }
     return 'Canal';
   };
@@ -128,7 +143,7 @@ export default function FloatingChatWidget() {
   // Get channel avatar/initials
   const getChannelInitials = (channel) => {
     if (channel.type === 'DIRECT') {
-      const other = channel.members?.find(m => m.user?.id !== currentUser?.id);
+      const other = channel.members?.find((m) => m.user?.id !== currentUser?.id);
       if (other?.user) {
         return `${other.user.firstName?.[0] || ''}${other.user.lastName?.[0] || ''}`;
       }
@@ -146,7 +161,7 @@ export default function FloatingChatWidget() {
   // Check if other user is online (for DMs)
   const isChannelOnline = (channel) => {
     if (channel.type === 'DIRECT') {
-      const other = channel.members?.find(m => m.user?.id !== currentUser?.id);
+      const other = channel.members?.find((m) => m.user?.id !== currentUser?.id);
       return other?.user?.id ? onlineUsers[other.user.id] : false;
     }
     return false;
@@ -269,7 +284,7 @@ export default function FloatingChatWidget() {
   };
 
   // Selected channel object
-  const selectedChannel = channels.find(c => c.id === selectedChannelId);
+  const selectedChannel = channels.find((c) => c.id === selectedChannelId);
 
   // Sort channels by most recent activity
   const sortedChannels = [...channels].sort((a, b) => {
@@ -293,7 +308,9 @@ export default function FloatingChatWidget() {
   const MessageSkeleton = ({ isOwn }) => (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div className={`space-y-2 ${isOwn ? 'items-end' : 'items-start'}`}>
-        <div className={`h-12 w-48 animate-pulse rounded-2xl ${isOwn ? 'bg-orange-200' : 'bg-gray-200'}`} />
+        <div
+          className={`h-12 w-48 animate-pulse rounded-2xl ${isOwn ? 'bg-orange-200' : 'bg-gray-200'}`}
+        />
       </div>
     </div>
   );
@@ -422,11 +439,11 @@ export default function FloatingChatWidget() {
                         >
                           {/* Avatar */}
                           <div className="relative">
-                            <div className={`flex h-11 w-11 items-center justify-center rounded-full font-semibold text-sm transition-transform group-hover:scale-105 ${
-                              unread > 0
-                                ? 'bg-primary text-white'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}>
+                            <div
+                              className={`flex h-11 w-11 items-center justify-center rounded-full font-semibold text-sm transition-transform group-hover:scale-105 ${
+                                unread > 0 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
                               {ChannelIcon ? (
                                 <ChannelIcon className="h-5 w-5" />
                               ) : (
@@ -441,9 +458,13 @@ export default function FloatingChatWidget() {
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className={`truncate text-sm ${
-                                unread > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'
-                              }`}>
+                              <p
+                                className={`truncate text-sm ${
+                                  unread > 0
+                                    ? 'font-semibold text-gray-900'
+                                    : 'font-medium text-gray-700'
+                                }`}
+                              >
                                 {getChannelName(channel)}
                               </p>
                               <div className="flex items-center gap-2">
@@ -460,9 +481,11 @@ export default function FloatingChatWidget() {
                               </div>
                             </div>
                             {channel.lastMessage && (
-                              <p className={`mt-0.5 truncate text-xs ${
-                                unread > 0 ? 'text-gray-600' : 'text-gray-500'
-                              }`}>
+                              <p
+                                className={`mt-0.5 truncate text-xs ${
+                                  unread > 0 ? 'text-gray-600' : 'text-gray-500'
+                                }`}
+                              >
                                 {channel.lastMessage.author?.id === currentUser?.id ? 'Tu: ' : ''}
                                 {channel.lastMessage.body || 'Atașament'}
                               </p>
@@ -492,19 +515,17 @@ export default function FloatingChatWidget() {
                       <MessageCircle className="h-7 w-7 text-primary" />
                     </div>
                     <p className="font-medium text-gray-900">Începe conversația</p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Trimite primul mesaj
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500">Trimite primul mesaj</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {currentMessages.map((message, index) => {
                       const isOwn = message.author?.id === currentUser?.id;
                       const isPending = !!message.tempId;
-                      const showAuthor = !isOwn && (
-                        index === 0 ||
-                        currentMessages[index - 1]?.author?.id !== message.author?.id
-                      );
+                      const showAuthor =
+                        !isOwn &&
+                        (index === 0 ||
+                          currentMessages[index - 1]?.author?.id !== message.author?.id);
 
                       return (
                         <div
@@ -534,7 +555,12 @@ export default function FloatingChatWidget() {
                                 const fullUrl = getFileUrl(attachment.fileUrl);
                                 if (isImage) {
                                   return (
-                                    <a key={attachment.id} href={fullUrl} target="_blank" rel="noopener noreferrer">
+                                    <a
+                                      key={attachment.id}
+                                      href={fullUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
                                       <img
                                         src={fullUrl}
                                         alt={attachment.fileName}
@@ -552,16 +578,22 @@ export default function FloatingChatWidget() {
                                     className={`flex items-center gap-1.5 mt-1 text-xs underline ${isOwn ? 'text-white/80' : 'text-gray-600'}`}
                                   >
                                     <FileText className="h-3.5 w-3.5 flex-shrink-0" />
-                                    <span className="truncate max-w-[160px]">{attachment.fileName}</span>
+                                    <span className="truncate max-w-[160px]">
+                                      {attachment.fileName}
+                                    </span>
                                   </a>
                                 );
                               })}
                               {!message.body && !message.attachments?.length && (
-                                <p className="whitespace-pre-wrap break-words leading-relaxed opacity-70">Atașament</p>
+                                <p className="whitespace-pre-wrap break-words leading-relaxed opacity-70">
+                                  Atașament
+                                </p>
                               )}
-                              <div className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${
-                                isOwn ? 'text-white/70' : 'text-gray-400'
-                              }`}>
+                              <div
+                                className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${
+                                  isOwn ? 'text-white/70' : 'text-gray-400'
+                                }`}
+                              >
                                 {isPending && message.status === 'sending' && (
                                   <Clock className="h-3 w-3 animate-pulse" />
                                 )}
@@ -570,9 +602,10 @@ export default function FloatingChatWidget() {
                                 )}
                                 <span>
                                   {isPending
-                                    ? (message.status === 'sending' ? 'Se trimite...' : 'Eroare')
-                                    : format(new Date(message.createdAt), 'HH:mm')
-                                  }
+                                    ? message.status === 'sending'
+                                      ? 'Se trimite...'
+                                      : 'Eroare'
+                                    : format(new Date(message.createdAt), 'HH:mm')}
                                 </span>
                               </div>
                             </div>

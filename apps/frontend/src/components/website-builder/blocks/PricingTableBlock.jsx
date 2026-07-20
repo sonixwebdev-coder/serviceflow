@@ -46,19 +46,19 @@ const PricingTableBlock = ({ data, settings, isEditing = false, onClick }) => {
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 
         {plans.length > 0 ? (
-          <div className={cn(
-            'grid gap-8 items-start',
-            plans.length === 1 && 'max-w-md mx-auto',
-            plans.length === 2 && 'max-w-3xl mx-auto md:grid-cols-2',
-            plans.length >= 3 && 'md:grid-cols-2 lg:grid-cols-3',
-          )}>
+          <div
+            className={cn(
+              'grid gap-8 items-start',
+              plans.length === 1 && 'max-w-md mx-auto',
+              plans.length === 2 && 'max-w-3xl mx-auto md:grid-cols-2',
+              plans.length >= 3 && 'md:grid-cols-2 lg:grid-cols-3'
+            )}
+          >
             {plans.map((plan, index) => (
               <div
                 key={index}
@@ -76,9 +76,7 @@ const PricingTableBlock = ({ data, settings, isEditing = false, onClick }) => {
 
                 <div className="text-center mb-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  {plan.description && (
-                    <p className="text-gray-500 text-sm">{plan.description}</p>
-                  )}
+                  {plan.description && <p className="text-gray-500 text-sm">{plan.description}</p>}
                 </div>
 
                 <div className="text-center mb-8">
@@ -88,9 +86,7 @@ const PricingTableBlock = ({ data, settings, isEditing = false, onClick }) => {
                       <span className="text-gray-500 font-medium">{plan.currency}</span>
                     )}
                   </div>
-                  {plan.period && (
-                    <span className="text-gray-400 text-sm">/ {plan.period}</span>
-                  )}
+                  {plan.period && <span className="text-gray-400 text-sm">/ {plan.period}</span>}
                 </div>
 
                 {plan.features && plan.features.length > 0 && (
@@ -109,7 +105,12 @@ const PricingTableBlock = ({ data, settings, isEditing = false, onClick }) => {
                               <XIcon className="h-3 w-3 text-gray-400" />
                             </div>
                           )}
-                          <span className={cn('text-sm', isIncluded ? 'text-gray-700' : 'text-gray-400')}>
+                          <span
+                            className={cn(
+                              'text-sm',
+                              isIncluded ? 'text-gray-700' : 'text-gray-400'
+                            )}
+                          >
                             {text}
                           </span>
                         </li>

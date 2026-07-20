@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSendMessage } from '../../hooks/useChat';
 import { getSocket } from '../../lib/socket';
 import { Send, Smile } from 'lucide-react';
@@ -198,7 +198,8 @@ export default function MessageComposer({ channelId }) {
 
       {/* Helper Text */}
       <div className="mt-2 text-xs text-gray-500">
-        <span className="font-medium">Enter</span> pentru a trimite, <span className="font-medium">Shift+Enter</span> pentru linie nouă
+        <span className="font-medium">Enter</span> pentru a trimite,{' '}
+        <span className="font-medium">Shift+Enter</span> pentru linie nouă
       </div>
     </div>
   );

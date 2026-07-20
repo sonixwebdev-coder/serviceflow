@@ -9,13 +9,7 @@ function getThumbnail(url) {
 }
 
 const VideoBlock = ({ data, settings, isEditing = false, onClick }) => {
-  const {
-    title = '',
-    subtitle = '',
-    url = '',
-    thumbnail = '',
-    aspectRatio = '16:9',
-  } = data || {};
+  const { title = '', subtitle = '', url = '', thumbnail = '', aspectRatio = '16:9' } = data || {};
 
   const {
     backgroundColor = '#ffffff',
@@ -62,19 +56,23 @@ const VideoBlock = ({ data, settings, isEditing = false, onClick }) => {
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 
         {url ? (
-          <div className={cn(
-            'relative rounded-xl overflow-hidden shadow-lg mx-auto max-w-4xl',
-            aspectClasses[aspectRatio] || aspectClasses['16:9']
-          )}>
+          <div
+            className={cn(
+              'relative rounded-xl overflow-hidden shadow-lg mx-auto max-w-4xl',
+              aspectClasses[aspectRatio] || aspectClasses['16:9']
+            )}
+          >
             {thumbUrl ? (
-              <img src={thumbUrl} alt={title || 'Video thumbnail'} className="w-full h-full object-cover" />
+              <img
+                src={thumbUrl}
+                alt={title || 'Video thumbnail'}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-gray-900" />
             )}

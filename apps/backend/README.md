@@ -1,50 +1,56 @@
-# ForjaIt Backend API
+# ServiceFlow Backend API
 
-Express REST API powering the ForjaIt platform. PostgreSQL via Prisma ORM, real-time communication with Socket.io, Redis caching, Stripe billing, and Brevo transactional emails.
+Express REST API powering the ServiceFlow platform. PostgreSQL via Prisma ORM, real-time communication with Socket.io, Redis caching, Stripe billing, and Brevo transactional emails.
 
 ## Setup
 
 1. Install workspace dependencies from the monorepo root:
+
    ```bash
-   npm install
+   npm ci
    ```
 
 2. Copy the environment template and update secrets:
+
    ```bash
-   cp apps/backend/.env.example apps/backend/.env
+   cp .env.example .env
    ```
 
-3. Configure the required keys in `apps/backend/.env`:
+3. Configure the required keys in the root `.env`:
+
    ```env
    PORT=5000
-   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/forjait"
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/serviceflow"
    JWT_ACCESS_SECRET=your_access_secret
    JWT_REFRESH_SECRET=your_refresh_secret
 
-   # Optional: Redis for caching
+   # Required in production; reduced local operation is possible without it
    REDIS_URL=redis://localhost:6379
    ```
 
-4. (Optional) Install Redis for caching:
+4. Start the local PostgreSQL and Redis services:
+
    ```bash
-   sudo apt install redis-server -y
+   docker compose up -d postgres redis
    ```
 
 5. Generate the Prisma client:
+
    ```bash
-   npm run prisma:generate
+   npm run prisma:generate --workspace apps/backend
    ```
 
 6. Run migrations:
+
    ```bash
-   npm run prisma:migrate
+   npm run prisma:migrate --workspace apps/backend
    ```
 
 7. Start the API:
    ```bash
-   npm run dev          # Development (auto-starts Redis if available)
-   npm run dev:no-redis # Development without Redis
-   npm start            # Production
+   npm run dev:backend                                     # Development
+   npm run dev:no-redis --workspace apps/backend           # Reduced local mode
+   npm start --workspace apps/backend                      # Production
    ```
 
 ## Directory Structure
@@ -75,23 +81,25 @@ auth, users, organizations, clients, appointments, assets, resources, invoices, 
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Dev server (auto-starts Redis if available) |
-| `npm run dev:no-redis` | Dev server without Redis |
-| `npm start` | Production server |
-| `npm run prisma:generate` | Regenerate Prisma client |
-| `npm run prisma:migrate` | Apply dev migrations |
-| `npm run prisma:deploy` | Apply migrations in production |
-| `npm test` | Run tests with Jest |
+| Command                                            | Description                                 |
+| -------------------------------------------------- | ------------------------------------------- |
+| `npm run dev:backend`                              | Dev server (auto-starts Redis if available) |
+| `npm run dev:no-redis --workspace apps/backend`    | Dev server without Redis                    |
+| `npm start --workspace apps/backend`               | Production server                           |
+| `npm run prisma:generate --workspace apps/backend` | Regenerate Prisma client                    |
+| `npm run prisma:migrate --workspace apps/backend`  | Apply development migrations                |
+| `npm run prisma:deploy --workspace apps/backend`   | Apply production migrations                 |
+| `npm test --workspace apps/backend`                | Run tests with Jest                         |
 
 ## Performance
 
 - Strategic database indexes for optimized queries
-- Redis caching (optional): user data (5 min TTL), company settings (30 min TTL), automatic invalidation on updates
+- Redis caching: user data (5 min TTL), company settings (30 min TTL), automatic invalidation on updates
 - Rate limiting per route with express-rate-limit (Redis-backed when available)
-- App works fully without Redis
+- Local development can run with reduced behavior when Redis is unavailable. Production
+  deployments should treat Redis as required for distributed rate limiting, caching, presence, and
+  realtime consistency.
 
----
-
-Private - ForjaIt Internal Use Only.
+For repository-wide development, deployment, and configuration guidance, see the
+[root documentation](../../README.md). This application is licensed with the rest of ServiceFlow
+under AGPL-3.0-only.

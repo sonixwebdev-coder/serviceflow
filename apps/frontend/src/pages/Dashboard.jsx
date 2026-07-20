@@ -9,7 +9,6 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
-  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -27,7 +26,6 @@ import {
   GripVertical,
   Eye,
   EyeOff,
-  X,
   RotateCcw,
   Calendar,
   ClipboardList,
@@ -94,14 +92,10 @@ const SIZE_CLASSES = {
 
 // Sortable widget wrapper
 function SortableWidget({ widget, isEditMode, children }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: widget.id, disabled: !isEditMode });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: widget.id,
+    disabled: !isEditMode,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -120,9 +114,11 @@ function SortableWidget({ widget, isEditMode, children }) {
         isEditMode ? 'ring-2 ring-dashed ring-gray-300 rounded-xl' : ''
       }`}
     >
-      <div className={`bg-white rounded-xl border border-gray-200 overflow-hidden h-full ${
-        isDragging ? 'shadow-lg' : ''
-      }`}>
+      <div
+        className={`bg-white rounded-xl border border-gray-200 overflow-hidden h-full ${
+          isDragging ? 'shadow-lg' : ''
+        }`}
+      >
         {/* Widget header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
@@ -140,9 +136,7 @@ function SortableWidget({ widget, isEditMode, children }) {
           )}
         </div>
         {/* Widget content */}
-        <div className="p-4">
-          {children}
-        </div>
+        <div className="p-4">{children}</div>
       </div>
     </div>
   );
@@ -198,7 +192,7 @@ const Dashboard = () => {
 
   // Filter visible widgets and check role permissions
   const visibleWidgets = useMemo(() => {
-    return widgets.filter(w => {
+    return widgets.filter((w) => {
       if (!w.visible) return false;
       const config = WIDGET_CONFIG[w.id];
       if (!config) return false;
@@ -229,8 +223,8 @@ const Dashboard = () => {
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (active.id !== over?.id) {
-      const oldIndex = widgets.findIndex(w => w.id === active.id);
-      const newIndex = widgets.findIndex(w => w.id === over.id);
+      const oldIndex = widgets.findIndex((w) => w.id === active.id);
+      const newIndex = widgets.findIndex((w) => w.id === over.id);
       reorderWidgets(arrayMove(widgets, oldIndex, newIndex));
     }
   };
@@ -253,7 +247,7 @@ const Dashboard = () => {
             {user?.firstName} {user?.lastName}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {format(now, "EEEE, d MMMM yyyy", { locale: roDateLocale })}
+            {format(now, 'EEEE, d MMMM yyyy', { locale: roDateLocale })}
           </p>
         </div>
 
@@ -266,9 +260,7 @@ const Dashboard = () => {
           }`}
         >
           <Settings2 className="h-4 w-4" />
-          <span className="text-sm font-medium">
-            {isEditMode ? 'Gata' : 'Personalizeaza'}
-          </span>
+          <span className="text-sm font-medium">{isEditMode ? 'Gata' : 'Personalizeaza'}</span>
         </button>
       </div>
 
@@ -288,7 +280,7 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {widgets.map(widget => {
+            {widgets.map((widget) => {
               const config = WIDGET_CONFIG[widget.id];
               if (!config) return null;
               // Check role permission
@@ -309,33 +301,23 @@ const Dashboard = () => {
       )}
 
       {/* Quick stats (always at top, full width) */}
-      {visibleWidgets.find(w => w.id === WIDGET_TYPES.QUICK_STATS) && (
-        <QuickStatsWidget />
-      )}
+      {visibleWidgets.find((w) => w.id === WIDGET_TYPES.QUICK_STATS) && <QuickStatsWidget />}
 
       {/* Widget grid with DnD */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
-          items={visibleWidgets.filter(w => w.id !== WIDGET_TYPES.QUICK_STATS).map(w => w.id)}
+          items={visibleWidgets.filter((w) => w.id !== WIDGET_TYPES.QUICK_STATS).map((w) => w.id)}
           strategy={rectSortingStrategy}
         >
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {visibleWidgets
-              .filter(w => w.id !== WIDGET_TYPES.QUICK_STATS)
-              .map(widget => {
+              .filter((w) => w.id !== WIDGET_TYPES.QUICK_STATS)
+              .map((widget) => {
                 const WidgetComponent = WIDGET_COMPONENTS[widget.id];
                 if (!WidgetComponent) return null;
 
                 return (
-                  <SortableWidget
-                    key={widget.id}
-                    widget={widget}
-                    isEditMode={isEditMode}
-                  >
+                  <SortableWidget key={widget.id} widget={widget} isEditMode={isEditMode}>
                     <WidgetComponent />
                   </SortableWidget>
                 );

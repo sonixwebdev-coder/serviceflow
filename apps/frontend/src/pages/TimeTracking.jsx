@@ -2,16 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import confirm from '../utils/confirm';
 import { format, differenceInMinutes } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
-import {
-  Clock,
-  LogIn,
-  LogOut,
-  Users,
-  Calendar,
-  Trash2,
-  TrendingUp,
-  MapPin,
-} from 'lucide-react';
+import { Clock, LogIn, LogOut, Users, Calendar, Trash2, TrendingUp, MapPin } from 'lucide-react';
 import useTimeTracking from '../hooks/useTimeTracking';
 import useUsers from '../hooks/useUsers';
 import { clockIn, clockOut, deleteTimeTrackingRecord } from '../services/timeTrackingService';
@@ -31,18 +22,32 @@ const TimeTracking = () => {
   const isAdmin = hasRole(USER_ROLES.ADMIN);
   const [filters, setFilters] = useState({});
   const [dateFilters, setDateFilters] = useState({ startDate: null, endDate: null });
-  const { records, meta, loading, error, page, setPage, refresh, setFilters: setHookFilters } = useTimeTracking(filters, { enablePagination: true });
+  const {
+    records,
+    meta,
+    loading,
+    error,
+    setPage,
+    refresh,
+    setFilters: setHookFilters,
+  } = useTimeTracking(filters, { enablePagination: true });
   const { users: employees = [] } = useUsers({ isActive: true }, { enabled: isManagerial });
   const [clocking, setClocking] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [clockOutPayload, setClockOutPayload] = useState({ breakDuration: 0, clockOutLocation: '' });
+  const [clockOutPayload, setClockOutPayload] = useState({
+    breakDuration: 0,
+    clockOutLocation: '',
+  });
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const activeRecord = useMemo(() => {
     if (isManagerial) {
       return null;
     }
-    return records.find((record) => !record.clockOut && (record.employee?._id === userId || record.employee === userId));
+    return records.find(
+      (record) =>
+        !record.clockOut && (record.employee?._id === userId || record.employee === userId)
+    );
   }, [isManagerial, records, userId]);
 
   // Live timer for active shift
@@ -84,16 +89,29 @@ const TimeTracking = () => {
     const hoursToday = todayRecords.reduce((sum, r) => sum + (r.totalHours || 0), 0);
     const hoursThisWeek = weekRecords.reduce((sum, r) => sum + (r.totalHours || 0), 0);
     const activeEmployees = new Set(
-      records
-        .filter((r) => !r.clockOut)
-        .map((r) => r.employee?._id || r.employee)
+      records.filter((r) => !r.clockOut).map((r) => r.employee?._id || r.employee)
     ).size;
 
     return [
-      { label: 'Ore astazi', value: formatHoursToRomanian(hoursToday), icon: Clock, color: 'bg-blue-500' },
-      { label: 'Ore saptamana', value: formatHoursToRomanian(hoursThisWeek), icon: TrendingUp, color: 'bg-green-500' },
+      {
+        label: 'Ore astazi',
+        value: formatHoursToRomanian(hoursToday),
+        icon: Clock,
+        color: 'bg-blue-500',
+      },
+      {
+        label: 'Ore saptamana',
+        value: formatHoursToRomanian(hoursThisWeek),
+        icon: TrendingUp,
+        color: 'bg-green-500',
+      },
       { label: 'Angajati activi', value: activeEmployees, icon: Users, color: 'bg-orange-500' },
-      { label: 'Total inregistrari', value: records.length, icon: Calendar, color: 'bg-purple-500' },
+      {
+        label: 'Total inregistrari',
+        value: records.length,
+        icon: Calendar,
+        color: 'bg-purple-500',
+      },
     ];
   }, [records]);
 
@@ -142,7 +160,14 @@ const TimeTracking = () => {
   };
 
   const handleDeleteRecord = async (recordId) => {
-    if (!await confirm({ title: 'Sterge inregistrare', text: 'Esti sigur ca vrei sa stergi aceasta inregistrare?', confirmText: 'Sterge', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Sterge inregistrare',
+        text: 'Esti sigur ca vrei sa stergi aceasta inregistrare?',
+        confirmText: 'Sterge',
+        danger: true,
+      }))
+    ) {
       return;
     }
     setDeletingId(recordId);
@@ -213,7 +238,9 @@ const TimeTracking = () => {
             entityType="time-tracking"
             filters={{
               employee: filters.employee,
-              startDate: dateFilters.startDate ? format(dateFilters.startDate, 'yyyy-MM-dd') : undefined,
+              startDate: dateFilters.startDate
+                ? format(dateFilters.startDate, 'yyyy-MM-dd')
+                : undefined,
               endDate: dateFilters.endDate ? format(dateFilters.endDate, 'yyyy-MM-dd') : undefined,
             }}
           />
@@ -259,7 +286,9 @@ const TimeTracking = () => {
                     <div>
                       <p className="text-sm font-medium text-green-800">Pontare intrare</p>
                       <p className="text-lg font-semibold text-green-900 mt-1">
-                        {format(new Date(activeRecord.clockIn), 'HH:mm, dd MMMM', { locale: roDateLocale })}
+                        {format(new Date(activeRecord.clockIn), 'HH:mm, dd MMMM', {
+                          locale: roDateLocale,
+                        })}
                       </p>
                       {activeRecord.clockInLocation && (
                         <p className="text-xs text-green-700 flex items-center gap-1 mt-1">
@@ -288,7 +317,7 @@ const TimeTracking = () => {
                       onChange={(event) =>
                         setClockOutPayload((current) => ({
                           ...current,
-                          breakDuration: Number(event.target.value)
+                          breakDuration: Number(event.target.value),
                         }))
                       }
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -305,7 +334,7 @@ const TimeTracking = () => {
                       onChange={(event) =>
                         setClockOutPayload((current) => ({
                           ...current,
-                          clockOutLocation: event.target.value
+                          clockOutLocation: event.target.value,
                         }))
                       }
                       placeholder="ex. Locatie Centru"
@@ -411,7 +440,9 @@ const TimeTracking = () => {
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {isManagerial && <th className="px-4 py-3 text-left font-semibold text-gray-500">Angajat</th>}
+                    {isManagerial && (
+                      <th className="px-4 py-3 text-left font-semibold text-gray-500">Angajat</th>
+                    )}
                     <th className="px-4 py-3 text-left font-semibold text-gray-500">Intrare</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-500">Iesire</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-500">Pauza (min)</th>
@@ -433,7 +464,11 @@ const TimeTracking = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <LogIn size={14} className="text-green-600" />
-                          <span>{format(new Date(record.clockIn), 'dd MMM, HH:mm', { locale: roDateLocale })}</span>
+                          <span>
+                            {format(new Date(record.clockIn), 'dd MMM, HH:mm', {
+                              locale: roDateLocale,
+                            })}
+                          </span>
                         </div>
                         {record.clockInLocation && (
                           <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
@@ -447,7 +482,11 @@ const TimeTracking = () => {
                           <>
                             <div className="flex items-center gap-1.5">
                               <LogOut size={14} className="text-red-600" />
-                              <span>{format(new Date(record.clockOut), 'dd MMM, HH:mm', { locale: roDateLocale })}</span>
+                              <span>
+                                {format(new Date(record.clockOut), 'dd MMM, HH:mm', {
+                                  locale: roDateLocale,
+                                })}
+                              </span>
                             </div>
                             {record.clockOutLocation && (
                               <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
@@ -501,7 +540,9 @@ const TimeTracking = () => {
                     ) : (
                       <div>
                         <p className="font-semibold text-gray-900">
-                          {format(new Date(record.clockIn), 'dd MMMM yyyy', { locale: roDateLocale })}
+                          {format(new Date(record.clockIn), 'dd MMMM yyyy', {
+                            locale: roDateLocale,
+                          })}
                         </p>
                       </div>
                     )}
@@ -518,7 +559,9 @@ const TimeTracking = () => {
                       <LogIn size={14} className="text-green-600" />
                       <span className="text-gray-600">Intrare:</span>
                       <span className="font-medium">
-                        {format(new Date(record.clockIn), 'dd MMM, HH:mm', { locale: roDateLocale })}
+                        {format(new Date(record.clockIn), 'dd MMM, HH:mm', {
+                          locale: roDateLocale,
+                        })}
                       </span>
                     </div>
                     {record.clockInLocation && (
@@ -534,7 +577,9 @@ const TimeTracking = () => {
                           <LogOut size={14} className="text-red-600" />
                           <span className="text-gray-600">Iesire:</span>
                           <span className="font-medium">
-                            {format(new Date(record.clockOut), 'dd MMM, HH:mm', { locale: roDateLocale })}
+                            {format(new Date(record.clockOut), 'dd MMM, HH:mm', {
+                              locale: roDateLocale,
+                            })}
                           </span>
                         </div>
                         {record.clockOutLocation && (
@@ -560,7 +605,9 @@ const TimeTracking = () => {
                         </div>
                         <div>
                           <span className="text-gray-500">Total: </span>
-                          <span className="font-medium">{record.totalHours ? formatHoursToRomanian(record.totalHours) : '-'}</span>
+                          <span className="font-medium">
+                            {record.totalHours ? formatHoursToRomanian(record.totalHours) : '-'}
+                          </span>
                         </div>
                       </div>
                       {isAdmin && (

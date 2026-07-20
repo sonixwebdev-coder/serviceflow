@@ -1,5 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchAuditLogs, fetchActivityFeed, fetchEntityActivity } from '../services/auditLogService';
+import {
+  fetchAuditLogs,
+  fetchActivityFeed,
+  fetchEntityActivity,
+} from '../services/auditLogService';
 
 /**
  * Hook for fetching paginated audit logs with filtering

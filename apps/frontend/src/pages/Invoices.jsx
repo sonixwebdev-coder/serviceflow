@@ -10,7 +10,6 @@ import {
   CheckCircle,
   X,
   Search,
-  Filter,
   Eye,
   Edit,
   Trash2,
@@ -24,7 +23,7 @@ import useInvoices, {
   useMarkInvoiceAsSent,
   useMarkInvoiceAsPaid,
 } from '../hooks/useInvoices';
-import useAuth from '../context/useAuth';
+import '../context/useAuth';
 import { useTerminology } from '../context/TerminologyContext';
 import useToast from '../context/useToast';
 import { downloadInvoicePdf } from '../services/invoiceService';
@@ -44,11 +43,20 @@ const INVOICE_STATUS = {
 
 const STATUS_META = {
   [INVOICE_STATUS.DRAFT]: { label: 'Ciornă', class: 'bg-gray-50 text-gray-700 border-gray-200' },
-  [INVOICE_STATUS.GENERATED]: { label: 'Generată', class: 'bg-blue-50 text-blue-700 border-blue-200' },
-  [INVOICE_STATUS.SENT]: { label: 'Trimisă', class: 'bg-purple-50 text-purple-700 border-purple-200' },
+  [INVOICE_STATUS.GENERATED]: {
+    label: 'Generată',
+    class: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
+  [INVOICE_STATUS.SENT]: {
+    label: 'Trimisă',
+    class: 'bg-purple-50 text-purple-700 border-purple-200',
+  },
   [INVOICE_STATUS.PAID]: { label: 'Plătită', class: 'bg-green-50 text-green-700 border-green-200' },
   [INVOICE_STATUS.OVERDUE]: { label: 'Întârziată', class: 'bg-red-50 text-red-700 border-red-200' },
-  [INVOICE_STATUS.CANCELLED]: { label: 'Anulată', class: 'bg-gray-50 text-gray-500 border-gray-200' },
+  [INVOICE_STATUS.CANCELLED]: {
+    label: 'Anulată',
+    class: 'bg-gray-50 text-gray-500 border-gray-200',
+  },
 };
 
 const formatCurrency = (value) => {
@@ -69,7 +77,7 @@ const formatDate = (value) => {
 
 const Invoices = () => {
   const { showToast } = useToast();
-  const { user } = useAuth();
+
   const { features } = useTerminology();
   const hasAssets = features?.useAssets !== false;
 
@@ -94,7 +102,7 @@ const Invoices = () => {
     return params;
   }, [searchTerm, statusFilter]);
 
-  const { invoices, meta, loading, page, setPage, refresh } = useInvoices(filters, {
+  const { invoices, meta, loading, page, setPage } = useInvoices(filters, {
     enablePagination: true,
   });
 
@@ -135,19 +143,26 @@ const Invoices = () => {
     if (selectedInvoice && !formInitialized) {
       setEditForm({
         notes: selectedInvoice.notes || '',
-        dueDate: selectedInvoice.dueDate ? format(new Date(selectedInvoice.dueDate), 'yyyy-MM-dd') : '',
+        dueDate: selectedInvoice.dueDate
+          ? format(new Date(selectedInvoice.dueDate), 'yyyy-MM-dd')
+          : '',
         status: selectedInvoice.status || 'draft',
-        lineItems: selectedInvoice.lineItems?.map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
-          hardwareQuantity: item.hardwareQuantity != null ? Number(item.hardwareQuantity) : (Number(item.quantity) || 1),
-          laborQuantity: item.laborQuantity != null ? Number(item.laborQuantity) : (Number(item.quantity) || 1),
-          hardwarePrice: Number(item.hardwarePrice || 0),
-          laborPrice: Number(item.laborPrice || 0),
-          hardwareUnit: item.hardwareUnit || '',
-          laborUnit: item.laborUnit || '',
-        })) || [],
+        lineItems:
+          selectedInvoice.lineItems?.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            hardwareQuantity:
+              item.hardwareQuantity != null
+                ? Number(item.hardwareQuantity)
+                : Number(item.quantity) || 1,
+            laborQuantity:
+              item.laborQuantity != null ? Number(item.laborQuantity) : Number(item.quantity) || 1,
+            hardwarePrice: Number(item.hardwarePrice || 0),
+            laborPrice: Number(item.laborPrice || 0),
+            hardwareUnit: item.hardwareUnit || '',
+            laborUnit: item.laborUnit || '',
+          })) || [],
       });
       setFormInitialized(true);
     }
@@ -169,14 +184,15 @@ const Invoices = () => {
       const laborQty = Number(item.laborQuantity) || 0;
       const hwPrice = Number(item.hardwarePrice) || 0;
       const laborPrice = Number(item.laborPrice) || 0;
-      return sum + (hwQty * hwPrice) + (laborQty * laborPrice);
+      return sum + hwQty * hwPrice + laborQty * laborPrice;
     }, 0);
     const tax = selectedInvoice?.tax || 0;
     // Determine effective loyalty discount based on user toggle
     let loyaltyDiscount = 0;
-    const effectiveApply = editApplyLoyaltyDiscount !== null
-      ? editApplyLoyaltyDiscount
-      : Number(selectedInvoice?.loyaltyDiscount || 0) > 0;
+    const effectiveApply =
+      editApplyLoyaltyDiscount !== null
+        ? editApplyLoyaltyDiscount
+        : Number(selectedInvoice?.loyaltyDiscount || 0) > 0;
     if (effectiveApply) {
       if (editApplyLoyaltyDiscount === true && loyaltyDiscountPercent > 0) {
         // Recalculating from tier percentage (user toggled ON a previously-off invoice)
@@ -187,14 +203,30 @@ const Invoices = () => {
     }
     const total = subtotal + tax - loyaltyDiscount;
     return { subtotal, tax, loyaltyDiscount, total };
-  }, [isEditing, editForm.lineItems, selectedInvoice?.tax, selectedInvoice?.loyaltyDiscount, editApplyLoyaltyDiscount, loyaltyDiscountPercent]);
+  }, [
+    isEditing,
+    editForm.lineItems,
+    selectedInvoice?.tax,
+    selectedInvoice?.loyaltyDiscount,
+    editApplyLoyaltyDiscount,
+    loyaltyDiscountPercent,
+  ]);
 
   const handleAddLineItem = () => {
     setEditForm({
       ...editForm,
       lineItems: [
         ...editForm.lineItems,
-        { name: '', description: '', hardwareQuantity: 1, laborQuantity: 1, hardwarePrice: 0, laborPrice: 0, hardwareUnit: '', laborUnit: '' },
+        {
+          name: '',
+          description: '',
+          hardwareQuantity: 1,
+          laborQuantity: 1,
+          hardwarePrice: 0,
+          laborPrice: 0,
+          hardwareUnit: '',
+          laborUnit: '',
+        },
       ],
     });
   };
@@ -263,7 +295,9 @@ const Invoices = () => {
       const updatePayload = {
         id: selectedInvoice.id,
         notes: editForm.notes,
-        dueDate: editForm.dueDate ? new Date(editForm.dueDate).toISOString() : selectedInvoice.dueDate,
+        dueDate: editForm.dueDate
+          ? new Date(editForm.dueDate).toISOString()
+          : selectedInvoice.dueDate,
         status: editForm.status,
         lineItems: editForm.lineItems.map((item, index) => ({
           name: item.name,
@@ -360,7 +394,14 @@ const Invoices = () => {
   };
 
   const handleDelete = async (invoice) => {
-    if (!await confirm({ title: 'Sterge factura', text: `Sigur vrei sa stergi factura ${invoice.invoiceNumber}?`, confirmText: 'Sterge', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Sterge factura',
+        text: `Sigur vrei sa stergi factura ${invoice.invoiceNumber}?`,
+        confirmText: 'Sterge',
+        danger: true,
+      }))
+    ) {
       return;
     }
 
@@ -405,7 +446,7 @@ const Invoices = () => {
   };
 
   const handleSelectInvoice = (id) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -417,7 +458,7 @@ const Invoices = () => {
     if (selectedIds.size === invoices.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(invoices.map(inv => inv.id)));
+      setSelectedIds(new Set(invoices.map((inv) => inv.id)));
     }
   };
 
@@ -436,9 +477,7 @@ const Invoices = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="page-header">
           <h1 className="page-title">Facturi</h1>
-          <p className="page-subtitle">
-            Gestionează facturile pentru clienți
-          </p>
+          <p className="page-subtitle">Gestionează facturile pentru clienți</p>
         </div>
         <ExportButton
           entityType="invoices"
@@ -463,7 +502,9 @@ const Invoices = () => {
         </div>
         <div className="h-6 w-px bg-gray-200 hidden sm:block" />
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Status:
+          </label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -480,7 +521,10 @@ const Invoices = () => {
         {(searchTerm || statusFilter) && (
           <button
             type="button"
-            onClick={() => { setSearchTerm(''); setStatusFilter(''); }}
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('');
+            }}
             className="text-sm text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
           >
             <X size={14} />
@@ -578,7 +622,10 @@ const Invoices = () => {
                 invoices.map((invoice) => {
                   const statusMeta = STATUS_META[invoice.status] || STATUS_META.draft;
                   return (
-                    <tr key={invoice.id} className={`hover:bg-gray-50 ${selectedIds.has(invoice.id) ? 'bg-blue-50/40' : ''}`}>
+                    <tr
+                      key={invoice.id}
+                      className={`hover:bg-gray-50 ${selectedIds.has(invoice.id) ? 'bg-blue-50/40' : ''}`}
+                    >
                       <td className="pl-4 pr-2 py-4 w-10">
                         <input
                           type="checkbox"
@@ -707,7 +754,9 @@ const Invoices = () => {
                         {invoice.invoiceNumber}
                       </span>
                     </div>
-                    <div className="mt-1 text-sm text-gray-900 truncate">{getClientName(invoice)}</div>
+                    <div className="mt-1 text-sm text-gray-900 truncate">
+                      {getClientName(invoice)}
+                    </div>
                     {invoice.client?.phone && (
                       <div className="mt-0.5 text-xs text-gray-500">{invoice.client.phone}</div>
                     )}
@@ -806,8 +855,10 @@ const Invoices = () => {
           />
 
           {/* Drawer */}
-          <div className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-gray-200 bg-white shadow-xl sm:max-w-3xl" style={{ margin: 0, padding: 0 }}>
-
+          <div
+            className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-gray-200 bg-white shadow-xl sm:max-w-3xl"
+            style={{ margin: 0, padding: 0 }}
+          >
             {/* ── Header ── */}
             <div className="flex items-start justify-between border-b border-gray-200 px-4 py-4 sm:px-6">
               <div className="min-w-0 flex-1">
@@ -819,7 +870,8 @@ const Invoices = () => {
                       </h2>
                     </div>
                     <p className="mt-0.5 text-sm text-gray-500 truncate">
-                      {getClientName(selectedInvoice)} &middot; {formatDate(selectedInvoice.issueDate)}
+                      {getClientName(selectedInvoice)} &middot;{' '}
+                      {formatDate(selectedInvoice.issueDate)}
                     </p>
                   </>
                 ) : (
@@ -827,16 +879,19 @@ const Invoices = () => {
                 )}
               </div>
               <div className="ml-3 flex items-center gap-1 sm:gap-2">
-                {!invoiceLoading && selectedInvoice && selectedInvoice.status !== INVOICE_STATUS.PAID && !isEditing && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="rounded-lg bg-gray-100 px-2 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-200 sm:px-3 sm:text-sm"
-                  >
-                    <Edit className="mr-1 inline h-3 w-3 sm:mr-1.5 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Editează</span>
-                    <span className="sm:hidden">Edit</span>
-                  </button>
-                )}
+                {!invoiceLoading &&
+                  selectedInvoice &&
+                  selectedInvoice.status !== INVOICE_STATUS.PAID &&
+                  !isEditing && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="rounded-lg bg-gray-100 px-2 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-200 sm:px-3 sm:text-sm"
+                    >
+                      <Edit className="mr-1 inline h-3 w-3 sm:mr-1.5 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Editează</span>
+                      <span className="sm:hidden">Edit</span>
+                    </button>
+                  )}
                 <button
                   onClick={() => {
                     setSelectedInvoiceId(null);
@@ -858,15 +913,20 @@ const Invoices = () => {
                 <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 sm:px-6">
                   <div className="flex items-center gap-1">
                     {[
-                      { key: INVOICE_STATUS.DRAFT,      next: INVOICE_STATUS.GENERATED },
-                      { key: INVOICE_STATUS.GENERATED,  next: INVOICE_STATUS.SENT },
-                      { key: INVOICE_STATUS.SENT,       next: INVOICE_STATUS.PAID },
-                      { key: INVOICE_STATUS.PAID,       next: null },
+                      { key: INVOICE_STATUS.DRAFT, next: INVOICE_STATUS.GENERATED },
+                      { key: INVOICE_STATUS.GENERATED, next: INVOICE_STATUS.SENT },
+                      { key: INVOICE_STATUS.SENT, next: INVOICE_STATUS.PAID },
+                      { key: INVOICE_STATUS.PAID, next: null },
                     ].map(({ key, next }, idx, arr) => {
-                      const ORDER = [INVOICE_STATUS.DRAFT, INVOICE_STATUS.GENERATED, INVOICE_STATUS.SENT, INVOICE_STATUS.PAID];
+                      const ORDER = [
+                        INVOICE_STATUS.DRAFT,
+                        INVOICE_STATUS.GENERATED,
+                        INVOICE_STATUS.SENT,
+                        INVOICE_STATUS.PAID,
+                      ];
                       const currentIdx = ORDER.indexOf(selectedInvoice.status);
-                      const stepIdx   = ORDER.indexOf(key);
-                      const reached   = currentIdx >= stepIdx;
+                      const stepIdx = ORDER.indexOf(key);
+                      const reached = currentIdx >= stepIdx;
                       const isCurrent = selectedInvoice.status === key;
                       const canAdvance = next && currentIdx === stepIdx; // only one step forward
                       return (
@@ -877,10 +937,21 @@ const Invoices = () => {
                             onClick={async () => {
                               if (!canAdvance) return;
                               try {
-                                await updateInvoiceMutation.mutateAsync({ id: selectedInvoice.id, status: next });
-                                showToast({ title: 'Status actualizat', description: `Factura a trecut la "${STATUS_META[next]?.label}".`, type: 'success' });
+                                await updateInvoiceMutation.mutateAsync({
+                                  id: selectedInvoice.id,
+                                  status: next,
+                                });
+                                showToast({
+                                  title: 'Status actualizat',
+                                  description: `Factura a trecut la "${STATUS_META[next]?.label}".`,
+                                  type: 'success',
+                                });
                               } catch (err) {
-                                showToast({ title: 'Eroare', description: err.message || 'Nu s-a putut actualiza statusul.', type: 'error' });
+                                showToast({
+                                  title: 'Eroare',
+                                  description: err.message || 'Nu s-a putut actualiza statusul.',
+                                  type: 'error',
+                                });
                               }
                             }}
                             className={[
@@ -892,7 +963,11 @@ const Invoices = () => {
                                 : 'bg-white text-gray-400 border-gray-200',
                               canAdvance ? 'cursor-pointer hover:opacity-80' : 'cursor-default',
                             ].join(' ')}
-                            title={canAdvance ? `Avansează la "${STATUS_META[next]?.label}"` : STATUS_META[key]?.label}
+                            title={
+                              canAdvance
+                                ? `Avansează la "${STATUS_META[next]?.label}"`
+                                : STATUS_META[key]?.label
+                            }
                           >
                             {STATUS_META[key]?.label}
                           </button>
@@ -964,20 +1039,25 @@ const Invoices = () => {
                 </div>
               ) : selectedInvoice ? (
                 <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
-
                   {/* ── Two-column info grid ── */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {/* Invoice metadata */}
                     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Factură</h3>
+                      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Factură
+                      </h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-500">Număr</span>
-                          <span className="font-medium text-gray-900">{selectedInvoice.invoiceNumber}</span>
+                          <span className="font-medium text-gray-900">
+                            {selectedInvoice.invoiceNumber}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Emitere</span>
-                          <span className="text-gray-900">{formatDate(selectedInvoice.issueDate)}</span>
+                          <span className="text-gray-900">
+                            {formatDate(selectedInvoice.issueDate)}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Scadență</span>
@@ -985,23 +1065,31 @@ const Invoices = () => {
                             <input
                               type="date"
                               value={editForm.dueDate}
-                              onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                              onChange={(e) =>
+                                setEditForm({ ...editForm, dueDate: e.target.value })
+                              }
                               className="rounded border border-gray-300 px-2 py-0.5 text-sm"
                             />
                           ) : (
-                            <span className="text-gray-900">{formatDate(selectedInvoice.dueDate)}</span>
+                            <span className="text-gray-900">
+                              {formatDate(selectedInvoice.dueDate)}
+                            </span>
                           )}
                         </div>
                         {selectedInvoice.sentAt && (
                           <div className="flex justify-between">
                             <span className="text-gray-500">Trimisă</span>
-                            <span className="text-gray-900">{formatDate(selectedInvoice.sentAt)}</span>
+                            <span className="text-gray-900">
+                              {formatDate(selectedInvoice.sentAt)}
+                            </span>
                           </div>
                         )}
                         {selectedInvoice.paidAt && (
                           <div className="flex justify-between">
                             <span className="text-gray-500">Plătită</span>
-                            <span className="text-gray-900">{formatDate(selectedInvoice.paidAt)}</span>
+                            <span className="text-gray-900">
+                              {formatDate(selectedInvoice.paidAt)}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -1010,11 +1098,15 @@ const Invoices = () => {
                     {/* Client info */}
                     {selectedInvoice.client ? (
                       <div className="rounded-lg border border-gray-200 bg-white p-4">
-                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Client</h3>
+                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          Client
+                        </h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-500">Nume</span>
-                            <span className="font-medium text-gray-900 text-right">{getClientName(selectedInvoice)}</span>
+                            <span className="font-medium text-gray-900 text-right">
+                              {getClientName(selectedInvoice)}
+                            </span>
                           </div>
                           {selectedInvoice.client.phone && (
                             <div className="flex justify-between">
@@ -1025,13 +1117,17 @@ const Invoices = () => {
                           {selectedInvoice.client.email && (
                             <div className="flex justify-between">
                               <span className="text-gray-500">Email</span>
-                              <span className="text-gray-900 truncate ml-4 text-right">{selectedInvoice.client.email}</span>
+                              <span className="text-gray-900 truncate ml-4 text-right">
+                                {selectedInvoice.client.email}
+                              </span>
                             </div>
                           )}
                           {selectedInvoice.client.vatNumber && (
                             <div className="flex justify-between">
                               <span className="text-gray-500">CUI</span>
-                              <span className="text-gray-900">{selectedInvoice.client.vatNumber}</span>
+                              <span className="text-gray-900">
+                                {selectedInvoice.client.vatNumber}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -1061,61 +1157,95 @@ const Invoices = () => {
                       /* Edit mode - unchanged hardware/labor split form */
                       <div className="space-y-3">
                         {editForm.lineItems.map((item, index) => {
-                          const hwTotal = (Number(item.hardwareQuantity) || 0) * (Number(item.hardwarePrice) || 0);
-                          const laborTotal = (Number(item.laborQuantity) || 0) * (Number(item.laborPrice) || 0);
+                          const hwTotal =
+                            (Number(item.hardwareQuantity) || 0) *
+                            (Number(item.hardwarePrice) || 0);
+                          const laborTotal =
+                            (Number(item.laborQuantity) || 0) * (Number(item.laborPrice) || 0);
                           const itemTotal = hwTotal + laborTotal;
                           return (
-                            <div key={index} className="rounded-lg border border-gray-200 p-3 space-y-2">
+                            <div
+                              key={index}
+                              className="rounded-lg border border-gray-200 p-3 space-y-2"
+                            >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 space-y-2">
                                   {/* Name */}
                                   <div>
-                                    <label className="mb-1 block text-xs font-medium text-gray-700">Denumire *</label>
+                                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                                      Denumire *
+                                    </label>
                                     <input
                                       type="text"
                                       value={item.name}
-                                      onChange={(e) => handleLineItemChange(index, 'name', e.target.value)}
+                                      onChange={(e) =>
+                                        handleLineItemChange(index, 'name', e.target.value)
+                                      }
                                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                       placeholder="Nume articol"
                                     />
                                   </div>
                                   {/* Description */}
                                   <div>
-                                    <label className="mb-1 block text-xs font-medium text-gray-700">Descriere</label>
+                                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                                      Descriere
+                                    </label>
                                     <input
                                       type="text"
                                       value={item.description}
-                                      onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
+                                      onChange={(e) =>
+                                        handleLineItemChange(index, 'description', e.target.value)
+                                      }
                                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                       placeholder="Descriere opțională"
                                     />
                                   </div>
                                   {/* Hardware + Labor split - same layout as service orders */}
-                                  <div className={`grid gap-3 ${hasAssets ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                  <div
+                                    className={`grid gap-3 ${hasAssets ? 'grid-cols-2' : 'grid-cols-1'}`}
+                                  >
                                     {/* Hardware - only for orgs that use assets */}
                                     {hasAssets && (
                                       <div className="rounded-lg border border-blue-200 bg-white p-2.5">
-                                        <h4 className="mb-2 text-xs font-semibold text-blue-900">Piese / Materiale</h4>
+                                        <h4 className="mb-2 text-xs font-semibold text-blue-900">
+                                          Piese / Materiale
+                                        </h4>
                                         <div className="grid grid-cols-2 gap-2">
                                           <div>
-                                            <label className="mb-1 block text-xs text-gray-600">Cantitate</label>
+                                            <label className="mb-1 block text-xs text-gray-600">
+                                              Cantitate
+                                            </label>
                                             <input
                                               type="number"
                                               min="0"
                                               step="1"
                                               value={item.hardwareQuantity}
-                                              onChange={(e) => handleLineItemChange(index, 'hardwareQuantity', e.target.value)}
+                                              onChange={(e) =>
+                                                handleLineItemChange(
+                                                  index,
+                                                  'hardwareQuantity',
+                                                  e.target.value
+                                                )
+                                              }
                                               className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
                                             />
                                           </div>
                                           <div>
-                                            <label className="mb-1 block text-xs text-gray-600">Preț/buc (RON)</label>
+                                            <label className="mb-1 block text-xs text-gray-600">
+                                              Preț/buc (RON)
+                                            </label>
                                             <input
                                               type="number"
                                               min="0"
                                               step="0.01"
                                               value={item.hardwarePrice}
-                                              onChange={(e) => handleLineItemChange(index, 'hardwarePrice', e.target.value)}
+                                              onChange={(e) =>
+                                                handleLineItemChange(
+                                                  index,
+                                                  'hardwarePrice',
+                                                  e.target.value
+                                                )
+                                              }
                                               className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
                                               placeholder="0.00"
                                             />
@@ -1128,27 +1258,45 @@ const Invoices = () => {
                                     )}
                                     {/* Labor */}
                                     <div className="rounded-lg border border-green-200 bg-white p-2.5">
-                                      <h4 className="mb-2 text-xs font-semibold text-green-900">Manoperă</h4>
+                                      <h4 className="mb-2 text-xs font-semibold text-green-900">
+                                        Manoperă
+                                      </h4>
                                       <div className="grid grid-cols-2 gap-2">
                                         <div>
-                                          <label className="mb-1 block text-xs text-gray-600">Ore / Cantitate</label>
+                                          <label className="mb-1 block text-xs text-gray-600">
+                                            Ore / Cantitate
+                                          </label>
                                           <input
                                             type="number"
                                             min="0"
                                             step="0.5"
                                             value={item.laborQuantity}
-                                            onChange={(e) => handleLineItemChange(index, 'laborQuantity', e.target.value)}
+                                            onChange={(e) =>
+                                              handleLineItemChange(
+                                                index,
+                                                'laborQuantity',
+                                                e.target.value
+                                              )
+                                            }
                                             className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
                                           />
                                         </div>
                                         <div>
-                                          <label className="mb-1 block text-xs text-gray-600">Preț/oră (RON)</label>
+                                          <label className="mb-1 block text-xs text-gray-600">
+                                            Preț/oră (RON)
+                                          </label>
                                           <input
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             value={item.laborPrice}
-                                            onChange={(e) => handleLineItemChange(index, 'laborPrice', e.target.value)}
+                                            onChange={(e) =>
+                                              handleLineItemChange(
+                                                index,
+                                                'laborPrice',
+                                                e.target.value
+                                              )
+                                            }
                                             className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
                                             placeholder="0.00"
                                           />
@@ -1184,27 +1332,38 @@ const Invoices = () => {
                       /* View mode - card-based list */
                       <div className="space-y-2">
                         {selectedInvoice.lineItems?.map((item) => {
-                          const hwAmt  = (item.hardwareQuantity || 0) * (item.hardwarePrice || 0);
+                          const hwAmt = (item.hardwareQuantity || 0) * (item.hardwarePrice || 0);
                           const lbrAmt = (item.laborQuantity || 0) * (item.laborPrice || 0);
                           return (
-                            <div key={item.id} className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+                            <div
+                              key={item.id}
+                              className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
+                            >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium text-gray-900">{item.name}</p>
                                   {item.description && (
-                                    <p className="mt-0.5 text-xs text-gray-500">{item.description}</p>
+                                    <p className="mt-0.5 text-xs text-gray-500">
+                                      {item.description}
+                                    </p>
                                   )}
                                   <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                                     {item.hardwareQuantity > 0 && (
                                       <span>
-                                        Piese: {item.hardwareQuantity} {item.hardwareUnit || 'buc'} &times; {formatCurrency(item.hardwarePrice)}
-                                        {' '}<span className="text-blue-600">= {formatCurrency(hwAmt)}</span>
+                                        Piese: {item.hardwareQuantity} {item.hardwareUnit || 'buc'}{' '}
+                                        &times; {formatCurrency(item.hardwarePrice)}{' '}
+                                        <span className="text-blue-600">
+                                          = {formatCurrency(hwAmt)}
+                                        </span>
                                       </span>
                                     )}
                                     {item.laborQuantity > 0 && (
                                       <span>
-                                        Manoperă: {item.laborQuantity} {item.laborUnit || 'h'} &times; {formatCurrency(item.laborPrice)}
-                                        {' '}<span className="text-green-600">= {formatCurrency(lbrAmt)}</span>
+                                        Manoperă: {item.laborQuantity} {item.laborUnit || 'h'}{' '}
+                                        &times; {formatCurrency(item.laborPrice)}{' '}
+                                        <span className="text-green-600">
+                                          = {formatCurrency(lbrAmt)}
+                                        </span>
                                       </span>
                                     )}
                                   </div>
@@ -1225,56 +1384,78 @@ const Invoices = () => {
 
                   {/* ── Totals card ── */}
                   <div className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Sumar</h3>
+                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Sumar
+                    </h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Subtotal</span>
                         <span className="text-gray-900">
-                          {formatCurrency(isEditing && calculatedTotals ? calculatedTotals.subtotal : selectedInvoice.subtotal)}
+                          {formatCurrency(
+                            isEditing && calculatedTotals
+                              ? calculatedTotals.subtotal
+                              : selectedInvoice.subtotal
+                          )}
                         </span>
                       </div>
                       {/* Loyalty discount - always show when editing if client has a tier or invoice already has one */}
-                      {isEditing && (selectedInvoice.loyaltyDiscount > 0 || loyaltyDiscountPercent > 0) && (
-                        <div className="flex items-center justify-between">
-                          <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={
-                                editApplyLoyaltyDiscount !== null
-                                  ? editApplyLoyaltyDiscount
-                                  : Number(selectedInvoice.loyaltyDiscount || 0) > 0
-                              }
-                              onChange={(e) => setEditApplyLoyaltyDiscount(e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                            />
+                      {isEditing &&
+                        (selectedInvoice.loyaltyDiscount > 0 || loyaltyDiscountPercent > 0) && (
+                          <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  editApplyLoyaltyDiscount !== null
+                                    ? editApplyLoyaltyDiscount
+                                    : Number(selectedInvoice.loyaltyDiscount || 0) > 0
+                                }
+                                onChange={(e) => setEditApplyLoyaltyDiscount(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                              />
+                              <span className="text-green-700">
+                                Reducere fidelitate
+                                {loyaltyAccount?.currentTier &&
+                                  ` (${loyaltyAccount.currentTier} -${loyaltyDiscountPercent}%)`}
+                                :
+                              </span>
+                            </label>
                             <span className="text-green-700">
-                              Reducere fidelitate
-                              {loyaltyAccount?.currentTier && ` (${loyaltyAccount.currentTier} -${loyaltyDiscountPercent}%)`}:
+                              -{formatCurrency(calculatedTotals?.loyaltyDiscount || 0)}
                             </span>
-                          </label>
-                          <span className="text-green-700">
-                            -{formatCurrency(calculatedTotals?.loyaltyDiscount || 0)}
-                          </span>
-                        </div>
-                      )}
+                          </div>
+                        )}
                       {!isEditing && selectedInvoice.loyaltyDiscount > 0 && (
                         <div className="flex justify-between">
                           <span className="text-green-700">
-                            Reducere fidelitate {selectedInvoice.loyaltyTierAtTime && `(${selectedInvoice.loyaltyTierAtTime})`}:
+                            Reducere fidelitate{' '}
+                            {selectedInvoice.loyaltyTierAtTime &&
+                              `(${selectedInvoice.loyaltyTierAtTime})`}
+                            :
                           </span>
-                          <span className="text-green-700">-{formatCurrency(selectedInvoice.loyaltyDiscount)}</span>
+                          <span className="text-green-700">
+                            -{formatCurrency(selectedInvoice.loyaltyDiscount)}
+                          </span>
                         </div>
                       )}
                       <div className="flex justify-between">
                         <span className="text-gray-600">TVA</span>
                         <span className="text-gray-900">
-                          {formatCurrency(isEditing && calculatedTotals ? calculatedTotals.tax : selectedInvoice.tax)}
+                          {formatCurrency(
+                            isEditing && calculatedTotals
+                              ? calculatedTotals.tax
+                              : selectedInvoice.tax
+                          )}
                         </span>
                       </div>
                       <div className="flex justify-between rounded-lg bg-gray-900 px-3 py-2.5 text-base font-semibold text-white">
                         <span>Total factură</span>
                         <span>
-                          {formatCurrency(isEditing && calculatedTotals ? calculatedTotals.total : selectedInvoice.total)}
+                          {formatCurrency(
+                            isEditing && calculatedTotals
+                              ? calculatedTotals.total
+                              : selectedInvoice.total
+                          )}
                         </span>
                       </div>
                     </div>
@@ -1282,24 +1463,30 @@ const Invoices = () => {
 
                   {/* ── Payment Status ── */}
                   <div className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Status Plată</h3>
+                    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Status Plată
+                    </h3>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Status:</span>
                         <span
                           className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                            selectedInvoice.paymentStatus === 'paid' || selectedInvoice.paymentStatus === 'PAID'
+                            selectedInvoice.paymentStatus === 'paid' ||
+                            selectedInvoice.paymentStatus === 'PAID'
                               ? 'bg-green-50 text-green-700 border-green-200'
-                              : selectedInvoice.paymentStatus === 'partial' || selectedInvoice.paymentStatus === 'PARTIAL'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-gray-50 text-gray-700 border-gray-200'
+                              : selectedInvoice.paymentStatus === 'partial' ||
+                                  selectedInvoice.paymentStatus === 'PARTIAL'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-gray-50 text-gray-700 border-gray-200'
                           }`}
                         >
-                          {selectedInvoice.paymentStatus === 'paid' || selectedInvoice.paymentStatus === 'PAID'
+                          {selectedInvoice.paymentStatus === 'paid' ||
+                          selectedInvoice.paymentStatus === 'PAID'
                             ? 'Plătită'
-                            : selectedInvoice.paymentStatus === 'partial' || selectedInvoice.paymentStatus === 'PARTIAL'
-                            ? 'Plată parțială'
-                            : 'Neplătită'}
+                            : selectedInvoice.paymentStatus === 'partial' ||
+                                selectedInvoice.paymentStatus === 'PARTIAL'
+                              ? 'Plată parțială'
+                              : 'Neplătită'}
                         </span>
                       </div>
                       <div className="space-y-2 rounded-lg bg-gray-50 p-3 text-sm">
@@ -1352,7 +1539,9 @@ const Invoices = () => {
 
                   {/* ── Notes - always visible ── */}
                   <div className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Observații</h3>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Observații
+                    </h3>
                     {isEditing ? (
                       <textarea
                         value={editForm.notes}
@@ -1362,7 +1551,9 @@ const Invoices = () => {
                         placeholder="Adaugă observații..."
                       />
                     ) : selectedInvoice.notes ? (
-                      <p className="whitespace-pre-wrap text-sm text-gray-600">{selectedInvoice.notes}</p>
+                      <p className="whitespace-pre-wrap text-sm text-gray-600">
+                        {selectedInvoice.notes}
+                      </p>
                     ) : (
                       <p className="text-sm text-gray-400 italic">Nicio observație adăugată.</p>
                     )}
@@ -1371,7 +1562,9 @@ const Invoices = () => {
                   {/* ── Edit-mode status select ── */}
                   {isEditing && (
                     <div className="rounded-lg border border-gray-200 bg-white p-4">
-                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">Status factură</label>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Status factură
+                      </label>
                       <select
                         value={editForm.status}
                         onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -1389,7 +1582,9 @@ const Invoices = () => {
                   {/* ── PDF Preview ── */}
                   {selectedInvoice.pdfUrl && (
                     <div className="rounded-lg border border-gray-200 bg-white p-4">
-                      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Previzualizare PDF</h3>
+                      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Previzualizare PDF
+                      </h3>
                       <iframe
                         key={`pdf-${selectedInvoice.id}-${selectedInvoice.updatedAt || Date.now()}`}
                         title={`Factură ${selectedInvoice.invoiceNumber}`}

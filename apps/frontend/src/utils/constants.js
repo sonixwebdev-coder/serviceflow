@@ -2,9 +2,9 @@ export const USER_ROLES = {
   ADMIN: 'admin',
   MANAGER: 'manager',
   TEHNICIAN: 'technician',
-  TECHNICIAN: 'technician',  // Alias for backward compatibility (same value, won't duplicate in Object.values)
+  TECHNICIAN: 'technician', // Alias for backward compatibility (same value, won't duplicate in Object.values)
   VANZARI: 'sales',
-  SALES: 'sales',            // Alias for backward compatibility (same value, won't duplicate in Object.values)
+  SALES: 'sales', // Alias for backward compatibility (same value, won't duplicate in Object.values)
 };
 
 export const TASK_STATUS = {

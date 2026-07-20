@@ -10,7 +10,7 @@ const formatCurrency = (value) => {
   }).format(value || 0);
 };
 
-export default function RevenueCard({ data, dateRange, isLoading }) {
+export default function RevenueCard({ data, isLoading }) {
   if (isLoading) {
     return <RevenueCardSkeleton />;
   }
@@ -37,9 +37,12 @@ export default function RevenueCard({ data, dateRange, isLoading }) {
   };
 
   // Calculate progress bar width (capped at 150%)
-  const progressPercent = previousPeriodRevenue > 0
-    ? Math.min((totalRevenue / previousPeriodRevenue) * 100, 150)
-    : totalRevenue > 0 ? 100 : 0;
+  const progressPercent =
+    previousPeriodRevenue > 0
+      ? Math.min((totalRevenue / previousPeriodRevenue) * 100, 150)
+      : totalRevenue > 0
+        ? 100
+        : 0;
 
   return (
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4 sm:p-5 relative overflow-hidden h-full">
@@ -63,14 +66,15 @@ export default function RevenueCard({ data, dateRange, isLoading }) {
         {/* Change indicator */}
         <div className="flex items-center gap-2 mb-3">
           {revenueChange !== null && revenueChange !== undefined && (
-            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${getTrendColor()}`}>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${getTrendColor()}`}
+            >
               {getTrendIcon()}
-              {revenueChange > 0 ? '+' : ''}{revenueChange.toFixed(1)}%
+              {revenueChange > 0 ? '+' : ''}
+              {revenueChange.toFixed(1)}%
             </span>
           )}
-          <span className="text-sm text-gray-600">
-            vs. perioada anterioara
-          </span>
+          <span className="text-sm text-gray-600">vs. perioada anterioara</span>
         </div>
 
         {/* Progress bar comparing to previous period */}
@@ -100,7 +104,9 @@ export default function RevenueCard({ data, dateRange, isLoading }) {
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <span>Anterior:</span>
-            <span className="font-medium text-gray-700">{formatCurrency(previousPeriodRevenue)}</span>
+            <span className="font-medium text-gray-700">
+              {formatCurrency(previousPeriodRevenue)}
+            </span>
           </div>
         </div>
       </div>

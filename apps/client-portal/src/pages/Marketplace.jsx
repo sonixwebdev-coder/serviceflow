@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, X, SlidersHorizontal, Building2, MapPin } from 'lucide-react';
-import { useMarketplaceOrganizations, useMarketplaceFilters, useMarketplaceStats } from '@/hooks/useMarketplace';
+import {
+  useMarketplaceOrganizations,
+  useMarketplaceFilters,
+  useMarketplaceStats,
+} from '@/hooks/useMarketplace';
 import OrganizationCard from '@/components/marketplace/OrganizationCard';
 import Button from '@/components/ui/Button';
 import { SECTORS } from '@/utils/sectors';
@@ -138,7 +142,8 @@ export default function Marketplace({ basePath = '/marketplace' }) {
               <div className="mt-6 flex items-center gap-6 text-sm text-primary-200">
                 <span className="flex items-center gap-1.5">
                   <Building2 className="h-4 w-4" />
-                  {stats.organizationCount} {stats.organizationCount === 1 ? 'companie' : 'companii'}
+                  {stats.organizationCount}{' '}
+                  {stats.organizationCount === 1 ? 'companie' : 'companii'}
                 </span>
                 {stats.cityCount > 0 && (
                   <span className="flex items-center gap-1.5">
@@ -156,12 +161,13 @@ export default function Marketplace({ basePath = '/marketplace' }) {
         {/* Browse by Category - always visible */}
         <section className="mb-10">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Categorii
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900">Categorii</h2>
             {sector && (
               <button
-                onClick={() => { setSector(''); setPage(1); }}
+                onClick={() => {
+                  setSector('');
+                  setPage(1);
+                }}
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
               >
                 Vezi toate
@@ -174,38 +180,37 @@ export default function Marketplace({ basePath = '/marketplace' }) {
               const isActive = sector === s.key;
               const hasOrgs = s.count > 0;
 
-              let cardClass = 'relative text-left p-5 rounded-2xl border-2 transition-all duration-200 ';
+              let cardClass =
+                'relative text-left p-5 rounded-2xl border-2 transition-all duration-200 ';
               if (isActive) {
                 cardClass += `${s.lightBg} ${s.borderColor} shadow-md`;
               } else if (hasOrgs) {
-                cardClass += 'bg-white border-gray-200 hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300';
+                cardClass +=
+                  'bg-white border-gray-200 hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300';
               } else {
                 cardClass += 'bg-gray-50 border-gray-100 opacity-60';
               }
 
               return (
-                <button
-                  key={s.key}
-                  onClick={() => handleSectorChange(s.key)}
-                  className={cardClass}
-                >
+                <button key={s.key} onClick={() => handleSectorChange(s.key)} className={cardClass}>
                   <div className="flex items-start gap-4">
-                    <div className={`h-12 w-12 rounded-xl ${s.iconBg} flex items-center justify-center flex-shrink-0`}>
+                    <div
+                      className={`h-12 w-12 rounded-xl ${s.iconBg} flex items-center justify-center flex-shrink-0`}
+                    >
                       <Icon className={`h-6 w-6 ${s.iconColor}`} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-gray-900 text-sm">{s.label}</h3>
-                        {isActive && (
-                          <span className={`h-2 w-2 rounded-full ${s.iconBg}`} />
-                        )}
+                        {isActive && <span className={`h-2 w-2 rounded-full ${s.iconBg}`} />}
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{s.description}</p>
-                      <p className={`text-xs font-medium mt-2 ${hasOrgs ? s.iconColor : 'text-gray-400'}`}>
+                      <p
+                        className={`text-xs font-medium mt-2 ${hasOrgs ? s.iconColor : 'text-gray-400'}`}
+                      >
                         {hasOrgs
                           ? `${s.count} ${s.count === 1 ? 'companie' : 'companii'}`
-                          : 'In curand'
-                        }
+                          : 'In curand'}
                       </p>
                     </div>
                   </div>
@@ -260,7 +265,10 @@ export default function Marketplace({ basePath = '/marketplace' }) {
 
             {sector && (
               <button
-                onClick={() => { setSector(''); setPage(1); }}
+                onClick={() => {
+                  setSector('');
+                  setPage(1);
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 hover:bg-primary-200 transition-colors"
               >
                 {SECTORS[sector]?.label || sector}
@@ -269,7 +277,10 @@ export default function Marketplace({ basePath = '/marketplace' }) {
             )}
             {city && (
               <button
-                onClick={() => { setCity(''); setPage(1); }}
+                onClick={() => {
+                  setCity('');
+                  setPage(1);
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 hover:bg-primary-200 transition-colors"
               >
                 <MapPin className="h-3 w-3" />
@@ -279,7 +290,11 @@ export default function Marketplace({ basePath = '/marketplace' }) {
             )}
             {debouncedSearch && (
               <button
-                onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }}
+                onClick={() => {
+                  setSearch('');
+                  setDebouncedSearch('');
+                  setPage(1);
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 hover:bg-primary-200 transition-colors"
               >
                 "{debouncedSearch}"
@@ -332,8 +347,7 @@ export default function Marketplace({ basePath = '/marketplace' }) {
               <p className="mt-2 text-gray-500 max-w-sm mx-auto">
                 {hasActiveFilters
                   ? 'Incearca sa modifici termenul de cautare sau sa stergi filtrele aplicate.'
-                  : 'Momentan nu exista companii inregistrate. Revino in curand!'
-                }
+                  : 'Momentan nu exista companii inregistrate. Revino in curand!'}
               </p>
               {hasActiveFilters && (
                 <button

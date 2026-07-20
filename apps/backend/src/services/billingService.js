@@ -6,8 +6,17 @@ const { getSettings } = require('./platformSettingsService');
 const { getAllPlanLimits } = require('../utils/planLimits');
 const logger = require('../utils/logger');
 const { sendOrgSuspendedEmail, sendPaymentRequiredEmail } = require('./email/emailService');
-const { getRedisClient, isAvailable: isRedisAvailable } = require('../lib/redis');
 const cache = require('../utils/cache');
+const { invalidateOrganizationAuthCache } = require('./billing/authCache');
+const {
+  applyDisplayPrices,
+  applyStripeSubscription,
+  applyUpcomingInvoice,
+  applyUsageAndLimits,
+  buildSubscriptionUpdateData,
+  createBillingStatus,
+  getOrganizationStatus,
+} = require('./billing/billingDomain');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -136,40 +145,18 @@ const createPortalSession = async (org) => {
  */
 const getBillingStatus = async (org) => {
   const stripe = await getStripe();
-
-  const result = {
-    plan: org.plan,
-    status: org.status,
-    trialEndsAt: org.trialEndsAt,
-    subscriptionId: org.subscriptionId,
-    subscriptionEndsAt: org.subscriptionEndsAt,
-    hasStripeCustomer: Boolean(org.stripeCustomerId),
-    planOverride: org.planOverride || false,
-    planOverrideReason: org.planOverrideReason || null,
-    planOverrideAt: org.planOverrideAt || null,
-    nextInvoice: null,
-  };
+  const result = createBillingStatus(org);
 
   if (stripe && org.stripeCustomerId && org.subscriptionId) {
     try {
       const subscription = await stripe.subscriptions.retrieve(org.subscriptionId);
-      result.stripeStatus = subscription.status;
-      result.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
-      result.cancelAtPeriodEnd = subscription.cancel_at_period_end;
-
-      if (subscription.status === 'trialing') {
-        result.trialEnd = new Date(subscription.trial_end * 1000);
-      }
+      applyStripeSubscription(result, subscription);
 
       try {
         const upcoming = await stripe.invoices.retrieveUpcoming({
           customer: org.stripeCustomerId,
         });
-        result.nextInvoice = {
-          amount: upcoming.amount_due / 100,
-          currency: upcoming.currency,
-          date: new Date(upcoming.next_payment_attempt * 1000),
-        };
+        applyUpcomingInvoice(result, upcoming);
       } catch {
         // No upcoming invoice
       }
@@ -185,43 +172,11 @@ const getBillingStatus = async (org) => {
   ]);
 
   const limits = getAllPlanLimits(org.plan);
-
-  const toMax = (v) => (v === Infinity ? -1 : v);
-
-  result.usage = {
-    users: { current: userCount, max: toMax(limits.maxUsers) },
-    clients: { current: clientCount, max: toMax(limits.maxClients) },
-    appointments: { current: appointmentCount, max: toMax(limits.maxAppointments) },
-  };
-
-  result.planLimits = {
-    ...limits,
-    maxLocations: toMax(limits.maxLocations),
-    maxUsers: toMax(limits.maxUsers),
-    maxClients: toMax(limits.maxClients),
-    maxAppointments: toMax(limits.maxAppointments),
-    maxWebsitePages: toMax(limits.maxWebsitePages),
-  };
+  applyUsageAndLimits(result, { userCount, clientCount, appointmentCount }, limits);
 
   // Dynamic display prices from admin settings (convert Decimal to plain numbers)
   const settings = await getSettings();
-  if (settings) {
-    const toNum = (v) => (v != null ? Number(v) : null);
-    result.displayPrices = {
-      STARTER: {
-        monthly: toNum(settings.displayPriceStarterMonthly),
-        annual: toNum(settings.displayPriceStarterAnnual),
-      },
-      PROFESSIONAL: {
-        monthly: toNum(settings.displayPriceProfessionalMonthly),
-        annual: toNum(settings.displayPriceProfessionalAnnual),
-      },
-      ENTERPRISE: {
-        monthly: toNum(settings.displayPriceEnterpriseMonthly),
-        annual: toNum(settings.displayPriceEnterpriseAnnual),
-      },
-    };
-  }
+  applyDisplayPrices(result, settings);
 
   return result;
 };
@@ -274,48 +229,9 @@ const syncSubscription = async (stripeSubscription) => {
     return;
   }
 
-  let orgStatus;
-  switch (stripeSubscription.status) {
-    case 'trialing':
-      orgStatus = 'TRIAL';
-      break;
-    case 'active':
-      orgStatus = 'ACTIVE';
-      break;
-    case 'past_due':
-      orgStatus = 'PAYMENT_REQUIRED';
-      break;
-    case 'canceled':
-    case 'unpaid':
-      orgStatus = 'CANCELLED';
-      break;
-    default:
-      orgStatus = 'ACTIVE';
-  }
-
+  const orgStatus = getOrganizationStatus(stripeSubscription.status);
   const limits = getAllPlanLimits(plan);
-
-  const updateData = {
-    plan,
-    status: orgStatus,
-    subscriptionId: stripeSubscription.id,
-    subscriptionEndsAt: stripeSubscription.current_period_end
-      ? new Date(stripeSubscription.current_period_end * 1000)
-      : null,
-    maxUsers: limits.maxUsers === Infinity ? 999999 : limits.maxUsers,
-    maxClients: limits.maxClients === Infinity ? 999999 : limits.maxClients,
-    maxAppointments: limits.maxAppointments === Infinity ? 999999 : limits.maxAppointments,
-  };
-
-  if (stripeSubscription.trial_end) {
-    updateData.trialEndsAt = new Date(stripeSubscription.trial_end * 1000);
-  }
-
-  // Store billing interval and subscription start date
-  const interval = stripeSubscription.items?.data?.[0]?.price?.recurring?.interval;
-  if (interval) {
-    updateData.billingInterval = interval; // "month" or "year"
-  }
+  const updateData = buildSubscriptionUpdateData(stripeSubscription, plan, limits);
 
   await prisma.organization.update({
     where: { id: orgId },
@@ -323,11 +239,7 @@ const syncSubscription = async (stripeSubscription) => {
   });
 
   // Invalidate auth cache for all users in the org so they pick up the new status immediately
-  const orgUsers = await prisma.user.findMany({
-    where: { organizationId: orgId },
-    select: { id: true },
-  });
-  await Promise.all(orgUsers.map((u) => cache.del(`auth:${u.id}`)));
+  await invalidateOrganizationAuthCache(prisma, cache, orgId);
 
   // Cancel the previous subscription if this is an upgrade/downgrade
   if (previousSubscriptionId && previousSubscriptionId !== stripeSubscription.id) {
@@ -382,11 +294,7 @@ const handleSubscriptionDeleted = async (stripeSubscription) => {
   });
 
   // Invalidate auth cache for all users in the org
-  const orgUsers = await prisma.user.findMany({
-    where: { organizationId: orgId },
-    select: { id: true },
-  });
-  await Promise.all(orgUsers.map((u) => cache.del(`auth:${u.id}`)));
+  await invalidateOrganizationAuthCache(prisma, cache, orgId);
 
   logger.info('handleSubscriptionDeleted: set PAYMENT_REQUIRED', { orgId });
 };
@@ -417,21 +325,12 @@ const handlePaymentFailed = async (invoice) => {
     select: { email: true, firstName: true, lastName: true },
   });
 
-  // Helper to invalidate auth cache for all org users after status change
-  const invalidateOrgAuthCache = async () => {
-    const orgUsers = await prisma.user.findMany({
-      where: { organizationId: org.id },
-      select: { id: true },
-    });
-    await Promise.all(orgUsers.map((u) => cache.del(`auth:${u.id}`)));
-  };
-
   if (invoice.attempt_count >= 3) {
     await prisma.organization.update({
       where: { id: org.id },
       data: { status: 'SUSPENDED' },
     });
-    await invalidateOrgAuthCache();
+    await invalidateOrganizationAuthCache(prisma, cache, org.id);
 
     logger.warn('handlePaymentFailed: organization suspended after failed payments', {
       orgId: org.id,
@@ -452,7 +351,7 @@ const handlePaymentFailed = async (invoice) => {
       where: { id: org.id },
       data: { status: 'PAYMENT_REQUIRED' },
     });
-    await invalidateOrgAuthCache();
+    await invalidateOrganizationAuthCache(prisma, cache, org.id);
 
     logger.warn('handlePaymentFailed: set PAYMENT_REQUIRED', {
       orgId: org.id,
@@ -483,7 +382,8 @@ const processRefund = async (organizationId) => {
     throw new AppError('Rambursarea este disponibila doar pentru planurile anuale', 400);
   }
 
-  const daysSinceStart = (Date.now() - new Date(org.subscriptionStartedAt).getTime()) / (1000 * 60 * 60 * 24);
+  const daysSinceStart =
+    (Date.now() - new Date(org.subscriptionStartedAt).getTime()) / (1000 * 60 * 60 * 24);
   if (daysSinceStart > 3) {
     throw new AppError('Perioada de rambursare (3 zile) a expirat', 400);
   }

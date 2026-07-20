@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
@@ -57,9 +57,17 @@ export default function BookingPage() {
     vehicle: { make: '', model: '', year: '', plateNumber: '' },
     asset: { name: '', identifier: '', type: '', manufacturer: '', model: '' },
     device: {
-      deviceType: '', brand: '', model: '', serialNumber: '', imei: '',
-      condition: '', storageCapacity: '', color: '', password: '',
-      accessories: '', problemDescription: '',
+      deviceType: '',
+      brand: '',
+      model: '',
+      serialNumber: '',
+      imei: '',
+      condition: '',
+      storageCapacity: '',
+      color: '',
+      password: '',
+      accessories: '',
+      problemDescription: '',
     },
     appointment: { title: 'Programare online', description: '' },
     createAccount: false,
@@ -68,7 +76,11 @@ export default function BookingPage() {
   const [bookingResult, setBookingResult] = useState(null);
 
   // Fetch organization info
-  const { data: organization, isLoading: orgLoading, error: orgError } = useQuery({
+  const {
+    data: organization,
+    isLoading: orgLoading,
+    error: orgError,
+  } = useQuery({
     queryKey: ['booking-org', slug],
     queryFn: () => websiteService.getOrganization(slug),
     enabled: !!slug,
@@ -77,15 +89,22 @@ export default function BookingPage() {
   const sectorConfig = organization?.sectorConfig;
   const hasAssets = sectorConfig?.hasAssets || false;
   const assetType = sectorConfig?.assetType;
-  const assetTerminology = sectorConfig?.terminology?.asset || { singular: 'Activ', plural: 'Active', identifier: 'Identificator' };
-  const locations = organization?.locations || [];
+  const assetTerminology = sectorConfig?.terminology?.asset || {
+    singular: 'Activ',
+    plural: 'Active',
+    identifier: 'Identificator',
+  };
+  const locations = useMemo(() => organization?.locations || [], [organization?.locations]);
   const hasMultipleLocations = organization?.hasMultipleLocations || false;
-  const steps = useMemo(() => getStepsForSector(sectorConfig, hasMultipleLocations), [sectorConfig, hasMultipleLocations]);
+  const steps = useMemo(
+    () => getStepsForSector(sectorConfig, hasMultipleLocations),
+    [sectorConfig, hasMultipleLocations]
+  );
   const currentStepId = steps[currentStep]?.id;
   const isLastStep = currentStep === steps.length - 1;
 
   // Auto-select primary location if only one
-  useMemo(() => {
+  useEffect(() => {
     if (locations.length === 1 && !formData.selectedLocation) {
       setFormData((prev) => ({ ...prev, selectedLocation: locations[0] }));
     }
@@ -101,7 +120,8 @@ export default function BookingPage() {
   // Fetch available slots
   const { data: slots, isLoading: slotsLoading } = useQuery({
     queryKey: ['booking-slots', slug, formData.selectedDate, formData.selectedLocation?.id],
-    queryFn: () => websiteService.getAvailableSlots(slug, formData.selectedDate, formData.selectedLocation?.id),
+    queryFn: () =>
+      websiteService.getAvailableSlots(slug, formData.selectedDate, formData.selectedLocation?.id),
     enabled: !!formData.selectedDate,
   });
 
@@ -126,15 +146,25 @@ export default function BookingPage() {
 
   const canProceed = () => {
     switch (currentStepId) {
-      case 'location': return !!formData.selectedLocation;
-      case 'date': return !!formData.selectedDate;
-      case 'time': return !!formData.selectedSlot;
+      case 'location':
+        return !!formData.selectedLocation;
+      case 'date':
+        return !!formData.selectedDate;
+      case 'time':
+        return !!formData.selectedSlot;
       case 'details':
-        return formData.client.firstName && formData.client.lastName &&
-          formData.client.email && formData.client.phone;
-      case 'asset': return true;
-      case 'confirm': return !formData.createAccount || formData.password.length >= 6;
-      default: return false;
+        return (
+          formData.client.firstName &&
+          formData.client.lastName &&
+          formData.client.email &&
+          formData.client.phone
+        );
+      case 'asset':
+        return true;
+      case 'confirm':
+        return !formData.createAccount || formData.password.length >= 6;
+      default:
+        return false;
     }
   };
 
@@ -152,7 +182,10 @@ export default function BookingPage() {
       };
 
       if (hasAssets) {
-        if (assetType === 'vehicle' && (formData.vehicle.make || formData.vehicle.plateNumber || formData.vehicle.model)) {
+        if (
+          assetType === 'vehicle' &&
+          (formData.vehicle.make || formData.vehicle.plateNumber || formData.vehicle.model)
+        ) {
           bookingData.asset = {
             manufacturer: formData.vehicle.make,
             model: formData.vehicle.model,
@@ -160,9 +193,18 @@ export default function BookingPage() {
             identifier: formData.vehicle.plateNumber,
             name: `${formData.vehicle.make || ''} ${formData.vehicle.model || ''}`.trim() || null,
           };
-        } else if (assetType === 'device' && (formData.device.brand || formData.device.model || formData.device.serialNumber || formData.device.imei)) {
+        } else if (
+          assetType === 'device' &&
+          (formData.device.brand ||
+            formData.device.model ||
+            formData.device.serialNumber ||
+            formData.device.imei)
+        ) {
           bookingData.asset = {
-            name: `${formData.device.brand || ''} ${formData.device.model || ''}`.trim() || formData.device.deviceType || null,
+            name:
+              `${formData.device.brand || ''} ${formData.device.model || ''}`.trim() ||
+              formData.device.deviceType ||
+              null,
             manufacturer: formData.device.brand,
             model: formData.device.model,
             identifier: formData.device.serialNumber || formData.device.imei,
@@ -177,7 +219,11 @@ export default function BookingPage() {
               problemDescription: formData.device.problemDescription,
             },
           };
-        } else if (assetType !== 'vehicle' && assetType !== 'device' && (formData.asset.name || formData.asset.identifier)) {
+        } else if (
+          assetType !== 'vehicle' &&
+          assetType !== 'device' &&
+          (formData.asset.name || formData.asset.identifier)
+        ) {
           bookingData.asset = formData.asset;
         }
       }
@@ -273,7 +319,8 @@ export default function BookingPage() {
     );
   }
 
-  const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent';
+  const inputClass =
+    'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent';
 
   return (
     <div className="py-8 px-4">
@@ -294,15 +341,19 @@ export default function BookingPage() {
                   index < currentStep
                     ? 'text-white'
                     : index === currentStep
-                    ? 'border-2'
-                    : 'bg-gray-200 text-gray-500'
+                      ? 'border-2'
+                      : 'bg-gray-200 text-gray-500'
                 )}
                 style={
                   index < currentStep
                     ? { backgroundColor: primaryColor }
                     : index === currentStep
-                    ? { borderColor: primaryColor, color: primaryColor, backgroundColor: `${primaryColor}15` }
-                    : undefined
+                      ? {
+                          borderColor: primaryColor,
+                          color: primaryColor,
+                          backgroundColor: `${primaryColor}15`,
+                        }
+                      : undefined
                 }
               >
                 <step.icon className="h-5 w-5" />
@@ -326,7 +377,9 @@ export default function BookingPage() {
             {/* Select Location */}
             {currentStepId === 'location' && (
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">Selecteaza locatia unde doresti sa faci programarea.</p>
+                <p className="text-sm text-gray-600">
+                  Selecteaza locatia unde doresti sa faci programarea.
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {locations.map((location) => (
                     <button
@@ -351,19 +404,39 @@ export default function BookingPage() {
                       <div className="flex items-start gap-3">
                         <MapPin
                           className="h-5 w-5 mt-0.5 flex-shrink-0"
-                          style={{ color: formData.selectedLocation?.id === location.id ? primaryColor : '#9ca3af' }}
+                          style={{
+                            color:
+                              formData.selectedLocation?.id === location.id
+                                ? primaryColor
+                                : '#9ca3af',
+                          }}
                         />
                         <div>
-                          <p className="font-medium" style={formData.selectedLocation?.id === location.id ? { color: primaryColor } : undefined}>
+                          <p
+                            className="font-medium"
+                            style={
+                              formData.selectedLocation?.id === location.id
+                                ? { color: primaryColor }
+                                : undefined
+                            }
+                          >
                             {location.name}
-                            {location.isPrimary && <span className="ml-2 text-xs font-normal text-gray-500">(Principal)</span>}
+                            {location.isPrimary && (
+                              <span className="ml-2 text-xs font-normal text-gray-500">
+                                (Principal)
+                              </span>
+                            )}
                           </p>
                           {(location.address || location.city) && (
                             <p className="mt-1 text-sm text-gray-500">
-                              {[location.address, location.city, location.county].filter(Boolean).join(', ')}
+                              {[location.address, location.city, location.county]
+                                .filter(Boolean)
+                                .join(', ')}
                             </p>
                           )}
-                          {location.phone && <p className="mt-1 text-xs text-gray-400">{location.phone}</p>}
+                          {location.phone && (
+                            <p className="mt-1 text-xs text-gray-400">{location.phone}</p>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -396,7 +469,11 @@ export default function BookingPage() {
                         )}
                         style={
                           formData.selectedDate === date.date
-                            ? { borderColor: primaryColor, backgroundColor: `${primaryColor}08`, color: primaryColor }
+                            ? {
+                                borderColor: primaryColor,
+                                backgroundColor: `${primaryColor}08`,
+                                color: primaryColor,
+                              }
                             : undefined
                         }
                       >
@@ -418,7 +495,11 @@ export default function BookingPage() {
                     {(() => {
                       const [year, month, day] = formData.selectedDate.split('-').map(Number);
                       const d = new Date(year, month - 1, day);
-                      return d.toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' });
+                      return d.toLocaleDateString('ro-RO', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                      });
                     })()}
                   </strong>
                 </p>
@@ -427,7 +508,9 @@ export default function BookingPage() {
                     <Loader2 className="h-6 w-6 animate-spin" style={{ color: primaryColor }} />
                   </div>
                 ) : slots?.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500">Nu exista intervale disponibile pentru aceasta zi.</p>
+                  <p className="text-center py-8 text-gray-500">
+                    Nu exista intervale disponibile pentru aceasta zi.
+                  </p>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {slots?.map((slot) => (
@@ -442,7 +525,11 @@ export default function BookingPage() {
                         )}
                         style={
                           formData.selectedSlot?.start === slot.start
-                            ? { borderColor: primaryColor, backgroundColor: `${primaryColor}08`, color: primaryColor }
+                            ? {
+                                borderColor: primaryColor,
+                                backgroundColor: `${primaryColor}08`,
+                                color: primaryColor,
+                              }
                             : undefined
                         }
                       >
@@ -459,7 +546,9 @@ export default function BookingPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Prenume *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Prenume *
+                    </label>
                     <input
                       className={inputClass}
                       style={{ '--tw-ring-color': primaryColor }}
@@ -499,11 +588,15 @@ export default function BookingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Motiv programare</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Motiv programare
+                  </label>
                   <input
                     className={inputClass}
                     value={formData.appointment.description}
-                    onChange={(e) => updateNestedFormData('appointment', 'description', e.target.value)}
+                    onChange={(e) =>
+                      updateNestedFormData('appointment', 'description', e.target.value)
+                    }
                     placeholder="Descriere scurta (optional)"
                   />
                 </div>
@@ -522,22 +615,53 @@ export default function BookingPage() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
-                        <input className={inputClass} value={formData.vehicle.make} onChange={(e) => updateNestedFormData('vehicle', 'make', e.target.value)} placeholder="ex: Volkswagen" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Marca
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.vehicle.make}
+                          onChange={(e) => updateNestedFormData('vehicle', 'make', e.target.value)}
+                          placeholder="ex: Volkswagen"
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                        <input className={inputClass} value={formData.vehicle.model} onChange={(e) => updateNestedFormData('vehicle', 'model', e.target.value)} placeholder="ex: Golf" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Model
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.vehicle.model}
+                          onChange={(e) => updateNestedFormData('vehicle', 'model', e.target.value)}
+                          placeholder="ex: Golf"
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">An fabricatie</label>
-                        <input type="number" className={inputClass} value={formData.vehicle.year} onChange={(e) => updateNestedFormData('vehicle', 'year', e.target.value)} placeholder="ex: 2020" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          An fabricatie
+                        </label>
+                        <input
+                          type="number"
+                          className={inputClass}
+                          value={formData.vehicle.year}
+                          onChange={(e) => updateNestedFormData('vehicle', 'year', e.target.value)}
+                          placeholder="ex: 2020"
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{assetTerminology.identifier}</label>
-                        <input className={inputClass} value={formData.vehicle.plateNumber} onChange={(e) => updateNestedFormData('vehicle', 'plateNumber', e.target.value)} placeholder="ex: B 123 ABC" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {assetTerminology.identifier}
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.vehicle.plateNumber}
+                          onChange={(e) =>
+                            updateNestedFormData('vehicle', 'plateNumber', e.target.value)
+                          }
+                          placeholder="ex: B 123 ABC"
+                        />
                       </div>
                     </div>
                   </>
@@ -548,8 +672,16 @@ export default function BookingPage() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tip dispozitiv</label>
-                        <select className={inputClass} value={formData.device.deviceType} onChange={(e) => updateNestedFormData('device', 'deviceType', e.target.value)}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tip dispozitiv
+                        </label>
+                        <select
+                          className={inputClass}
+                          value={formData.device.deviceType}
+                          onChange={(e) =>
+                            updateNestedFormData('device', 'deviceType', e.target.value)
+                          }
+                        >
                           <option value="">Selecteaza...</option>
                           <option value="Telefon">Telefon</option>
                           <option value="Tableta">Tableta</option>
@@ -561,18 +693,40 @@ export default function BookingPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                        <input className={inputClass} value={formData.device.brand} onChange={(e) => updateNestedFormData('device', 'brand', e.target.value)} placeholder="ex: Apple, Samsung" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Brand
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.device.brand}
+                          onChange={(e) => updateNestedFormData('device', 'brand', e.target.value)}
+                          placeholder="ex: Apple, Samsung"
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                        <input className={inputClass} value={formData.device.model} onChange={(e) => updateNestedFormData('device', 'model', e.target.value)} placeholder="ex: iPhone 14" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Model
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.device.model}
+                          onChange={(e) => updateNestedFormData('device', 'model', e.target.value)}
+                          placeholder="ex: iPhone 14"
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Stare la receptie</label>
-                        <select className={inputClass} value={formData.device.condition} onChange={(e) => updateNestedFormData('device', 'condition', e.target.value)}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Stare la receptie
+                        </label>
+                        <select
+                          className={inputClass}
+                          value={formData.device.condition}
+                          onChange={(e) =>
+                            updateNestedFormData('device', 'condition', e.target.value)
+                          }
+                        >
                           <option value="">Selecteaza...</option>
                           <option value="Functional">Functional</option>
                           <option value="Partial functional">Partial functional</option>
@@ -583,21 +737,55 @@ export default function BookingPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">IMEI / Numar serie</label>
-                        <input className={inputClass} value={formData.device.imei || formData.device.serialNumber} onChange={(e) => updateNestedFormData('device', 'imei', e.target.value)} placeholder="ex: 123456789012345" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          IMEI / Numar serie
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.device.imei || formData.device.serialNumber}
+                          onChange={(e) => updateNestedFormData('device', 'imei', e.target.value)}
+                          placeholder="ex: 123456789012345"
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cod acces (optional)</label>
-                        <input className={inputClass} value={formData.device.password} onChange={(e) => updateNestedFormData('device', 'password', e.target.value)} placeholder="PIN/Pattern pentru testare" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Cod acces (optional)
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.device.password}
+                          onChange={(e) =>
+                            updateNestedFormData('device', 'password', e.target.value)
+                          }
+                          placeholder="PIN/Pattern pentru testare"
+                        />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Descriere problema</label>
-                      <textarea className={`${inputClass} min-h-[80px]`} value={formData.device.problemDescription} onChange={(e) => updateNestedFormData('device', 'problemDescription', e.target.value)} placeholder="Descrieti problema dispozitivului..." />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Descriere problema
+                      </label>
+                      <textarea
+                        className={`${inputClass} min-h-[80px]`}
+                        value={formData.device.problemDescription}
+                        onChange={(e) =>
+                          updateNestedFormData('device', 'problemDescription', e.target.value)
+                        }
+                        placeholder="Descrieti problema dispozitivului..."
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Accesorii predate (optional)</label>
-                      <input className={inputClass} value={formData.device.accessories} onChange={(e) => updateNestedFormData('device', 'accessories', e.target.value)} placeholder="ex: Incarcator, husa, casti" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Accesorii predate (optional)
+                      </label>
+                      <input
+                        className={inputClass}
+                        value={formData.device.accessories}
+                        onChange={(e) =>
+                          updateNestedFormData('device', 'accessories', e.target.value)
+                        }
+                        placeholder="ex: Incarcator, husa, casti"
+                      />
                     </div>
                   </>
                 )}
@@ -607,27 +795,62 @@ export default function BookingPage() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Denumire</label>
-                        <input className={inputClass} value={formData.asset.name} onChange={(e) => updateNestedFormData('asset', 'name', e.target.value)} placeholder="ex: Laptop Dell" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Denumire
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.asset.name}
+                          onChange={(e) => updateNestedFormData('asset', 'name', e.target.value)}
+                          placeholder="ex: Laptop Dell"
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{assetTerminology.identifier}</label>
-                        <input className={inputClass} value={formData.asset.identifier} onChange={(e) => updateNestedFormData('asset', 'identifier', e.target.value)} placeholder="ex: SN123456" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {assetTerminology.identifier}
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.asset.identifier}
+                          onChange={(e) =>
+                            updateNestedFormData('asset', 'identifier', e.target.value)
+                          }
+                          placeholder="ex: SN123456"
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Tip</label>
-                        <input className={inputClass} value={formData.asset.type} onChange={(e) => updateNestedFormData('asset', 'type', e.target.value)} placeholder="ex: Laptop, Telefon" />
+                        <input
+                          className={inputClass}
+                          value={formData.asset.type}
+                          onChange={(e) => updateNestedFormData('asset', 'type', e.target.value)}
+                          placeholder="ex: Laptop, Telefon"
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Producator</label>
-                        <input className={inputClass} value={formData.asset.manufacturer} onChange={(e) => updateNestedFormData('asset', 'manufacturer', e.target.value)} placeholder="ex: Dell, Apple" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Producator
+                        </label>
+                        <input
+                          className={inputClass}
+                          value={formData.asset.manufacturer}
+                          onChange={(e) =>
+                            updateNestedFormData('asset', 'manufacturer', e.target.value)
+                          }
+                          placeholder="ex: Dell, Apple"
+                        />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                      <input className={inputClass} value={formData.asset.model} onChange={(e) => updateNestedFormData('asset', 'model', e.target.value)} placeholder="ex: XPS 15" />
+                      <input
+                        className={inputClass}
+                        value={formData.asset.model}
+                        onChange={(e) => updateNestedFormData('asset', 'model', e.target.value)}
+                        placeholder="ex: XPS 15"
+                      />
                     </div>
                   </>
                 )}
@@ -648,13 +871,19 @@ export default function BookingPage() {
                     <span className="text-gray-600">Data si ora:</span>
                     <span className="font-medium">
                       {new Date(formData.selectedSlot.start).toLocaleDateString('ro-RO', {
-                        weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        hour: '2-digit',
+                        minute: '2-digit',
                       })}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Nume:</span>
-                    <span className="font-medium">{formData.client.firstName} {formData.client.lastName}</span>
+                    <span className="font-medium">
+                      {formData.client.firstName} {formData.client.lastName}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Email:</span>
@@ -668,28 +897,37 @@ export default function BookingPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">{assetTerminology.singular}:</span>
                       <span className="font-medium">
-                        {formData.vehicle.make} {formData.vehicle.model} - {formData.vehicle.plateNumber}
+                        {formData.vehicle.make} {formData.vehicle.model} -{' '}
+                        {formData.vehicle.plateNumber}
                       </span>
                     </div>
                   )}
-                  {hasAssets && assetType === 'device' && (formData.device.brand || formData.device.model || formData.device.deviceType) && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">{assetTerminology.singular}:</span>
-                      <span className="font-medium">
-                        {formData.device.deviceType && `${formData.device.deviceType}: `}
-                        {formData.device.brand} {formData.device.model}
-                        {formData.device.imei && ` (${formData.device.imei})`}
-                      </span>
-                    </div>
-                  )}
-                  {hasAssets && assetType !== 'vehicle' && assetType !== 'device' && (formData.asset.name || formData.asset.identifier) && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">{assetTerminology.singular}:</span>
-                      <span className="font-medium">
-                        {formData.asset.name}{formData.asset.identifier && ` - ${formData.asset.identifier}`}
-                      </span>
-                    </div>
-                  )}
+                  {hasAssets &&
+                    assetType === 'device' &&
+                    (formData.device.brand ||
+                      formData.device.model ||
+                      formData.device.deviceType) && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">{assetTerminology.singular}:</span>
+                        <span className="font-medium">
+                          {formData.device.deviceType && `${formData.device.deviceType}: `}
+                          {formData.device.brand} {formData.device.model}
+                          {formData.device.imei && ` (${formData.device.imei})`}
+                        </span>
+                      </div>
+                    )}
+                  {hasAssets &&
+                    assetType !== 'vehicle' &&
+                    assetType !== 'device' &&
+                    (formData.asset.name || formData.asset.identifier) && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">{assetTerminology.singular}:</span>
+                        <span className="font-medium">
+                          {formData.asset.name}
+                          {formData.asset.identifier && ` - ${formData.asset.identifier}`}
+                        </span>
+                      </div>
+                    )}
                 </div>
 
                 <div className="border-t pt-4">
@@ -708,7 +946,9 @@ export default function BookingPage() {
 
                   {formData.createAccount && (
                     <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Parola (minim 6 caractere)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Parola (minim 6 caractere)
+                      </label>
                       <input
                         type="password"
                         className={inputClass}
@@ -722,7 +962,8 @@ export default function BookingPage() {
 
                 {bookingMutation.isError && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    {bookingMutation.error?.response?.data?.error || 'A aparut o eroare. Te rugam sa incerci din nou.'}
+                    {bookingMutation.error?.response?.data?.error ||
+                      'A aparut o eroare. Te rugam sa incerci din nou.'}
                   </div>
                 )}
               </div>

@@ -22,7 +22,8 @@ const DEFAULT_OPERATING_HOURS = {
   sunday: { isOpen: false, openTime: '10:00', closeTime: '14:00' },
 };
 
-const inputClass = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition';
+const inputClass =
+  'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition';
 
 /** Transform frontend shape to the shape the backend schema expects */
 const toBackendHours = (operatingHours) => {
@@ -72,12 +73,12 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
   const handleHoursChange = (day, field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       operatingHours: {
         ...prev.operatingHours,
@@ -102,7 +103,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           <input
             type="text"
             value={formData.name}
-            onChange={e => handleChange('name', e.target.value)}
+            onChange={(e) => handleChange('name', e.target.value)}
             className={`${inputClass} ${errors.name ? 'border-red-500' : ''}`}
           />
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
@@ -113,7 +114,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           <input
             type="text"
             value={formData.address}
-            onChange={e => handleChange('address', e.target.value)}
+            onChange={(e) => handleChange('address', e.target.value)}
             className={`${inputClass} ${errors.address ? 'border-red-500' : ''}`}
           />
           {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
@@ -124,7 +125,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           <input
             type="text"
             value={formData.city}
-            onChange={e => handleChange('city', e.target.value)}
+            onChange={(e) => handleChange('city', e.target.value)}
             className={`${inputClass} ${errors.city ? 'border-red-500' : ''}`}
           />
           {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
@@ -135,7 +136,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           <input
             type="text"
             value={formData.county}
-            onChange={e => handleChange('county', e.target.value)}
+            onChange={(e) => handleChange('county', e.target.value)}
             className={inputClass}
           />
         </div>
@@ -145,7 +146,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           <input
             type="tel"
             value={formData.phone}
-            onChange={e => handleChange('phone', e.target.value)}
+            onChange={(e) => handleChange('phone', e.target.value)}
             className={inputClass}
           />
         </div>
@@ -155,7 +156,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
           <input
             type="email"
             value={formData.email}
-            onChange={e => handleChange('email', e.target.value)}
+            onChange={(e) => handleChange('email', e.target.value)}
             className={inputClass}
           />
         </div>
@@ -176,7 +177,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
                   <input
                     type="checkbox"
                     checked={dayHours.isOpen}
-                    onChange={e => handleHoursChange(key, 'isOpen', e.target.checked)}
+                    onChange={(e) => handleHoursChange(key, 'isOpen', e.target.checked)}
                     className="rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <span className="text-sm text-gray-700">{label}</span>
@@ -185,12 +186,12 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
                   <div className="flex items-center gap-2">
                     <TimePicker
                       value={dayHours.openTime}
-                      onChange={v => handleHoursChange(key, 'openTime', v)}
+                      onChange={(v) => handleHoursChange(key, 'openTime', v)}
                     />
                     <span className="text-gray-400">-</span>
                     <TimePicker
                       value={dayHours.closeTime}
-                      onChange={v => handleHoursChange(key, 'closeTime', v)}
+                      onChange={(v) => handleHoursChange(key, 'closeTime', v)}
                     />
                   </div>
                 )}

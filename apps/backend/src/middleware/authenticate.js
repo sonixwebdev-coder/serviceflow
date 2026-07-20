@@ -88,12 +88,20 @@ const authenticate = async (req, res, next) => {
       throw new AppError('User not found or inactive', 401);
     }
 
-    if (!userData.orgStatus || userData.orgStatus === 'SUSPENDED' || userData.orgStatus === 'CANCELLED') {
+    if (
+      !userData.orgStatus ||
+      userData.orgStatus === 'SUSPENDED' ||
+      userData.orgStatus === 'CANCELLED'
+    ) {
       throw new AppError('Organization is not active', 403);
     }
 
     // Lazy trial expiry: transition expired TRIAL → PAYMENT_REQUIRED
-    if (userData.orgStatus === 'TRIAL' && userData.orgTrialEndsAt && new Date() > new Date(userData.orgTrialEndsAt)) {
+    if (
+      userData.orgStatus === 'TRIAL' &&
+      userData.orgTrialEndsAt &&
+      new Date() > new Date(userData.orgTrialEndsAt)
+    ) {
       await prisma.organization.update({
         where: { id: userData.organizationId },
         data: { status: 'PAYMENT_REQUIRED' },
@@ -105,8 +113,14 @@ const authenticate = async (req, res, next) => {
 
     // PAYMENT_REQUIRED: restrict to billing, settings, auth, and user profile routes
     if (userData.orgStatus === 'PAYMENT_REQUIRED') {
-      const allowedPrefixes = ['/api/billing', '/api/settings', '/api/auth', '/api/users/me', '/api/organizations/me'];
-      const isAllowed = allowedPrefixes.some(p => req.originalUrl.startsWith(p));
+      const allowedPrefixes = [
+        '/api/billing',
+        '/api/settings',
+        '/api/auth',
+        '/api/users/me',
+        '/api/organizations/me',
+      ];
+      const isAllowed = allowedPrefixes.some((p) => req.originalUrl.startsWith(p));
       if (!isAllowed) {
         return res.status(402).json({
           error: 'Plata necesara',

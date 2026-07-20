@@ -1,16 +1,30 @@
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Phone, Clock, CalendarCheck, Briefcase, Navigation, CheckCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  MapPin,
+  Phone,
+  Clock,
+  CalendarCheck,
+  Briefcase,
+  Navigation,
+  CheckCircle,
+} from 'lucide-react';
 import { useMarketplaceOrganization } from '@/hooks/useMarketplace';
 import { Card, CardContent } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
+import '@/components/ui/Button';
 import { getSectorConfig } from '@/utils/sectors';
 import { formatCurrency } from '@/lib/utils';
 
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const DAY_NAMES_RO = {
-  monday: 'Luni', tuesday: 'Marti', wednesday: 'Miercuri',
-  thursday: 'Joi', friday: 'Vineri', saturday: 'Sambata', sunday: 'Duminica',
+  monday: 'Luni',
+  tuesday: 'Marti',
+  wednesday: 'Miercuri',
+  thursday: 'Joi',
+  friday: 'Vineri',
+  saturday: 'Sambata',
+  sunday: 'Duminica',
 };
 
 export default function OrganizationDetail() {
@@ -110,10 +124,8 @@ export default function OrganizationDetail() {
       {/* ── Body ──────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-
           {/* ── Main content ─────────────────────────────────── */}
           <div className="lg:col-span-2 space-y-10">
-
             {/* Services */}
             {services.length > 0 && (
               <div>
@@ -128,15 +140,21 @@ export default function OrganizationDetail() {
                       className="flex items-start gap-4 p-5 bg-white rounded-xl border border-gray-200 hover:border-primary-200 hover:shadow-sm transition-all"
                     >
                       {/* Icon */}
-                      <div className={`h-10 w-10 rounded-xl ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                        <CheckCircle className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`} />
+                      <div
+                        className={`h-10 w-10 rounded-xl ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0 mt-0.5`}
+                      >
+                        <CheckCircle
+                          className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`}
+                        />
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900">{service.name}</h3>
                         {service.description && (
-                          <p className="mt-0.5 text-sm text-gray-500 line-clamp-2">{service.description}</p>
+                          <p className="mt-0.5 text-sm text-gray-500 line-clamp-2">
+                            {service.description}
+                          </p>
                         )}
                         {/* Badges row */}
                         <div className="mt-2 flex flex-wrap gap-2">
@@ -175,8 +193,12 @@ export default function OrganizationDetail() {
                     <Card key={loc.id}>
                       <CardContent>
                         <div className="flex items-start gap-3">
-                          <div className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0`}>
-                            <MapPin className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`} />
+                          <div
+                            className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0`}
+                          >
+                            <MapPin
+                              className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`}
+                            />
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className="font-semibold text-gray-900">{loc.name}</h3>
@@ -199,8 +221,10 @@ export default function OrganizationDetail() {
                                     const hours = loc.operatingHours[day];
                                     return (
                                       <div key={day}>
-                                        <span className="font-medium">{DAY_NAMES_RO[day] || day}:</span>{' '}
-                                        {(hours.closed === true || hours.isOpen === false)
+                                        <span className="font-medium">
+                                          {DAY_NAMES_RO[day] || day}:
+                                        </span>{' '}
+                                        {hours.closed === true || hours.isOpen === false
                                           ? 'Inchis'
                                           : `${hours.open || hours.openTime} - ${hours.close || hours.closeTime}`}
                                       </div>
@@ -227,9 +251,7 @@ export default function OrganizationDetail() {
                 <p className="text-gray-700 font-medium">
                   Aceasta companie nu a publicat inca servicii sau detalii de locatie.
                 </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Poti totusi crea o programare direct.
-                </p>
+                <p className="text-sm text-gray-400 mt-1">Poti totusi crea o programare direct.</p>
               </div>
             )}
           </div>
@@ -237,14 +259,13 @@ export default function OrganizationDetail() {
           {/* ── Sidebar ──────────────────────────────────────── */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-4">
-
               {/* CTA Card */}
-              <div className={`rounded-2xl p-6 bg-gradient-to-br ${sector?.gradient || 'from-primary-500 to-primary-600'} text-white shadow-lg`}>
+              <div
+                className={`rounded-2xl p-6 bg-gradient-to-br ${sector?.gradient || 'from-primary-500 to-primary-600'} text-white shadow-lg`}
+              >
                 <CalendarCheck className="h-9 w-9 mb-3 opacity-90" />
                 <h3 className="text-lg font-bold">Programeaza o vizita</h3>
-                <p className="mt-1 text-sm text-white/75">
-                  Alege data si ora care ti se potrivesc
-                </p>
+                <p className="mt-1 text-sm text-white/75">Alege data si ora care ti se potrivesc</p>
                 <Link to={`/book/${org.slug}`} className="block mt-5">
                   <button className="w-full py-3 px-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm text-sm">
                     Programeaza acum
@@ -258,10 +279,14 @@ export default function OrganizationDetail() {
                   <CardContent className="space-y-4">
                     {sector && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Categorie</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                          Categorie
+                        </p>
                         <div className="flex items-center gap-2">
                           {SectorIcon && (
-                            <div className={`h-8 w-8 rounded-lg ${sector.iconBg} flex items-center justify-center`}>
+                            <div
+                              className={`h-8 w-8 rounded-lg ${sector.iconBg} flex items-center justify-center`}
+                            >
                               <SectorIcon className={`h-4 w-4 ${sector.iconColor}`} />
                             </div>
                           )}
@@ -271,16 +296,22 @@ export default function OrganizationDetail() {
                     )}
                     {filledLocations[0]?.city && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Locatie</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                          Locatie
+                        </p>
                         <p className="text-sm text-gray-900 flex items-center gap-1.5">
                           <MapPin className="h-4 w-4 text-gray-400" />
-                          {[filledLocations[0].city, filledLocations[0].county].filter(Boolean).join(', ')}
+                          {[filledLocations[0].city, filledLocations[0].county]
+                            .filter(Boolean)
+                            .join(', ')}
                         </p>
                       </div>
                     )}
                     {filledLocations[0]?.phone && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Telefon</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                          Telefon
+                        </p>
                         <p className="text-sm text-gray-900 flex items-center gap-1.5">
                           <Phone className="h-4 w-4 text-gray-400" />
                           {filledLocations[0].phone}

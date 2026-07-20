@@ -42,9 +42,8 @@ const GalleryBlock = ({ data, settings, isEditing = false, onClick }) => {
 
   // Get unique categories
   const categories = [...new Set(images.map((img) => img.category).filter(Boolean))];
-  const filteredImages = selectedCategory === 'all'
-    ? images
-    : images.filter((img) => img.category === selectedCategory);
+  const filteredImages =
+    selectedCategory === 'all' ? images : images.filter((img) => img.category === selectedCategory);
 
   const openLightbox = (index) => {
     if (isEditing || !showLightbox) return;
@@ -78,18 +77,11 @@ const GalleryBlock = ({ data, settings, isEditing = false, onClick }) => {
         {(title || subtitle) && (
           <div className="text-center mb-8">
             {title && (
-              <h2
-                className="text-3xl font-bold mb-4"
-                style={{ color: textColor }}
-              >
+              <h2 className="text-3xl font-bold mb-4" style={{ color: textColor }}>
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 

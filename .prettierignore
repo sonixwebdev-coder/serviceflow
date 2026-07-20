@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+apps/backend/storage
+apps/backend/uploads
+apps/backend/logs
+prisma/migrations
+*.min.js
+*.map
+package-lock.json
+.tmp-*
+issues.md
+todo.md

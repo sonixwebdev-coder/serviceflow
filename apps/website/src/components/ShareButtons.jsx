@@ -18,10 +18,7 @@ export default function ShareButtons({ primaryColor }) {
   };
 
   const shareToWhatsApp = () => {
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(`${title} - ${url}`)}`,
-      '_blank'
-    );
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${title} - ${url}`)}`, '_blank');
   };
 
   const copyLink = async () => {

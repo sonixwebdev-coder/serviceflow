@@ -32,52 +32,48 @@ const addonService = require('../services/addonService');
 
 const router = express.Router();
 
-router.post(
-  '/stripe',
-  express.raw({ type: 'application/json' }),
-  async (req, res) => {
-    const stripe = await getStripe();
-    if (!stripe) {
-      return res.status(503).json({ error: 'Billing not configured' });
-    }
-
-    const sig = req.headers['stripe-signature'];
-    const settings = await getSettings();
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || settings?.stripeWebhookSecret;
-
-    if (!webhookSecret) {
-      logger.warn('Stripe webhook secret not configured, webhook ignored');
-      return res.status(400).json({ error: 'Webhook secret not configured' });
-    }
-
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } catch (err) {
-      logger.warn('Stripe webhook signature verification failed', { error: err.message });
-      return res.status(400).json({ error: 'Invalid signature' });
-    }
-
-    res.status(200).json({ received: true });
-
-    // Idempotency check: skip duplicate events
-    if (await isEventProcessed(event.id)) {
-      logger.info('Stripe webhook duplicate skipped', { eventId: event.id, type: event.type });
-      return;
-    }
-
-    try {
-      await handleWebhookEvent(event, stripe);
-    } catch (err) {
-      logger.error('Error processing Stripe webhook', {
-        eventType: event.type,
-        eventId: event.id,
-        error: err.message,
-        stack: err.stack,
-      });
-    }
+router.post('/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const stripe = await getStripe();
+  if (!stripe) {
+    return res.status(503).json({ error: 'Billing not configured' });
   }
-);
+
+  const sig = req.headers['stripe-signature'];
+  const settings = await getSettings();
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || settings?.stripeWebhookSecret;
+
+  if (!webhookSecret) {
+    logger.warn('Stripe webhook secret not configured, webhook ignored');
+    return res.status(400).json({ error: 'Webhook secret not configured' });
+  }
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err) {
+    logger.warn('Stripe webhook signature verification failed', { error: err.message });
+    return res.status(400).json({ error: 'Invalid signature' });
+  }
+
+  res.status(200).json({ received: true });
+
+  // Idempotency check: skip duplicate events
+  if (await isEventProcessed(event.id)) {
+    logger.info('Stripe webhook duplicate skipped', { eventId: event.id, type: event.type });
+    return;
+  }
+
+  try {
+    await handleWebhookEvent(event, stripe);
+  } catch (err) {
+    logger.error('Error processing Stripe webhook', {
+      eventType: event.type,
+      eventId: event.id,
+      error: err.message,
+      stack: err.stack,
+    });
+  }
+});
 
 /**
  * Get org admin email info for subscription notifications
@@ -135,7 +131,10 @@ async function handleWebhookEvent(event, stripe) {
 
         // Store subscription start date (only on initial subscription, not upgrades) and billing interval
         if (session.metadata?.organizationId) {
-          const existingOrg = await prisma.organization.findUnique({ where: { id: session.metadata.organizationId }, select: { subscriptionStartedAt: true } });
+          const existingOrg = await prisma.organization.findUnique({
+            where: { id: session.metadata.organizationId },
+            select: { subscriptionStartedAt: true },
+          });
           const updateData = {};
           if (!existingOrg?.subscriptionStartedAt) {
             updateData.subscriptionStartedAt = new Date();
@@ -178,7 +177,9 @@ async function handleWebhookEvent(event, stripe) {
             email: info.admin.email,
             userName: info.userName,
             organizationName: info.org.name,
-          }).catch((err) => logger.error('[EMAIL] Subscription cancelled email failed:', err.message));
+          }).catch((err) =>
+            logger.error('[EMAIL] Subscription cancelled email failed:', err.message)
+          );
         }
       }
 
@@ -207,14 +208,18 @@ async function handleWebhookEvent(event, stripe) {
           if (info && !info.org.planOverride) {
             const priceId = subscription.items?.data?.[0]?.price?.id;
             const plan = await getPlanFromPriceId(priceId);
-            const amount = invoice.amount_paid ? `${(invoice.amount_paid / 100).toFixed(2)} ${(invoice.currency || 'RON').toUpperCase()}` : 'N/A';
+            const amount = invoice.amount_paid
+              ? `${(invoice.amount_paid / 100).toFixed(2)} ${(invoice.currency || 'RON').toUpperCase()}`
+              : 'N/A';
             const nextBillingDate = subscription.current_period_end
               ? new Date(subscription.current_period_end * 1000).toLocaleDateString('ro-RO')
               : 'N/A';
 
             // First payment = activated, subsequent = renewed
             const isFirstPayment = invoice.billing_reason === 'subscription_create';
-            const emailFn = isFirstPayment ? sendSubscriptionActivatedEmail : sendSubscriptionRenewedEmail;
+            const emailFn = isFirstPayment
+              ? sendSubscriptionActivatedEmail
+              : sendSubscriptionRenewedEmail;
 
             emailFn({
               email: info.admin.email,
@@ -223,7 +228,9 @@ async function handleWebhookEvent(event, stripe) {
               plan: plan || info.org.plan,
               amount,
               nextBillingDate,
-            }).catch((err) => logger.error('[EMAIL] Subscription payment email failed:', err.message));
+            }).catch((err) =>
+              logger.error('[EMAIL] Subscription payment email failed:', err.message)
+            );
           }
         }
       }

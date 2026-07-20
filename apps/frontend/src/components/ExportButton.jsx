@@ -55,11 +55,6 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
   const { showToast } = useToast();
   const { hasRole } = useAuth();
 
-  // Only show export button for admins
-  if (!hasRole('admin')) {
-    return null;
-  }
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -94,6 +89,12 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
     };
   }, [isOpen]);
 
+  // Hooks must run in the same order for every render. Authorization only
+  // controls the rendered output, not hook registration.
+  if (!hasRole('admin')) {
+    return null;
+  }
+
   const handleExport = async (format) => {
     setIsOpen(false);
     setIsExporting(true);
@@ -122,8 +123,6 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
         type: 'success',
       });
     } catch (error) {
-      console.error('Export error:', error);
-
       let errorMessage = 'Nu s-au putut exporta datele.';
 
       if (error.message?.includes('Network')) {
@@ -151,11 +150,16 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
 
   const getFileExtension = (format) => {
     switch (format) {
-      case 'csv': return 'csv';
-      case 'excel': return 'xlsx';
-      case 'json': return 'json';
-      case 'xml': return 'xml';
-      default: return 'txt';
+      case 'csv':
+        return 'csv';
+      case 'excel':
+        return 'xlsx';
+      case 'json':
+        return 'json';
+      case 'xml':
+        return 'xml';
+      default:
+        return 'txt';
     }
   };
 
@@ -207,7 +211,10 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
           <>
             <Download size={16} />
             <span>Exporta</span>
-            <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              size={16}
+              className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            />
           </>
         )}
       </button>

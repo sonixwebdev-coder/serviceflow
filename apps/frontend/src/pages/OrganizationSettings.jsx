@@ -20,9 +20,7 @@ import {
   Unlink,
   RefreshCw,
   CheckCircle,
-  XCircle,
   AlertCircle,
-  ExternalLink,
   Copy,
   Check,
 } from 'lucide-react';
@@ -45,7 +43,12 @@ const SECTOR_ICONS = {
 };
 
 const OrganizationSettings = () => {
-  const { publicBooking: currentPublicBooking, orgDescription: currentOrgDescription, publicListing: currentPublicListing, refreshSettings } = useTerminology();
+  const {
+    publicBooking: currentPublicBooking,
+    orgDescription: currentOrgDescription,
+    publicListing: currentPublicListing,
+    refreshSettings,
+  } = useTerminology();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState('');
@@ -90,14 +93,15 @@ const OrganizationSettings = () => {
       const detail = params.get('detail');
       showToast({
         title: 'Eroare',
-        description: error === 'oauth_failed'
-          ? `Nu s-a putut conecta Google Calendar.${detail ? ` (${detail})` : ''} Te rugam sa incerci din nou.`
-          : `Eroare: ${error}`,
+        description:
+          error === 'oauth_failed'
+            ? `Nu s-a putut conecta Google Calendar.${detail ? ` (${detail})` : ''} Te rugam sa incerci din nou.`
+            : `Eroare: ${error}`,
         type: 'error',
       });
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [showToast]);
+  }, [currentLocationId, showToast]);
 
   // Fetch sector info
   const { data: sectorInfo, isLoading: sectorLoading } = useQuery({
@@ -109,11 +113,7 @@ const OrganizationSettings = () => {
   });
 
   // Google Calendar hooks - status returns ALL configs for the user
-  const {
-    data: gcalStatus,
-    isLoading: gcalStatusLoading,
-    refetch: refetchGcalStatus,
-  } = useGoogleCalendarStatus();
+  const { data: gcalStatus, isLoading: gcalStatusLoading } = useGoogleCalendarStatus();
 
   // Derive the config for the current location from all configs
   const locationConfig = useMemo(() => {
@@ -160,7 +160,15 @@ const OrganizationSettings = () => {
   };
 
   const handleDisconnect = async () => {
-    if (!await confirm({ title: 'Deconecteaza Google Calendar', text: 'Sigur doriti sa deconectati Google Calendar? Sincronizarea va fi oprita.', confirmText: 'Deconecteaza', danger: true })) return;
+    if (
+      !(await confirm({
+        title: 'Deconecteaza Google Calendar',
+        text: 'Sigur doriti sa deconectati Google Calendar? Sincronizarea va fi oprita.',
+        confirmText: 'Deconecteaza',
+        danger: true,
+      }))
+    )
+      return;
 
     try {
       await disconnectMutation.mutateAsync();
@@ -334,7 +342,9 @@ const OrganizationSettings = () => {
       setPublicListingEnabled(value);
       showToast({
         title: 'Succes',
-        description: value ? 'Organizatia este acum vizibila in marketplace' : 'Organizatia a fost ascunsa din marketplace',
+        description: value
+          ? 'Organizatia este acum vizibila in marketplace'
+          : 'Organizatia a fost ascunsa din marketplace',
         type: 'success',
       });
     } catch (error) {
@@ -366,7 +376,9 @@ const OrganizationSettings = () => {
         description: 'Contul a fost dezactivat. Vei fi deconectat.',
         type: 'success',
       });
-      setTimeout(() => { window.location.href = '/logout'; }, 2000);
+      setTimeout(() => {
+        window.location.href = '/logout';
+      }, 2000);
     } catch (error) {
       showToast({
         title: 'Eroare',
@@ -377,15 +389,14 @@ const OrganizationSettings = () => {
     }
   };
 
-  const SectorIcon = (sectorInfo?.activitySector && SECTOR_ICONS[sectorInfo.activitySector]) || Info;
+  const SectorIcon =
+    (sectorInfo?.activitySector && SECTOR_ICONS[sectorInfo.activitySector]) || Info;
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Setari organizatie</h1>
-        <p className="text-gray-600 mt-2">
-          Gestioneaza setarile organizatiei tale
-        </p>
+        <p className="text-gray-600 mt-2">Gestioneaza setarile organizatiei tale</p>
       </div>
 
       {/* Sector Info - Read Only */}
@@ -415,27 +426,31 @@ const OrganizationSettings = () => {
                 <h3 className="text-lg font-semibold text-gray-900">
                   {sectorInfo.labelRo || sectorInfo.label}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {sectorInfo.description}
-                </p>
+                <p className="text-sm text-gray-600 mt-1">{sectorInfo.description}</p>
 
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sectorInfo.hasAssets && (
                     <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Tip activ</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tip activ
+                      </p>
                       <p className="text-sm font-medium text-gray-900 mt-1">
                         {sectorInfo.terminology?.asset?.singular || 'N/A'}
                       </p>
                     </div>
                   )}
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Resurse</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Resurse
+                    </p>
                     <p className="text-sm font-medium text-gray-900 mt-1">
                       {sectorInfo.terminology?.resource?.singular || 'N/A'}
                     </p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Foloseste active</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Foloseste active
+                    </p>
                     <p className="text-sm font-medium text-gray-900 mt-1">
                       {sectorInfo.hasAssets ? 'Da' : 'Nu'}
                     </p>
@@ -443,7 +458,8 @@ const OrganizationSettings = () => {
                 </div>
 
                 <p className="text-xs text-gray-500 mt-4">
-                  Aceste setari sunt determinate automat de domeniul de activitate si nu pot fi modificate.
+                  Aceste setari sunt determinate automat de domeniul de activitate si nu pot fi
+                  modificate.
                 </p>
               </div>
             </div>
@@ -470,7 +486,8 @@ const OrganizationSettings = () => {
           <div>
             <h3 className="text-base font-semibold text-gray-900 mb-2">Descriere organizatie</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Aceasta descriere va fi afisata in marketplace-ul public pentru clientii care cauta servicii
+              Aceasta descriere va fi afisata in marketplace-ul public pentru clientii care cauta
+              servicii
             </p>
             <textarea
               value={description}
@@ -534,7 +551,9 @@ const OrganizationSettings = () => {
 
             <select
               value={publicBooking.slotDuration || 60}
-              onChange={(e) => handlePublicBookingChange('slotDuration', parseInt(e.target.value, 10))}
+              onChange={(e) =>
+                handlePublicBookingChange('slotDuration', parseInt(e.target.value, 10))
+              }
               className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value={15}>15 minute</option>
@@ -568,34 +587,36 @@ const OrganizationSettings = () => {
           </div>
 
           {/* Portal URL Info */}
-          {orgData?.slug && (() => {
-            const bookingUrl = `${CLIENT_PORTAL_URL}/book/${orgData.slug}`;
-            const handleCopy = () => {
-              navigator.clipboard.writeText(bookingUrl);
-              setLinkCopied(true);
-              setTimeout(() => setLinkCopied(false), 2000);
-            };
-            return (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm font-semibold text-blue-900 mb-2">Link portal public:</p>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <code className="flex-1 text-sm text-blue-800 bg-white rounded-lg px-3 py-2 border border-blue-200 break-all">
-                    {bookingUrl}
-                  </code>
-                  <button
-                    onClick={handleCopy}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {linkCopied ? 'Copiat!' : 'Copiaza'}
-                  </button>
+          {orgData?.slug &&
+            (() => {
+              const bookingUrl = `${CLIENT_PORTAL_URL}/book/${orgData.slug}`;
+              const handleCopy = () => {
+                navigator.clipboard.writeText(bookingUrl);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              };
+              return (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-semibold text-blue-900 mb-2">Link portal public:</p>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <code className="flex-1 text-sm text-blue-800 bg-white rounded-lg px-3 py-2 border border-blue-200 break-all">
+                      {bookingUrl}
+                    </code>
+                    <button
+                      onClick={handleCopy}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {linkCopied ? 'Copiat!' : 'Copiaza'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-2">
+                    Acest link poate fi distribuit clientilor noi pentru a face programari fara
+                    cont.
+                  </p>
                 </div>
-                <p className="text-xs text-blue-700 mt-2">
-                  Acest link poate fi distribuit clientilor noi pentru a face programari fara cont.
-                </p>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
           {/* Actions */}
           <div className="flex justify-end pt-6 border-t border-gray-200">
@@ -647,7 +668,9 @@ const OrganizationSettings = () => {
                   <CheckCircle className="w-6 h-6 text-green-600" />
                   <div>
                     <p className="font-medium text-green-900">Conectat la Google Calendar</p>
-                    <p className="text-sm text-green-700">Locatia: {locationConfig.locationName || currentLocation?.name}</p>
+                    <p className="text-sm text-green-700">
+                      Locatia: {locationConfig.locationName || currentLocation?.name}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -695,11 +718,13 @@ const OrganizationSettings = () => {
                         Sincronizare activa (bidirectionala)
                       </p>
                       <p className="text-sm text-blue-700 mt-1">
-                        Programarile pentru aceasta locatie sunt sincronizate automat in ambele directii: CRM → Google si Google → CRM.
+                        Programarile pentru aceasta locatie sunt sincronizate automat in ambele
+                        directii: CRM → Google si Google → CRM.
                       </p>
                       {locationConfig?.lastSyncAt && (
                         <p className="text-xs text-blue-600 mt-2">
-                          Ultima sincronizare: {new Date(locationConfig.lastSyncAt).toLocaleString('ro-RO')}
+                          Ultima sincronizare:{' '}
+                          {new Date(locationConfig.lastSyncAt).toLocaleString('ro-RO')}
                         </p>
                       )}
                     </div>
@@ -709,15 +734,21 @@ const OrganizationSettings = () => {
                         disabled={syncBidirectionalMutation.isPending || syncAllMutation.isPending}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50"
                       >
-                        <RefreshCw className={`w-4 h-4 mr-1.5 ${syncBidirectionalMutation.isPending ? 'animate-spin' : ''}`} />
-                        {syncBidirectionalMutation.isPending ? 'Se sincronizeaza...' : 'Sincronizare completa'}
+                        <RefreshCw
+                          className={`w-4 h-4 mr-1.5 ${syncBidirectionalMutation.isPending ? 'animate-spin' : ''}`}
+                        />
+                        {syncBidirectionalMutation.isPending
+                          ? 'Se sincronizeaza...'
+                          : 'Sincronizare completa'}
                       </button>
                       <button
                         onClick={handleSyncAll}
                         disabled={syncAllMutation.isPending || syncBidirectionalMutation.isPending}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors disabled:opacity-50"
                       >
-                        <RefreshCw className={`w-4 h-4 mr-1.5 ${syncAllMutation.isPending ? 'animate-spin' : ''}`} />
+                        <RefreshCw
+                          className={`w-4 h-4 mr-1.5 ${syncAllMutation.isPending ? 'animate-spin' : ''}`}
+                        />
                         {syncAllMutation.isPending ? 'Se exporta...' : 'Doar export (CRM → Google)'}
                       </button>
                     </div>
@@ -733,7 +764,10 @@ const OrganizationSettings = () => {
                     {gcalStatus.configs
                       .filter((c) => c.locationId !== currentLocationId)
                       .map((c) => (
-                        <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                        <span
+                          key={c.id}
+                          className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
+                        >
                           <CheckCircle className="w-3 h-3" />
                           {c.locationName || 'Fara locatie'}
                         </span>
@@ -751,7 +785,8 @@ const OrganizationSettings = () => {
                 Conecteaza Google Calendar {currentLocation ? `pentru ${currentLocation.name}` : ''}
               </h3>
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Sincronizeaza programarile din aceasta locatie cu Google Calendar. Fiecare locatie poate fi conectata la un cont Google diferit.
+                Sincronizeaza programarile din aceasta locatie cu Google Calendar. Fiecare locatie
+                poate fi conectata la un cont Google diferit.
               </p>
               <button
                 onClick={handleConnect}
@@ -768,7 +803,10 @@ const OrganizationSettings = () => {
                   <p className="text-xs font-medium text-gray-600 mb-2">Locatii deja conectate:</p>
                   <div className="flex flex-wrap gap-2">
                     {gcalStatus.configs.map((c) => (
-                      <span key={c.id} className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                      <span
+                        key={c.id}
+                        className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
+                      >
                         <CheckCircle className="w-3 h-3" />
                         {c.locationName || 'Fara locatie'}
                       </span>
@@ -783,8 +821,8 @@ const OrganizationSettings = () => {
                   <div>
                     <p className="text-sm font-medium text-amber-900">Nota importanta</p>
                     <p className="text-sm text-amber-700 mt-1">
-                      Vei fi redirectionat catre Google pentru a autoriza accesul.
-                      Aplicatia va putea crea si gestiona evenimente in calendarul tau.
+                      Vei fi redirectionat catre Google pentru a autoriza accesul. Aplicatia va
+                      putea crea si gestiona evenimente in calendarul tau.
                     </p>
                   </div>
                 </div>
@@ -806,7 +844,9 @@ const OrganizationSettings = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-900">
-                {publicListingEnabled ? 'Organizatia este vizibila in marketplace' : 'Organizatia este ascunsa din marketplace'}
+                {publicListingEnabled
+                  ? 'Organizatia este vizibila in marketplace'
+                  : 'Organizatia este ascunsa din marketplace'}
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 Clientii pot gasi si programa in urma cautarilor din marketplace
@@ -843,7 +883,8 @@ const OrganizationSettings = () => {
             <div>
               <p className="text-sm font-medium text-gray-900">Dezactiveaza contul</p>
               <p className="text-sm text-gray-500 mt-1">
-                Contul va fi suspendat si nu va mai fi accesibil. Poate fi reactivat de un administrator de platforma.
+                Contul va fi suspendat si nu va mai fi accesibil. Poate fi reactivat de un
+                administrator de platforma.
               </p>
             </div>
             <button

@@ -22,9 +22,11 @@ router.get(
   asyncHandler(async (req, res) => {
     // Validate returnUrl is a safe relative path (prevent open redirect)
     const rawReturnUrl = req.query.returnUrl || '/profile';
-    const returnUrl = /^\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(rawReturnUrl) && !rawReturnUrl.startsWith('//')
-      ? rawReturnUrl
-      : '/profile';
+    const returnUrl =
+      /^\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(rawReturnUrl) &&
+      !rawReturnUrl.startsWith('//')
+        ? rawReturnUrl
+        : '/profile';
 
     const state = Buffer.from(
       JSON.stringify({
@@ -50,7 +52,11 @@ router.get(
  */
 const sendRedirectPage = (res, url) => {
   const safeUrl = url.replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  res.type('html').send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="2;url=${safeUrl}"><script>window.location.replace("${safeUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");</script></head><body style="font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;color:#666"><p>Se redirectioneaza...</p></body></html>`);
+  res
+    .type('html')
+    .send(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="2;url=${safeUrl}"><script>window.location.replace("${safeUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}");</script></head><body style="font-family:system-ui;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;color:#666"><p>Se redirectioneaza...</p></body></html>`
+    );
 };
 
 router.get(
@@ -80,9 +86,16 @@ router.get(
       const tokens = await googleOAuthService.exchangeCodeForTokens(code);
 
       // Store config using global prisma (no tenant context in callback)
-      await googleOAuthService.storeCalendarConfig(prisma, stateData.userId, tokens, stateData.locationId || null);
+      await googleOAuthService.storeCalendarConfig(
+        prisma,
+        stateData.userId,
+        tokens,
+        stateData.locationId || null
+      );
 
-      logger.info(`Google Calendar connected for user ${stateData.userId} (location: ${stateData.locationId || 'default'})`);
+      logger.info(
+        `Google Calendar connected for user ${stateData.userId} (location: ${stateData.locationId || 'default'})`
+      );
 
       // Redirect back to the app, include locationId so frontend can restore the active location
       const locParam = stateData.locationId ? `&locationId=${stateData.locationId}` : '';
@@ -95,7 +108,10 @@ router.get(
         userId: stateData.userId,
         locationId: stateData.locationId,
       });
-      sendRedirectPage(res, `${frontendUrl}${returnUrl}?error=oauth_failed&detail=${encodeURIComponent(err.message || 'unknown')}`);
+      sendRedirectPage(
+        res,
+        `${frontendUrl}${returnUrl}?error=oauth_failed&detail=${encodeURIComponent(err.message || 'unknown')}`
+      );
     }
   })
 );
@@ -139,7 +155,11 @@ router.get(
   integrationsPermission,
   asyncHandler(async (req, res) => {
     const locationId = req.query.locationId || null;
-    const calendars = await googleCalendarService.listCalendars(req.tenantPrisma, req.user.id, locationId);
+    const calendars = await googleCalendarService.listCalendars(
+      req.tenantPrisma,
+      req.user.id,
+      locationId
+    );
     res.json(calendars);
   })
 );
@@ -173,7 +193,11 @@ router.post(
   integrationsPermission,
   asyncHandler(async (req, res) => {
     const { locationId } = req.body;
-    const result = await googleCalendarService.syncAllAppointments(req.tenantPrisma, req.user.id, locationId);
+    const result = await googleCalendarService.syncAllAppointments(
+      req.tenantPrisma,
+      req.user.id,
+      locationId
+    );
     res.json(result);
   })
 );
@@ -262,10 +286,7 @@ router.post(
   authenticate,
   integrationsPermission,
   asyncHandler(async (req, res) => {
-    const result = await googleCalendarService.syncBidirectional(
-      req.tenantPrisma,
-      req.user.id
-    );
+    const result = await googleCalendarService.syncBidirectional(req.tenantPrisma, req.user.id);
     res.json(result);
   })
 );

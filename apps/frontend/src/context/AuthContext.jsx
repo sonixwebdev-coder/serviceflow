@@ -16,13 +16,16 @@ const NO_REFRESH_PATHS = ['/', '/terms', '/privacy', '/pricing'];
  */
 const cacheUserForDisplay = (user) => {
   if (!user) return;
-  localStorage.setItem('user', JSON.stringify({
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    avatarUrl: user.avatarUrl,
-    role: user.role,
-  }));
+  localStorage.setItem(
+    'user',
+    JSON.stringify({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+    })
+  );
 };
 
 export const AuthProvider = ({ children }) => {
@@ -63,7 +66,7 @@ export const AuthProvider = ({ children }) => {
       // No stored user or on a public page - skip refresh
       setLoading(false);
     }
-  }, [hydrate, clear]);
+  }, [hydrate, clear, location.pathname]);
 
   // Cross-tab session sync: detect login/logout from other tabs
   useEffect(() => {
@@ -150,7 +153,7 @@ export const AuthProvider = ({ children }) => {
   const hasRole = (...roles) => {
     if (!roles.length) return true;
 
-    const required = roles.filter(role => role).map((role) => role.toLowerCase());
+    const required = roles.filter((role) => role).map((role) => role.toLowerCase());
     const owned = new Set();
 
     if (user?.role) {

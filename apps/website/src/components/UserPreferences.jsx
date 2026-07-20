@@ -39,8 +39,8 @@ export default function UserPreferences({ primaryColor }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-gray-700 leading-relaxed">
-              Acest site foloseste cookie-uri pentru a va oferi o experienta mai buna.
-              Prin continuarea navigarii, sunteti de acord cu utilizarea cookie-urilor.
+              Acest site foloseste cookie-uri pentru a va oferi o experienta mai buna. Prin
+              continuarea navigarii, sunteti de acord cu utilizarea cookie-urilor.
             </p>
             <div className="flex items-center gap-3 mt-4">
               <button

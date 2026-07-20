@@ -21,7 +21,10 @@ const {
   updateServices,
   updateDescription,
 } = require('../services/organizationSettingsService');
-const { publicBookingSchema, servicesArraySchema } = require('../schemas/organizationSettingsSchema');
+const {
+  publicBookingSchema,
+  servicesArraySchema,
+} = require('../schemas/organizationSettingsSchema');
 const { logFromRequest } = require('../services/auditLogService');
 const { ok, created } = require('../utils/http');
 const { validateCuiChecksum, validateVatNumber } = require('../services/vatValidationService');
@@ -58,7 +61,10 @@ const vatValidationLimiter = rateLimit({
 // ─── Shared Validators ───────────────────────────────────────────────────────
 
 const safeString = (maxLen = 500) =>
-  z.string().max(maxLen).transform((s) => s.trim());
+  z
+    .string()
+    .max(maxLen)
+    .transform((s) => s.trim());
 
 const emailSchema = z
   .string()
@@ -90,65 +96,60 @@ const optionalPhoneSchema = z
 
 // ─── Signup Schema ───────────────────────────────────────────────────────────
 
-const signupSchema = z.object({
-  organizationName: safeString(200).pipe(
-    z.string().min(2, 'Numele organizatiei trebuie sa aiba minim 2 caractere')
-  ),
-  slug: z
-    .string()
-    .min(3, 'Slug-ul trebuie sa aiba minim 3 caractere')
-    .max(63, 'Slug-ul trebuie sa aiba maxim 63 caractere')
-    .regex(/^[a-z0-9-]+$/, 'Slug-ul poate contine doar litere mici, cifre si cratime')
-    .regex(/^[a-z0-9]/, 'Slug-ul trebuie sa inceapa cu o litera sau cifra')
-    .regex(/[a-z0-9]$/, 'Slug-ul trebuie sa se termine cu o litera sau cifra')
-    .refine((val) => !val.includes('--'), 'Slug-ul nu poate contine cratime consecutive'),
-  email: emailSchema,
-  password: z
-    .string()
-    .min(8, 'Parola trebuie sa aiba minim 8 caractere')
-    .max(128, 'Parola poate avea maxim 128 caractere'),
-  firstName: safeString(100).pipe(
-    z.string().min(1, 'Prenumele este obligatoriu')
-  ),
-  lastName: safeString(100).pipe(
-    z.string().min(1, 'Numele este obligatoriu')
-  ),
-  phoneNumber: optionalPhoneSchema,
-  activitySector: z.string().refine((val) => isValidSector(val), {
-    message: 'Domeniul de activitate este invalid',
-  }),
-  plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).default('PROFESSIONAL'),
+const signupSchema = z
+  .object({
+    organizationName: safeString(200).pipe(
+      z.string().min(2, 'Numele organizatiei trebuie sa aiba minim 2 caractere')
+    ),
+    slug: z
+      .string()
+      .min(3, 'Slug-ul trebuie sa aiba minim 3 caractere')
+      .max(63, 'Slug-ul trebuie sa aiba maxim 63 caractere')
+      .regex(/^[a-z0-9-]+$/, 'Slug-ul poate contine doar litere mici, cifre si cratime')
+      .regex(/^[a-z0-9]/, 'Slug-ul trebuie sa inceapa cu o litera sau cifra')
+      .regex(/[a-z0-9]$/, 'Slug-ul trebuie sa se termine cu o litera sau cifra')
+      .refine((val) => !val.includes('--'), 'Slug-ul nu poate contine cratime consecutive'),
+    email: emailSchema,
+    password: z
+      .string()
+      .min(8, 'Parola trebuie sa aiba minim 8 caractere')
+      .max(128, 'Parola poate avea maxim 128 caractere'),
+    firstName: safeString(100).pipe(z.string().min(1, 'Prenumele este obligatoriu')),
+    lastName: safeString(100).pipe(z.string().min(1, 'Numele este obligatoriu')),
+    phoneNumber: optionalPhoneSchema,
+    activitySector: z.string().refine((val) => isValidSector(val), {
+      message: 'Domeniul de activitate este invalid',
+    }),
+    plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).default('PROFESSIONAL'),
 
-  // Company profile fields
-  vatNumber: safeString(20).pipe(
-    z.string().min(1, 'CUI-ul este obligatoriu')
-  ),
-  companyAddress: safeString(500).pipe(
-    z.string().min(1, 'Adresa companiei este obligatorie')
-  ),
-  companyEmail: emailSchema,
-  companyPhone: phoneSchema,
-  entityType: z.enum(['SRL', 'PFA'], {
-    errorMap: () => ({ message: 'Tipul entitatii trebuie sa fie SRL sau PFA' }),
-  }),
-  registrationNumber: safeString(50).optional().or(z.literal('')),
-  cnp: z
-    .string()
-    .max(13)
-    .regex(/^(\d{13})?$/, 'CNP-ul trebuie sa aiba exact 13 cifre')
-    .optional()
-    .or(z.literal('')),
-}).strict().superRefine((data, ctx) => {
-  // Server-side CUI checksum validation
-  const checksumResult = validateCuiChecksum(data.vatNumber);
-  if (!checksumResult.valid) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: checksumResult.error,
-      path: ['vatNumber'],
-    });
-  }
-});
+    // Company profile fields
+    vatNumber: safeString(20).pipe(z.string().min(1, 'CUI-ul este obligatoriu')),
+    companyAddress: safeString(500).pipe(z.string().min(1, 'Adresa companiei este obligatorie')),
+    companyEmail: emailSchema,
+    companyPhone: phoneSchema,
+    entityType: z.enum(['SRL', 'PFA'], {
+      errorMap: () => ({ message: 'Tipul entitatii trebuie sa fie SRL sau PFA' }),
+    }),
+    registrationNumber: safeString(50).optional().or(z.literal('')),
+    cnp: z
+      .string()
+      .max(13)
+      .regex(/^(\d{13})?$/, 'CNP-ul trebuie sa aiba exact 13 cifre')
+      .optional()
+      .or(z.literal('')),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    // Server-side CUI checksum validation
+    const checksumResult = validateCuiChecksum(data.vatNumber);
+    if (!checksumResult.valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: checksumResult.error,
+        path: ['vatNumber'],
+      });
+    }
+  });
 
 // ─── Slug Check Schema ───────────────────────────────────────────────────────
 
@@ -180,7 +181,9 @@ router.post(
         const { verifyAccessToken } = require('../utils/token');
         const payload = verifyAccessToken(authHeader.replace('Bearer ', ''));
         if (payload.type === 'admin') {
-          return res.status(403).json({ error: 'Conturile super admin nu pot folosi formularul public de inregistrare' });
+          return res.status(403).json({
+            error: 'Conturile super admin nu pot folosi formularul public de inregistrare',
+          });
         }
       } catch {
         // Invalid/expired token - proceed with signup as a public user
@@ -276,11 +279,7 @@ router.patch(
   authorize({ roles: ['admin'] }),
   validate(publicBookingSchema),
   asyncHandler(async (req, res) => {
-    const settings = await updatePublicBooking(
-      req.tenantPrisma,
-      req.user.organizationId,
-      req.body
-    );
+    const settings = await updatePublicBooking(req.tenantPrisma, req.user.organizationId, req.body);
 
     await logFromRequest(req, {
       action: 'UPDATE',
@@ -373,13 +372,19 @@ router.patch(
   '/me/settings/invoiceSequence',
   authenticate,
   authorize({ roles: ['admin'] }),
-  validate(z.object({
-    prefix: z.string().max(10).regex(/^[A-Z0-9]*$/i, 'Only letters and numbers allowed').optional(),
-    separator: z.enum(['-', '/', '_', '']).optional(),
-    includeYear: z.boolean().optional(),
-    paddingDigits: z.number().int().min(3).max(10).optional(),
-    startingNumber: z.number().int().min(1).optional(),
-  })),
+  validate(
+    z.object({
+      prefix: z
+        .string()
+        .max(10)
+        .regex(/^[A-Z0-9]*$/i, 'Only letters and numbers allowed')
+        .optional(),
+      separator: z.enum(['-', '/', '_', '']).optional(),
+      includeYear: z.boolean().optional(),
+      paddingDigits: z.number().int().min(3).max(10).optional(),
+      startingNumber: z.number().int().min(1).optional(),
+    })
+  ),
   asyncHandler(async (req, res) => {
     const { AppError } = require('../utils/errors');
     const org = await req.tenantPrisma.organization.findUnique({

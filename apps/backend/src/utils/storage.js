@@ -2,8 +2,7 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 
-const STORAGE_ROOT =
-  process.env.FILE_STORAGE_ROOT || path.resolve(__dirname, '../../storage');
+const STORAGE_ROOT = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname, '../../storage');
 
 const ensureDirectory = async (dirPath) => {
   if (!fs.existsSync(dirPath)) {

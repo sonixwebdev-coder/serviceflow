@@ -20,21 +20,27 @@ const router = express.Router();
 const createPersonalTodoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
   description: z.string().max(1000, 'Description is too long').optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'low', 'medium', 'high', 'urgent']).optional(),
+  priority: z
+    .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'low', 'medium', 'high', 'urgent'])
+    .optional(),
   dueDate: z.string().datetime().optional().nullable(),
 });
 
 const updatePersonalTodoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long').optional(),
   description: z.string().max(1000, 'Description is too long').optional().nullable(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'low', 'medium', 'high', 'urgent']).optional(),
+  priority: z
+    .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'low', 'medium', 'high', 'urgent'])
+    .optional(),
   dueDate: z.string().datetime().optional().nullable(),
   isCompleted: z.boolean().optional(),
 });
 
 const listQuerySchema = z.object({
   isCompleted: z.enum(['true', 'false']).optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'low', 'medium', 'high', 'urgent']).optional(),
+  priority: z
+    .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT', 'low', 'medium', 'high', 'urgent'])
+    .optional(),
 });
 
 // List all personal todos for current user

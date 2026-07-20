@@ -6,9 +6,14 @@ const { ok, noContent } = require('../utils/http');
 const { listNotifications, markNotificationRead } = require('../services/notificationService');
 const { z } = require('zod');
 
-const listQuerySchema = z.object({
-  isRead: z.string().transform((value) => value === 'true').optional(),
-}).optional();
+const listQuerySchema = z
+  .object({
+    isRead: z
+      .string()
+      .transform((value) => value === 'true')
+      .optional(),
+  })
+  .optional();
 
 const router = express.Router();
 

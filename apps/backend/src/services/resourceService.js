@@ -3,7 +3,11 @@ const { AppError } = require('../utils/errors');
 /**
  * List resources with pagination and filtering
  */
-const listResources = async (prisma, { search, type, isActive, locationId, page = 1, limit = 50 }, options = {}) => {
+const listResources = async (
+  prisma,
+  { search, type, isActive, locationId, page = 1, limit = 50 },
+  options = {}
+) => {
   const take = Math.min(limit, 100);
   const skip = (page - 1) * take;
 
@@ -251,7 +255,11 @@ const deleteResource = async (prisma, resourceId) => {
 /**
  * Get available resources for a time slot
  */
-const getAvailableResources = async (prisma, { startTime, endTime, type, locationId }, options = {}) => {
+const getAvailableResources = async (
+  prisma,
+  { startTime, endTime, type, locationId },
+  options = {}
+) => {
   const where = {
     isActive: true,
   };

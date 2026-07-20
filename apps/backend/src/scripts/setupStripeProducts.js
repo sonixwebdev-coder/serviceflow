@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * One-time script to create Stripe Products & Prices for ForjaIt plans.
+ * One-time script to create Stripe Products & Prices for the configured platform plans.
  *
  * Usage:
  *   STRIPE_SECRET_KEY=sk_test_xxx node src/scripts/setupStripeProducts.js
@@ -12,29 +12,32 @@
 
 require('dotenv').config();
 const Stripe = require('stripe');
+const { getPlatformConfig } = require('../config/platform');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',
 });
 
+const platformName = getPlatformConfig().name;
+
 const PLANS = [
   {
     plan: 'STARTER',
-    name: 'ForjaIt Starter',
+    name: `${platformName} Starter`,
     description: 'Tot ce ai nevoie ca solo operator sau micro-afacere.',
     monthlyPrice: 9900, // 99 RON in bani (smallest unit)
     annualPrice: 94800, // 79 RON * 12 = 948 RON
   },
   {
     plan: 'PROFESSIONAL',
-    name: 'ForjaIt Profesional',
+    name: `${platformName} Profesional`,
     description: 'Pentru echipe in crestere si afaceri cu mai multe locatii.',
     monthlyPrice: 24900, // 249 RON
     annualPrice: 238800, // 199 RON * 12 = 2388 RON
   },
   {
     plan: 'ENTERPRISE',
-    name: 'ForjaIt Enterprise',
+    name: `${platformName} Enterprise`,
     description: 'Fara limite. Pentru lanturi de service si operatiuni mari.',
     monthlyPrice: 49900, // 499 RON
     annualPrice: 478800, // 399 RON * 12 = 4788 RON

@@ -38,7 +38,7 @@ describe('ZIP Exporter - createZipArchive', () => {
     const zip = new AdmZip(zipBuffer);
     const zipEntries = zip.getEntries();
 
-    const fileNames = zipEntries.map(entry => entry.entryName);
+    const fileNames = zipEntries.map((entry) => entry.entryName);
     expect(fileNames).toContain('test.txt');
     expect(fileNames).toContain('data.json');
   });
@@ -63,9 +63,7 @@ describe('ZIP Exporter - createZipArchive', () => {
   });
 
   it('handles single file', async () => {
-    const files = [
-      { name: 'single.txt', buffer: Buffer.from('Single file', 'utf8') },
-    ];
+    const files = [{ name: 'single.txt', buffer: Buffer.from('Single file', 'utf8') }];
 
     const zipBuffer = await createZipArchive(files);
     const zip = new AdmZip(zipBuffer);
@@ -76,9 +74,7 @@ describe('ZIP Exporter - createZipArchive', () => {
 
   it('handles large files', async () => {
     const largeContent = Buffer.alloc(1024 * 1024, 'A'); // 1MB
-    const files = [
-      { name: 'large.dat', buffer: largeContent },
-    ];
+    const files = [{ name: 'large.dat', buffer: largeContent }];
 
     const zipBuffer = await createZipArchive(files);
     expect(zipBuffer).toBeInstanceOf(Buffer);
@@ -89,10 +85,8 @@ describe('ZIP Exporter - createZipArchive', () => {
   });
 
   it('handles binary files', async () => {
-    const binaryData = Buffer.from([0x00, 0x01, 0x02, 0xFF, 0xFE]);
-    const files = [
-      { name: 'binary.bin', buffer: binaryData },
-    ];
+    const binaryData = Buffer.from([0x00, 0x01, 0x02, 0xff, 0xfe]);
+    const files = [{ name: 'binary.bin', buffer: binaryData }];
 
     const zipBuffer = await createZipArchive(files);
     const zip = new AdmZip(zipBuffer);
@@ -111,19 +105,19 @@ describe('ZIP Exporter - createZipArchive', () => {
   });
 
   it('throws error for files without name property', async () => {
-    const files = [
-      { buffer: Buffer.from('Content', 'utf8') },
-    ];
+    const files = [{ buffer: Buffer.from('Content', 'utf8') }];
 
-    await expect(createZipArchive(files)).rejects.toThrow('Each file must have name and buffer properties');
+    await expect(createZipArchive(files)).rejects.toThrow(
+      'Each file must have name and buffer properties'
+    );
   });
 
   it('throws error for files without buffer property', async () => {
-    const files = [
-      { name: 'file.txt' },
-    ];
+    const files = [{ name: 'file.txt' }];
 
-    await expect(createZipArchive(files)).rejects.toThrow('Each file must have name and buffer properties');
+    await expect(createZipArchive(files)).rejects.toThrow(
+      'Each file must have name and buffer properties'
+    );
   });
 
   it('handles UTF-8 file names', async () => {
@@ -157,9 +151,7 @@ describe('ZIP Exporter - createZipArchive', () => {
 
   it('compresses files', async () => {
     const uncompressedContent = 'A'.repeat(10000);
-    const files = [
-      { name: 'compressible.txt', buffer: Buffer.from(uncompressedContent, 'utf8') },
-    ];
+    const files = [{ name: 'compressible.txt', buffer: Buffer.from(uncompressedContent, 'utf8') }];
 
     const zipBuffer = await createZipArchive(files);
 
@@ -182,7 +174,7 @@ describe('ZIP Exporter - createMetadataFile', () => {
     const parsed = JSON.parse(jsonString);
 
     expect(parsed).toHaveProperty('exportDate');
-    expect(parsed).toHaveProperty('generatedBy', 'ViperX CRM');
+    expect(parsed).toHaveProperty('generatedBy', 'ServiceFlow');
     expect(parsed).toHaveProperty('version', '2.0.0');
     expect(parsed.entities).toEqual(['appointments', 'invoices']);
     expect(parsed.totalRecords).toBe(100);
@@ -202,7 +194,7 @@ describe('ZIP Exporter - createMetadataFile', () => {
     const jsonString = buffer.toString('utf8');
     const parsed = JSON.parse(jsonString);
 
-    expect(parsed.generatedBy).toBe('ViperX CRM');
+    expect(parsed.generatedBy).toBe('ServiceFlow');
     expect(parsed.version).toBe('2.0.0');
   });
 
@@ -368,7 +360,7 @@ describe('ZIP Exporter - exportEntitiesToZip', () => {
     const zipEntries = zip.getEntries();
 
     // Should have metadata.json + 1 valid entity file
-    const fileNames = zipEntries.map(e => e.entryName);
+    const fileNames = zipEntries.map((e) => e.entryName);
     expect(fileNames).toContain('valid.txt');
     expect(fileNames).toContain('metadata.json');
   });
@@ -391,11 +383,11 @@ describe('ZIP Exporter - exportEntitiesToZip', () => {
 describe('ZIP Exporter - createZipWithFolders', () => {
   it('creates ZIP with folder structure', async () => {
     const structure = {
-      'folder1': {
+      folder1: {
         'file1.txt': Buffer.from('Content 1', 'utf8'),
         'file2.txt': Buffer.from('Content 2', 'utf8'),
       },
-      'folder2': {
+      folder2: {
         'file3.txt': Buffer.from('Content 3', 'utf8'),
       },
     };
@@ -410,9 +402,9 @@ describe('ZIP Exporter - createZipWithFolders', () => {
 
   it('handles nested folders', async () => {
     const structure = {
-      'parent': {
-        'child': {
-          'grandchild': {
+      parent: {
+        child: {
+          grandchild: {
             'file.txt': Buffer.from('Deep', 'utf8'),
           },
         },
@@ -428,7 +420,7 @@ describe('ZIP Exporter - createZipWithFolders', () => {
   it('handles mixed files and folders at root', async () => {
     const structure = {
       'root-file.txt': Buffer.from('Root', 'utf8'),
-      'folder': {
+      folder: {
         'nested-file.txt': Buffer.from('Nested', 'utf8'),
       },
     };
@@ -457,10 +449,12 @@ describe('ZIP Exporter - createZipWithFolders', () => {
 
 describe('ZIP Exporter - Edge Cases', () => {
   it('handles many files', async () => {
-    const files = Array(100).fill(null).map((_, i) => ({
-      name: `file${i}.txt`,
-      buffer: Buffer.from(`Content ${i}`, 'utf8'),
-    }));
+    const files = Array(100)
+      .fill(null)
+      .map((_, i) => ({
+        name: `file${i}.txt`,
+        buffer: Buffer.from(`Content ${i}`, 'utf8'),
+      }));
 
     const zipBuffer = await createZipArchive(files);
     const zip = new AdmZip(zipBuffer);
@@ -494,9 +488,7 @@ describe('ZIP Exporter - Edge Cases', () => {
   });
 
   it('handles empty buffers', async () => {
-    const files = [
-      { name: 'empty.txt', buffer: Buffer.alloc(0) },
-    ];
+    const files = [{ name: 'empty.txt', buffer: Buffer.alloc(0) }];
 
     const zipBuffer = await createZipArchive(files);
     const zip = new AdmZip(zipBuffer);
@@ -521,9 +513,7 @@ describe('ZIP Exporter - Edge Cases', () => {
 
   it('handles very long file names', async () => {
     const longName = 'a'.repeat(200) + '.txt';
-    const files = [
-      { name: longName, buffer: Buffer.from('data', 'utf8') },
-    ];
+    const files = [{ name: longName, buffer: Buffer.from('data', 'utf8') }];
 
     const zipBuffer = await createZipArchive(files);
     expect(zipBuffer).toBeInstanceOf(Buffer);

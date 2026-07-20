@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-const useAuthStore = create((set, get) => ({
+const useAuthStore = create((set) => ({
   user: JSON.parse(localStorage.getItem('sf_admin_user') || 'null'),
   accessToken: null, // In-memory only - not persisted to localStorage
   isAuthenticated: false,

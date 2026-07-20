@@ -1,13 +1,9 @@
 import { cn } from '@/lib/utils';
 
 const SpacerBlock = ({ data, settings, isEditing = false, onClick }) => {
-  const {
-    height = 60,
-  } = data || {};
+  const { height = 60 } = data || {};
 
-  const {
-    backgroundColor = 'transparent',
-  } = settings || {};
+  const { backgroundColor = 'transparent' } = settings || {};
 
   return (
     <div

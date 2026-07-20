@@ -4,9 +4,18 @@ import { queryClient } from '../lib/queryClient';
 
 // Query keys that depend on the current location and must be refetched on switch
 const LOCATION_DEPENDENT_KEYS = [
-  'appointments', 'invoices', 'clients', 'services', 'users',
-  'analytics', 'tasks', 'resources', 'time-tracking', 'loyalty',
-  'service-orders', 'online-clients',
+  'appointments',
+  'invoices',
+  'clients',
+  'services',
+  'users',
+  'analytics',
+  'tasks',
+  'resources',
+  'time-tracking',
+  'loyalty',
+  'service-orders',
+  'online-clients',
 ];
 
 const useLocationStore = create(
@@ -66,9 +75,7 @@ const useLocationStore = create(
         try {
           // Invalidate only location-dependent queries
           await Promise.all(
-            LOCATION_DEPENDENT_KEYS.map((key) =>
-              queryClient.invalidateQueries({ queryKey: [key] })
-            )
+            LOCATION_DEPENDENT_KEYS.map((key) => queryClient.invalidateQueries({ queryKey: [key] }))
           );
           // Wait a brief moment for queries to start refetching
           await new Promise((resolve) => setTimeout(resolve, 300));
@@ -114,9 +121,10 @@ const useLocationStore = create(
       reset: () => {
         // Save current location to map before clearing
         const { _activeUserId, currentLocationId, userLocationMap } = get();
-        const updatedMap = _activeUserId && currentLocationId
-          ? { ...userLocationMap, [_activeUserId]: currentLocationId }
-          : userLocationMap;
+        const updatedMap =
+          _activeUserId && currentLocationId
+            ? { ...userLocationMap, [_activeUserId]: currentLocationId }
+            : userLocationMap;
 
         set({
           locations: [],

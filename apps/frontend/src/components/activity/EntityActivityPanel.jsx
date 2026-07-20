@@ -25,11 +25,10 @@ export default function EntityActivityPanel({
   defaultExpanded = true,
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const { data: activities = [], isLoading } = useEntityActivity(
-    entityType,
-    entityId,
-    { limit, enabled: isExpanded }
-  );
+  const { data: activities = [], isLoading } = useEntityActivity(entityType, entityId, {
+    limit,
+    enabled: isExpanded,
+  });
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -64,11 +63,7 @@ export default function EntityActivityPanel({
           ) : (
             <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
               {activities.map((activity) => (
-                <ActivityItem
-                  key={activity.id}
-                  activity={activity}
-                  showTime={true}
-                />
+                <ActivityItem key={activity.id} activity={activity} showTime={true} />
               ))}
             </div>
           )}

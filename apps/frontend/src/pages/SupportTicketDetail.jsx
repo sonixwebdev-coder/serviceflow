@@ -44,7 +44,12 @@ export default function SupportTicketDetail() {
           setReply('');
           showToast({ title: 'Mesaj trimis', type: 'success' });
         },
-        onError: () => showToast({ title: 'Eroare', description: 'Nu s-a putut trimite mesajul.', type: 'error' }),
+        onError: () =>
+          showToast({
+            title: 'Eroare',
+            description: 'Nu s-a putut trimite mesajul.',
+            type: 'error',
+          }),
       }
     );
   };
@@ -77,15 +82,17 @@ export default function SupportTicketDetail() {
           <div>
             <h1 className="text-xl font-bold text-gray-900">{ticket.subject}</h1>
             <div className="flex items-center gap-2 mt-2">
-              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[ticket.status]}`}>
+              <span
+                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[ticket.status]}`}
+              >
                 {ticket.status.replace('_', ' ')}
               </span>
-              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${PRIORITY_COLORS[ticket.priority]}`}>
+              <span
+                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${PRIORITY_COLORS[ticket.priority]}`}
+              >
                 {ticket.priority}
               </span>
-              <span className="text-xs text-gray-500">
-                {CATEGORY_LABELS[ticket.category]}
-              </span>
+              <span className="text-xs text-gray-500">{CATEGORY_LABELS[ticket.category]}</span>
               <span className="text-xs text-gray-400">
                 &#183; {new Date(ticket.createdAt).toLocaleDateString('ro-RO')}
               </span>
@@ -100,24 +107,21 @@ export default function SupportTicketDetail() {
           {ticket.messages?.map((msg) => {
             const isOrgUser = msg.authorType === 'ORG_USER';
             return (
-              <div
-                key={msg.id}
-                className={`flex ${isOrgUser ? 'justify-end' : 'justify-start'}`}
-              >
+              <div key={msg.id} className={`flex ${isOrgUser ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[75%] rounded-xl px-4 py-3 ${
-                    isOrgUser
-                      ? 'bg-blue-50 text-gray-800'
-                      : 'bg-gray-100 text-gray-800'
+                    isOrgUser ? 'bg-blue-50 text-gray-800' : 'bg-gray-100 text-gray-800'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-semibold">
                       {msg.author?.firstName} {msg.author?.lastName}
                     </span>
-                    <span className={`text-[10px] rounded-full px-1.5 py-0.5 ${
-                      isOrgUser ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'
-                    }`}>
+                    <span
+                      className={`text-[10px] rounded-full px-1.5 py-0.5 ${
+                        isOrgUser ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
                       {isOrgUser ? 'Tu' : 'Suport'}
                     </span>
                   </div>

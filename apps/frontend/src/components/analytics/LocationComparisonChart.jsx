@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { MapPin, TrendingUp, Users, Calendar, CheckSquare, Banknote } from 'lucide-react';
+import { MapPin, Users, Calendar, Banknote } from 'lucide-react';
 import { useLocationComparison } from '../../hooks/useAnalytics';
 import useLocationStore from '../../state/useLocationStore';
 
@@ -143,7 +143,8 @@ const LocationComparisonChart = ({ startDate, endDate }) => {
             ))}
           </div>
           <div className="mt-2 text-right text-xs text-gray-500">
-            Total: {data.totals.appointments.total} ({data.totals.appointments.completionRate}% finalizate)
+            Total: {data.totals.appointments.total} ({data.totals.appointments.completionRate}%
+            finalizate)
           </div>
         </div>
 
@@ -180,7 +181,9 @@ const LocationComparisonChart = ({ startDate, endDate }) => {
                   <th className="text-right py-2 px-4 font-medium text-gray-600">Venituri</th>
                   <th className="text-right py-2 px-4 font-medium text-gray-600">Programari</th>
                   <th className="text-right py-2 px-4 font-medium text-gray-600">Clienti</th>
-                  <th className="text-right py-2 pl-4 font-medium text-gray-600">Rata Finalizare</th>
+                  <th className="text-right py-2 pl-4 font-medium text-gray-600">
+                    Rata Finalizare
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -193,8 +196,21 @@ const LocationComparisonChart = ({ startDate, endDate }) => {
                   >
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-2">
-                        <MapPin size={14} className={loc.location.id === currentLocationId ? 'text-orange-500' : 'text-gray-400'} />
-                        <span className={loc.location.id === currentLocationId ? 'font-medium text-orange-700' : 'text-gray-900'}>
+                        <MapPin
+                          size={14}
+                          className={
+                            loc.location.id === currentLocationId
+                              ? 'text-orange-500'
+                              : 'text-gray-400'
+                          }
+                        />
+                        <span
+                          className={
+                            loc.location.id === currentLocationId
+                              ? 'font-medium text-orange-700'
+                              : 'text-gray-900'
+                          }
+                        >
                           {loc.location.name}
                         </span>
                         {loc.location.isPrimary && (
@@ -212,13 +228,15 @@ const LocationComparisonChart = ({ startDate, endDate }) => {
                       {loc.metrics.clients.total}
                     </td>
                     <td className="text-right py-2 pl-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        loc.metrics.appointments.completionRate >= 80
-                          ? 'bg-green-100 text-green-700'
-                          : loc.metrics.appointments.completionRate >= 50
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          loc.metrics.appointments.completionRate >= 80
+                            ? 'bg-green-100 text-green-700'
+                            : loc.metrics.appointments.completionRate >= 50
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                        }`}
+                      >
                         {loc.metrics.appointments.completionRate}%
                       </span>
                     </td>

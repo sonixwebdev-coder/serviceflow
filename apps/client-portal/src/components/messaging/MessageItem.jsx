@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { User, Download, Play, Pause, FileText, Image as ImageIcon } from 'lucide-react';
+import { User, Play, Pause, FileText, Image as ImageIcon } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { getFileUrl } from '@/utils/api';
 
@@ -45,7 +45,9 @@ function FileAttachment({ attachment, onPreview }) {
     return (
       <button
         type="button"
-        onClick={() => onPreview({ url: fullUrl, name: attachment.fileName, type: attachment.fileType })}
+        onClick={() =>
+          onPreview({ url: fullUrl, name: attachment.fileName, type: attachment.fileType })
+        }
         className="block mt-2 cursor-pointer hover:opacity-90 transition-opacity"
       >
         <img
@@ -60,7 +62,9 @@ function FileAttachment({ attachment, onPreview }) {
   return (
     <button
       type="button"
-      onClick={() => onPreview({ url: fullUrl, name: attachment.fileName, type: attachment.fileType })}
+      onClick={() =>
+        onPreview({ url: fullUrl, name: attachment.fileName, type: attachment.fileType })
+      }
       className="flex items-center gap-2 mt-2 p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors w-full text-left"
     >
       {isPdf ? (
@@ -68,9 +72,7 @@ function FileAttachment({ attachment, onPreview }) {
       ) : (
         <FileText className="h-5 w-5 text-gray-500" />
       )}
-      <span className="text-sm text-gray-700 truncate max-w-[180px]">
-        {attachment.fileName}
-      </span>
+      <span className="text-sm text-gray-700 truncate max-w-[180px]">{attachment.fileName}</span>
       <ImageIcon className="h-4 w-4 text-gray-400 ml-auto" />
     </button>
   );
@@ -116,32 +118,18 @@ function VoicePlayer({ fileUrl, duration }) {
 
   return (
     <div className="flex items-center gap-3 mt-2 p-2 bg-gray-100 rounded-lg min-w-[200px]">
-      <audio
-        ref={audioRef}
-        src={fullUrl}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={handleEnded}
-      />
+      <audio ref={audioRef} src={fullUrl} onTimeUpdate={handleTimeUpdate} onEnded={handleEnded} />
       <button
         onClick={togglePlay}
         className="w-8 h-8 flex items-center justify-center bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors"
       >
-        {isPlaying ? (
-          <Pause className="h-4 w-4" />
-        ) : (
-          <Play className="h-4 w-4 ml-0.5" />
-        )}
+        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
       </button>
       <div className="flex-1">
         <div className="h-1 bg-gray-300 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary-600 transition-all"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-primary-600 transition-all" style={{ width: `${progress}%` }} />
         </div>
-        <span className="text-xs text-gray-500 mt-1">
-          {formatDuration(duration)}
-        </span>
+        <span className="text-xs text-gray-500 mt-1">{formatDuration(duration)}</span>
       </div>
     </div>
   );
@@ -157,12 +145,7 @@ export default function MessageItem({ message, isOwnMessage, onPreviewFile }) {
   const isClientMessage = message.author?.type === 'client';
 
   return (
-    <div
-      className={cn(
-        'flex gap-3 py-2',
-        isOwnMessage ? 'flex-row-reverse' : 'flex-row'
-      )}
-    >
+    <div className={cn('flex gap-3 py-2', isOwnMessage ? 'flex-row-reverse' : 'flex-row')}>
       {/* Avatar */}
       <div
         className={cn(
@@ -177,22 +160,12 @@ export default function MessageItem({ message, isOwnMessage, onPreviewFile }) {
             className="w-8 h-8 rounded-full object-cover"
           />
         ) : (
-          <User
-            className={cn(
-              'h-4 w-4',
-              isClientMessage ? 'text-primary-600' : 'text-gray-500'
-            )}
-          />
+          <User className={cn('h-4 w-4', isClientMessage ? 'text-primary-600' : 'text-gray-500')} />
         )}
       </div>
 
       {/* Message content */}
-      <div
-        className={cn(
-          'max-w-[75%] flex flex-col',
-          isOwnMessage ? 'items-end' : 'items-start'
-        )}
-      >
+      <div className={cn('max-w-[75%] flex flex-col', isOwnMessage ? 'items-end' : 'items-start')}>
         {/* Author name and time */}
         <div
           className={cn(
@@ -201,9 +174,7 @@ export default function MessageItem({ message, isOwnMessage, onPreviewFile }) {
           )}
         >
           <span className="text-xs font-medium text-gray-700">{authorName}</span>
-          <span className="text-xs text-gray-400">
-            {formatMessageTime(message.createdAt)}
-          </span>
+          <span className="text-xs text-gray-400">{formatMessageTime(message.createdAt)}</span>
         </div>
 
         {/* Message bubble */}
@@ -232,7 +203,11 @@ export default function MessageItem({ message, isOwnMessage, onPreviewFile }) {
           {!isVoice &&
             hasAttachments &&
             message.attachments.map((attachment) => (
-              <FileAttachment key={attachment.id} attachment={attachment} onPreview={onPreviewFile} />
+              <FileAttachment
+                key={attachment.id}
+                attachment={attachment}
+                onPreview={onPreviewFile}
+              />
             ))}
         </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import API from '../utils/api';
+import { runtimeConfig } from '../config/runtime';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -55,7 +56,7 @@ const ResetPassword = () => {
       <header className="border-b border-gray-200/60 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/" className="text-lg font-bold tracking-tight text-gray-900">
-            ForjaIt
+            {runtimeConfig.platformName}
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -74,9 +75,7 @@ const ResetPassword = () => {
           <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-8 shadow-sm">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold tracking-tight text-gray-900">Resetare parola</h1>
-              <p className="mt-2 text-sm text-gray-500">
-                Introdu noua parola pentru contul tau.
-              </p>
+              <p className="mt-2 text-sm text-gray-500">Introdu noua parola pentru contul tau.</p>
             </div>
 
             {success ? (
@@ -85,7 +84,8 @@ const ResetPassword = () => {
                   <CheckCircle className="h-6 w-6 text-green-600" />
                 </div>
                 <p className="text-sm text-gray-700">
-                  Parola a fost resetata cu succes! Vei fi redirectionat catre pagina de autentificare...
+                  Parola a fost resetata cu succes! Vei fi redirectionat catre pagina de
+                  autentificare...
                 </p>
                 <Link
                   to="/login"
@@ -116,7 +116,10 @@ const ResetPassword = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-gray-700 mb-1.5"
+                    >
                       Parola noua
                     </label>
                     <input
@@ -133,7 +136,10 @@ const ResetPassword = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-gray-700 mb-1.5"
+                    >
                       Confirma parola
                     </label>
                     <input
@@ -177,18 +183,26 @@ const ResetPassword = () => {
       <footer className="border-t border-gray-100">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-3 text-xs text-gray-500">
-            <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               ANPC
             </a>
-            <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/ce-este-sal/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               SAL
-            </a>
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
-              SOL
             </a>
           </div>
           <p className="text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+            &copy; {new Date().getFullYear()} {runtimeConfig.platformName}. Toate drepturile
+            rezervate.
           </p>
         </div>
       </footer>

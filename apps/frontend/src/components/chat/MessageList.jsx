@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useChatStore } from '../../state/useChatStore';
 import { useAuthStore } from '../../state/useAuthStore';
 import MessageItem from './MessageItem';
@@ -9,7 +9,7 @@ import { format, isToday, isYesterday, isSameDay } from 'date-fns';
  * Displays messages with date separators and auto-scroll
  */
 export default function MessageList({ channelId }) {
-  const { messagesByChannel, getTypingUsers, typingUsers, channels, pendingMessages } = useChatStore();
+  const { messagesByChannel, getTypingUsers, channels, pendingMessages } = useChatStore();
   const { user: currentUser } = useAuthStore();
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -90,9 +90,7 @@ export default function MessageList({ channelId }) {
           const previousMessage = index > 0 ? messages[index - 1] : null;
           const showDateSeparator = shouldShowDateSeparator(message, previousMessage);
           const showAvatar =
-            !previousMessage ||
-            previousMessage.authorId !== message.authorId ||
-            showDateSeparator;
+            !previousMessage || previousMessage.authorId !== message.authorId || showDateSeparator;
 
           return (
             <div key={message.id}>

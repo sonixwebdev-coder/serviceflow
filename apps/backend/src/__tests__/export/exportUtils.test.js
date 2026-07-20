@@ -56,7 +56,7 @@ describe('Export Utils - sanitizeForExport', () => {
   });
 
   it('handles arrays as strings', () => {
-    expect(sanitizeForExport([1, 2, 3])).toBe('1,2,3');
+    expect(sanitizeForExport([1, 2, 3])).toBe('[1,2,3]');
   });
 });
 
@@ -275,7 +275,7 @@ describe('Export Utils - applyFilters', () => {
   it('filters by status', () => {
     const result = applyFilters(mockData, { status: 'pending' });
     expect(result).toHaveLength(2);
-    expect(result.every(item => item.status === 'PENDING')).toBe(true);
+    expect(result.every((item) => item.status === 'PENDING')).toBe(true);
   });
 
   it('filters by start date', () => {
@@ -333,7 +333,7 @@ describe('Export Utils - generateFilename', () => {
 
   it('handles entity names with spaces', () => {
     const filename = generateFilename('User Reports', 'excel');
-    expect(filename).toMatch(/^user-reports_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.excel$/);
+    expect(filename).toMatch(/^user-reports_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.xlsx$/);
   });
 
   it('uses custom timestamp', () => {
@@ -370,7 +370,7 @@ describe('Export Utils - validateFormat', () => {
     expect(validateFormat('csv')).toBe('csv');
     expect(validateFormat('excel')).toBe('excel');
     expect(validateFormat('json')).toBe('json');
-    expect(validateFormat('pdf')).toBe('pdf');
+    expect(validateFormat('xml')).toBe('xml');
   });
 
   it('normalizes format to lowercase', () => {
@@ -380,7 +380,7 @@ describe('Export Utils - validateFormat', () => {
   });
 
   it('throws error for invalid formats', () => {
-    expect(() => validateFormat('xml')).toThrow('Invalid export format');
+    expect(() => validateFormat('docx')).toThrow('Invalid export format');
     expect(() => validateFormat('doc')).toThrow('Invalid export format');
     expect(() => validateFormat('')).toThrow('Invalid export format');
   });
@@ -397,7 +397,9 @@ describe('Export Utils - getContentType', () => {
   });
 
   it('returns correct content type for Excel', () => {
-    expect(getContentType('excel')).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(getContentType('excel')).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
   });
 
   it('returns correct content type for JSON', () => {
@@ -488,7 +490,7 @@ describe('Export Utils - VALID_FORMATS constant', () => {
     expect(VALID_FORMATS).toContain('csv');
     expect(VALID_FORMATS).toContain('excel');
     expect(VALID_FORMATS).toContain('json');
-    expect(VALID_FORMATS).toContain('pdf');
+    expect(VALID_FORMATS).toContain('xml');
   });
 
   it('has exactly 4 formats', () => {

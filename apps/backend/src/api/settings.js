@@ -8,24 +8,27 @@ const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
 const validate = require('../middleware/validate');
-const { ok, created } = require('../utils/http');
+const { ok } = require('../utils/http');
 const { getCompanySettings, updateCompanySettings } = require('../services/companySettingService');
 const { validateVatNumber } = require('../services/vatValidationService');
 const { AppError } = require('../utils/errors');
+const { removeStoredLogo } = require('../utils/companyLogoStorage');
+const { STORAGE_ROOT } = require('../utils/storage');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
 // Configure multer for logo uploads
 const logoStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../storage/logos');
+    const uploadDir = path.join(STORAGE_ROOT, 'logos');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const ext = path.extname(file.originalname);
     cb(null, `company-logo-${uniqueSuffix}${ext}`);
   },
@@ -54,24 +57,44 @@ const IBAN_REGEX = /^RO\d{2}[A-Z0-9]{22}$/i;
 const SWIFT_REGEX = /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/i;
 
 const companySettingsSchema = z.object({
-  legalName:          z.string().max(160).optional().or(z.literal('')),
-  address:            z.string().max(500).optional().or(z.literal('')),
-  email:              z.string().email('Adresa de email nu este valida').optional().or(z.literal('')),
-  phone:              z.string().max(30).regex(PHONE_REGEX, 'Numarul de telefon nu este valid').optional().or(z.literal('')),
-  contactPerson:      z.string().max(120).optional().or(z.literal('')),
-  website:            z.string().url('URL-ul nu este valid').optional().or(z.literal('')),
-  logoUrl:            z.string().max(500).nullable().optional(),
-  bankName:           z.string().max(120).optional().or(z.literal('')),
-  iban:               z.string().max(34).regex(IBAN_REGEX, 'IBAN-ul nu este valid (format: RO49AAAA1234...)').optional().or(z.literal('')),
-  swift:              z.string().max(11).regex(SWIFT_REGEX, 'Codul SWIFT/BIC nu este valid').optional().or(z.literal('')),
+  legalName: z.string().max(160).optional().or(z.literal('')),
+  address: z.string().max(500).optional().or(z.literal('')),
+  email: z.string().email('Adresa de email nu este valida').optional().or(z.literal('')),
+  phone: z
+    .string()
+    .max(30)
+    .regex(PHONE_REGEX, 'Numarul de telefon nu este valid')
+    .optional()
+    .or(z.literal('')),
+  contactPerson: z.string().max(120).optional().or(z.literal('')),
+  website: z.string().url('URL-ul nu este valid').optional().or(z.literal('')),
+  logoUrl: z.string().max(500).nullable().optional(),
+  bankName: z.string().max(120).optional().or(z.literal('')),
+  iban: z
+    .string()
+    .max(34)
+    .regex(IBAN_REGEX, 'IBAN-ul nu este valid (format: RO49AAAA1234...)')
+    .optional()
+    .or(z.literal('')),
+  swift: z
+    .string()
+    .max(11)
+    .regex(SWIFT_REGEX, 'Codul SWIFT/BIC nu este valid')
+    .optional()
+    .or(z.literal('')),
   registrationNumber: z.string().max(60).optional().or(z.literal('')),
-  cnp:                z.string().max(13).regex(/^(\d{13})?$/, 'CNP-ul trebuie sa aiba 13 cifre').optional().or(z.literal('')),
-  rampCount:          z.number().int().min(1).max(999).optional(),
-  tvaEnabled:         z.boolean().optional(),
-  tvaPercentage:      z.number().min(0).max(100).optional(),
-  footerNote:         z.string().max(500).optional().or(z.literal('')),
-  gdprNote:           z.string().max(1200).optional().or(z.literal('')),
-  additionalNote:     z.string().max(1200).optional().or(z.literal('')),
+  cnp: z
+    .string()
+    .max(13)
+    .regex(/^(\d{13})?$/, 'CNP-ul trebuie sa aiba 13 cifre')
+    .optional()
+    .or(z.literal('')),
+  rampCount: z.number().int().min(1).max(999).optional(),
+  tvaEnabled: z.boolean().optional(),
+  tvaPercentage: z.number().min(0).max(100).optional(),
+  footerNote: z.string().max(500).optional().or(z.literal('')),
+  gdprNote: z.string().max(1200).optional().or(z.literal('')),
+  additionalNote: z.string().max(1200).optional().or(z.literal('')),
 });
 
 router.get(
@@ -108,13 +131,10 @@ router.post(
     try {
       const currentSettings = await getCompanySettings(req.user.organizationId);
       if (currentSettings?.logoUrl) {
-        const oldLogoPath = path.join(__dirname, '../..', currentSettings.logoUrl);
-        if (fs.existsSync(oldLogoPath)) {
-          fs.unlinkSync(oldLogoPath);
-        }
+        await removeStoredLogo(currentSettings.logoUrl);
       }
     } catch (error) {
-      console.error('Failed to delete old logo:', error);
+      logger.error('Failed to delete replaced company logo', error);
       // Continue anyway - not a critical error
     }
 
@@ -151,7 +171,10 @@ const makeVatRateLimitStore = () => {
 const vatValidationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { success: false, message: 'Prea multe verificari. Incercati din nou peste cateva minute.' },
+  message: {
+    success: false,
+    message: 'Prea multe verificari. Incercati din nou peste cateva minute.',
+  },
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.user?.id || req.ip,

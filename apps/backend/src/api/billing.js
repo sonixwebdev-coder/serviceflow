@@ -217,7 +217,10 @@ router.post(
       await billingService.syncSubscription(subscription);
 
       // Store subscription start date (only on initial subscription, not upgrades) and billing interval
-      const existingOrg = await prisma.organization.findUnique({ where: { id: req.user.organizationId }, select: { subscriptionStartedAt: true } });
+      const existingOrg = await prisma.organization.findUnique({
+        where: { id: req.user.organizationId },
+        select: { subscriptionStartedAt: true },
+      });
       const updateData = { stripeCustomerId: session.customer };
       if (!existingOrg?.subscriptionStartedAt) {
         updateData.subscriptionStartedAt = new Date();

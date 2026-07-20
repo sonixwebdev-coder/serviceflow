@@ -22,7 +22,9 @@ export const useUpdateAppointment = () => {
         queryClient.setQueryData(['appointment', data.id], data);
         queryClient.setQueriesData({ queryKey: ['appointments'] }, (current) => {
           if (!Array.isArray(current)) return current;
-          return current.map((appointment) => (appointment.id === data.id ? { ...appointment, ...data } : appointment));
+          return current.map((appointment) =>
+            appointment.id === data.id ? { ...appointment, ...data } : appointment
+          );
         });
         if (data.serviceOrder) {
           queryClient.setQueryData(['service-order', data.id], data.serviceOrder);

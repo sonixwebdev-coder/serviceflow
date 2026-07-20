@@ -44,6 +44,7 @@ const exportLimiter = rateLimit({
   keyGenerator: (req) => {
     return req.user?.id || req.ip;
   },
+  skip: () => process.env.NODE_ENV === 'test',
 });
 
 /**
@@ -335,10 +336,12 @@ router.post(
   asyncHandler(async (req, res) => {
     // Check if user is admin
     // req.userRoles is an array of strings from extractUserRoles middleware
-    const roleKeys = req.userRoles.map(r => {
-      if (typeof r === 'string') return r;
-      return r.role?.key || r.key;
-    }).filter(Boolean);
+    const roleKeys = req.userRoles
+      .map((r) => {
+        if (typeof r === 'string') return r;
+        return r.role?.key || r.key;
+      })
+      .filter(Boolean);
 
     const isAdmin = roleKeys.includes('admin');
 
@@ -346,7 +349,12 @@ router.post(
       throw new AppError('Only administrators can export all data', 403);
     }
 
-    const result = await exportAllData(req.tenantPrisma, req.user.id, req.userRoles, req.user.organizationId);
+    const result = await exportAllData(
+      req.tenantPrisma,
+      req.user.id,
+      req.userRoles,
+      req.user.organizationId
+    );
 
     setDownloadHeaders(res, result.filename, result.contentType);
     return res.send(result.buffer);
@@ -383,12 +391,6 @@ router.get(
             mimeType: 'application/json',
           },
           {
-            key: 'pdf',
-            name: 'PDF',
-            description: 'Portable Document Format',
-            mimeType: 'application/pdf',
-          },
-          {
             key: 'xml',
             name: 'XML',
             description: 'Extensible Markup Language',
@@ -407,7 +409,7 @@ router.get(
 router.get(
   '/entities',
   asyncHandler(async (req, res) => {
-    const roleKeys = req.userRoles.map(r => r.role?.key).filter(Boolean);
+    const roleKeys = req.userRoles.map((r) => r.role?.key).filter(Boolean);
     const isAdmin = roleKeys.includes('admin');
     const isManager = roleKeys.includes('manager');
 

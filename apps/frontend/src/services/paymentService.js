@@ -7,10 +7,7 @@ import API from '../utils/api';
  * @returns {Promise<Object>} Payment data
  */
 export const recordAdvancePayment = async (appointmentId, amount) => {
-  const response = await API.post(
-    `/appointments/${appointmentId}/payments/advance`,
-    { amount }
-  );
+  const response = await API.post(`/appointments/${appointmentId}/payments/advance`, { amount });
   return response.data.data;
 };
 
@@ -21,10 +18,7 @@ export const recordAdvancePayment = async (appointmentId, amount) => {
  * @returns {Promise<Object>} Payment data
  */
 export const recordFinalPayment = async (appointmentId, amount) => {
-  const response = await API.post(
-    `/appointments/${appointmentId}/payments/final`,
-    { amount }
-  );
+  const response = await API.post(`/appointments/${appointmentId}/payments/final`, { amount });
   return response.data.data;
 };
 
@@ -34,9 +28,7 @@ export const recordFinalPayment = async (appointmentId, amount) => {
  * @returns {Promise<Object>} Payment status data including status, total, paid, remaining, etc.
  */
 export const getPaymentStatus = async (appointmentId) => {
-  const response = await API.get(
-    `/appointments/${appointmentId}/payment-status`
-  );
+  const response = await API.get(`/appointments/${appointmentId}/payment-status`);
   return response.data.data;
 };
 
@@ -46,9 +38,7 @@ export const getPaymentStatus = async (appointmentId) => {
  * @returns {Promise<Array>} Array of payment records
  */
 export const getAppointmentPayments = async (appointmentId) => {
-  const response = await API.get(
-    `/payments/appointment/${appointmentId}`
-  );
+  const response = await API.get(`/payments/appointment/${appointmentId}`);
   return response.data.data;
 };
 

@@ -3,7 +3,18 @@ import confirm from '../utils/confirm';
 import { useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
-import { X, UserPlus, Mail, Phone, Calendar, Shield, CheckCircle, Umbrella, Users, MapPin } from 'lucide-react';
+import {
+  X,
+  UserPlus,
+  Mail,
+  Phone,
+  Calendar,
+  Shield,
+  CheckCircle,
+  Umbrella,
+  Users,
+  MapPin,
+} from 'lucide-react';
 import useUsers from '../hooks/useUsers';
 import useAuth from '../context/useAuth';
 import useToast from '../context/useToast';
@@ -40,10 +51,18 @@ const Employees = () => {
   const userId = user?._id || user?.id;
 
   const [filters, setFilters] = useState({ isActive: true });
-  const { users, loading, error, setFilters: setHookFilters, refresh } = useUsers(filters, { enabled: isAdmin });
+  const {
+    users,
+    loading,
+    error,
+    setFilters: setHookFilters,
+    refresh,
+  } = useUsers(filters, { enabled: isAdmin });
 
   // Fetch all organization locations for the form
-  const { locations: allLocations, loading: locationsLoading } = useAllOrgLocations({ enabled: isAdmin });
+  const { locations: allLocations, loading: locationsLoading } = useAllOrgLocations({
+    enabled: isAdmin,
+  });
   const { assignUsers, removeUsers } = useLocationMutations();
 
   const [modalMode, setModalMode] = useState(null); // 'create' | 'edit'
@@ -239,9 +258,8 @@ const Employees = () => {
       // Handle location assignments if we have locations selected
       if (savedUserId && formState.locationIds.length > 0) {
         // Get current locations for the user (for edit mode)
-        const currentLocationIds = modalMode === 'edit'
-          ? (targetUser?.locations || []).map((loc) => loc.id)
-          : [];
+        const currentLocationIds =
+          modalMode === 'edit' ? (targetUser?.locations || []).map((loc) => loc.id) : [];
 
         // Find locations to add and remove
         const locationsToAdd = formState.locationIds.filter(
@@ -304,7 +322,14 @@ const Employees = () => {
   };
 
   const handleDeactivate = async (employeeId) => {
-    if (!await confirm({ title: 'Dezactiveaza utilizator', text: 'Esti sigur ca vrei sa dezactivezi acest utilizator?', confirmText: 'Dezactiveaza', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Dezactiveaza utilizator',
+        text: 'Esti sigur ca vrei sa dezactivezi acest utilizator?',
+        confirmText: 'Dezactiveaza',
+        danger: true,
+      }))
+    ) {
       return;
     }
     deactivateMutation.mutate(employeeId);
@@ -497,7 +522,9 @@ const Employees = () => {
       {/* Filters */}
       <div className="filter-bar">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol:</label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Rol:
+          </label>
           <select
             name="role"
             value={filters.role || ''}
@@ -514,7 +541,9 @@ const Employees = () => {
         </div>
         <div className="h-6 w-px bg-gray-200 hidden sm:block" />
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status:</label>
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Status:
+          </label>
           <select
             name="isActive"
             value={filters.isActive?.toString() ?? 'true'}
@@ -547,13 +576,27 @@ const Employees = () => {
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Nume</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status Concediu</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Locatii</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status Cont</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actiuni</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Nume
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Status Concediu
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Rol
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Locatii
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Status Cont
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Actiuni
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -565,7 +608,8 @@ const Employees = () => {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-sm font-semibold text-primary">
-                              {employee.firstName?.[0]}{employee.lastName?.[0]}
+                              {employee.firstName?.[0]}
+                              {employee.lastName?.[0]}
                             </span>
                           </div>
                           <div className="ml-3">
@@ -573,7 +617,12 @@ const Employees = () => {
                               {employee.firstName} {employee.lastName}
                             </div>
                             <div className="text-xs text-gray-500">
-                              Angajat din: {employee.createdAt ? format(new Date(employee.createdAt), 'dd MMM yyyy', { locale: roDateLocale }) : '-'}
+                              Angajat din:{' '}
+                              {employee.createdAt
+                                ? format(new Date(employee.createdAt), 'dd MMM yyyy', {
+                                    locale: roDateLocale,
+                                  })
+                                : '-'}
                             </div>
                           </div>
                         </div>
@@ -638,7 +687,9 @@ const Employees = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${employee.isActive ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${employee.isActive ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-gray-50 text-gray-600 border border-gray-200'}`}
+                        >
                           {employee.isActive ? 'Activ' : 'Inactiv'}
                         </span>
                       </td>
@@ -657,10 +708,16 @@ const Employees = () => {
                             <button
                               type="button"
                               onClick={() => handleDeactivate(employee._id)}
-                              disabled={deactivateMutation.isPending && deactivateMutation.variables === employee._id}
+                              disabled={
+                                deactivateMutation.isPending &&
+                                deactivateMutation.variables === employee._id
+                              }
                               className="text-red-600 hover:text-red-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {deactivateMutation.isPending && deactivateMutation.variables === employee._id ? 'Se dezactiveaza...' : 'Dezactiveaza'}
+                              {deactivateMutation.isPending &&
+                              deactivateMutation.variables === employee._id
+                                ? 'Se dezactiveaza...'
+                                : 'Dezactiveaza'}
                             </button>
                           )}
                         </div>
@@ -693,7 +750,8 @@ const Employees = () => {
                       <div className="flex items-center gap-3">
                         <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-base font-semibold text-primary">
-                            {employee.firstName?.[0]}{employee.lastName?.[0]}
+                            {employee.firstName?.[0]}
+                            {employee.lastName?.[0]}
                           </span>
                         </div>
                         <div className="flex-1">
@@ -712,7 +770,9 @@ const Employees = () => {
                                 In concediu
                               </span>
                             )}
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${employee.isActive ? 'bg-green-50 text-green-800' : 'bg-gray-50 text-gray-600'}`}>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${employee.isActive ? 'bg-green-50 text-green-800' : 'bg-gray-50 text-gray-600'}`}
+                            >
                               {employee.isActive ? 'Activ' : 'Inactiv'}
                             </span>
                           </div>
@@ -736,7 +796,12 @@ const Employees = () => {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Calendar size={14} className="text-gray-400" />
-                          Angajat din: {employee.createdAt ? format(new Date(employee.createdAt), 'dd MMM yyyy', { locale: roDateLocale }) : '-'}
+                          Angajat din:{' '}
+                          {employee.createdAt
+                            ? format(new Date(employee.createdAt), 'dd MMM yyyy', {
+                                locale: roDateLocale,
+                              })
+                            : '-'}
                         </div>
                         {(employee.locations || []).length > 0 && (
                           <div className="flex items-center gap-2">
@@ -773,10 +838,16 @@ const Employees = () => {
                           <button
                             type="button"
                             onClick={() => handleDeactivate(employee._id)}
-                            disabled={deactivateMutation.isPending && deactivateMutation.variables === employee._id}
+                            disabled={
+                              deactivateMutation.isPending &&
+                              deactivateMutation.variables === employee._id
+                            }
                             className="flex-1 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {deactivateMutation.isPending && deactivateMutation.variables === employee._id ? 'Se dezactiveaza...' : 'Dezactiveaza'}
+                            {deactivateMutation.isPending &&
+                            deactivateMutation.variables === employee._id
+                              ? 'Se dezactiveaza...'
+                              : 'Dezactiveaza'}
                           </button>
                         )}
                       </div>
@@ -814,9 +885,7 @@ const Employees = () => {
               </button>
             </div>
 
-            <div className="px-4 sm:px-6 py-3 sm:py-4">
-              {renderForm()}
-            </div>
+            <div className="px-4 sm:px-6 py-3 sm:py-4">{renderForm()}</div>
 
             <div className="flex justify-end gap-3 border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
               <button

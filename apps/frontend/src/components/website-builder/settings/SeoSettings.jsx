@@ -29,7 +29,10 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
   };
 
   const handleRemoveKeyword = (keyword) => {
-    handleChange('keywords', localSeo.keywords.filter((k) => k !== keyword));
+    handleChange(
+      'keywords',
+      localSeo.keywords.filter((k) => k !== keyword)
+    );
   };
 
   const handleKeyDown = (e) => {
@@ -44,7 +47,8 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
   };
 
   const hasChanges =
-    JSON.stringify(localSeo) !== JSON.stringify({
+    JSON.stringify(localSeo) !==
+    JSON.stringify({
       title: seoDefaults.title || '',
       description: seoDefaults.description || '',
       keywords: seoDefaults.keywords || [],
@@ -77,11 +81,10 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
             <div className="text-blue-800 text-lg hover:underline cursor-pointer">
               {localSeo.title || siteName || 'Titlul website-ului'}
             </div>
-            <div className="text-green-700 text-sm mt-1">
-              www.exemplu.ro
-            </div>
+            <div className="text-green-700 text-sm mt-1">www.exemplu.ro</div>
             <div className="text-gray-600 text-sm mt-1 line-clamp-2">
-              {localSeo.description || 'Descrierea website-ului va aparea aici. O descriere buna ajuta utilizatorii sa inteleaga despre ce este pagina dvs.'}
+              {localSeo.description ||
+                'Descrierea website-ului va aparea aici. O descriere buna ajuta utilizatorii sa inteleaga despre ce este pagina dvs.'}
             </div>
           </div>
         </div>
@@ -227,7 +230,8 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
             URL Canonical
           </h3>
           <p className="text-sm text-gray-500 mt-1">
-            URL-ul principal al website-ului. Ajuta motoarele de cautare sa evite continutul duplicat.
+            URL-ul principal al website-ului. Ajuta motoarele de cautare sa evite continutul
+            duplicat.
           </p>
         </div>
         <div className="p-6">
@@ -262,7 +266,9 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
             />
             <div>
               <span className="text-sm font-medium text-gray-900">Permite indexarea</span>
-              <p className="text-xs text-gray-500">Motoarele de cautare vor include website-ul in rezultate</p>
+              <p className="text-xs text-gray-500">
+                Motoarele de cautare vor include website-ul in rezultate
+              </p>
             </div>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
@@ -273,8 +279,12 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
-              <span className="text-sm font-medium text-gray-900">Permite urmarirea link-urilor</span>
-              <p className="text-xs text-gray-500">Motoarele de cautare vor urma link-urile de pe website</p>
+              <span className="text-sm font-medium text-gray-900">
+                Permite urmarirea link-urilor
+              </span>
+              <p className="text-xs text-gray-500">
+                Motoarele de cautare vor urma link-urile de pe website
+              </p>
             </div>
           </label>
         </div>
@@ -288,19 +298,23 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
             Schema.org (Date structurate)
           </h3>
           <p className="text-sm text-gray-500 mt-1">
-            Adaugati date structurate JSON-LD personalizate pentru a imbunatati aparitia in rezultatele Google (rich snippets)
+            Adaugati date structurate JSON-LD personalizate pentru a imbunatati aparitia in
+            rezultatele Google (rich snippets)
           </p>
         </div>
         <div className="p-6 space-y-2">
           <textarea
             value={localSeo.customSchema}
             onChange={(e) => handleChange('customSchema', e.target.value)}
-            placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "LocalBusiness",\n  "name": "Numele afacerii"\n}'}
+            placeholder={
+              '{\n  "@context": "https://schema.org",\n  "@type": "LocalBusiness",\n  "name": "Numele afacerii"\n}'
+            }
             rows={8}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
           />
           <p className="text-xs text-gray-500">
-            Introduceti un obiect JSON-LD valid. Se adauga automat schema LocalBusiness si FAQPage din continutul paginilor.
+            Introduceti un obiect JSON-LD valid. Se adauga automat schema LocalBusiness si FAQPage
+            din continutul paginilor.
           </p>
         </div>
       </div>
@@ -313,14 +327,17 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
             Cod personalizat (Head)
           </h3>
           <p className="text-sm text-gray-500 mt-1">
-            Adaugati cod HTML in sectiunea &lt;head&gt; a website-ului (ex: Google Analytics, verificare Search Console, pixeli de tracking)
+            Adaugati cod HTML in sectiunea &lt;head&gt; a website-ului (ex: Google Analytics,
+            verificare Search Console, pixeli de tracking)
           </p>
         </div>
         <div className="p-6 space-y-2">
           <textarea
             value={localSeo.customHeadCode}
             onChange={(e) => handleChange('customHeadCode', e.target.value)}
-            placeholder={'<!-- Google Analytics -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>'}
+            placeholder={
+              '<!-- Google Analytics -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>'
+            }
             rows={6}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
           />

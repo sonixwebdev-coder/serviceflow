@@ -21,6 +21,8 @@ const apiRouter = require('./src/api');
 const errorHandler = require('./src/middleware/errorHandler');
 const createSocketServer = require('./src/realtime');
 const logger = require('./src/utils/logger');
+const { getPlatformConfig } = require('./src/config/platform');
+const { createReadinessHandler } = require('./src/health/readiness');
 
 // Initialize Redis early so the rate limiter Redis store can use it
 initRedis();
@@ -57,10 +59,16 @@ const fileStorageRoot = process.env.FILE_STORAGE_ROOT || path.resolve(__dirname,
 
 // CORS configuration (defined early for use in multiple places)
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? (process.env.CORS_ORIGINS || 'https://forja.it.com,https://app.forja.it.com,https://portal.forja.it.com,https://admin.forja.it.com,https://website.forja.it.com').split(',').map(s => s.trim())
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
-  credentials: true
+  origin:
+    process.env.NODE_ENV === 'production'
+      ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim())
+      : [
+          'http://localhost:5173',
+          'http://localhost:5174',
+          'http://localhost:5175',
+          'http://localhost:5176',
+        ],
+  credentials: true,
 };
 
 // Static file serving MUST come BEFORE helmet to avoid CSP blocking PDF iframes
@@ -70,7 +78,9 @@ const { verifyAccessToken } = require('./src/utils/token');
 const staticCorsMiddleware = (req, res, next) => {
   // Set CORS headers for cross-origin access
   const origin = req.headers.origin;
-  const allowedOrigins = Array.isArray(corsOptions.origin) ? corsOptions.origin : [corsOptions.origin];
+  const allowedOrigins = Array.isArray(corsOptions.origin)
+    ? corsOptions.origin
+    : [corsOptions.origin];
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
@@ -86,14 +96,21 @@ const staticCorsMiddleware = (req, res, next) => {
 // Accepts token from: Authorization header, ?token= query param (for <img>, <a>, <audio>)
 const staticAuthMiddleware = (req, res, next) => {
   // Public paths — logos, website assets, and website images don't require auth
-  if (req.path.startsWith('/logos/') || req.path.startsWith('/websites/') || req.path.startsWith('/website-images/')) {
+  if (
+    req.path.startsWith('/logos/') ||
+    req.path.startsWith('/websites/') ||
+    req.path.startsWith('/website-images/')
+  ) {
     return next();
   }
 
   // Check token from Authorization header or query param
   const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice(7)
-    : (typeof req.query.token === 'string' ? req.query.token : null);
+  const token = header?.startsWith('Bearer ')
+    ? header.slice(7)
+    : typeof req.query.token === 'string'
+      ? req.query.token
+      : null;
 
   if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
@@ -121,7 +138,7 @@ const helmetMiddleware = helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", 'data:', 'https:'],
       frameSrc: ["'self'"], // Allow iframes from same origin for PDF preview
       frameAncestors: ["'self'"], // Allow being framed by same origin
     },
@@ -143,7 +160,8 @@ app.use((req, res, next) => {
 // Permissions-Policy header
 app.use((req, res, next) => {
   if (!res.locals.skipCSP) {
-    res.setHeader('Permissions-Policy',
+    res.setHeader(
+      'Permissions-Policy',
       'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
     );
   }
@@ -249,17 +267,6 @@ const forgotPasswordLimiter = rateLimit({
   store: makeRateLimitStore('forgot-pwd'),
 });
 
-// Exports — CPU/DB intensive, limit tightly
-const exportLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: 'Too many export requests, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || req.ip,
-  store: makeRateLimitStore('exports'),
-});
-
 // Analytics — expensive queries, limit to prevent runaway load
 const analyticsLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -290,7 +297,8 @@ app.use('/api/auth', authLimiter);
 app.use('/api/portal/auth', authLimiter);
 
 app.use('/api/users/profile', (req, res, next) => {
-  if (req.path === '/password' && req.method === 'PUT') return passwordChangeLimiter(req, res, next);
+  if (req.path === '/password' && req.method === 'PUT')
+    return passwordChangeLimiter(req, res, next);
   if (req.method === 'PUT') return profileUpdateLimiter(req, res, next);
   next();
 });
@@ -317,40 +325,23 @@ app.use('/api/super-admin', superAdminLimiter, superAdminRouter);
 // Prisma-powered API
 app.use('/api', apiRouter);
 
-// Liveness check — always 200, proves the process is running (used by ForjaHost / load balancers)
+// Liveness check — always 200, proves the process is running for load balancers.
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // Readiness check — verifies DB and Redis connectivity (use for deeper monitoring)
-app.get('/health/ready', async (req, res) => {
-  const checks = { db: false, redis: false };
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    checks.db = true;
-  } catch {}
-  try {
-    const redisClient = getRedisClient();
-    if (redisClient) { await redisClient.ping(); checks.redis = true; }
-    else { checks.redis = null; }
-  } catch {}
-  const healthy = checks.db;
-  res.status(healthy ? 200 : 503).json({
-    status: healthy ? 'OK' : 'DEGRADED',
-    checks,
-    timestamp: new Date().toISOString(),
-  });
-});
+app.get('/health/ready', createReadinessHandler({ prisma, getRedisClient }));
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'ForjaIt API',
+    message: `${getPlatformConfig().name} API`,
     version: '2.0.0',
     endpoints: {
       health: '/health',
       auth: '/api/auth',
-    }
+    },
   });
 });
 
@@ -361,7 +352,7 @@ app.use(errorHandler);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Endpoint not found'
+    message: 'Endpoint not found',
   });
 });
 
@@ -370,7 +361,7 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   try {
     await prisma.$connect();
-    console.log('✅ Prisma connected to PostgreSQL');
+    logger.system('Prisma connected to PostgreSQL');
 
     // Ensure PlatformSettings singleton exists
     await prisma.platformSettings.upsert({
@@ -379,7 +370,7 @@ async function startServer() {
       update: {},
     });
   } catch (error) {
-    console.error('❌ Prisma connection error:', error);
+    logger.error('Prisma connection failed', error);
     process.exit(1);
   }
 
@@ -393,9 +384,10 @@ async function startServer() {
   createSocketServer(httpServer);
 
   httpServer.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 API: http://localhost:${PORT}`);
+    logger.system('Server started', {
+      port: Number(PORT),
+      environment: process.env.NODE_ENV || 'development',
+    });
   });
 
   const gracefulShutdown = async (signal) => {
@@ -411,10 +403,7 @@ async function startServer() {
 
     httpServer.close(async () => {
       await logger.flush();
-      await Promise.all([
-        prisma.$disconnect(),
-        closeRedis(),
-      ]);
+      await Promise.all([prisma.$disconnect(), closeRedis()]);
       process.exit(0);
     });
 

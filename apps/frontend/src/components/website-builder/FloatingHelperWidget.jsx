@@ -13,12 +13,42 @@ import {
 import { cn } from '@/lib/utils';
 
 const GENERAL_TIPS = [
-  { icon: Layout, title: 'Structura paginii', description: 'Incepe cu un bloc Hero, urmat de servicii, testimoniale si contact. Aceasta ordine ghideaza natural vizitatorii.' },
-  { icon: Image, title: 'Imagini de calitate', description: 'Foloseste imagini clare, bine luminate, de min 1200px latime. Comprima-le inainte de upload (tinypng.com).' },
-  { icon: Palette, title: 'Branding consistent', description: 'Foloseste aceleasi culori si fonturi pe tot site-ul. Seteaza-le din Setari branding pentru uniformitate.' },
-  { icon: Smartphone, title: 'Mobile-friendly', description: 'Previzualizeaza site-ul pe mobil. Toate blocurile se adapteaza automat, dar verifica textul si imaginile.' },
-  { icon: MousePointerClick, title: 'Call-to-action clar', description: 'Fiecare pagina trebuie sa aiba un singur obiectiv clar: programare, contact, sau informare.' },
-  { icon: AlignLeft, title: 'Continut concis', description: 'Scrie texte scurte si la obiect. Vizitatorii scaneaza rapid - pune informatia importanta prima.' },
+  {
+    icon: Layout,
+    title: 'Structura paginii',
+    description:
+      'Incepe cu un bloc Hero, urmat de servicii, testimoniale si contact. Aceasta ordine ghideaza natural vizitatorii.',
+  },
+  {
+    icon: Image,
+    title: 'Imagini de calitate',
+    description:
+      'Foloseste imagini clare, bine luminate, de min 1200px latime. Comprima-le inainte de upload (tinypng.com).',
+  },
+  {
+    icon: Palette,
+    title: 'Branding consistent',
+    description:
+      'Foloseste aceleasi culori si fonturi pe tot site-ul. Seteaza-le din Setari branding pentru uniformitate.',
+  },
+  {
+    icon: Smartphone,
+    title: 'Mobile-friendly',
+    description:
+      'Previzualizeaza site-ul pe mobil. Toate blocurile se adapteaza automat, dar verifica textul si imaginile.',
+  },
+  {
+    icon: MousePointerClick,
+    title: 'Call-to-action clar',
+    description:
+      'Fiecare pagina trebuie sa aiba un singur obiectiv clar: programare, contact, sau informare.',
+  },
+  {
+    icon: AlignLeft,
+    title: 'Continut concis',
+    description:
+      'Scrie texte scurte si la obiect. Vizitatorii scaneaza rapid - pune informatia importanta prima.',
+  },
 ];
 
 const BLOCK_TIPS = {
@@ -27,10 +57,7 @@ const BLOCK_TIPS = {
     'Pastreaza titlul scurt - max 8-10 cuvinte.',
     'Adauga un buton CTA vizibil ("Programeaza acum").',
   ],
-  text: [
-    'Scrie paragrafe scurte - max 3-4 randuri.',
-    'Alterna cu imagini sau spatii libere.',
-  ],
+  text: ['Scrie paragrafe scurte - max 3-4 randuri.', 'Alterna cu imagini sau spatii libere.'],
   image: [
     'Imagini optimizate pentru web (JPEG/WebP, sub 500KB).',
     'Completeaza textul ALT pentru SEO.',
@@ -52,14 +79,8 @@ const BLOCK_TIPS = {
     'Se sincronizeaza automat cu calendarul CRM.',
     'Modul compact este ideal cand nu e blocul principal.',
   ],
-  testimonials: [
-    'Adauga minim 3 testimoniale.',
-    'Layout carusel pentru 4+ testimoniale.',
-  ],
-  faq: [
-    'Raspunde la cele mai frecvente 5-8 intrebari.',
-    'Ordoneaza de la cele mai importante.',
-  ],
+  testimonials: ['Adauga minim 3 testimoniale.', 'Layout carusel pentru 4+ testimoniale.'],
+  faq: ['Raspunde la cele mai frecvente 5-8 intrebari.', 'Ordoneaza de la cele mai importante.'],
   gallery: [
     'Imagini de aceeasi dimensiune pentru grid uniform.',
     'Activeaza lightbox-ul pentru vizualizare completa.',
@@ -127,9 +148,7 @@ export default function FloatingHelperWidget({ selectedBlockType }) {
           ref={panelRef}
           className={cn(
             'fixed z-40 bottom-24 right-6 w-[340px] max-h-[70vh] flex flex-col rounded-2xl bg-white shadow-2xl shadow-gray-900/20 ring-1 ring-gray-900/5 transition-all duration-200',
-            isAnimating
-              ? 'translate-y-0 opacity-100 scale-100'
-              : 'translate-y-4 opacity-0 scale-95'
+            isAnimating ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'
           )}
         >
           {/* Header */}
@@ -178,13 +197,18 @@ export default function FloatingHelperWidget({ selectedBlockType }) {
                 Sfaturi generale
               </h4>
               {GENERAL_TIPS.map((tip, i) => (
-                <div key={i} className="flex gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+                <div
+                  key={i}
+                  className="flex gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 shrink-0">
                     <tip.icon className="h-4 w-4 text-blue-500" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800">{tip.title}</p>
-                    <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{tip.description}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed mt-0.5">
+                      {tip.description}
+                    </p>
                   </div>
                 </div>
               ))}

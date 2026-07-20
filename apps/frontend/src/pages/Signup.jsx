@@ -1,11 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signupOrganization, checkSlugAvailability, validateVatPublic, fetchPricing } from '../services/organizationService';
+import {
+  signupOrganization,
+  checkSlugAvailability,
+  validateVatPublic,
+  fetchPricing,
+} from '../services/organizationService';
 import { getSectorList } from '../constants/activitySectors';
 import { useAuthStore } from '../state/useAuthStore';
-import { Car, Scissors, Wrench, Smartphone, Check, ArrowLeft, ArrowRight, Building2, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Car,
+  Scissors,
+  Wrench,
+  Smartphone,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Loader2,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 import { SIGNUP_PLANS } from '../constants/plans';
 import SEOHead from '../components/landing/SEOHead';
+import { runtimeConfig } from '../config/runtime';
 
 const STEPS = [
   { id: 'organization', title: 'Organizatie', description: 'Detalii organizatie' },
@@ -65,7 +83,9 @@ const Signup = () => {
   useEffect(() => {
     fetchPricing()
       .then(setDynamicPrices)
-      .catch(() => {/* keep fallback prices */});
+      .catch(() => {
+        /* keep fallback prices */
+      });
   }, []);
 
   // Override SIGNUP_PLANS prices with dynamic values when available
@@ -130,8 +150,8 @@ const Signup = () => {
   };
 
   const handleCompanyChange = (field, value) => {
-    setCompanyData(prev => ({ ...prev, [field]: value }));
-    if (companyErrors[field]) setCompanyErrors(prev => ({ ...prev, [field]: undefined }));
+    setCompanyData((prev) => ({ ...prev, [field]: value }));
+    if (companyErrors[field]) setCompanyErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
   const handleVerifyVat = async () => {
@@ -149,11 +169,11 @@ const Signup = () => {
   const handleApplyViesData = () => {
     if (!vatValidation.data) return;
     if (vatValidation.data.name) {
-      setFormData(prev => ({ ...prev, organizationName: vatValidation.data.name }));
+      setFormData((prev) => ({ ...prev, organizationName: vatValidation.data.name }));
       setNameFromVies(true);
     }
     if (vatValidation.data.address) {
-      setCompanyData(prev => ({ ...prev, companyAddress: vatValidation.data.address }));
+      setCompanyData((prev) => ({ ...prev, companyAddress: vatValidation.data.address }));
     }
   };
 
@@ -289,15 +309,18 @@ const Signup = () => {
       });
 
       // Cache user data for display hydration on reload (include role for hasRole checks)
-      localStorage.setItem('user', JSON.stringify({
-        id: result.user.id,
-        firstName: result.user.firstName,
-        lastName: result.user.lastName,
-        avatarUrl: result.user.avatarUrl,
-        role: result.user.role,
-        roles: result.user.roles,
-        orgStatus: result.user.orgStatus,
-      }));
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          id: result.user.id,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
+          avatarUrl: result.user.avatarUrl,
+          role: result.user.role,
+          roles: result.user.roles,
+          orgStatus: result.user.orgStatus,
+        })
+      );
 
       // Use React Router navigate (no full reload) so auth state persists
       navigate('/dashboard', { replace: true });
@@ -321,8 +344,8 @@ const Signup = () => {
                 index < currentStep
                   ? 'bg-green-500 text-white'
                   : index === currentStep
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-400'
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 text-gray-400'
               }`}
             >
               {index < currentStep ? <Check className="h-4 w-4" /> : index + 1}
@@ -350,7 +373,10 @@ const Signup = () => {
   const renderOrganizationStep = () => (
     <div className="space-y-5">
       <div>
-        <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label
+          htmlFor="organizationName"
+          className="block text-sm font-medium text-gray-700 mb-1.5"
+        >
           Numele Organizatiei *
         </label>
         <input
@@ -386,8 +412,8 @@ const Signup = () => {
               slugAvailable === false
                 ? '!border-red-400 focus:!border-red-500 focus:!ring-red-500/20'
                 : slugAvailable === true
-                ? '!border-green-400 focus:!border-green-500 focus:!ring-green-500/20'
-                : ''
+                  ? '!border-green-400 focus:!border-green-500 focus:!ring-green-500/20'
+                  : ''
             }`}
             placeholder="numele-companiei"
             disabled={loading}
@@ -400,9 +426,14 @@ const Signup = () => {
           )}
         </div>
         <p className="mt-1.5 text-xs text-gray-500">
-          Litere mici, numere si cratime. Adresa portalului: {formData.slug || 'slug'}.forja.it.com
-          {slugAvailable === false && <span className="ml-2 font-medium text-red-600">Nu este disponibil</span>}
-          {slugAvailable === true && <span className="ml-2 font-medium text-green-600">Disponibil</span>}
+          Litere mici, numere si cratime. Adresa portalului: {runtimeConfig.portalUrl}/book/
+          {formData.slug || 'slug'}
+          {slugAvailable === false && (
+            <span className="ml-2 font-medium text-red-600">Nu este disponibil</span>
+          )}
+          {slugAvailable === true && (
+            <span className="ml-2 font-medium text-green-600">Disponibil</span>
+          )}
         </p>
       </div>
     </div>
@@ -497,7 +528,10 @@ const Signup = () => {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label
+            htmlFor="confirmPassword"
+            className="block text-sm font-medium text-gray-700 mb-1.5"
+          >
             Confirmare Parola *
           </label>
           <input
@@ -528,11 +562,21 @@ const Signup = () => {
           />
           <span className="text-sm text-gray-600">
             Am citit si accept{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:text-primary-800">
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:text-primary-800"
+            >
               Termenii si Conditiile
             </a>{' '}
             si{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:text-primary-800">
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:text-primary-800"
+            >
               Politica de Confidentialitate
             </a>
           </span>
@@ -545,7 +589,8 @@ const Signup = () => {
     <div className="space-y-6">
       <div>
         <p className="text-sm text-gray-500 mb-3">
-          Selectati domeniul principal. Aceasta optiune configureaza automat tipul de active si terminologia.
+          Selectati domeniul principal. Aceasta optiune configureaza automat tipul de active si
+          terminologia.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -573,12 +618,18 @@ const Signup = () => {
                     <IconComponent className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className={`text-sm font-semibold ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}>
+                    <h3
+                      className={`text-sm font-semibold ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}
+                    >
                       {sector.labelRo}
                     </h3>
-                    <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">{sector.description}</p>
+                    <p className="mt-0.5 text-xs text-gray-500 line-clamp-2">
+                      {sector.description}
+                    </p>
                     <p className="mt-1 text-xs text-gray-400">
-                      {sector.hasAssets ? `Tip activ: ${sector.terminology.asset.singular}` : 'Fara gestiune active'}
+                      {sector.hasAssets
+                        ? `Tip activ: ${sector.terminology.asset.singular}`
+                        : 'Fara gestiune active'}
                     </p>
                   </div>
                   {isSelected && (
@@ -595,7 +646,9 @@ const Signup = () => {
 
       {/* Plan selection */}
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-3">Alege planul (14 zile gratuit pe orice plan)</p>
+        <p className="text-sm font-medium text-gray-700 mb-3">
+          Alege planul (14 zile gratuit pe orice plan)
+        </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {signupPlans.map((plan) => {
             const isSelected = formData.plan === plan.key;
@@ -615,7 +668,11 @@ const Signup = () => {
                     Recomandat
                   </span>
                 )}
-                <h4 className={`text-sm font-bold ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}>{plan.name}</h4>
+                <h4
+                  className={`text-sm font-bold ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}
+                >
+                  {plan.name}
+                </h4>
                 <div className="mt-1 flex items-baseline gap-1">
                   <span className="text-lg font-extrabold text-gray-900">{plan.price}</span>
                   <span className="text-xs text-gray-500">RON/luna</span>
@@ -641,7 +698,9 @@ const Signup = () => {
           <Building2 className="w-6 h-6 text-orange-600" />
         </div>
         <h2 className="text-lg font-semibold text-gray-800">Profil companie</h2>
-        <p className="text-gray-500 text-xs mt-1">Informatii esentiale pentru facturare si identificare</p>
+        <p className="text-gray-500 text-xs mt-1">
+          Informatii esentiale pentru facturare si identificare
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -650,11 +709,13 @@ const Signup = () => {
           <input
             type="text"
             value={companyData.companyAddress}
-            onChange={e => handleCompanyChange('companyAddress', e.target.value)}
+            onChange={(e) => handleCompanyChange('companyAddress', e.target.value)}
             className={`${inputClasses} ${companyErrors.companyAddress ? '!border-red-400' : ''}`}
             disabled={loading}
           />
-          {companyErrors.companyAddress && <p className="text-red-500 text-xs mt-1">{companyErrors.companyAddress}</p>}
+          {companyErrors.companyAddress && (
+            <p className="text-red-500 text-xs mt-1">{companyErrors.companyAddress}</p>
+          )}
         </div>
 
         <div>
@@ -662,11 +723,13 @@ const Signup = () => {
           <input
             type="email"
             value={companyData.companyEmail}
-            onChange={e => handleCompanyChange('companyEmail', e.target.value)}
+            onChange={(e) => handleCompanyChange('companyEmail', e.target.value)}
             className={`${inputClasses} ${companyErrors.companyEmail ? '!border-red-400' : ''}`}
             disabled={loading}
           />
-          {companyErrors.companyEmail && <p className="text-red-500 text-xs mt-1">{companyErrors.companyEmail}</p>}
+          {companyErrors.companyEmail && (
+            <p className="text-red-500 text-xs mt-1">{companyErrors.companyEmail}</p>
+          )}
         </div>
 
         <div>
@@ -674,18 +737,22 @@ const Signup = () => {
           <input
             type="tel"
             value={companyData.companyPhone}
-            onChange={e => handleCompanyChange('companyPhone', e.target.value)}
+            onChange={(e) => handleCompanyChange('companyPhone', e.target.value)}
             className={`${inputClasses} ${companyErrors.companyPhone ? '!border-red-400' : ''}`}
             disabled={loading}
           />
-          {companyErrors.companyPhone && <p className="text-red-500 text-xs mt-1">{companyErrors.companyPhone}</p>}
+          {companyErrors.companyPhone && (
+            <p className="text-red-500 text-xs mt-1">{companyErrors.companyPhone}</p>
+          )}
         </div>
 
         {/* Entity type */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tip entitate juridica</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Tip entitate juridica
+          </label>
           <div className="flex gap-6">
-            {['SRL', 'PFA'].map(type => (
+            {['SRL', 'PFA'].map((type) => (
               <label key={type} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
@@ -710,24 +777,30 @@ const Signup = () => {
             <input
               type="text"
               value={companyData.vatNumber}
-              onChange={e => {
+              onChange={(e) => {
                 handleCompanyChange('vatNumber', e.target.value);
                 setVatValidation({ status: 'idle', message: '', data: null });
                 setNameFromVies(false);
               }}
-              placeholder={companyData.entityType === 'PFA' ? 'Numar de identificare fiscala' : 'RO12345678'}
+              placeholder={
+                companyData.entityType === 'PFA' ? 'Numar de identificare fiscala' : 'RO12345678'
+              }
               className={inputClasses}
               disabled={loading}
             />
             <button
               type="button"
               onClick={handleVerifyVat}
-              disabled={!companyData.vatNumber.trim() || vatValidation.status === 'loading' || loading}
+              disabled={
+                !companyData.vatNumber.trim() || vatValidation.status === 'loading' || loading
+              }
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {vatValidation.status === 'loading' ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : 'Verifica'}
+              ) : (
+                'Verifica'
+              )}
             </button>
           </div>
           {vatValidation.status === 'valid' && (
@@ -760,11 +833,13 @@ const Signup = () => {
 
         {companyData.entityType === 'SRL' ? (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nr. Registrul Comertului (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nr. Registrul Comertului (optional)
+            </label>
             <input
               type="text"
               value={companyData.registrationNumber}
-              onChange={e => handleCompanyChange('registrationNumber', e.target.value)}
+              onChange={(e) => handleCompanyChange('registrationNumber', e.target.value)}
               placeholder="J40/1234/2024"
               className={inputClasses}
               disabled={loading}
@@ -776,7 +851,7 @@ const Signup = () => {
             <input
               type="text"
               value={companyData.cnp}
-              onChange={e => handleCompanyChange('cnp', e.target.value)}
+              onChange={(e) => handleCompanyChange('cnp', e.target.value)}
               placeholder="Cod numeric personal (13 cifre)"
               maxLength={13}
               className={inputClasses}
@@ -806,15 +881,15 @@ const Signup = () => {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50/80">
       <SEOHead
-        title="Inregistrare - Creeaza cont ForjaIt gratuit | 14 zile trial"
-        description="Creeaza cont gratuit ForjaIt in 2 minute. Programari online, CRM, facturare si website builder. 14 zile trial pe orice plan, fara card de credit."
-        canonical="https://app.forja.it.com/signup"
+        title={`Inregistrare - Creeaza cont ${runtimeConfig.platformName} gratuit | 14 zile trial`}
+        description={`Creeaza cont gratuit ${runtimeConfig.platformName} in 2 minute. Programari online, CRM, facturare si website builder. 14 zile trial pe orice plan, fara card de credit.`}
+        canonical={`${runtimeConfig.platformUrl}/signup`}
       />
       {/* Header */}
       <header className="border-b border-gray-200/60 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link to="/" className="text-lg font-bold tracking-tight text-gray-900">
-            ForjaIt
+            {runtimeConfig.platformName}
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -831,7 +906,9 @@ const Signup = () => {
       <div className="flex flex-1 items-center justify-center px-4 py-10">
         <div className="w-full max-w-2xl">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Incepe in 5 minute. Rezultate din prima zi.</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              Incepe in 5 minute. Rezultate din prima zi.
+            </h1>
             <p className="mt-2 text-sm text-gray-500">
               14 zile gratuit pe orice plan. Fara card bancar. Fara obligatii.
             </p>
@@ -891,7 +968,10 @@ const Signup = () => {
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-500">
               Ai deja un cont?{' '}
-              <Link to="/login" className="font-semibold text-primary hover:text-primary-800 transition-colors">
+              <Link
+                to="/login"
+                className="font-semibold text-primary hover:text-primary-800 transition-colors"
+              >
                 Conecteaza-te
               </Link>
             </p>
@@ -903,18 +983,26 @@ const Signup = () => {
       <footer className="border-t border-gray-100">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-3 text-xs text-gray-500">
-            <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               ANPC
             </a>
-            <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
+            <a
+              href="https://anpc.ro/ce-este-sal/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+            >
               SAL
-            </a>
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700">
-              SOL
             </a>
           </div>
           <p className="text-center text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.
+            &copy; {new Date().getFullYear()} {runtimeConfig.platformName}. Toate drepturile
+            rezervate.
           </p>
         </div>
       </footer>

@@ -7,13 +7,17 @@ const { ok } = require('../utils/http');
 const logger = require('../utils/logger');
 const { sendEmail } = require('../services/email/emailService');
 const prisma = require('../../lib/prisma');
+const { getPlatformConfig } = require('../config/platform');
 
 const router = express.Router();
 
 const contactLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: { success: false, message: 'Prea multe mesaje trimise. Incercati din nou peste cateva minute.' },
+  message: {
+    success: false,
+    message: 'Prea multe mesaje trimise. Incercati din nou peste cateva minute.',
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -31,19 +35,20 @@ router.post(
   validate(contactSchema),
   asyncHandler(async (req, res) => {
     const { name, email, subject, message } = req.body;
+    const platform = getPlatformConfig();
 
     // Persist the contact message in its own table (separate from CRM tickets)
     await prisma.platformContactMessage.create({
       data: { name, email, subject, message },
     });
 
-    const adminEmail = process.env.PLATFORM_CONTACT_EMAIL || process.env.COMPANY_EMAIL || 'contact@forja.it.com';
+    const adminEmail = platform.contactEmail || process.env.COMPANY_EMAIL;
 
     sendEmail(null, {
       to: adminEmail,
-      subject: `[Contact ForjaIt] ${subject}`,
+      subject: `[Contact ${platform.name}] ${subject}`,
       html: `
-        <h2>Mesaj nou de pe platforma ForjaIt</h2>
+        <h2>Mesaj nou de pe platforma ${platform.name}</h2>
         <p><strong>De la:</strong> ${name} (${email})</p>
         <p><strong>Subiect:</strong> ${subject}</p>
         <hr />

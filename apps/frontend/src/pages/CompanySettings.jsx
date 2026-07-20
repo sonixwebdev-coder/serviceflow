@@ -33,26 +33,36 @@ function validateFields(form) {
   if (form.entityType === 'PFA' && form.cnp && !CNP_REGEX.test(form.cnp)) {
     errors.cnp = 'CNP-ul trebuie sa aiba exact 13 cifre';
   }
-  if (form.tvaPercentage !== undefined && form.tvaPercentage !== '' &&
-      (Number(form.tvaPercentage) < 0 || Number(form.tvaPercentage) > 100)) {
+  if (
+    form.tvaPercentage !== undefined &&
+    form.tvaPercentage !== '' &&
+    (Number(form.tvaPercentage) < 0 || Number(form.tvaPercentage) > 100)
+  ) {
     errors.tvaPercentage = 'Procentul TVA trebuie sa fie intre 0 si 100';
   }
-  if (form.rampCount !== undefined && form.rampCount !== '' &&
-      (!Number.isInteger(Number(form.rampCount)) || Number(form.rampCount) < 1)) {
+  if (
+    form.rampCount !== undefined &&
+    form.rampCount !== '' &&
+    (!Number.isInteger(Number(form.rampCount)) || Number(form.rampCount) < 1)
+  ) {
     errors.rampCount = 'Numarul de rampe trebuie sa fie un numar intreg pozitiv';
   }
   return errors;
 }
 
-const inputClass = 'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
-const inputErrorClass = 'mt-1 w-full rounded-lg border border-red-400 bg-red-50 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500';
+const inputClass =
+  'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
+const inputErrorClass =
+  'mt-1 w-full rounded-lg border border-red-400 bg-red-50 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500';
 
 function LockedField({ label, value, hint }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
       <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-        <span className="flex-1 text-sm text-gray-800">{value || <span className="text-gray-400 italic">Necompletat</span>}</span>
+        <span className="flex-1 text-sm text-gray-800">
+          {value || <span className="text-gray-400 italic">Necompletat</span>}
+        </span>
         <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" />
       </div>
       {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
@@ -98,7 +108,8 @@ const CompanySettings = () => {
       if (data.invoiceSequence) {
         setInvoiceSeq({
           prefix: data.invoiceSequence.prefix || 'INV',
-          separator: data.invoiceSequence.separator !== undefined ? data.invoiceSequence.separator : '-',
+          separator:
+            data.invoiceSequence.separator !== undefined ? data.invoiceSequence.separator : '-',
           includeYear: data.invoiceSequence.includeYear !== false,
           paddingDigits: data.invoiceSequence.paddingDigits || 5,
           startingNumber: data.invoiceSequence.startingNumber || 1,
@@ -129,7 +140,11 @@ const CompanySettings = () => {
     setIsDirty(true);
     // Clear error for this field on change
     if (errors[name]) {
-      setErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
     }
   };
 
@@ -137,11 +152,19 @@ const CompanySettings = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      showToast({ title: 'Format invalid', description: 'Te rugam sa selectezi o imagine (PNG, JPG, SVG)', type: 'error' });
+      showToast({
+        title: 'Format invalid',
+        description: 'Te rugam sa selectezi o imagine (PNG, JPG, SVG)',
+        type: 'error',
+      });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      showToast({ title: 'Fisier prea mare', description: 'Logo-ul nu poate depasi 5MB', type: 'error' });
+      showToast({
+        title: 'Fisier prea mare',
+        description: 'Logo-ul nu poate depasi 5MB',
+        type: 'error',
+      });
       return;
     }
     setLogoFile(file);
@@ -163,10 +186,18 @@ const CompanySettings = () => {
     setIsExportingAllData(true);
     try {
       const blob = await exportAllData();
-      downloadFile(blob, `forjait-export-${new Date().toISOString().split('T')[0]}.zip`);
-      showToast({ title: 'Export complet', description: 'Toate datele au fost descarcate cu succes.', type: 'success' });
+      downloadFile(blob, `serviceflow-export-${new Date().toISOString().split('T')[0]}.zip`);
+      showToast({
+        title: 'Export complet',
+        description: 'Toate datele au fost descarcate cu succes.',
+        type: 'success',
+      });
     } catch (err) {
-      showToast({ title: 'Eroare la export', description: err.message || 'Nu s-au putut exporta datele.', type: 'error' });
+      showToast({
+        title: 'Eroare la export',
+        description: err.message || 'Nu s-au putut exporta datele.',
+        type: 'error',
+      });
     } finally {
       setIsExportingAllData(false);
     }
@@ -176,7 +207,8 @@ const CompanySettings = () => {
     if (currentInvoiceSequence) {
       setInvoiceSeq({
         prefix: currentInvoiceSequence.prefix || 'INV',
-        separator: currentInvoiceSequence.separator !== undefined ? currentInvoiceSequence.separator : '-',
+        separator:
+          currentInvoiceSequence.separator !== undefined ? currentInvoiceSequence.separator : '-',
         includeYear: currentInvoiceSequence.includeYear !== false,
         paddingDigits: currentInvoiceSequence.paddingDigits || 5,
         startingNumber: currentInvoiceSequence.startingNumber || 1,
@@ -184,7 +216,7 @@ const CompanySettings = () => {
     }
   }, [currentInvoiceSequence]);
 
-  const getInvoicePreview = (seq, sampleNum = 1) => {
+  const getInvoicePreview = (seq) => {
     const prefix = (seq.prefix || 'INV').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'INV';
     const sep = seq.separator !== undefined ? seq.separator : '-';
     const pad = Math.max(3, Math.min(10, Number(seq.paddingDigits) || 5));
@@ -208,7 +240,11 @@ const CompanySettings = () => {
       });
       showToast({ title: 'Numerotare facturi salvata', type: 'success' });
     } catch (err) {
-      showToast({ title: 'Eroare', description: err.response?.data?.message || 'Nu s-a putut salva configuratia', type: 'error' });
+      showToast({
+        title: 'Eroare',
+        description: err.response?.data?.message || 'Nu s-a putut salva configuratia',
+        type: 'error',
+      });
     } finally {
       setSavingInvoiceSeq(false);
     }
@@ -220,7 +256,11 @@ const CompanySettings = () => {
     const validationErrors = validateFields(formState);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      showToast({ title: 'Date invalide', description: 'Corecteaza erorile inainte de salvare.', type: 'error' });
+      showToast({
+        title: 'Date invalide',
+        description: 'Corecteaza erorile inainte de salvare.',
+        type: 'error',
+      });
       return;
     }
 
@@ -235,7 +275,11 @@ const CompanySettings = () => {
           const uploadResponse = await API.post('/settings/company/logo', formData);
           logoUrl = uploadResponse.data?.data?.logoUrl || uploadResponse.data?.logoUrl;
         } catch (uploadError) {
-          showToast({ title: 'Eroare la incarcarea logo-ului', description: uploadError?.response?.data?.message || 'Te rugam sa incerci din nou.', type: 'error' });
+          showToast({
+            title: 'Eroare la incarcarea logo-ului',
+            description: uploadError?.response?.data?.message || 'Te rugam sa incerci din nou.',
+            type: 'error',
+          });
           setIsUploadingLogo(false);
           return;
         } finally {
@@ -245,24 +289,26 @@ const CompanySettings = () => {
 
       // Only send editable fields - locked fields (vatNumber, companyName, entityType) are excluded
       const payload = {
-        legalName:          formState.legalName,
-        address:            formState.address,
-        email:              formState.email,
-        phone:              formState.phone,
-        website:            formState.website,
-        logoUrl:            logoUrl,
-        contactPerson:      formState.contactPerson,
-        bankName:           formState.bankName,
-        iban:               formState.iban ? formState.iban.replace(/\s/g, '').toUpperCase() : formState.iban,
-        swift:              formState.swift ? formState.swift.toUpperCase() : formState.swift,
-        registrationNumber: formState.entityType === 'PFA' ? '' : (formState.registrationNumber || ''),
-        cnp:                formState.entityType === 'PFA' ? (formState.cnp || '') : '',
-        footerNote:         formState.footerNote,
-        gdprNote:           formState.gdprNote,
-        additionalNote:     formState.additionalNote,
-        rampCount:          formState.rampCount ? Number(formState.rampCount) : undefined,
-        tvaEnabled:         formState.tvaEnabled === true || formState.tvaEnabled === 'true',
-        tvaPercentage:      formState.tvaPercentage !== undefined ? Number(formState.tvaPercentage) : undefined,
+        legalName: formState.legalName,
+        address: formState.address,
+        email: formState.email,
+        phone: formState.phone,
+        website: formState.website,
+        logoUrl: logoUrl,
+        contactPerson: formState.contactPerson,
+        bankName: formState.bankName,
+        iban: formState.iban ? formState.iban.replace(/\s/g, '').toUpperCase() : formState.iban,
+        swift: formState.swift ? formState.swift.toUpperCase() : formState.swift,
+        registrationNumber:
+          formState.entityType === 'PFA' ? '' : formState.registrationNumber || '',
+        cnp: formState.entityType === 'PFA' ? formState.cnp || '' : '',
+        footerNote: formState.footerNote,
+        gdprNote: formState.gdprNote,
+        additionalNote: formState.additionalNote,
+        rampCount: formState.rampCount ? Number(formState.rampCount) : undefined,
+        tvaEnabled: formState.tvaEnabled === true || formState.tvaEnabled === 'true',
+        tvaPercentage:
+          formState.tvaPercentage !== undefined ? Number(formState.tvaPercentage) : undefined,
       };
 
       await updateMutation.mutateAsync(payload);
@@ -271,7 +317,11 @@ const CompanySettings = () => {
       setLogoFile(null);
       setErrors({});
     } catch (mutationError) {
-      showToast({ title: 'Eroare la salvarea setarilor', description: mutationError?.message || 'Te rugam sa incerci din nou.', type: 'error' });
+      showToast({
+        title: 'Eroare la salvarea setarilor',
+        description: mutationError?.message || 'Te rugam sa incerci din nou.',
+        type: 'error',
+      });
     }
   };
 
@@ -300,28 +350,58 @@ const CompanySettings = () => {
                 {logoPreview ? (
                   <div className="relative">
                     <div className="h-28 w-28 sm:h-32 sm:w-32 overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50">
-                      <img src={logoPreview} alt="Company logo" className="h-full w-full object-contain p-2" />
+                      <img
+                        src={logoPreview}
+                        alt="Company logo"
+                        className="h-full w-full object-contain p-2"
+                      />
                     </div>
                     <button
                       type="button"
                       onClick={handleRemoveLogo}
                       className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white shadow-lg hover:bg-red-600 transition"
                     >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
                 ) : (
                   <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
-                    <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg
+                      className="h-12 w-12 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                 )}
               </div>
               <div className="flex-1">
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoSelect}
+                  className="hidden"
+                />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -352,9 +432,17 @@ const CompanySettings = () => {
               />
               <LockedField label="Denumire companie" value={formState.companyName} />
               {(formState.entityType || 'SRL') === 'SRL' ? (
-                <LockedField label="Nr. registru comert" value={formState.registrationNumber} hint="Necompletat la inregistrare? Poti actualiza mai jos." />
+                <LockedField
+                  label="Nr. registru comert"
+                  value={formState.registrationNumber}
+                  hint="Necompletat la inregistrare? Poti actualiza mai jos."
+                />
               ) : (
-                <LockedField label="CNP" value={formState.cnp} hint="Necompletat la inregistrare? Poti actualiza mai jos." />
+                <LockedField
+                  label="CNP"
+                  value={formState.cnp}
+                  hint="Necompletat la inregistrare? Poti actualiza mai jos."
+                />
               )}
             </div>
           </div>
@@ -383,7 +471,9 @@ const CompanySettings = () => {
                 </div>
               ) : (
                 <div className="max-w-xs">
-                  <label className="block text-sm font-medium text-gray-700">Nr. registru comert</label>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Nr. registru comert
+                  </label>
                   <input
                     type="text"
                     value={formState.registrationNumber ?? ''}
@@ -399,9 +489,10 @@ const CompanySettings = () => {
 
           {/* Company Details - editable */}
           <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Detalii contact si facturare</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-4">
+              Detalii contact si facturare
+            </h2>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-
               <div>
                 <label className="block text-sm font-medium text-gray-700">Denumire legala</label>
                 <input
@@ -442,7 +533,9 @@ const CompanySettings = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Persoana de contact</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Persoana de contact
+                </label>
                 <input
                   type="text"
                   value={formState.contactPerson ?? ''}
@@ -493,7 +586,9 @@ const CompanySettings = () => {
                 <input
                   type="text"
                   value={formState.iban ?? ''}
-                  onChange={(e) => handleChange('iban', e.target.value.toUpperCase().replace(/\s/g, ''))}
+                  onChange={(e) =>
+                    handleChange('iban', e.target.value.toUpperCase().replace(/\s/g, ''))
+                  }
                   placeholder="RO49AAAA1234567890123456"
                   maxLength={24}
                   className={errors.iban ? inputErrorClass : inputClass}
@@ -506,7 +601,9 @@ const CompanySettings = () => {
                 <input
                   type="text"
                   value={formState.swift ?? ''}
-                  onChange={(e) => handleChange('swift', e.target.value.toUpperCase().replace(/\s/g, ''))}
+                  onChange={(e) =>
+                    handleChange('swift', e.target.value.toUpperCase().replace(/\s/g, ''))
+                  }
                   placeholder="RNCBROBU"
                   maxLength={11}
                   className={errors.swift ? inputErrorClass : inputClass}
@@ -525,8 +622,12 @@ const CompanySettings = () => {
                     className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   />
                   <div>
-                    <label htmlFor="tvaEnabled" className="block text-sm font-medium text-gray-700">TVA activat</label>
-                    <p className="text-xs text-gray-500">Aplica TVA la facturi (nu se aplica la comenzile de service)</p>
+                    <label htmlFor="tvaEnabled" className="block text-sm font-medium text-gray-700">
+                      TVA activat
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Aplica TVA la facturi (nu se aplica la comenzile de service)
+                    </p>
                   </div>
                 </div>
               </div>
@@ -567,7 +668,9 @@ const CompanySettings = () => {
             <h2 className="text-base font-semibold text-gray-900 mb-4">Note documente generate</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Nota subsol document</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Nota subsol document
+                </label>
                 <textarea
                   value={formState.footerNote ?? ''}
                   onChange={(e) => handleChange('footerNote', e.target.value)}
@@ -586,7 +689,9 @@ const CompanySettings = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Informatii aditionale</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Informatii aditionale
+                </label>
                 <textarea
                   value={formState.additionalNote ?? ''}
                   onChange={(e) => handleChange('additionalNote', e.target.value)}
@@ -606,7 +711,9 @@ const CompanySettings = () => {
             </p>
             <div className="mb-5 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3">
               <span className="text-xs text-gray-500">Urmatoarea factura va fi:</span>
-              <span className="font-mono font-semibold text-primary text-sm">{getInvoicePreview(invoiceSeq)}</span>
+              <span className="font-mono font-semibold text-primary text-sm">
+                {getInvoicePreview(invoiceSeq)}
+              </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -614,7 +721,12 @@ const CompanySettings = () => {
                 <input
                   type="text"
                   value={invoiceSeq.prefix}
-                  onChange={e => setInvoiceSeq(prev => ({ ...prev, prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }))}
+                  onChange={(e) =>
+                    setInvoiceSeq((prev) => ({
+                      ...prev,
+                      prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+                    }))
+                  }
                   maxLength={10}
                   placeholder="INV"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -624,7 +736,9 @@ const CompanySettings = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Separator</label>
                 <select
                   value={invoiceSeq.separator}
-                  onChange={e => setInvoiceSeq(prev => ({ ...prev, separator: e.target.value }))}
+                  onChange={(e) =>
+                    setInvoiceSeq((prev) => ({ ...prev, separator: e.target.value }))
+                  }
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="-">Linie ( - )</option>
@@ -634,14 +748,20 @@ const CompanySettings = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cifre numar secventa</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cifre numar secventa
+                </label>
                 <select
                   value={invoiceSeq.paddingDigits}
-                  onChange={e => setInvoiceSeq(prev => ({ ...prev, paddingDigits: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setInvoiceSeq((prev) => ({ ...prev, paddingDigits: Number(e.target.value) }))
+                  }
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  {[3, 4, 5, 6, 7, 8].map(n => (
-                    <option key={n} value={n}>{n} cifre (ex: {'0'.repeat(n - 1)}1)</option>
+                  {[3, 4, 5, 6, 7, 8].map((n) => (
+                    <option key={n} value={n}>
+                      {n} cifre (ex: {'0'.repeat(n - 1)}1)
+                    </option>
                   ))}
                 </select>
               </div>
@@ -650,10 +770,14 @@ const CompanySettings = () => {
                   type="checkbox"
                   id="includeYear"
                   checked={invoiceSeq.includeYear !== false}
-                  onChange={e => setInvoiceSeq(prev => ({ ...prev, includeYear: e.target.checked }))}
+                  onChange={(e) =>
+                    setInvoiceSeq((prev) => ({ ...prev, includeYear: e.target.checked }))
+                  }
                   className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                 />
-                <label htmlFor="includeYear" className="text-sm font-medium text-gray-700">Include anul in numar</label>
+                <label htmlFor="includeYear" className="text-sm font-medium text-gray-700">
+                  Include anul in numar
+                </label>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -663,11 +787,17 @@ const CompanySettings = () => {
                   type="number"
                   min={1}
                   value={invoiceSeq.startingNumber}
-                  onChange={e => setInvoiceSeq(prev => ({ ...prev, startingNumber: Math.max(1, Number(e.target.value)) }))}
+                  onChange={(e) =>
+                    setInvoiceSeq((prev) => ({
+                      ...prev,
+                      startingNumber: Math.max(1, Number(e.target.value)),
+                    }))
+                  }
                   className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Daca ai deja 50 de facturi emise in alt sistem, seteaza 51. Se aplica pentru {new Date().getFullYear()}.
+                  Daca ai deja 50 de facturi emise in alt sistem, seteaza 51. Se aplica pentru{' '}
+                  {new Date().getFullYear()}.
                 </p>
               </div>
             </div>
@@ -688,7 +818,9 @@ const CompanySettings = () => {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-gray-900">Exporta toate datele</h2>
-                <p className="text-sm text-gray-500 mt-1">Descarca toate datele platformei intr-un singur fisier ZIP</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Descarca toate datele platformei intr-un singur fisier ZIP
+                </p>
               </div>
             </div>
             <button
@@ -697,10 +829,21 @@ const CompanySettings = () => {
               disabled={isExportingAllData}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isExportingAllData ? <><Loader2 size={16} className="animate-spin" />Se genereaza...</> : <><Download size={16} />Descarca toate datele</>}
+              {isExportingAllData ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Se genereaza...
+                </>
+              ) : (
+                <>
+                  <Download size={16} />
+                  Descarca toate datele
+                </>
+              )}
             </button>
             <p className="mt-3 text-xs text-gray-500">
-              Fisierul va contine toate programarile, facturile, clientii, angajatii si alte date in format CSV.
+              Fisierul va contine toate programarile, facturile, clientii, angajatii si alte date in
+              format CSV.
             </p>
           </div>
 
@@ -734,7 +877,11 @@ const CompanySettings = () => {
                 disabled={updateMutation.isPending || isUploadingLogo || !isDirty}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isUploadingLogo ? 'Se incarca logo-ul...' : updateMutation.isPending ? 'Se salveaza...' : 'Salveaza setarile'}
+                {isUploadingLogo
+                  ? 'Se incarca logo-ul...'
+                  : updateMutation.isPending
+                    ? 'Se salveaza...'
+                    : 'Salveaza setarile'}
               </button>
             </div>
           </div>

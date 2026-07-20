@@ -13,14 +13,19 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  AlertTriangle
 } from 'lucide-react';
 import useTasks from '../hooks/useTasks';
 import useUsers from '../hooks/useUsers';
 import useAuth from '../context/useAuth';
 import useToast from '../context/useToast';
 import { USER_ROLES, TASK_STATUS, TASK_PRIORITY } from '../utils/constants';
-import { createTask, updateTask, addTaskComment, deleteTask, fetchTaskComments } from '../services/taskService';
+import {
+  createTask,
+  updateTask,
+  addTaskComment,
+  deleteTask,
+  fetchTaskComments,
+} from '../services/taskService';
 import DatePicker from '../components/ui/DatePicker';
 import Pagination from '../components/Pagination';
 import LocationBadge from '../components/LocationBadge';
@@ -35,15 +40,33 @@ const TASK_TYPE_LABELS = {
 };
 
 const STATUS_META = {
-  [TASK_STATUS.TODO]: { label: 'De facut', icon: Clock, class: 'bg-gray-50 text-gray-800 border-gray-200' },
-  [TASK_STATUS.IN_PROGRESS]: { label: 'In lucru', icon: AlertCircle, class: 'bg-blue-50 text-blue-800 border-blue-200' },
-  [TASK_STATUS.COMPLETED]: { label: 'Finalizat', icon: CheckCircle2, class: 'bg-green-50 text-green-800 border-green-200' },
+  [TASK_STATUS.TODO]: {
+    label: 'De facut',
+    icon: Clock,
+    class: 'bg-gray-50 text-gray-800 border-gray-200',
+  },
+  [TASK_STATUS.IN_PROGRESS]: {
+    label: 'In lucru',
+    icon: AlertCircle,
+    class: 'bg-blue-50 text-blue-800 border-blue-200',
+  },
+  [TASK_STATUS.COMPLETED]: {
+    label: 'Finalizat',
+    icon: CheckCircle2,
+    class: 'bg-green-50 text-green-800 border-green-200',
+  },
 };
 
 const PRIORITY_META = {
   [TASK_PRIORITY.LOW]: { label: 'Scazuta', class: 'bg-gray-50 text-gray-700 border-gray-200' },
-  [TASK_PRIORITY.MEDIUM]: { label: 'Medie', class: 'bg-yellow-50 text-yellow-800 border-yellow-200' },
-  [TASK_PRIORITY.HIGH]: { label: 'Ridicata', class: 'bg-orange-50 text-orange-800 border-orange-200' },
+  [TASK_PRIORITY.MEDIUM]: {
+    label: 'Medie',
+    class: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+  },
+  [TASK_PRIORITY.HIGH]: {
+    label: 'Ridicata',
+    class: 'bg-orange-50 text-orange-800 border-orange-200',
+  },
   [TASK_PRIORITY.URGENT]: { label: 'Urgenta', class: 'bg-red-50 text-red-800 border-red-200' },
 };
 
@@ -62,7 +85,10 @@ const Tasks = () => {
   const userId = user?._id || user?.id || '';
   const isManagerial = hasRole(USER_ROLES.ADMIN);
 
-  const { tasks, meta, loading, error, page, setPage, refresh } = useTasks({}, { enablePagination: true });
+  const { tasks, meta, loading, error, setPage, refresh } = useTasks(
+    {},
+    { enablePagination: true }
+  );
   // All users (including non-admins) should see all employees when creating/assigning tasks
   const { users: employees = [] } = useUsers({ isActive: true }, { enabled: true });
 
@@ -130,7 +156,7 @@ const Tasks = () => {
         ...current,
         assignedTo: isSelected
           ? current.assignedTo.filter((id) => id !== selectedUserId)
-          : [...current.assignedTo, selectedUserId]
+          : [...current.assignedTo, selectedUserId],
       };
     });
   };
@@ -195,13 +221,13 @@ const Tasks = () => {
   const canModifyTask = (task) => {
     if (isManagerial) return true;
 
-    const assignedIds = task.assignedTo?.map((assignee) =>
-      typeof assignee === 'string' ? assignee : assignee._id || assignee
-    ) || [];
+    const assignedIds =
+      task.assignedTo?.map((assignee) =>
+        typeof assignee === 'string' ? assignee : assignee._id || assignee
+      ) || [];
 
-    const creatorId = typeof task.createdBy === 'string'
-      ? task.createdBy
-      : task.createdBy?._id || '';
+    const creatorId =
+      typeof task.createdBy === 'string' ? task.createdBy : task.createdBy?._id || '';
 
     return assignedIds.includes(userId) || creatorId.toString() === userId;
   };
@@ -215,10 +241,18 @@ const Tasks = () => {
       { taskId, status },
       {
         onSuccess: () => {
-          showToast({ title: 'Task actualizat', description: 'Status-ul a fost actualizat.', type: 'success' });
+          showToast({
+            title: 'Task actualizat',
+            description: 'Status-ul a fost actualizat.',
+            type: 'success',
+          });
         },
         onError: (err) => {
-          showToast({ title: 'Actualizare esuata', description: err.message || 'Nu s-a putut actualiza status-ul.', type: 'error' });
+          showToast({
+            title: 'Actualizare esuata',
+            description: err.message || 'Nu s-a putut actualiza status-ul.',
+            type: 'error',
+          });
         },
       }
     );
@@ -313,17 +347,32 @@ const Tasks = () => {
   };
 
   const handleDeleteTask = async (taskId) => {
-    if (!await confirm({ title: 'Sterge task', text: 'Esti sigur ca vrei sa stergi acest task?', confirmText: 'Sterge', danger: true })) {
+    if (
+      !(await confirm({
+        title: 'Sterge task',
+        text: 'Esti sigur ca vrei sa stergi acest task?',
+        confirmText: 'Sterge',
+        danger: true,
+      }))
+    ) {
       return;
     }
 
     setHiddenTasks((prev) => ({ ...prev, [taskId]: true }));
     deleteMutation.mutate(taskId, {
       onSuccess: () => {
-        showToast({ title: 'Task sters', description: 'Task-ul a fost sters cu succes.', type: 'success' });
+        showToast({
+          title: 'Task sters',
+          description: 'Task-ul a fost sters cu succes.',
+          type: 'success',
+        });
       },
       onError: (err) => {
-        showToast({ title: 'Stergere esuata', description: err.message || 'Te rugam sa incerci din nou.', type: 'error' });
+        showToast({
+          title: 'Stergere esuata',
+          description: err.message || 'Te rugam sa incerci din nou.',
+          type: 'error',
+        });
       },
     });
   };
@@ -365,14 +414,18 @@ const Tasks = () => {
     Object.keys(expandedTasks).forEach(async (taskId) => {
       if (!expandedTasks[taskId]) return; // Skip if not expanded
 
-      const task = tasks.find(t => t._id === taskId);
+      const task = tasks.find((t) => t._id === taskId);
       if (!task) return;
 
       const currentOverride = commentCountOverrides[taskId];
       const backendCount = task.commentCount;
 
       // If backend count differs from our override, refresh the comments
-      if (backendCount !== undefined && currentOverride !== undefined && backendCount !== currentOverride) {
+      if (
+        backendCount !== undefined &&
+        currentOverride !== undefined &&
+        backendCount !== currentOverride
+      ) {
         try {
           const updatedComments = await fetchTaskComments(taskId);
           setLoadedComments((prev) => ({ ...prev, [taskId]: updatedComments }));
@@ -422,7 +475,9 @@ const Tasks = () => {
             <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         ) : error ? (
-          <div className="rounded-xl bg-white border border-red-200 p-6 text-center text-sm text-red-600">{error}</div>
+          <div className="rounded-xl bg-white border border-red-200 p-6 text-center text-sm text-red-600">
+            {error}
+          </div>
         ) : visibleTasks.length === 0 ? (
           <div className="rounded-xl bg-white border border-gray-200 p-6 text-center text-sm text-gray-500">
             Niciun task inca.
@@ -445,18 +500,25 @@ const Tasks = () => {
             const priorityMeta = PRIORITY_META[task.priority];
 
             return (
-              <div key={task._id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div
+                key={task._id}
+                className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+              >
                 {/* Task Header */}
                 <div className="p-6">
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">{task.title}</h3>
                       <div className="flex flex-wrap gap-2">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusMeta?.class || ''}`}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusMeta?.class || ''}`}
+                        >
                           {StatusIcon && <StatusIcon size={12} />}
                           {statusMeta?.label || displayStatus}
                         </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${priorityMeta?.class || ''}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${priorityMeta?.class || ''}`}
+                        >
                           {priorityMeta?.label || task.priority}
                         </span>
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200">
@@ -486,37 +548,51 @@ const Tasks = () => {
                     {task.dueDate && (
                       <div className="flex items-center gap-1.5">
                         <CalendarIcon size={14} className="text-gray-400" />
-                        <span>Scadenta: {format(new Date(task.dueDate), 'dd MMM yyyy', { locale: roDateLocale })}</span>
+                        <span>
+                          Scadenta:{' '}
+                          {format(new Date(task.dueDate), 'dd MMM yyyy', { locale: roDateLocale })}
+                        </span>
                       </div>
                     )}
                     {assigned.length > 0 && (
                       <div className="flex items-center gap-1.5">
                         <User size={14} className="text-gray-400" />
                         <span>
-                          {assigned.map((assignee) => {
-                            const person = typeof assignee === 'string'
-                              ? employees.find((emp) => emp._id === assignee)
-                              : assignee;
-                            return person ? `${person.firstName} ${person.lastName}` : '';
-                          }).filter(Boolean).join(', ') || 'Nealocate'}
+                          {assigned
+                            .map((assignee) => {
+                              const person =
+                                typeof assignee === 'string'
+                                  ? employees.find((emp) => emp._id === assignee)
+                                  : assignee;
+                              return person ? `${person.firstName} ${person.lastName}` : '';
+                            })
+                            .filter(Boolean)
+                            .join(', ') || 'Nealocate'}
                         </span>
                       </div>
                     )}
                     {totalCommentCount > 0 && (
                       <div className="flex items-center gap-1.5">
                         <MessageSquare size={14} className="text-gray-400" />
-                        <span>{totalCommentCount} {totalCommentCount === 1 ? 'comentariu' : 'comentarii'}</span>
+                        <span>
+                          {totalCommentCount}{' '}
+                          {totalCommentCount === 1 ? 'comentariu' : 'comentarii'}
+                        </span>
                       </div>
                     )}
                   </div>
 
                   {canEdit && (
                     <div className="mt-4 pt-4 border-t border-gray-100">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Actualizeaza status</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Actualizeaza status
+                      </label>
                       <select
                         value={displayStatus}
                         onChange={(event) => handleStatusChange(task._id, event.target.value)}
-                        disabled={statusMutation.isPending && statusMutation.variables?.taskId === task._id}
+                        disabled={
+                          statusMutation.isPending && statusMutation.variables?.taskId === task._id
+                        }
                         className="w-full sm:w-auto rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {statusOptions.map((status) => {
@@ -541,7 +617,9 @@ const Tasks = () => {
                       className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition mb-4"
                     >
                       <MessageSquare size={16} />
-                      <span>{isExpanded ? 'Ascunde' : 'Arata'} comentarii ({totalCommentCount})</span>
+                      <span>
+                        {isExpanded ? 'Ascunde' : 'Arata'} comentarii ({totalCommentCount})
+                      </span>
                     </button>
 
                     {isExpanded && (
@@ -562,7 +640,11 @@ const Tasks = () => {
                                     {comment.user?.firstName} {comment.user?.lastName}
                                   </span>
                                   <span className="text-xs text-gray-500">
-                                    {comment.createdAt ? format(new Date(comment.createdAt), 'dd MMM HH:mm', { locale: roDateLocale }) : ''}
+                                    {comment.createdAt
+                                      ? format(new Date(comment.createdAt), 'dd MMM HH:mm', {
+                                          locale: roDateLocale,
+                                        })
+                                      : ''}
                                   </span>
                                 </div>
                                 <p className="text-sm text-gray-700">{comment.text}</p>
@@ -573,7 +655,9 @@ const Tasks = () => {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500 text-center py-4">Niciun comentariu inca.</p>
+                          <p className="text-sm text-gray-500 text-center py-4">
+                            Niciun comentariu inca.
+                          </p>
                         )}
 
                         {canEdit && (
@@ -581,7 +665,10 @@ const Tasks = () => {
                             <textarea
                               value={commentMap[task._id] || ''}
                               onChange={(event) =>
-                                setCommentMap((current) => ({ ...current, [task._id]: event.target.value }))
+                                setCommentMap((current) => ({
+                                  ...current,
+                                  [task._id]: event.target.value,
+                                }))
                               }
                               placeholder="Adauga un comentariu..."
                               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
@@ -590,7 +677,9 @@ const Tasks = () => {
                             <button
                               type="button"
                               onClick={() => handleAddComment(task._id)}
-                              disabled={commentLoading[task._id] || !(commentMap[task._id] || '').trim()}
+                              disabled={
+                                commentLoading[task._id] || !(commentMap[task._id] || '').trim()
+                              }
                               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50 transition self-stretch"
                             >
                               {commentLoading[task._id] ? 'Se trimite...' : 'Posteaza'}
@@ -722,7 +811,9 @@ const Tasks = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Asigneaza persoane</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Asigneaza persoane
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {employees.map((employee) => {
                     const checked = taskForm.assignedTo.includes(employee._id);
@@ -730,7 +821,9 @@ const Tasks = () => {
                       <label
                         key={employee._id}
                         className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition ${
-                          checked ? 'border-primary bg-orange-50' : 'border-gray-200 hover:bg-gray-50'
+                          checked
+                            ? 'border-primary bg-orange-50'
+                            : 'border-gray-200 hover:bg-gray-50'
                         }`}
                       >
                         <input

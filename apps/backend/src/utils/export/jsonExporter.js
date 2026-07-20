@@ -4,6 +4,7 @@
  */
 
 const { formatDateTime } = require('./exportUtils');
+const { getPlatformConfig } = require('../../config/platform');
 
 /**
  * Export data to JSON format
@@ -19,11 +20,7 @@ const exportToJSON = (data, options = {}) => {
     throw new Error('Data must be an array');
   }
 
-  const {
-    includeMetadata = true,
-    prettyPrint = true,
-    entityType = 'data',
-  } = options;
+  const { includeMetadata = true, prettyPrint = true, entityType = 'data' } = options;
 
   let output;
 
@@ -33,7 +30,7 @@ const exportToJSON = (data, options = {}) => {
         exportDate: formatDateTime(new Date()),
         entityType,
         totalRecords: data.length,
-        generatedBy: 'ForjaIt CRM',
+        generatedBy: getPlatformConfig().name,
       },
       data,
     };
@@ -82,8 +79,8 @@ const exportMultipleEntitiesToJSON = (entities) => {
   const output = {
     metadata: {
       exportDate: formatDateTime(new Date()),
-      generatedBy: 'ViperX CRM',
-      entities: entities.map(e => ({
+      generatedBy: getPlatformConfig().name,
+      entities: entities.map((e) => ({
         name: e.name,
         count: e.data?.length || 0,
       })),
@@ -91,7 +88,7 @@ const exportMultipleEntitiesToJSON = (entities) => {
     data: {},
   };
 
-  entities.forEach(entity => {
+  entities.forEach((entity) => {
     output.data[entity.name] = entity.data || [];
   });
 

@@ -12,10 +12,7 @@ function MonthEvent({ event }) {
       className="flex items-center gap-1 truncate"
       title={`${event.title} - ${timeStr} - ${endStr}`}
     >
-      <span
-        className="h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ backgroundColor: dotColor }}
-      />
+      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
       <span className="truncate text-[11px]">{event.title}</span>
     </div>
   );

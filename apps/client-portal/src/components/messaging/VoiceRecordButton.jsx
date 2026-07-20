@@ -34,9 +34,7 @@ export default function VoiceRecordButton({ onUpload, isUploading, disabled }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : 'audio/mp4',
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4',
       });
 
       mediaRecorderRef.current = mediaRecorder;
@@ -128,9 +126,7 @@ export default function VoiceRecordButton({ onUpload, isUploading, disabled }) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-full">
         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-        <span className="text-sm text-red-600 font-medium">
-          {formatTime(recordingTime)}
-        </span>
+        <span className="text-sm text-red-600 font-medium">{formatTime(recordingTime)}</span>
         <button
           onClick={stopRecording}
           className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
@@ -146,22 +142,14 @@ export default function VoiceRecordButton({ onUpload, isUploading, disabled }) {
   if (audioBlob && audioUrl) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
-        <audio
-          ref={audioRef}
-          src={audioUrl}
-          onEnded={() => setIsPlaying(false)}
-        />
+        <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />
 
         <button
           onClick={togglePlayback}
           className="p-1.5 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors"
           title={isPlaying ? 'Pauza' : 'Reda'}
         >
-          {isPlaying ? (
-            <Pause className="h-4 w-4" />
-          ) : (
-            <Play className="h-4 w-4 ml-0.5" />
-          )}
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
         </button>
 
         <span className="text-sm text-gray-600">{formatTime(recordingTime)}</span>

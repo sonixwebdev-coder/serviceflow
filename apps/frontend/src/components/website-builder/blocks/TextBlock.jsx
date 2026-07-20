@@ -3,8 +3,29 @@ import DOMPurify from 'dompurify';
 
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
-    'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'span', 'div', 'hr', 'sub', 'sup',
+    'p',
+    'br',
+    'strong',
+    'em',
+    'u',
+    's',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'a',
+    'img',
+    'span',
+    'div',
+    'hr',
+    'sub',
+    'sup',
   ],
   ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'rel'],
   ALLOW_DATA_ATTR: false,
@@ -19,10 +40,7 @@ const formatClasses = {
 };
 
 const TextBlock = ({ data, settings, isEditing = false, onClick }) => {
-  const {
-    content = '',
-    format = 'prose',
-  } = data || {};
+  const { content = '', format = 'prose' } = data || {};
 
   const {
     backgroundColor = 'transparent',

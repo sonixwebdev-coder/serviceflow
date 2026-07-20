@@ -96,7 +96,9 @@ export default function LoyaltySettings() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Program de Fidelitate</h1>
-          <p className="text-sm text-gray-500 mt-1">Configurati sistemul de puncte si recompense pentru clienti</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Configurati sistemul de puncte si recompense pentru clienti
+          </p>
         </div>
         <button
           onClick={handleSave}
@@ -114,8 +116,12 @@ export default function LoyaltySettings() {
           <div className="flex items-center gap-3">
             <Gift size={20} className="text-indigo-600" />
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Activeaza programul de fidelitate</h3>
-              <p className="text-sm text-gray-500">Clientii vor acumula puncte pentru plati si vizite</p>
+              <h3 className="text-base font-semibold text-gray-900">
+                Activeaza programul de fidelitate
+              </h3>
+              <p className="text-sm text-gray-500">
+                Clientii vor acumula puncte pentru plati si vizite
+              </p>
             </div>
           </div>
           <button
@@ -127,9 +133,11 @@ export default function LoyaltySettings() {
               form.isEnabled ? 'bg-indigo-600' : 'bg-gray-200'
             }`}
           >
-            <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
-              form.isEnabled ? 'translate-x-5' : 'translate-x-0'
-            }`} />
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
+                form.isEnabled ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
           </button>
         </div>
       </div>
@@ -151,10 +159,14 @@ export default function LoyaltySettings() {
               onChange={(e) => handleChange('pointsPerRon', Number(e.target.value))}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Cate puncte primeste clientul per RON platit</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Cate puncte primeste clientul per RON platit
+            </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expirare puncte (zile)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Expirare puncte (zile)
+            </label>
             <input
               type="number"
               min="0"
@@ -176,7 +188,12 @@ export default function LoyaltySettings() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'].map((tier) => {
             const tierLower = tier.toLowerCase();
-            const names = { BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum' };
+            const names = {
+              BRONZE: 'Bronze',
+              SILVER: 'Silver',
+              GOLD: 'Gold',
+              PLATINUM: 'Platinum',
+            };
             return (
               <div key={tier} className={`rounded-lg border-2 p-4 ${TIER_COLORS[tier]}`}>
                 <h4 className="font-semibold mb-3">{names[tier]}</h4>
@@ -187,7 +204,9 @@ export default function LoyaltySettings() {
                       type="number"
                       min="0"
                       value={form[`${tierLower}Threshold`]}
-                      onChange={(e) => handleChange(`${tierLower}Threshold`, Number(e.target.value))}
+                      onChange={(e) =>
+                        handleChange(`${tierLower}Threshold`, Number(e.target.value))
+                      }
                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white"
                     />
                   </div>
@@ -226,15 +245,19 @@ export default function LoyaltySettings() {
               form.visitRewardEnabled ? 'bg-indigo-600' : 'bg-gray-200'
             }`}
           >
-            <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
-              form.visitRewardEnabled ? 'translate-x-5' : 'translate-x-0'
-            }`} />
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
+                form.visitRewardEnabled ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
           </button>
         </div>
         {form.visitRewardEnabled && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">La fiecare N vizite</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                La fiecare N vizite
+              </label>
               <input
                 type="number"
                 min="1"
@@ -251,7 +274,9 @@ export default function LoyaltySettings() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
               >
                 {REWARD_TYPES.map((rt) => (
-                  <option key={rt.value} value={rt.value}>{rt.label}</option>
+                  <option key={rt.value} value={rt.value}>
+                    {rt.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -285,15 +310,19 @@ export default function LoyaltySettings() {
               form.referralEnabled ? 'bg-indigo-600' : 'bg-gray-200'
             }`}
           >
-            <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
-              form.referralEnabled ? 'translate-x-5' : 'translate-x-0'
-            }`} />
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
+                form.referralEnabled ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
           </button>
         </div>
         {form.referralEnabled && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Puncte bonus (referrer)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Puncte bonus (referrer)
+              </label>
               <input
                 type="number"
                 min="0"
@@ -304,7 +333,9 @@ export default function LoyaltySettings() {
               <p className="text-xs text-gray-500 mt-1">Puncte pentru cel care recomanda</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Puncte bonus (client nou)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Puncte bonus (client nou)
+              </label>
               <input
                 type="number"
                 min="0"

@@ -11,21 +11,22 @@ import {
   Users,
   BarChart3,
   Globe,
-  MapPin,
-  Zap,
-  Clock,
-  Shield,
   Sparkles,
   Check,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMarketplaceStats } from '@/hooks/useMarketplace';
 import { FRONTEND_URL } from '@/config/urls';
-import Logo from '@/components/landing/Logo';
 import GridBackground from '@/components/landing/GridBackground';
+import LandingFooter from '@/components/landing/LandingFooter';
+import LandingHeader from '@/components/landing/LandingHeader';
 import SectionHeading from '@/components/landing/SectionHeading';
-import AnimatedSection, { StaggerContainer, StaggerItem } from '@/components/landing/AnimatedSection';
+import AnimatedSection, {
+  StaggerContainer,
+  StaggerItem,
+} from '@/components/landing/AnimatedSection';
 import SEOHead from '@/components/landing/SEOHead';
+import { runtimeConfig } from '@/config/runtime';
 
 // ---------------------------------------------------------------------------
 // Animated counter (scroll-triggered)
@@ -67,22 +68,26 @@ const benefits = [
   {
     icon: Calendar,
     title: 'Programeaza-te oricand, de oriunde',
-    description: 'E ora 11 noaptea si vrei programare maine? Deschizi portalul, alegi ora libera, gata. Fara sa suni pe nimeni.',
+    description:
+      'E ora 11 noaptea si vrei programare maine? Deschizi portalul, alegi ora libera, gata. Fara sa suni pe nimeni.',
   },
   {
     icon: MessageCircle,
     title: 'Vorbeste direct cu furnizorul',
-    description: 'Ai o intrebare despre pret sau durata? Scrii in chat, primesti raspuns. Totul salvat intr-un singur loc.',
+    description:
+      'Ai o intrebare despre pret sau durata? Scrii in chat, primesti raspuns. Totul salvat intr-un singur loc.',
   },
   {
     icon: FileText,
     title: 'Facturile tale, mereu la indemana',
-    description: 'Nu mai cauti prin email. Toate facturile si platile tale sunt organizate cronologic. Stii exact ce ai platit si ce ai de plata.',
+    description:
+      'Nu mai cauti prin email. Toate facturile si platile tale sunt organizate cronologic. Stii exact ce ai platit si ce ai de plata.',
   },
   {
     icon: Search,
     title: 'Gaseste servicii noi in zona ta',
-    description: 'Cauti un service auto sau un electrician? Marketplace-ul iti arata furnizori verificati, cu recenzii si preturi.',
+    description:
+      'Cauti un service auto sau un electrician? Marketplace-ul iti arata furnizori verificati, cu recenzii si preturi.',
   },
 ];
 
@@ -90,17 +95,20 @@ const steps = [
   {
     icon: Search,
     title: 'Cauta',
-    description: 'Deschizi marketplace-ul, filtrezi dupa categorie si oras. In 10 secunde ai lista de furnizori.',
+    description:
+      'Deschizi marketplace-ul, filtrezi dupa categorie si oras. In 10 secunde ai lista de furnizori.',
   },
   {
     icon: CalendarCheck,
     title: 'Programeaza',
-    description: 'Vezi orele libere, alegi ce ti se potriveste, confirmi. Primesti confirmare instant pe email.',
+    description:
+      'Vezi orele libere, alegi ce ti se potriveste, confirmi. Primesti confirmare instant pe email.',
   },
   {
     icon: CheckCircle,
     title: 'Gata. Totul e organizat.',
-    description: 'Programarea, factura, comunicarea - totul apare automat in portalul tau. Zero efort din partea ta.',
+    description:
+      'Programarea, factura, comunicarea - totul apare automat in portalul tau. Zero efort din partea ta.',
   },
 ];
 
@@ -124,45 +132,35 @@ export default function Landing() {
   const seoSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'ForjaIt Portal',
+    name: `${runtimeConfig.platformName} Portal`,
     applicationCategory: 'LifestyleApplication',
     operatingSystem: 'Web',
-    description: 'Portal de programari online - gaseste furnizori de servicii, programeaza in 30 de secunde si gestioneaza totul dintr-un singur loc.',
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'RON', description: 'Gratuit pentru clienti' },
+    description:
+      'Portal de programari online - gaseste furnizori de servicii, programeaza in 30 de secunde si gestioneaza totul dintr-un singur loc.',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'RON',
+      description: 'Gratuit pentru clienti',
+    },
   };
 
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title="ForjaIt - Programeaza-te online in 30 de secunde | Fara telefon"
+        title={`${runtimeConfig.platformName} - Programeaza-te online in 30 de secunde | Fara telefon`}
         description="Gaseste furnizori de servicii, programeaza online si tine evidenta programarilor si facturilor intr-un singur loc. 100% gratuit."
-        canonical="https://portal.forja.it.com/"
+        canonical={`${runtimeConfig.portalUrl}/`}
         og={{
-          title: 'ForjaIt - Programeaza-te in 30 de secunde, fara telefon',
-          description: 'Alegi serviciul, alegi ora, confirmi. Programari, facturi si comunicare - totul intr-un singur portal gratuit.',
-          url: 'https://portal.forja.it.com/',
+          title: `${runtimeConfig.platformName} - Programeaza-te in 30 de secunde, fara telefon`,
+          description:
+            'Alegi serviciul, alegi ora, confirmi. Programari, facturi si comunicare - totul intr-un singur portal gratuit.',
+          url: `${runtimeConfig.portalUrl}/`,
         }}
         schema={seoSchema}
       />
 
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="shrink-0">
-              <Logo className="text-xl text-gray-900" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link to="/marketplace" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                Marketplace
-              </Link>
-              <Link to="/login" className="text-sm font-semibold text-white bg-primary hover:bg-primary-700 px-5 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25">
-                Autentificare
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* ── Section 1: Hero ─────────────────────────────────────── */}
       <section className="bg-slate-950 text-white relative overflow-hidden">
@@ -181,10 +179,13 @@ export default function Landing() {
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05]">
               Programeaza-te
               <br />
-              <span className="bg-gradient-to-r from-primary-400 to-accent bg-clip-text text-transparent">in 30 de secunde.</span>
+              <span className="bg-gradient-to-r from-primary-400 to-accent bg-clip-text text-transparent">
+                in 30 de secunde.
+              </span>
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Alegi serviciul, alegi ora, confirmi. Fara sa suni, fara sa astepti. Totul programari, facturi, mesaje intr-un singur loc.
+              Alegi serviciul, alegi ora, confirmi. Fara sa suni, fara sa astepti. Totul programari,
+              facturi, mesaje intr-un singur loc.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
@@ -202,9 +203,18 @@ export default function Landing() {
               </Link>
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-500">
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" />100% gratuit pentru tine</span>
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" />Fara cont obligatoriu</span>
-              <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-400" />Confirmare instant pe email</span>
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                100% gratuit pentru tine
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                Fara cont obligatoriu
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                Confirmare instant pe email
+              </span>
             </div>
           </motion.div>
         </div>
@@ -249,12 +259,15 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection>
             <SectionHeading
-              label="De ce ForjaIt"
+              label={`De ce ${runtimeConfig.platformName}`}
               title="Fara telefon. Fara hartii. Fara nervi."
               subtitle="Totul intr-un singur portal: programezi, comunici, platesti. Simplu."
             />
           </AnimatedSection>
-          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" stagger={0.08}>
+          <StaggerContainer
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            stagger={0.08}
+          >
             {benefits.map((b) => (
               <StaggerItem key={b.title}>
                 <div className="group p-7 rounded-2xl border border-gray-200 bg-white hover:border-primary-200 hover:shadow-lg hover:shadow-primary-50 transition-all h-full">
@@ -281,7 +294,10 @@ export default function Landing() {
               subtitle="Trei pasi. Zero complicatii. Functioneaza si la 2 noaptea."
             />
           </AnimatedSection>
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8 relative" stagger={0.12}>
+          <StaggerContainer
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 relative"
+            stagger={0.12}
+          >
             {/* Connector line */}
             <div className="hidden md:block absolute top-12 left-[calc(33.33%+1rem)] right-[calc(33.33%+1rem)] h-px bg-gray-200" />
             {steps.map((step, i) => (
@@ -296,7 +312,9 @@ export default function Landing() {
                     </div>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed max-w-xs">{step.description}</p>
+                  <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+                    {step.description}
+                  </p>
                 </div>
               </StaggerItem>
             ))}
@@ -321,7 +339,13 @@ export default function Landing() {
             <AnimatedSection>
               <SectionHeading
                 label="Pentru companii"
-                title={<>Ai o afacere de servicii?<br />Clientii tai te cauta aici.</>}
+                title={
+                  <>
+                    Ai o afacere de servicii?
+                    <br />
+                    Clientii tai te cauta aici.
+                  </>
+                }
                 subtitle="Inregistreaza-ti compania si primesti: programari online, CRM, facturare, website builder si portal dedicat pentru clienti. Totul intr-o singura platforma."
                 className="[&_p]:text-slate-400 [&_h2]:text-white"
               />
@@ -352,10 +376,26 @@ export default function Landing() {
 
             <StaggerContainer className="grid grid-cols-2 gap-4" stagger={0.08}>
               {[
-                { icon: Users, title: 'CRM Clienti', desc: 'Baza de date completa cu istoricul fiecarui client' },
-                { icon: Calendar, title: 'Programari', desc: 'Calendar inteligent cu confirmare automata' },
-                { icon: FileText, title: 'Facturare', desc: 'Facturi generate dintr-un click, trimise automat' },
-                { icon: BarChart3, title: 'Rapoarte', desc: 'Statistici clare despre venituri si activitate' },
+                {
+                  icon: Users,
+                  title: 'CRM Clienti',
+                  desc: 'Baza de date completa cu istoricul fiecarui client',
+                },
+                {
+                  icon: Calendar,
+                  title: 'Programari',
+                  desc: 'Calendar inteligent cu confirmare automata',
+                },
+                {
+                  icon: FileText,
+                  title: 'Facturare',
+                  desc: 'Facturi generate dintr-un click, trimise automat',
+                },
+                {
+                  icon: BarChart3,
+                  title: 'Rapoarte',
+                  desc: 'Statistici clare despre venituri si activitate',
+                },
               ].map((item) => (
                 <StaggerItem key={item.title}>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm p-6 hover:bg-white/[0.06] transition-colors">
@@ -378,7 +418,8 @@ export default function Landing() {
               Nu mai suna. Programeaza-te online.
             </h2>
             <p className="mt-4 text-gray-500 text-base max-w-lg mx-auto leading-relaxed">
-              Contul e gratuit, se creeaza in 30 de secunde si ai acces instant la programari, facturi si comunicare directa.
+              Contul e gratuit, se creeaza in 30 de secunde si ai acces instant la programari,
+              facturi si comunicare directa.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
@@ -402,67 +443,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="border-t border-gray-200 bg-gray-50/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            <div className="sm:col-span-2 lg:col-span-1">
-              <Logo className="text-lg text-gray-900" />
-              <p className="mt-3 text-sm text-gray-500 leading-relaxed max-w-xs">
-                Programeaza-te online in 30 de secunde. Gaseste furnizori, comunica direct, tine evidenta facturilor - totul gratuit.
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Platforma</p>
-              <ul className="space-y-2.5">
-                {[
-                  { to: '/marketplace', label: 'Marketplace' },
-                  { to: '/login', label: 'Portal Client' },
-                ].map((l) => (
-                  <li key={l.to}>
-                    <Link to={l.to} className="text-sm text-gray-600 hover:text-gray-900 transition-colors">{l.label}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Pentru companii</p>
-              <ul className="space-y-2.5">
-                <li><a href={FRONTEND_URL} className="text-sm text-gray-600 hover:text-gray-900 transition-colors" target="_blank" rel="noopener noreferrer">Platforma business</a></li>
-                <li><a href={`${FRONTEND_URL}/pricing`} className="text-sm text-gray-600 hover:text-gray-900 transition-colors" target="_blank" rel="noopener noreferrer">Preturi</a></li>
-              </ul>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Legal</p>
-              <ul className="space-y-2.5">
-                {[
-                  { to: '/terms', label: 'Termeni si Conditii' },
-                  { to: '/privacy', label: 'Politica de Confidentialitate' },
-                  { to: '/contact', label: 'Contact' },
-                ].map((l) => (
-                  <li key={l.to}>
-                    <Link to={l.to} className="text-sm text-gray-600 hover:text-gray-900 transition-colors">{l.label}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12 border-t border-gray-200 pt-6">
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-5 text-xs text-gray-500">
-              <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 font-medium transition hover:bg-white hover:text-gray-700 hover:border-gray-300">ANPC</a>
-              <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 font-medium transition hover:bg-white hover:text-gray-700 hover:border-gray-300">SAL</a>
-              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 font-medium transition hover:bg-white hover:text-gray-700 hover:border-gray-300">SOL</a>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-sm text-gray-400">&copy; {new Date().getFullYear()} ForjaIt. Toate drepturile rezervate.</p>
-              <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Clock className="h-3.5 w-3.5" />
-                Suport Luni – Vineri, 09:00 – 18:00
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

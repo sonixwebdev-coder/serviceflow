@@ -6,6 +6,7 @@
 const archiver = require('archiver');
 const { Readable } = require('stream');
 const { formatDateTime } = require('./exportUtils');
+const { getPlatformConfig } = require('../../config/platform');
 
 /**
  * Create ZIP archive from multiple files
@@ -21,7 +22,7 @@ const createZipArchive = (files) => {
 
     // Create archive
     const archive = archiver('zip', {
-      zlib: { level: 9 } // Maximum compression
+      zlib: { level: 9 }, // Maximum compression
     });
 
     const chunks = [];
@@ -43,7 +44,7 @@ const createZipArchive = (files) => {
     });
 
     // Add files to archive
-    files.forEach(file => {
+    files.forEach((file) => {
       if (!file.name || !file.buffer) {
         throw new Error('Each file must have name and buffer properties');
       }
@@ -64,7 +65,7 @@ const createZipArchive = (files) => {
 const createMetadataFile = (metadata) => {
   const content = {
     exportDate: formatDateTime(new Date()),
-    generatedBy: 'ForjaIt CRM',
+    generatedBy: getPlatformConfig().name,
     version: '2.0.0',
     ...metadata,
   };
@@ -89,7 +90,7 @@ const exportEntitiesToZip = async (entities, metadata = {}) => {
   // Add metadata file
   const metadataContent = {
     ...metadata,
-    entities: entities.map(e => ({
+    entities: entities.map((e) => ({
       name: e.name,
       fileName: e.fileName,
       recordCount: e.recordCount || 0,
@@ -102,7 +103,7 @@ const exportEntitiesToZip = async (entities, metadata = {}) => {
   });
 
   // Add entity files
-  entities.forEach(entity => {
+  entities.forEach((entity) => {
     if (entity.buffer && entity.fileName) {
       files.push({
         name: entity.fileName,
@@ -125,7 +126,7 @@ const createZipWithFolders = (structure) => {
     }
 
     const archive = archiver('zip', {
-      zlib: { level: 9 }
+      zlib: { level: 9 },
     });
 
     const chunks = [];
@@ -145,7 +146,7 @@ const createZipWithFolders = (structure) => {
 
     // Process structure recursively
     const addToArchive = (obj, basePath = '') => {
-      Object.keys(obj).forEach(key => {
+      Object.keys(obj).forEach((key) => {
         const value = obj[key];
         const currentPath = basePath ? `${basePath}/${key}` : key;
 

@@ -4,7 +4,10 @@ const { sendWelcomeEmail } = require('./email/emailService');
 const { getCompanySettings } = require('./companySettingService');
 const logger = require('../utils/logger');
 
-const listClients = async (prisma, { search, page = 1, limit = 20, isOnline, locationFilter = {} }) => {
+const listClients = async (
+  prisma,
+  { search, page = 1, limit = 20, isOnline, locationFilter = {} }
+) => {
   const take = Math.min(limit, 100);
   const skip = (page - 1) * take;
 
@@ -37,9 +40,12 @@ const listClients = async (prisma, { search, page = 1, limit = 20, isOnline, loc
     conditions.push({ isOnline: isOnline === 'true' || isOnline === true });
   }
 
-  const where = conditions.length > 0
-    ? (conditions.length === 1 ? conditions[0] : { AND: conditions })
-    : undefined;
+  const where =
+    conditions.length > 0
+      ? conditions.length === 1
+        ? conditions[0]
+        : { AND: conditions }
+      : undefined;
 
   const [items, total] = await Promise.all([
     prisma.client.findMany({
@@ -114,13 +120,15 @@ const createClient = async (prisma, data, options = {}) => {
 
     // Send welcome email to client (fire-and-forget)
     if (client.email) {
-      getCompanySettings(client.organizationId).then((companySettings) => {
-        sendWelcomeEmail(prisma, {
-          client,
-          companySettings,
-          organizationId: client.organizationId,
-        }).catch((err) => logger.error('[EMAIL] Client welcome email failed:', err.message));
-      }).catch(() => {});
+      getCompanySettings(client.organizationId)
+        .then((companySettings) => {
+          sendWelcomeEmail(prisma, {
+            client,
+            companySettings,
+            organizationId: client.organizationId,
+          }).catch((err) => logger.error('[EMAIL] Client welcome email failed:', err.message));
+        })
+        .catch(() => {});
     }
 
     return client;

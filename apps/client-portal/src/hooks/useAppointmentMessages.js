@@ -63,8 +63,9 @@ export function useAppointmentMessages(appointmentId) {
     onSuccess: () => {
       queryClient.invalidateQueries(['appointment-messages-unread', appointmentId]);
       // Update messages to mark them as read
-      queryClient.setQueryData(['appointment-messages', appointmentId], (old) =>
-        old?.map((msg) => ({ ...msg, isRead: true })) || []
+      queryClient.setQueryData(
+        ['appointment-messages', appointmentId],
+        (old) => old?.map((msg) => ({ ...msg, isRead: true })) || []
       );
     },
   });

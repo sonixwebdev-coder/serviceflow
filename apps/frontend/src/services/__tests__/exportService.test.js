@@ -17,7 +17,12 @@ import {
 import API from '../../utils/api';
 
 // Mock the API module
-vi.mock('../../utils/api');
+vi.mock('../../utils/api', () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
+}));
 
 describe('Export Service - API Calls', () => {
   beforeEach(() => {
@@ -191,12 +196,13 @@ describe('Export Service - API Calls', () => {
   describe('exportAllData', () => {
     it('calls correct endpoint with extended timeout', async () => {
       const mockBlob = new Blob(['zip data'], { type: 'application/zip' });
-      API.get.mockResolvedValue({ data: mockBlob });
+      API.post.mockResolvedValue({ data: mockBlob });
 
       await exportAllData();
 
-      expect(API.get).toHaveBeenCalledWith(
-        '/exports/all',
+      expect(API.post).toHaveBeenCalledWith(
+        '/exports/all-data',
+        {},
         expect.objectContaining({
           responseType: 'blob',
           timeout: 120000,
@@ -206,7 +212,7 @@ describe('Export Service - API Calls', () => {
 
     it('returns ZIP blob', async () => {
       const mockBlob = new Blob(['zip data'], { type: 'application/zip' });
-      API.get.mockResolvedValue({ data: mockBlob });
+      API.post.mockResolvedValue({ data: mockBlob });
 
       const result = await exportAllData();
 
@@ -281,7 +287,12 @@ describe('Export Service - downloadFile', () => {
   it('handles various file types', () => {
     const fileTypes = [
       { blob: new Blob(['csv'], { type: 'text/csv' }), filename: 'data.csv' },
-      { blob: new Blob(['excel'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename: 'data.xlsx' },
+      {
+        blob: new Blob(['excel'], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }),
+        filename: 'data.xlsx',
+      },
       { blob: new Blob(['json'], { type: 'application/json' }), filename: 'data.json' },
       { blob: new Blob(['pdf'], { type: 'application/pdf' }), filename: 'data.pdf' },
       { blob: new Blob(['zip'], { type: 'application/zip' }), filename: 'data.zip' },
@@ -347,9 +358,9 @@ describe('Export Service - Error Handling', () => {
   });
 
   it('handles timeout errors', async () => {
-    API.get.mockRejectedValue({ code: 'ECONNABORTED', message: 'timeout' });
+    API.post.mockRejectedValue(new Error('timeout'));
 
-    await expect(exportAllData()).rejects.toThrow();
+    await expect(exportAllData()).rejects.toThrow('timeout');
   });
 });
 

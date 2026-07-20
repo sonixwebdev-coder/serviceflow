@@ -134,9 +134,6 @@ $RECYCLE.BIN/
 # Prisma migrations (keep in git, but can exclude if needed)
 # prisma/migrations/
 
-# Claude.md files (project-specific instructions)
-# CLAUDE.md is kept in repo, but temporary ones can be ignored
-# .claude/
 /apps/backend/storage/
 /.gaai/core/agents/sub-agents/implementation.sub-agent.md
 /.gaai/core/agents/sub-agents/micro-delivery.sub-agent.md

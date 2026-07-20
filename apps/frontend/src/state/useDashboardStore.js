@@ -147,17 +147,13 @@ export const useDashboardStore = create(
       // Set widget visibility
       setWidgetVisibility: (widgetId, visible) =>
         set((state) => ({
-          widgets: state.widgets.map((w) =>
-            w.id === widgetId ? { ...w, visible } : w
-          ),
+          widgets: state.widgets.map((w) => (w.id === widgetId ? { ...w, visible } : w)),
         })),
 
       // Change widget size
       setWidgetSize: (widgetId, size) =>
         set((state) => ({
-          widgets: state.widgets.map((w) =>
-            w.id === widgetId ? { ...w, size } : w
-          ),
+          widgets: state.widgets.map((w) => (w.id === widgetId ? { ...w, size } : w)),
         })),
 
       // Reset to defaults

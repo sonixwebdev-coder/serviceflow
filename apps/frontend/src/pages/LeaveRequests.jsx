@@ -1,7 +1,28 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay, addMonths, subMonths } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  isBefore,
+  startOfDay,
+  addMonths,
+  subMonths,
+} from 'date-fns';
 import roDateLocale from 'date-fns/locale/ro';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Check, XCircle, Clock, UserPlus } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  X,
+  Check,
+  XCircle,
+  Clock,
+  UserPlus,
+} from 'lucide-react';
 import useLeaveRequests from '../hooks/useLeaveRequests';
 import useUsers from '../hooks/useUsers';
 import useAuth from '../context/useAuth';
@@ -13,7 +34,7 @@ import {
   submitLeaveRequest,
   approveLeaveRequest,
   rejectLeaveRequest,
-  createMedicalLeave
+  createMedicalLeave,
 } from '../services/leaveRequestService';
 
 const LEAVE_TYPE_LABELS = {
@@ -25,16 +46,28 @@ const LEAVE_TYPE_LABELS = {
 };
 
 const STATUS_META = {
-  [LEAVE_STATUS.PENDING]: { label: 'In asteptare', icon: Clock, class: 'bg-yellow-50 text-yellow-800 border-yellow-200' },
-  [LEAVE_STATUS.APPROVED]: { label: 'Aprobat', icon: Check, class: 'bg-green-50 text-green-800 border-green-200' },
-  [LEAVE_STATUS.REJECTED]: { label: 'Respins', icon: XCircle, class: 'bg-red-50 text-red-800 border-red-200' },
+  [LEAVE_STATUS.PENDING]: {
+    label: 'In asteptare',
+    icon: Clock,
+    class: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+  },
+  [LEAVE_STATUS.APPROVED]: {
+    label: 'Aprobat',
+    icon: Check,
+    class: 'bg-green-50 text-green-800 border-green-200',
+  },
+  [LEAVE_STATUS.REJECTED]: {
+    label: 'Respins',
+    icon: XCircle,
+    class: 'bg-red-50 text-red-800 border-red-200',
+  },
 };
 
 const defaultForm = {
   leaveType: LEAVE_TYPE.VACATION,
   startDate: null,
   endDate: null,
-  reason: ''
+  reason: '',
 };
 
 const LeaveRequests = () => {
@@ -83,8 +116,12 @@ const LeaveRequests = () => {
     const previousMonth = subMonths(monthStart, 1);
     const previousMonthEnd = endOfMonth(previousMonth);
     const previousMonthDays = eachDayOfInterval({
-      start: new Date(previousMonthEnd.getFullYear(), previousMonthEnd.getMonth(), previousMonthEnd.getDate() - paddingDays + 1),
-      end: previousMonthEnd
+      start: new Date(
+        previousMonthEnd.getFullYear(),
+        previousMonthEnd.getMonth(),
+        previousMonthEnd.getDate() - paddingDays + 1
+      ),
+      end: previousMonthEnd,
     });
 
     return [...previousMonthDays, ...days];
@@ -94,8 +131,8 @@ const LeaveRequests = () => {
   const approvedRequestsByDay = useMemo(() => {
     const map = new Map();
     requests
-      .filter(req => req.status === LEAVE_STATUS.APPROVED)
-      .forEach(req => {
+      .filter((req) => req.status === LEAVE_STATUS.APPROVED)
+      .forEach((req) => {
         const start = startOfDay(new Date(req.startDate));
         const end = startOfDay(new Date(req.endDate));
 
@@ -109,10 +146,13 @@ const LeaveRequests = () => {
   }, [requests]);
 
   // Get requests for a specific day
-  const getRequestsForDay = useCallback((day) => {
-    const key = format(day, 'yyyy-MM-dd');
-    return approvedRequestsByDay.get(key) || [];
-  }, [approvedRequestsByDay]);
+  const getRequestsForDay = useCallback(
+    (day) => {
+      const key = format(day, 'yyyy-MM-dd');
+      return approvedRequestsByDay.get(key) || [];
+    },
+    [approvedRequestsByDay]
+  );
 
   const handleDateClick = (day) => {
     const today = startOfDay(new Date());
@@ -181,7 +221,8 @@ const LeaveRequests = () => {
     if (!selectedDates.end) {
       showToast({
         title: 'Selecteaza perioada',
-        description: 'Selecteaza data de sfarsit sau apasa din nou pe aceeasi zi pentru o singura zi.',
+        description:
+          'Selecteaza data de sfarsit sau apasa din nou pe aceeasi zi pentru o singura zi.',
         type: 'warning',
       });
       return;
@@ -329,11 +370,12 @@ const LeaveRequests = () => {
               ...request,
               status: LEAVE_STATUS.APPROVED,
               reviewNotes: notes,
-              reviewedBy: request.reviewedBy || (user
-                ? { firstName: user.firstName, lastName: user.lastName }
-                : request.reviewedBy
-              ),
-              reviewedAt: new Date().toISOString()
+              reviewedBy:
+                request.reviewedBy ||
+                (user
+                  ? { firstName: user.firstName, lastName: user.lastName }
+                  : request.reviewedBy),
+              reviewedAt: new Date().toISOString(),
             }
           : request
       )
@@ -384,11 +426,12 @@ const LeaveRequests = () => {
               ...request,
               status: LEAVE_STATUS.REJECTED,
               reviewNotes: notes,
-              reviewedBy: request.reviewedBy || (user
-                ? { firstName: user.firstName, lastName: user.lastName }
-                : request.reviewedBy
-              ),
-              reviewedAt: new Date().toISOString()
+              reviewedBy:
+                request.reviewedBy ||
+                (user
+                  ? { firstName: user.firstName, lastName: user.lastName }
+                  : request.reviewedBy),
+              reviewedAt: new Date().toISOString(),
             }
           : request
       )
@@ -468,7 +511,8 @@ const LeaveRequests = () => {
             Selecteaza perioada concediului
           </h2>
           <p className="text-sm text-gray-600">
-            Apasa pe o zi pentru inceput, apoi pe alta zi pentru sfarsit. Pentru o singura zi, apasa de doua ori pe aceeasi zi.
+            Apasa pe o zi pentru inceput, apoi pe alta zi pentru sfarsit. Pentru o singura zi, apasa
+            de doua ori pe aceeasi zi.
           </p>
         </div>
 
@@ -532,7 +576,9 @@ const LeaveRequests = () => {
                   ${isAtLimit && currentMonthDay ? 'ring-2 ring-red-300' : ''}
                 `}
               >
-                <div className={`text-sm font-semibold mb-1 ${today && currentMonthDay ? 'text-primary' : ''}`}>
+                <div
+                  className={`text-sm font-semibold mb-1 ${today && currentMonthDay ? 'text-primary' : ''}`}
+                >
                   {format(day, 'd')}
                 </div>
                 {requestsOnDay.length > 0 && currentMonthDay && (
@@ -553,7 +599,8 @@ const LeaveRequests = () => {
                           className={`text-[10px] px-1.5 py-0.5 rounded font-medium truncate shadow-sm ${colorClass}`}
                           title={`${req.employee?.firstName} ${req.employee?.lastName}`}
                         >
-                          {req.employee?.firstName?.[0]}{req.employee?.lastName?.[0]}
+                          {req.employee?.firstName?.[0]}
+                          {req.employee?.lastName?.[0]}
                         </div>
                       );
                     })}
@@ -623,16 +670,28 @@ const LeaveRequests = () => {
           ) : error ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
           ) : requests.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-gray-500">Nicio cerere de concediu inca.</div>
+            <div className="px-6 py-8 text-center text-sm text-gray-500">
+              Nicio cerere de concediu inca.
+            </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Angajat</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perioada</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tip</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motiv</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Angajat
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Perioada
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tip
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Motiv
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
                   {isManagerial && <th className="px-6 py-3" />}
                 </tr>
               </thead>
@@ -651,20 +710,35 @@ const LeaveRequests = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-700">
-                          {format(new Date(request.startDate), 'dd MMM yyyy', { locale: roDateLocale })} - {format(new Date(request.endDate), 'dd MMM yyyy', { locale: roDateLocale })}
+                          {format(new Date(request.startDate), 'dd MMM yyyy', {
+                            locale: roDateLocale,
+                          })}{' '}
+                          -{' '}
+                          {format(new Date(request.endDate), 'dd MMM yyyy', {
+                            locale: roDateLocale,
+                          })}
                         </div>
-                        <div className="text-xs text-gray-500">{request.totalDays} {request.totalDays === 1 ? 'zi' : 'zile'}</div>
+                        <div className="text-xs text-gray-500">
+                          {request.totalDays} {request.totalDays === 1 ? 'zi' : 'zile'}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-700">{LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType}</span>
+                        <span className="text-sm text-gray-700">
+                          {LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 max-w-xs truncate" title={request.reason}>
+                        <div
+                          className="text-sm text-gray-600 max-w-xs truncate"
+                          title={request.reason}
+                        >
                           {request.reason}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusMeta?.class || ''}`}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusMeta?.class || ''}`}
+                        >
                           {StatusIcon && <StatusIcon size={12} />}
                           {statusMeta?.label || request.status}
                         </span>
@@ -725,7 +799,9 @@ const LeaveRequests = () => {
           ) : error ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">{error}</div>
           ) : requests.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-gray-500">Nicio cerere de concediu inca.</div>
+            <div className="px-6 py-8 text-center text-sm text-gray-500">
+              Nicio cerere de concediu inca.
+            </div>
           ) : (
             <div className="divide-y divide-gray-200">
               {requests.map((request) => {
@@ -741,7 +817,9 @@ const LeaveRequests = () => {
                         </p>
                         <p className="text-xs text-gray-500">{request.employee?.email}</p>
                       </div>
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusMeta?.class || ''}`}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusMeta?.class || ''}`}
+                      >
                         {StatusIcon && <StatusIcon size={12} />}
                         {statusMeta?.label}
                       </span>
@@ -750,11 +828,18 @@ const LeaveRequests = () => {
                     <div className="space-y-1.5 text-sm">
                       <div className="flex items-center gap-2 text-gray-700">
                         <CalendarIcon size={14} className="text-gray-400" />
-                        {format(new Date(request.startDate), 'dd MMM yyyy', { locale: roDateLocale })} - {format(new Date(request.endDate), 'dd MMM yyyy', { locale: roDateLocale })}
-                        <span className="text-xs text-gray-500">({request.totalDays} {request.totalDays === 1 ? 'zi' : 'zile'})</span>
+                        {format(new Date(request.startDate), 'dd MMM yyyy', {
+                          locale: roDateLocale,
+                        })}{' '}
+                        -{' '}
+                        {format(new Date(request.endDate), 'dd MMM yyyy', { locale: roDateLocale })}
+                        <span className="text-xs text-gray-500">
+                          ({request.totalDays} {request.totalDays === 1 ? 'zi' : 'zile'})
+                        </span>
                       </div>
                       <p className="text-gray-600">
-                        <span className="font-medium">Tip:</span> {LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType}
+                        <span className="font-medium">Tip:</span>{' '}
+                        {LEAVE_TYPE_LABELS[request.leaveType] || request.leaveType}
                       </p>
                       <p className="text-gray-600">
                         <span className="font-medium">Motiv:</span> {request.reason}
@@ -839,7 +924,9 @@ const LeaveRequests = () => {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tip concediu *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tip concediu *
+                </label>
                 <select
                   name="leaveType"
                   value={formData.leaveType}
@@ -856,19 +943,31 @@ const LeaveRequests = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data inceput *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data inceput *
+                  </label>
                   <input
                     type="text"
-                    value={formData.startDate ? format(formData.startDate, 'dd MMM yyyy', { locale: roDateLocale }) : ''}
+                    value={
+                      formData.startDate
+                        ? format(formData.startDate, 'dd MMM yyyy', { locale: roDateLocale })
+                        : ''
+                    }
                     readOnly
                     className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data sfarsit *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data sfarsit *
+                  </label>
                   <input
                     type="text"
-                    value={formData.endDate ? format(formData.endDate, 'dd MMM yyyy', { locale: roDateLocale }) : ''}
+                    value={
+                      formData.endDate
+                        ? format(formData.endDate, 'dd MMM yyyy', { locale: roDateLocale })
+                        : ''
+                    }
                     readOnly
                     className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm"
                   />
@@ -922,7 +1021,9 @@ const LeaveRequests = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Adauga concediu medical</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                Adauga concediu medical
+              </h2>
               <button
                 type="button"
                 onClick={closeMedicalLeaveModal}
@@ -932,7 +1033,10 @@ const LeaveRequests = () => {
               </button>
             </div>
 
-            <form onSubmit={handleMedicalLeaveSubmit} className="px-4 sm:px-6 py-3 sm:py-4 space-y-4">
+            <form
+              onSubmit={handleMedicalLeaveSubmit}
+              className="px-4 sm:px-6 py-3 sm:py-4 space-y-4"
+            >
               {medicalLeaveError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {medicalLeaveError}
@@ -961,14 +1065,18 @@ const LeaveRequests = () => {
                 <DatePicker
                   label="Data inceput"
                   value={medicalLeaveForm.startDate}
-                  onChange={(date) => setMedicalLeaveForm((current) => ({ ...current, startDate: date }))}
+                  onChange={(date) =>
+                    setMedicalLeaveForm((current) => ({ ...current, startDate: date }))
+                  }
                   placeholder="Selecteaza data inceput"
                   required
                 />
                 <DatePicker
                   label="Data sfarsit"
                   value={medicalLeaveForm.endDate}
-                  onChange={(date) => setMedicalLeaveForm((current) => ({ ...current, endDate: date }))}
+                  onChange={(date) =>
+                    setMedicalLeaveForm((current) => ({ ...current, endDate: date }))
+                  }
                   minDate={medicalLeaveForm.startDate}
                   placeholder="Selecteaza data sfarsit"
                   required
@@ -989,7 +1097,8 @@ const LeaveRequests = () => {
               </div>
 
               <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
-                <strong>Nota:</strong> Concediul medical va fi creat si aprobat automat. Angajatul nu va putea vedea acest concediu.
+                <strong>Nota:</strong> Concediul medical va fi creat si aprobat automat. Angajatul
+                nu va putea vedea acest concediu.
               </div>
 
               <div className="flex justify-end gap-3 pt-2">

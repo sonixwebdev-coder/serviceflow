@@ -4,7 +4,6 @@ const path = require('path');
 const prisma = require('../../lib/prisma');
 const { getCutoffDate, FINANCIAL_AUDIT_ENTITY_TYPES } = require('../utils/retentionPolicy');
 const { STORAGE_ROOT, removeFile } = require('../utils/storage');
-const logger = require('../utils/logger');
 
 /**
  * Delete expired sessions and tokens across all orgs (global).
@@ -18,7 +17,11 @@ const BATCH_DELETE_LIMIT = 1000;
 async function batchDelete(model, where, idField = 'id') {
   let totalDeleted = 0;
   while (true) {
-    const rows = await model.findMany({ where, select: { [idField]: true }, take: BATCH_DELETE_LIMIT });
+    const rows = await model.findMany({
+      where,
+      select: { [idField]: true },
+      take: BATCH_DELETE_LIMIT,
+    });
     if (rows.length === 0) break;
     const ids = rows.map((r) => r[idField]);
     const result = await model.deleteMany({ where: { [idField]: { in: ids } } });
@@ -86,13 +89,22 @@ async function cleanupOrganization(orgId) {
   if (!org) return null;
 
   const plan = org.plan;
-  const stats = { notifications: 0, auditLogs: 0, emailLogs: 0, chatMessages: 0, chatAttachments: 0, messages: 0, messageAttachments: 0 };
+  const stats = {
+    notifications: 0,
+    auditLogs: 0,
+    emailLogs: 0,
+    chatMessages: 0,
+    chatAttachments: 0,
+    messages: 0,
+    messageAttachments: 0,
+  };
 
   // 1. Notifications
   const notifCutoff = getCutoffDate('notifications', plan);
   if (notifCutoff) {
     stats.notifications = await batchDelete(prisma.notification, {
-      organizationId: orgId, createdAt: { lt: notifCutoff },
+      organizationId: orgId,
+      createdAt: { lt: notifCutoff },
     });
   }
 
@@ -109,7 +121,8 @@ async function cleanupOrganization(orgId) {
   // 3. Email logs
   if (logsCutoff) {
     stats.emailLogs = await batchDelete(prisma.emailLog, {
-      organizationId: orgId, createdAt: { lt: logsCutoff },
+      organizationId: orgId,
+      createdAt: { lt: logsCutoff },
     });
   }
 
@@ -158,7 +171,11 @@ async function cleanupOrganization(orgId) {
         // Soft-delete messages
         const msgResult = await prisma.chatMessage.updateMany({
           where: { id: { in: messageIds } },
-          data: { isDeleted: true, deletedAt: new Date(), body: '[Mesaj sters - politica de retentie]' },
+          data: {
+            isDeleted: true,
+            deletedAt: new Date(),
+            body: '[Mesaj sters - politica de retentie]',
+          },
         });
         stats.chatMessages = msgResult.count;
       }
@@ -193,7 +210,9 @@ async function cleanupOrganization(orgId) {
 
       // Delete read receipts, then attachments, then messages
       await prisma.messageReadReceipt.deleteMany({ where: { messageId: { in: msgIds } } });
-      const attResult = await prisma.messageAttachment.deleteMany({ where: { messageId: { in: msgIds } } });
+      const attResult = await prisma.messageAttachment.deleteMany({
+        where: { messageId: { in: msgIds } },
+      });
       stats.messageAttachments = attResult.count;
 
       const msgResult = await prisma.message.deleteMany({ where: { id: { in: msgIds } } });
@@ -216,10 +235,7 @@ async function getIdleAccounts(idleDays = 180) {
       status: { in: ['ACTIVE', 'TRIAL'] },
       users: {
         every: {
-          OR: [
-            { lastLoginAt: null },
-            { lastLoginAt: { lt: cutoff } },
-          ],
+          OR: [{ lastLoginAt: null }, { lastLoginAt: { lt: cutoff } }],
         },
       },
     },

@@ -112,7 +112,11 @@ const VoiceRecorder = ({ onUpload, disabled, isUploading }) => {
           disabled={isUploading}
           className="p-1 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50"
         >
-          {isUploading ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send size={12} />}
+          {isUploading ? (
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
+            <Send size={12} />
+          )}
         </button>
       </div>
     );

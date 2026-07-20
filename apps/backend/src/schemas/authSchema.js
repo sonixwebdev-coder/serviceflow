@@ -1,7 +1,8 @@
 const { z } = require('zod');
 
 const emailSchema = z.string().email().max(254);
-const passwordSchema = z.string()
+const passwordSchema = z
+  .string()
   .min(8, 'Parola trebuie sa aiba cel putin 8 caractere')
   .max(128, 'Parola nu poate depasi 128 caractere')
   .regex(/[a-zA-Z]/, 'Parola trebuie sa contina cel putin o litera')

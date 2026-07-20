@@ -56,9 +56,7 @@ const FaqBlock = ({ data, settings, isEditing = false, onClick }) => {
                 {title}
               </h2>
             )}
-            {subtitle && (
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
           </div>
         )}
 
@@ -72,7 +70,10 @@ const FaqBlock = ({ data, settings, isEditing = false, onClick }) => {
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden"
                 >
                   <button
-                    onClick={(e) => { e.stopPropagation(); toggleItem(index); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleItem(index);
+                    }}
                     className="w-full flex items-center justify-between px-6 py-5 text-left"
                     disabled={isEditing}
                   >
@@ -85,9 +86,7 @@ const FaqBlock = ({ data, settings, isEditing = false, onClick }) => {
                     />
                   </button>
                   {isOpen && (
-                    <div className="px-6 pb-5 text-gray-600 leading-relaxed">
-                      {item.answer}
-                    </div>
+                    <div className="px-6 pb-5 text-gray-600 leading-relaxed">{item.answer}</div>
                   )}
                 </div>
               );

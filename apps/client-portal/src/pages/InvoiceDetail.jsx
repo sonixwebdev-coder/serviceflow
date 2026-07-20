@@ -121,7 +121,10 @@ export default function InvoiceDetail() {
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="2" className="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                    <td
+                      colSpan="2"
+                      className="px-6 py-3 text-right text-sm font-medium text-gray-900"
+                    >
                       Total
                     </td>
                     <td className="px-6 py-3 text-right text-lg font-bold text-gray-900">

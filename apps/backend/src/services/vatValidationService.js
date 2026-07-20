@@ -241,7 +241,10 @@ async function validateVatNumber(vatNumber) {
             logger.info(`Both ANAF and VIES unavailable, serving cached result for RO${number}`);
             return fallback;
           }
-          throw new AppError('Serviciile de validare (ANAF si VIES) nu sunt disponibile momentan. Incercati mai tarziu.', 503);
+          throw new AppError(
+            'Serviciile de validare (ANAF si VIES) nu sunt disponibile momentan. Incercati mai tarziu.',
+            503
+          );
         }
       } else {
         throw anafErr;
