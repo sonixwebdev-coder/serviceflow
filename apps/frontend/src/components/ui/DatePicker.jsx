@@ -163,7 +163,7 @@ const DatePicker = ({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
-        className={`flex w-full items-center justify-between rounded-lg border border-gray-300 px-3 py-2 text-left text-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60 ${
+        className={`flex w-full items-center justify-between rounded-lg border border-gray-300 px-3 py-2 text-left text-sm transition focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60 ${
           displayValue ? 'text-gray-900' : 'text-gray-500'
         }`}
       >
@@ -186,7 +186,7 @@ const DatePicker = ({
               <select
                 value={getMonth(visibleMonth)}
                 onChange={handleMonthSelect}
-                className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/40"
               >
                 {monthLabels.map((label, index) => (
                   <option key={label} value={index}>
@@ -197,7 +197,7 @@ const DatePicker = ({
               <select
                 value={getYear(visibleMonth)}
                 onChange={handleYearSelect}
-                className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/40"
               >
                 {yearOptions.map((yearOption) => (
                   <option key={yearOption} value={yearOption}>
@@ -236,7 +236,7 @@ const DatePicker = ({
                     type="button"
                     onClick={() => handleSelect(day)}
                     disabled={isDisabled}
-                    className={`rounded-lg px-0 py-2 text-center transition focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-30 ${
+                    className={`rounded-lg px-0 py-2 text-center transition focus:outline-hidden focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-30 ${
                       isSelected
                         ? 'bg-primary text-white hover:bg-orange-600'
                         : isMuted

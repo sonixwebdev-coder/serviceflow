@@ -10,8 +10,8 @@ const ListSkeleton = () => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
         <div className="flex-1 space-y-1">
-          <div className="h-4 w-28 animate-pulse rounded bg-gray-200" />
-          <div className="h-3 w-40 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-28 animate-pulse rounded-sm bg-gray-200" />
+          <div className="h-3 w-40 animate-pulse rounded-sm bg-gray-200" />
         </div>
       </div>
     ))}
@@ -95,7 +95,7 @@ export default function RecentMessagesWidget() {
             }`}
           >
             <div
-              className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
+              className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
                 unread > 0 ? 'bg-purple-200 text-purple-700' : 'bg-gray-200 text-gray-600'
               }`}
             >
@@ -114,7 +114,7 @@ export default function RecentMessagesWidget() {
               )}
             </div>
             {unread > 0 && (
-              <span className="flex-shrink-0 h-5 min-w-[20px] flex items-center justify-center rounded-full bg-purple-500 text-white text-[10px] font-bold px-1.5">
+              <span className="shrink-0 h-5 min-w-[20px] flex items-center justify-center rounded-full bg-purple-500 text-white text-[10px] font-bold px-1.5">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}

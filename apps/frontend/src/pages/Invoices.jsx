@@ -497,7 +497,7 @@ const Invoices = () => {
             placeholder="Caută după număr factură..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
         <div className="h-6 w-px bg-gray-200 hidden sm:block" />
@@ -508,7 +508,7 @@ const Invoices = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           >
             <option value="">Toate</option>
             {Object.entries(STATUS_META).map(([value, { label }]) => (
@@ -561,7 +561,7 @@ const Invoices = () => {
       )}
 
       {/* Table - Desktop */}
-      <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:block">
+      <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs lg:block">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50/50">
@@ -569,7 +569,7 @@ const Invoices = () => {
                 <th className="pl-4 pr-2 py-3 w-10">
                   <input
                     type="checkbox"
-                    className="rounded border-gray-300"
+                    className="rounded-sm border-gray-300"
                     checked={invoices.length > 0 && selectedIds.size === invoices.length}
                     onChange={handleSelectAll}
                   />
@@ -629,7 +629,7 @@ const Invoices = () => {
                       <td className="pl-4 pr-2 py-4 w-10">
                         <input
                           type="checkbox"
-                          className="rounded border-gray-300"
+                          className="rounded-sm border-gray-300"
                           checked={selectedIds.has(invoice.id)}
                           onChange={() => handleSelectInvoice(invoice.id)}
                         />
@@ -723,13 +723,13 @@ const Invoices = () => {
       {/* Cards - Mobile */}
       <div className="space-y-4 lg:hidden">
         {loading && invoices.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm px-4 py-12">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-xs px-4 py-12">
             <div className="flex justify-center">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           </div>
         ) : invoices.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white shadow-xs">
             <div className="empty-state">
               <FileText className="empty-state-icon" />
               <p className="empty-state-title">Nicio factură</p>
@@ -744,12 +744,12 @@ const Invoices = () => {
             return (
               <div
                 key={invoice.id}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-xs"
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                      <FileText className="h-4 w-4 shrink-0 text-gray-400" />
                       <span className="text-sm font-medium text-gray-900 truncate">
                         {invoice.invoiceNumber}
                       </span>
@@ -762,7 +762,7 @@ const Invoices = () => {
                     )}
                   </div>
                   <span
-                    className={`inline-flex flex-shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMeta.class}`}
+                    className={`inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusMeta.class}`}
                   >
                     {statusMeta.label}
                   </span>
@@ -958,7 +958,7 @@ const Invoices = () => {
                               'rounded-full px-3 py-1 text-xs font-medium border transition',
                               reached
                                 ? isCurrent
-                                  ? `${STATUS_META[key]?.class || ''} shadow-sm`
+                                  ? `${STATUS_META[key]?.class || ''} shadow-xs`
                                   : 'bg-gray-200 text-gray-600 border-gray-300'
                                 : 'bg-white text-gray-400 border-gray-200',
                               canAdvance ? 'cursor-pointer hover:opacity-80' : 'cursor-default',
@@ -972,7 +972,7 @@ const Invoices = () => {
                             {STATUS_META[key]?.label}
                           </button>
                           {idx < arr.length - 1 && (
-                            <ChevronRight size={12} className="flex-shrink-0 text-gray-300" />
+                            <ChevronRight size={12} className="shrink-0 text-gray-300" />
                           )}
                         </div>
                       );
@@ -985,7 +985,7 @@ const Invoices = () => {
                   <button
                     onClick={() => handleDownloadPdf(selectedInvoice)}
                     disabled={downloadingPdf[selectedInvoice.id]}
-                    className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
                   >
                     {downloadingPdf[selectedInvoice.id] ? (
                       <Loader2 size={13} className="animate-spin" />
@@ -998,7 +998,7 @@ const Invoices = () => {
                     <button
                       onClick={() => handleMarkAsSent(selectedInvoice)}
                       disabled={markAsSentMutation.isPending}
-                      className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-purple-300 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition hover:bg-purple-100 disabled:opacity-50"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-purple-300 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition hover:bg-purple-100 disabled:opacity-50"
                     >
                       <Send size={13} />
                       Marchează trimisă
@@ -1009,7 +1009,7 @@ const Invoices = () => {
                     <button
                       onClick={() => handleMarkAsPaid(selectedInvoice)}
                       disabled={markAsPaidMutation.isPending}
-                      className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100 disabled:opacity-50"
                     >
                       <CheckCircle size={13} />
                       Marchează plătită
@@ -1021,7 +1021,7 @@ const Invoices = () => {
                         handleDelete(selectedInvoice);
                         setSelectedInvoiceId(null);
                       }}
-                      className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100"
                     >
                       <Trash2 size={13} />
                       Șterge
@@ -1068,7 +1068,7 @@ const Invoices = () => {
                               onChange={(e) =>
                                 setEditForm({ ...editForm, dueDate: e.target.value })
                               }
-                              className="rounded border border-gray-300 px-2 py-0.5 text-sm"
+                              className="rounded-sm border border-gray-300 px-2 py-0.5 text-sm"
                             />
                           ) : (
                             <span className="text-gray-900">
@@ -1181,7 +1181,7 @@ const Invoices = () => {
                                       onChange={(e) =>
                                         handleLineItemChange(index, 'name', e.target.value)
                                       }
-                                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                      className="w-full rounded-sm border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                       placeholder="Nume articol"
                                     />
                                   </div>
@@ -1196,7 +1196,7 @@ const Invoices = () => {
                                       onChange={(e) =>
                                         handleLineItemChange(index, 'description', e.target.value)
                                       }
-                                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                      className="w-full rounded-sm border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                       placeholder="Descriere opțională"
                                     />
                                   </div>
@@ -1227,7 +1227,7 @@ const Invoices = () => {
                                                   e.target.value
                                                 )
                                               }
-                                              className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
+                                              className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-hidden"
                                             />
                                           </div>
                                           <div>
@@ -1246,7 +1246,7 @@ const Invoices = () => {
                                                   e.target.value
                                                 )
                                               }
-                                              className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
+                                              className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-hidden"
                                               placeholder="0.00"
                                             />
                                           </div>
@@ -1278,7 +1278,7 @@ const Invoices = () => {
                                                 e.target.value
                                               )
                                             }
-                                            className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
+                                            className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-hidden"
                                           />
                                         </div>
                                         <div>
@@ -1297,7 +1297,7 @@ const Invoices = () => {
                                                 e.target.value
                                               )
                                             }
-                                            className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
+                                            className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-hidden"
                                             placeholder="0.00"
                                           />
                                         </div>
@@ -1313,7 +1313,7 @@ const Invoices = () => {
                                 </div>
                                 <button
                                   onClick={() => handleRemoveLineItem(index)}
-                                  className="rounded p-1 text-red-600 transition hover:bg-red-50"
+                                  className="rounded-sm p-1 text-red-600 transition hover:bg-red-50"
                                   title="Șterge articol"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1368,7 +1368,7 @@ const Invoices = () => {
                                     )}
                                   </div>
                                 </div>
-                                <span className="flex-shrink-0 text-sm font-semibold text-gray-900">
+                                <span className="shrink-0 text-sm font-semibold text-gray-900">
                                   {formatCurrency(item.totalPrice)}
                                 </span>
                               </div>
@@ -1411,7 +1411,7 @@ const Invoices = () => {
                                     : Number(selectedInvoice.loyaltyDiscount || 0) > 0
                                 }
                                 onChange={(e) => setEditApplyLoyaltyDiscount(e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                                className="h-4 w-4 rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                               />
                               <span className="text-green-700">
                                 Reducere fidelitate
@@ -1547,7 +1547,7 @@ const Invoices = () => {
                         value={editForm.notes}
                         onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                         rows={4}
-                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-sm border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                         placeholder="Adaugă observații..."
                       />
                     ) : selectedInvoice.notes ? (
@@ -1568,7 +1568,7 @@ const Invoices = () => {
                       <select
                         value={editForm.status}
                         onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       >
                         {Object.entries(STATUS_META).map(([value, { label }]) => (
                           <option key={value} value={value}>
@@ -1589,7 +1589,7 @@ const Invoices = () => {
                         key={`pdf-${selectedInvoice.id}-${selectedInvoice.updatedAt || Date.now()}`}
                         title={`Factură ${selectedInvoice.invoiceNumber}`}
                         src={`${getFileUrl(selectedInvoice.pdfUrl)}&t=${new Date(selectedInvoice.updatedAt || Date.now()).getTime()}#toolbar=0`}
-                        className="h-96 w-full rounded border border-gray-200 bg-white"
+                        className="h-96 w-full rounded-sm border border-gray-200 bg-white"
                       />
                     </div>
                   )}

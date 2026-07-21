@@ -35,7 +35,7 @@ export default function ButtonBlock({ data, subdomain, branding }) {
     fullWidth && 'w-full',
     variant === 'primary' && 'text-white hover:opacity-90',
     variant === 'secondary' && 'border-2 border-gray-300 text-gray-700 hover:bg-gray-100',
-    variant === 'outline' && 'border-2 text-primary-600 hover:bg-primary-50'
+    variant === 'outline-solid' && 'border-2 text-primary-600 hover:bg-primary-50'
   );
 
   const style = variant === 'primary' ? { backgroundColor: primaryColor } : undefined;

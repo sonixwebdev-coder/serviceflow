@@ -87,7 +87,7 @@ export default function TimePicker({
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
           'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
-          'bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary',
+          'bg-white hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-primary/30 focus:border-primary',
           disabled
             ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
             : 'border-gray-300 text-gray-900',
@@ -109,7 +109,7 @@ export default function TimePicker({
               <button
                 type="button"
                 onClick={decrementHour}
-                className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                className="p-0.5 rounded-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               >
                 <ChevronUp className="h-3.5 w-3.5" />
               </button>
@@ -141,7 +141,7 @@ export default function TimePicker({
               <button
                 type="button"
                 onClick={incrementHour}
-                className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                className="p-0.5 rounded-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               >
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
@@ -157,7 +157,7 @@ export default function TimePicker({
               <button
                 type="button"
                 onClick={decrementMinute}
-                className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                className="p-0.5 rounded-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               >
                 <ChevronUp className="h-3.5 w-3.5" />
               </button>
@@ -189,7 +189,7 @@ export default function TimePicker({
               <button
                 type="button"
                 onClick={incrementMinute}
-                className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                className="p-0.5 rounded-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               >
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>

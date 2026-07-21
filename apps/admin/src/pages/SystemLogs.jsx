@@ -67,11 +67,11 @@ export default function SystemLogs() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs">
         <select
           value={filters.level}
           onChange={(e) => handleFilterChange('level', e.target.value)}
-          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate nivelurile</option>
           {LEVELS.map((l) => (
@@ -83,7 +83,7 @@ export default function SystemLogs() {
         <select
           value={filters.category}
           onChange={(e) => handleFilterChange('category', e.target.value)}
-          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate categoriile</option>
           {CATEGORIES.map((c) => (
@@ -99,13 +99,13 @@ export default function SystemLogs() {
             value={filters.search}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             placeholder="Cauta in mesaje..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50/50 pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50/50 pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

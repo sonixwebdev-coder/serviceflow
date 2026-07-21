@@ -400,7 +400,7 @@ const OrganizationSettings = () => {
       </div>
 
       {/* Sector Info - Read Only */}
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mb-6">
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-xs mb-6">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Domeniu de activitate</h2>
           <p className="text-sm text-gray-600 mt-1">
@@ -413,13 +413,13 @@ const OrganizationSettings = () => {
             <div className="animate-pulse flex items-center gap-4">
               <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
               <div className="flex-1">
-                <div className="h-5 bg-gray-200 rounded w-1/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-5 bg-gray-200 rounded-sm w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded-sm w-1/2"></div>
               </div>
             </div>
           ) : sectorInfo ? (
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
                 <SectorIcon className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1">
@@ -470,7 +470,7 @@ const OrganizationSettings = () => {
       </div>
 
       {/* Public Booking Settings */}
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-xs">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
           <Globe className="w-5 h-5 text-gray-400" />
           <div>
@@ -495,14 +495,14 @@ const OrganizationSettings = () => {
               maxLength={500}
               rows={4}
               placeholder="Ex: Oferim servicii de calitate cu peste 10 ani de experienta..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary resize-none"
             />
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-gray-400">{description.length}/500 caractere</span>
               <button
                 onClick={saveDescription}
                 disabled={savingDescription}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-primary hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
               >
                 <Save className="w-3.5 h-3.5 mr-1.5" />
                 {savingDescription ? 'Se salveaza...' : 'Salveaza descrierea'}
@@ -554,7 +554,7 @@ const OrganizationSettings = () => {
               onChange={(e) =>
                 handlePublicBookingChange('slotDuration', parseInt(e.target.value, 10))
               }
-              className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             >
               <option value={15}>15 minute</option>
               <option value={30}>30 minute</option>
@@ -582,7 +582,7 @@ const OrganizationSettings = () => {
               id="allow-weekends"
               checked={publicBooking.allowWeekends || false}
               onChange={(e) => handlePublicBookingChange('allowWeekends', e.target.checked)}
-              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded-sm"
             />
           </div>
 
@@ -623,7 +623,7 @@ const OrganizationSettings = () => {
             <button
               onClick={savePublicBooking}
               disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-xs text-sm font-medium text-white bg-primary hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
             >
               <Save className="w-4 h-4 mr-2" />
               {loading ? 'Se salveaza...' : 'Salveaza modificarile'}
@@ -633,7 +633,7 @@ const OrganizationSettings = () => {
       </div>
 
       {/* Google Calendar Integration */}
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mt-6">
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-xs mt-6">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-500" />
@@ -656,8 +656,8 @@ const OrganizationSettings = () => {
             <div className="animate-pulse flex items-center gap-4">
               <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
               <div className="flex-1">
-                <div className="h-5 bg-gray-200 rounded w-1/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-5 bg-gray-200 rounded-sm w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded-sm w-1/2"></div>
               </div>
             </div>
           ) : isLocationConnected ? (
@@ -695,7 +695,7 @@ const OrganizationSettings = () => {
                     value={selectedCalendarId}
                     onChange={(e) => handleCalendarChange(e.target.value)}
                     disabled={updateSettingsMutation.isPending}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                   >
                     <option value="">Selecteaza un calendar...</option>
                     {calendars.map((cal) => (
@@ -791,7 +791,7 @@ const OrganizationSettings = () => {
               <button
                 onClick={handleConnect}
                 disabled={connectMutation.isPending}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-xs text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
               >
                 <Link2 className="w-4 h-4 mr-2" />
                 {connectMutation.isPending ? 'Se conecteaza...' : 'Conecteaza cu Google'}
@@ -817,7 +817,7 @@ const OrganizationSettings = () => {
 
               <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200 text-left max-w-md mx-auto">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-amber-900">Nota importanta</p>
                     <p className="text-sm text-amber-700 mt-1">
@@ -833,7 +833,7 @@ const OrganizationSettings = () => {
       </div>
 
       {/* Marketplace Visibility */}
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm mt-6">
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-xs mt-6">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Vizibilitate marketplace</h2>
           <p className="text-sm text-gray-600 mt-1">
@@ -856,7 +856,7 @@ const OrganizationSettings = () => {
               type="button"
               onClick={() => savePublicListing(!publicListingEnabled)}
               disabled={savingPublicListing}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 ${
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 ${
                 publicListingEnabled ? 'bg-primary' : 'bg-gray-200'
               }`}
             >
@@ -871,7 +871,7 @@ const OrganizationSettings = () => {
       </div>
 
       {/* Danger Zone */}
-      <div className="rounded-2xl border border-red-200 bg-white shadow-sm mt-6">
+      <div className="rounded-2xl border border-red-200 bg-white shadow-xs mt-6">
         <div className="px-6 py-4 border-b border-red-100">
           <h2 className="text-lg font-semibold text-red-700">Zona periculoasa</h2>
           <p className="text-sm text-gray-600 mt-1">
@@ -891,7 +891,7 @@ const OrganizationSettings = () => {
               type="button"
               onClick={handleDeactivate}
               disabled={deactivating}
-              className="flex-shrink-0 inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 transition-colors"
+              className="shrink-0 inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-hidden focus:ring-2 focus:ring-red-500 disabled:opacity-50 transition-colors"
             >
               {deactivating ? 'Se dezactiveaza...' : 'Dezactiveaza contul'}
             </button>

@@ -211,7 +211,7 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-8">
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-200 p-4 sm:p-8">
           {/* Header */}
           <div className="text-center mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-1">

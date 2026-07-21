@@ -82,7 +82,7 @@ const LocationsMapBlock = ({ data, settings, isEditing = false, onClick, crmData
         >
           {displayLocations.length > 0 ? (
             displayLocations.map((location, index) => (
-              <div key={location.id || index} className="bg-white rounded-lg border shadow-sm">
+              <div key={location.id || index} className="bg-white rounded-lg border shadow-xs">
                 <div className="p-6 border-b">
                   <h3 className="font-semibold flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-blue-600" />

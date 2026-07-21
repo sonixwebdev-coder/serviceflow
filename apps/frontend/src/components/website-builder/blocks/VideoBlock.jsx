@@ -28,9 +28,9 @@ const VideoBlock = ({ data, settings, isEditing = false, onClick }) => {
 
   const aspectClasses = {
     '16:9': 'aspect-video',
-    '4:3': 'aspect-[4/3]',
+    '4:3': 'aspect-4/3',
     '1:1': 'aspect-square',
-    '21:9': 'aspect-[21/9]',
+    '21:9': 'aspect-21/9',
   };
 
   const thumbUrl = thumbnail || getThumbnail(url);

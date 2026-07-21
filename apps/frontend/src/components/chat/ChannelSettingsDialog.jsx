@@ -225,7 +225,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="Numele canalului"
                   />
                 </div>
@@ -235,7 +235,7 @@ export default function ChannelSettingsDialog({ isOpen, onClose, channelId }) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="Descrierea canalului (opțional)"
                   />
                 </div>

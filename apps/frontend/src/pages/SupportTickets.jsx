@@ -100,7 +100,7 @@ export default function SupportTickets() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-xs">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />

@@ -455,7 +455,7 @@ const PersonalTodos = () => {
             <select
               value={completionFilter}
               onChange={(e) => setCompletionFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             >
               <option value="all">Toate</option>
               <option value="active">Active</option>
@@ -469,7 +469,7 @@ const PersonalTodos = () => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             >
               <option value="all">Toate</option>
               <option value={PRIORITY.LOW}>Scazuta</option>
@@ -485,7 +485,7 @@ const PersonalTodos = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             >
               <option value="dueDate">Data scadenta</option>
               <option value="priority">Prioritate</option>
@@ -555,7 +555,7 @@ const PersonalTodos = () => {
                   <button
                     type="button"
                     onClick={() => handleToggleComplete(todo)}
-                    className="mt-1 flex-shrink-0 relative"
+                    className="mt-1 shrink-0 relative"
                     disabled={togglingTodoId === todo.id}
                   >
                     {togglingTodoId === todo.id ? (
@@ -563,7 +563,7 @@ const PersonalTodos = () => {
                     ) : todo.isCompleted ? (
                       <CheckCircle className="h-5 w-5 text-green-600" />
                     ) : (
-                      <div className="h-5 w-5 rounded border-2 border-gray-400 hover:border-primary transition" />
+                      <div className="h-5 w-5 rounded-sm border-2 border-gray-400 hover:border-primary transition" />
                     )}
                   </button>
 
@@ -596,7 +596,7 @@ const PersonalTodos = () => {
                             type="button"
                             onClick={() => openEditModal(todo)}
                             disabled={togglingTodoId === todo.id}
-                            className="rounded p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="rounded-sm p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Edit size={16} />
                           </button>
@@ -604,7 +604,7 @@ const PersonalTodos = () => {
                             type="button"
                             onClick={() => handleDelete(todo.id)}
                             disabled={togglingTodoId === todo.id}
-                            className="rounded p-1.5 text-gray-500 transition hover:bg-red-100 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="rounded-sm p-1.5 text-gray-500 transition hover:bg-red-100 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -683,7 +683,7 @@ const PersonalTodos = () => {
                   value={todoForm.title}
                   onChange={handleFormChange}
                   maxLength={200}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   placeholder="Ex: Pregateste raportul zilnic"
                 />
                 <p className="mt-1 text-xs text-gray-500">{todoForm.title.length}/200 caractere</p>
@@ -700,7 +700,7 @@ const PersonalTodos = () => {
                   onChange={handleFormChange}
                   maxLength={1000}
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   placeholder="Detalii suplimentare..."
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -715,7 +715,7 @@ const PersonalTodos = () => {
                   name="priority"
                   value={todoForm.priority}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 >
                   <option value={PRIORITY.LOW}>Scazuta</option>
                   <option value={PRIORITY.MEDIUM}>Medie</option>
@@ -737,7 +737,7 @@ const PersonalTodos = () => {
                   timeFormat="HH:mm"
                   timeIntervals={15}
                   placeholderText="Selecteaza data si ora"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   wrapperClassName="w-full"
                   locale={roDateLocale}
                 />

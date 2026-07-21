@@ -15,8 +15,8 @@ const ListSkeleton = () => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="h-9 w-9 animate-pulse rounded-lg bg-gray-200" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-          <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-32 animate-pulse rounded-sm bg-gray-200" />
+          <div className="h-3 w-20 animate-pulse rounded-sm bg-gray-200" />
         </div>
       </div>
     ))}
@@ -67,7 +67,7 @@ export default function ActiveTasksWidget() {
             className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition"
           >
             <div
-              className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
+              className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
                 isInProgress ? 'bg-blue-100' : 'bg-gray-200'
               }`}
             >

@@ -4,7 +4,7 @@
 
 // Base skeleton element with pulse animation
 export const SkeletonBox = ({ className = '' }) => (
-  <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+  <div className={`animate-pulse bg-gray-200 rounded-sm ${className}`} />
 );
 
 // Skeleton for metric cards
@@ -85,7 +85,7 @@ export const StatusGridSkeleton = ({ cols = 5 }) => (
 
 // Skeleton for the revenue card
 export const RevenueCardSkeleton = () => (
-  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-5 h-full">
+  <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-5 h-full">
     <div className="flex items-start justify-between mb-4">
       <div className="space-y-3">
         <SkeletonBox className="h-4 w-32" />

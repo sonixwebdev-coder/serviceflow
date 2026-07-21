@@ -23,7 +23,7 @@ export default function DataPreferences() {
   if (!visible) return null;
 
   return (
-    <div className="data-preferences-bar fixed bottom-0 left-0 right-0 z-[9999] border-t border-gray-200 bg-white shadow-lg">
+    <div className="data-preferences-bar fixed bottom-0 left-0 right-0 z-9999 border-t border-gray-200 bg-white shadow-lg">
       <div className="mx-auto max-w-5xl px-4 py-3">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between sm:gap-4">
           <div className="text-xs leading-relaxed text-gray-600 text-center sm:text-left">

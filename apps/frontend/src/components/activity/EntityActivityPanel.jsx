@@ -9,8 +9,8 @@ const PanelSkeleton = () => (
       <div key={i} className="flex gap-3">
         <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
         <div className="flex-1 space-y-1">
-          <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" />
-          <div className="h-3 w-1/2 animate-pulse rounded bg-gray-200" />
+          <div className="h-3 w-3/4 animate-pulse rounded-sm bg-gray-200" />
+          <div className="h-3 w-1/2 animate-pulse rounded-sm bg-gray-200" />
         </div>
       </div>
     ))}

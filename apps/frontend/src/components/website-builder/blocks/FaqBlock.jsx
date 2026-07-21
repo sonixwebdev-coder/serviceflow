@@ -80,7 +80,7 @@ const FaqBlock = ({ data, settings, isEditing = false, onClick }) => {
                     <span className="font-semibold text-gray-900 pr-4">{item.question}</span>
                     <ChevronDown
                       className={cn(
-                        'h-5 w-5 flex-shrink-0 transition-transform duration-200',
+                        'h-5 w-5 shrink-0 transition-transform duration-200',
                         isOpen ? 'rotate-180 text-blue-500' : 'text-gray-400'
                       )}
                     />

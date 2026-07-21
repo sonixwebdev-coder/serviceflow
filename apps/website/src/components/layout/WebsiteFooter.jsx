@@ -125,7 +125,7 @@ function ContactDetails({ contact, location, primaryColor }) {
       <ul className="space-y-3">
         {phone && (
           <li className="flex items-center gap-3">
-            <Phone className="h-5 w-5 flex-shrink-0" style={{ color: primaryColor }} />
+            <Phone className="h-5 w-5 shrink-0" style={{ color: primaryColor }} />
             <a href={`tel:${phone}`} className="transition-colors hover:text-white">
               {phone}
             </a>
@@ -133,7 +133,7 @@ function ContactDetails({ contact, location, primaryColor }) {
         )}
         {email && (
           <li className="flex items-center gap-3">
-            <Mail className="h-5 w-5 flex-shrink-0" style={{ color: primaryColor }} />
+            <Mail className="h-5 w-5 shrink-0" style={{ color: primaryColor }} />
             <a href={`mailto:${email}`} className="transition-colors hover:text-white">
               {email}
             </a>
@@ -141,7 +141,7 @@ function ContactDetails({ contact, location, primaryColor }) {
         )}
         {address && (
           <li className="flex items-start gap-3">
-            <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0" style={{ color: primaryColor }} />
+            <MapPin className="mt-0.5 h-5 w-5 shrink-0" style={{ color: primaryColor }} />
             <span>{address}</span>
           </li>
         )}

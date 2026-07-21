@@ -153,7 +153,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
         </div>
 
         {/* Form */}
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 shrink-0">
           <div className="mb-4">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Nume canal <span className="text-red-500">*</span>
@@ -163,7 +163,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="ex: general, suport-tehnic"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
               disabled={isCreating}
             />
           </div>
@@ -177,7 +177,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descrie scopul acestui canal..."
               rows={2}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
               disabled={isCreating}
             />
           </div>
@@ -185,7 +185,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
 
         {/* Member Selection */}
         <div className="border-t border-gray-200 flex-1 overflow-hidden flex flex-col min-h-0">
-          <div className="p-4 flex-shrink-0">
+          <div className="p-4 shrink-0">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-4 w-4 text-gray-500" />
               <label className="text-sm font-medium text-gray-700">Adaugă membri (opțional)</label>
@@ -202,7 +202,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                 value={memberSearchTerm}
                 onChange={(e) => setMemberSearchTerm(e.target.value)}
                 placeholder="Caută utilizatori..."
-                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 disabled={isCreating}
               />
             </div>
@@ -210,7 +210,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
 
           {/* Selected Members */}
           {selectedMembers.length > 0 && (
-            <div className="px-4 pb-2 flex-shrink-0">
+            <div className="px-4 pb-2 shrink-0">
               <div className="flex flex-wrap gap-2">
                 {selectedMembers.map((userId) => {
                   const user = users.find((u) => u.id === userId);
@@ -261,7 +261,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                       }`}
                     >
                       <div
-                        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm text-white ${
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm text-white ${
                           isSelected ? 'bg-primary' : 'bg-gray-500'
                         }`}
                       >
@@ -277,7 +277,7 @@ export default function CreateChannelDialog({ isOpen, onClose }) {
                         )}
                       </div>
                       {isSelected && (
-                        <div className="flex-shrink-0">
+                        <div className="shrink-0">
                           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                             <svg
                               className="h-3 w-3 text-white"

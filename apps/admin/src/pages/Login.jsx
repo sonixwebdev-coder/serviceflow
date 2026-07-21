@@ -45,7 +45,7 @@ export default function Login({ loading }) {
     <div className="flex min-h-screen items-center justify-center bg-gray-950 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-xl font-bold text-white shadow-xl shadow-primary-500/25">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-primary-500 to-primary-700 text-xl font-bold text-white shadow-xl shadow-primary-500/25">
             F
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">
@@ -68,7 +68,7 @@ export default function Login({ loading }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-gray-800 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+              className="w-full rounded-xl border border-gray-800 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-primary-500/50 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
               placeholder="admin@example.com"
             />
           </div>
@@ -80,7 +80,7 @@ export default function Login({ loading }) {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-800 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+              className="w-full rounded-xl border border-gray-800 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-primary-500/50 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
               placeholder="••••••••"
             />
           </div>
@@ -88,7 +88,7 @@ export default function Login({ loading }) {
           <button
             type="submit"
             disabled={loginMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary-500/20 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:opacity-50 transition-all"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-primary-500/20 hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:opacity-50 transition-all"
           >
             <LogIn className="h-4 w-4" />
             {loginMutation.isPending ? 'Se autentifica...' : 'Autentificare'}

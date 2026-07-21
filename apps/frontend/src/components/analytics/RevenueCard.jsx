@@ -45,7 +45,7 @@ export default function RevenueCard({ data, isLoading }) {
         : 0;
 
   return (
-    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4 sm:p-5 relative overflow-hidden h-full">
+    <div className="bg-linear-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4 sm:p-5 relative overflow-hidden h-full">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-green-100/50 rounded-full -mr-16 -mt-16"></div>
 

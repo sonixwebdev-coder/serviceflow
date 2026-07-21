@@ -105,13 +105,13 @@ export default function Preturi() {
             <div className="mt-8 inline-flex items-center gap-1 rounded-full bg-gray-100 p-1">
               <button
                 onClick={() => setAnnual(false)}
-                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all ${!annual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all ${!annual ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Lunar
               </button>
               <button
                 onClick={() => setAnnual(true)}
-                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all ${annual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all ${annual ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Anual
                 <span className="ml-1.5 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
@@ -137,7 +137,7 @@ export default function Preturi() {
                   className={`relative flex flex-col rounded-2xl border p-7 h-full ${tier.highlight ? 'border-primary shadow-xl shadow-primary/10 ring-1 ring-primary' : 'border-gray-200 hover:shadow-lg transition-shadow'}`}
                 >
                   {tier.badge && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-white shadow-sm">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-white shadow-xs">
                       {tier.badge}
                     </span>
                   )}
@@ -238,7 +238,7 @@ export default function Preturi() {
               { title: 'Fara angajament', text: 'Anuleaza oricand, fara penalizari sau contracte' },
             ].map((item) => (
               <StaggerItem key={item.title}>
-                <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+                <div className="rounded-2xl bg-white p-6 shadow-xs border border-gray-100">
                   <h3 className="text-sm font-bold text-gray-900">{item.title}</h3>
                   <p className="mt-2 text-xs leading-relaxed text-gray-500">{item.text}</p>
                 </div>
@@ -272,7 +272,7 @@ export default function Preturi() {
             </p>
             <Link
               to="/signup"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-semibold text-white shadow-sm shadow-primary/25 hover:bg-primary-700 transition-colors"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-semibold text-white shadow-xs shadow-primary/25 hover:bg-primary-700 transition-colors"
             >
               Activeaza contul gratuit <ArrowRight className="h-4 w-4" />
             </Link>

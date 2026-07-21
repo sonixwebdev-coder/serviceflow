@@ -167,7 +167,7 @@ export default function TicketDetail() {
       </div>
 
       {/* Messages */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-xs">
         <div className="max-h-[500px] overflow-y-auto p-5 space-y-3">
           {ticket.messages?.map((msg) => {
             const isSuperAdmin = msg.authorType === 'SUPER_ADMIN';
@@ -215,12 +215,12 @@ export default function TicketDetail() {
               onChange={(e) => setReply(e.target.value)}
               placeholder="Scrie un raspuns..."
               rows={2}
-              className="flex-1 rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-sm resize-none placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+              className="flex-1 rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-sm resize-none placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
             />
             <button
               type="submit"
               disabled={!reply.trim() || sending}
-              className="self-end rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 hover:shadow disabled:opacity-50 transition-all"
+              className="self-end rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-primary-700 hover:shadow-sm disabled:opacity-50 transition-all"
             >
               {sending ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

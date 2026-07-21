@@ -28,7 +28,7 @@ export default function Contact() {
   };
 
   const inputCls =
-    'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none';
+    'w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-hidden';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -145,7 +145,7 @@ export default function Contact() {
             <button
               type="submit"
               disabled={status === 'sending'}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-700 transition-colors disabled:opacity-50 shadow-sm shadow-primary/25"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-700 transition-colors disabled:opacity-50 shadow-xs shadow-primary/25"
             >
               {status === 'sending' ? (
                 <>

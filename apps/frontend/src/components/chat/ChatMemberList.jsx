@@ -95,11 +95,13 @@ export default function ChatMemberList() {
               >
                 <div
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer ${
-                    isCurrentUser ? 'bg-primary/5 border border-primary/20' : 'hover:bg-gray-50'
+                    isCurrentUser
+                      ? 'rbc-selected-cell border border-primary/20'
+                      : 'hover:bg-gray-50'
                   }`}
                 >
                   {/* Avatar with online status */}
-                  <div className="relative flex-shrink-0">
+                  <div className="relative shrink-0">
                     <div
                       className={`flex h-8 w-8 items-center justify-center rounded-full text-sm text-white ${
                         isCurrentUser ? 'bg-primary ring-2 ring-primary/30' : 'bg-primary'
@@ -135,7 +137,7 @@ export default function ChatMemberList() {
 
                   {/* Role Badge */}
                   {(member.role === 'OWNER' || member.role === 'ADMIN') && (
-                    <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                    <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
                       {getRoleLabel(member.role)}
                     </span>
                   )}

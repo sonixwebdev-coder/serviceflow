@@ -38,6 +38,7 @@ const portalVendorChunk = (id) => {
 
 export default defineConfig({
   plugins: [react()],
+  oxc: { jsx: { runtime: 'automatic' } },
   build: {
     rollupOptions: {
       output: {

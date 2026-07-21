@@ -25,7 +25,7 @@ export default function ActivityItem({ activity, showTime = true }) {
   return (
     <div className="flex gap-3 p-3 rounded-lg hover:bg-gray-50 transition group">
       {/* Avatar */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         {activity.actor?.avatarUrl ? (
           <img
             src={activity.actor.avatarUrl}
@@ -66,7 +66,7 @@ export default function ActivityItem({ activity, showTime = true }) {
           {/* Time */}
           {showTime && (
             <span
-              className="flex-shrink-0 text-xs text-gray-400 group-hover:text-gray-600"
+              className="shrink-0 text-xs text-gray-400 group-hover:text-gray-600"
               title={fullTime}
             >
               {timeAgo}

@@ -41,9 +41,9 @@ const STATUS_STYLES = {
 
 function StatCard({ icon: Icon, label, value, subtitle, gradient }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-200/60 bg-white p-5 shadow-xs transition-shadow hover:shadow-md">
       <div
-        className={`absolute inset-0 opacity-[0.03] ${gradient || 'bg-gradient-to-br from-blue-500 to-blue-600'}`}
+        className={`absolute inset-0 opacity-[0.03] ${gradient || 'bg-linear-to-br from-blue-500 to-blue-600'}`}
       />
       <div className="relative flex items-center gap-4">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100/80 transition-colors group-hover:bg-gray-100">
@@ -102,7 +102,7 @@ function HealthIndicator({ health }) {
 
 function ChartCard({ title, children, empty }) {
   return (
-    <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-xs">
       <h3 className="mb-4 text-sm font-semibold text-gray-900">{title}</h3>
       {empty ? (
         <div className="flex h-[250px] items-center justify-center text-sm text-gray-400">
@@ -150,19 +150,19 @@ export default function Dashboard() {
           icon={Building2}
           label="Total Organizatii"
           value={overview?.totalOrgs}
-          gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
+          gradient="bg-linear-to-br from-blue-500 to-indigo-600"
         />
         <StatCard
           icon={Users}
           label="Total Utilizatori"
           value={overview?.totalUsers}
-          gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
+          gradient="bg-linear-to-br from-emerald-500 to-teal-600"
         />
         <StatCard
           icon={UserPlus}
           label="Noi (7 zile)"
           value={overview?.recentSignups}
-          gradient="bg-gradient-to-br from-purple-500 to-violet-600"
+          gradient="bg-linear-to-br from-purple-500 to-violet-600"
         />
         <StatCard
           icon={Globe}
@@ -173,7 +173,7 @@ export default function Dashboard() {
               ? `${overview.websiteAdoption.published}/${overview.websiteAdoption.total} publicate`
               : undefined
           }
-          gradient="bg-gradient-to-br from-amber-500 to-orange-600"
+          gradient="bg-linear-to-br from-amber-500 to-orange-600"
         />
         <HealthIndicator health={overview?.systemHealth} />
       </div>
@@ -274,7 +274,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-xs">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900">
             <Activity className="h-4 w-4 text-gray-400" />
             Activitate Recenta

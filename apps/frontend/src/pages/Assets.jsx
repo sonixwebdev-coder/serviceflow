@@ -69,7 +69,7 @@ const Assets = () => {
             placeholder={`Cauta ${assetPlural.toLowerCase()} dupa nume, identificator, producator...`}
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
         {search && (
@@ -86,7 +86,7 @@ const Assets = () => {
 
       {/* Assets List */}
       <div
-        className={`bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}
+        className={`bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}
       >
         {isLoading ? (
           <div className="flex justify-center py-12">

@@ -15,7 +15,7 @@ export default function ActivityTimelineTable({
   return (
     <section
       aria-label="Istoric activitate"
-      className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-opacity ${
+      className={`overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs transition-opacity ${
         isFetching && !isLoading ? 'opacity-70' : ''
       }`}
     >
@@ -133,11 +133,11 @@ function ActorAvatar({ activity, presentation, size }) {
     <img
       src={activity.actor.avatarUrl}
       alt={presentation.actorName}
-      className={`${sizeClass} flex-shrink-0 rounded-full object-cover`}
+      className={`${sizeClass} shrink-0 rounded-full object-cover`}
     />
   ) : (
     <span
-      className={`${sizeClass} flex-shrink-0 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600`}
+      className={`${sizeClass} shrink-0 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600`}
       aria-hidden="true"
     >
       {presentation.actorInitials}
@@ -223,14 +223,14 @@ function DesktopSkeleton() {
         <div key={item} className="grid grid-cols-5 gap-4 px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-            <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-24 animate-pulse rounded-sm bg-gray-200" />
           </div>
-          <div className="col-span-2 h-4 w-3/4 animate-pulse self-center rounded bg-gray-200" />
+          <div className="col-span-2 h-4 w-3/4 animate-pulse self-center rounded-sm bg-gray-200" />
           <div className="flex gap-2 self-center">
             <div className="h-5 w-16 animate-pulse rounded-full bg-gray-200" />
             <div className="h-5 w-16 animate-pulse rounded-full bg-gray-200" />
           </div>
-          <div className="h-4 w-28 animate-pulse self-center rounded bg-gray-200" />
+          <div className="h-4 w-28 animate-pulse self-center rounded-sm bg-gray-200" />
         </div>
       ))}
     </div>
@@ -244,10 +244,10 @@ function MobileSkeleton() {
         <div key={item} className="flex gap-3 p-3">
           <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
+            <div className="h-4 w-3/4 animate-pulse rounded-sm bg-gray-200" />
             <div className="flex gap-2">
               <div className="h-5 w-16 animate-pulse rounded-full bg-gray-200" />
-              <div className="h-5 w-20 animate-pulse rounded bg-gray-200" />
+              <div className="h-5 w-20 animate-pulse rounded-sm bg-gray-200" />
             </div>
           </div>
         </div>

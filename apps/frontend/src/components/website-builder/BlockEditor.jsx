@@ -131,7 +131,7 @@ const BlockEditor = ({
         {/* Editor Canvas */}
         <div className="flex-1 overflow-y-auto bg-gray-100">
           <div className={cn('min-h-full', !previewMode && 'py-8 px-4')}>
-            <div className={cn('bg-white shadow-sm', !previewMode && 'rounded-lg overflow-hidden')}>
+            <div className={cn('bg-white shadow-xs', !previewMode && 'rounded-lg overflow-hidden')}>
               {blocks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-gray-500">
                   <p className="mb-4">Niciun bloc adaugat</p>
@@ -215,7 +215,7 @@ const BlockEditor = ({
       {showSettings && !previewMode && selectedBlock && (
         <div
           ref={settingsPanelRef}
-          className="w-[400px] border-l bg-white flex-shrink-0 h-full overflow-hidden"
+          className="w-[400px] border-l bg-white shrink-0 h-full overflow-hidden"
         >
           <BlockSettings
             block={selectedBlock}
@@ -241,7 +241,7 @@ const BlockEditor = ({
               <h2 className="text-lg font-semibold">Adauga un bloc</h2>
               <button
                 onClick={() => setShowAddBlockDialog(false)}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
               >
                 <X className="h-5 w-5" />
               </button>

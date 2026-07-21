@@ -72,7 +72,7 @@ export default function OrganizationDetail() {
   return (
     <div>
       {/* ── Header banner ─────────────────────────────────────── */}
-      <div className={`bg-gradient-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}>
+      <div className={`bg-linear-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Link
             to="/marketplace"
@@ -84,7 +84,7 @@ export default function OrganizationDetail() {
 
           <div className="flex items-start gap-5">
             {/* Sector icon */}
-            <div className="hidden sm:flex h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-sm items-center justify-center flex-shrink-0 border border-white/20">
+            <div className="hidden sm:flex h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-xs items-center justify-center shrink-0 border border-white/20">
               {SectorIcon && <SectorIcon className="h-8 w-8 text-white" />}
             </div>
 
@@ -92,7 +92,7 @@ export default function OrganizationDetail() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">{org.name}</h1>
                 {sector && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold bg-white/20 text-white backdrop-blur-sm border border-white/15">
+                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold bg-white/20 text-white backdrop-blur-xs border border-white/15">
                     {sector.label}
                   </span>
                 )}
@@ -137,11 +137,11 @@ export default function OrganizationDetail() {
                   {services.map((service, index) => (
                     <div
                       key={service.id || index}
-                      className="flex items-start gap-4 p-5 bg-white rounded-xl border border-gray-200 hover:border-primary-200 hover:shadow-sm transition-all"
+                      className="flex items-start gap-4 p-5 bg-white rounded-xl border border-gray-200 hover:border-primary-200 hover:shadow-xs transition-all"
                     >
                       {/* Icon */}
                       <div
-                        className={`h-10 w-10 rounded-xl ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0 mt-0.5`}
+                        className={`h-10 w-10 rounded-xl ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center shrink-0 mt-0.5`}
                       >
                         <CheckCircle
                           className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`}
@@ -169,7 +169,7 @@ export default function OrganizationDetail() {
 
                       {/* Price */}
                       {service.price != null && (
-                        <div className="flex-shrink-0 text-right">
+                        <div className="shrink-0 text-right">
                           <span className="text-lg font-bold text-gray-900">
                             {formatCurrency(service.price)}
                           </span>
@@ -194,7 +194,7 @@ export default function OrganizationDetail() {
                       <CardContent>
                         <div className="flex items-start gap-3">
                           <div
-                            className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0`}
+                            className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center shrink-0`}
                           >
                             <MapPin
                               className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`}
@@ -215,7 +215,7 @@ export default function OrganizationDetail() {
                             )}
                             {loc.operatingHours && Object.keys(loc.operatingHours).length > 0 && (
                               <div className="mt-2 flex items-start gap-1.5 text-sm text-gray-500">
-                                <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                                <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                                 <div className="space-y-0.5">
                                   {DAY_ORDER.filter((day) => loc.operatingHours[day]).map((day) => {
                                     const hours = loc.operatingHours[day];
@@ -261,13 +261,13 @@ export default function OrganizationDetail() {
             <div className="sticky top-24 space-y-4">
               {/* CTA Card */}
               <div
-                className={`rounded-2xl p-6 bg-gradient-to-br ${sector?.gradient || 'from-primary-500 to-primary-600'} text-white shadow-lg`}
+                className={`rounded-2xl p-6 bg-linear-to-br ${sector?.gradient || 'from-primary-500 to-primary-600'} text-white shadow-lg`}
               >
                 <CalendarCheck className="h-9 w-9 mb-3 opacity-90" />
                 <h3 className="text-lg font-bold">Programeaza o vizita</h3>
                 <p className="mt-1 text-sm text-white/75">Alege data si ora care ti se potrivesc</p>
                 <Link to={`/book/${org.slug}`} className="block mt-5">
-                  <button className="w-full py-3 px-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm text-sm">
+                  <button className="w-full py-3 px-4 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-xs text-sm">
                     Programeaza acum
                   </button>
                 </Link>

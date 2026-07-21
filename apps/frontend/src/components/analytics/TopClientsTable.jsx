@@ -34,7 +34,7 @@ export default function TopClientsTable({ data = [], isLoading }) {
       {data.map((item, index) => (
         <div key={item.client?.id || index} className="flex items-center gap-4 py-3">
           {/* Rank */}
-          <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+          <div className="shrink-0 w-8 h-8 flex items-center justify-center">
             <span
               className={`text-lg font-bold ${
                 index === 0
@@ -52,7 +52,7 @@ export default function TopClientsTable({ data = [], isLoading }) {
 
           {/* Client avatar */}
           <div
-            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
               item.client?.type === 'SRL' ? 'bg-blue-100' : 'bg-primary/10'
             }`}
           >

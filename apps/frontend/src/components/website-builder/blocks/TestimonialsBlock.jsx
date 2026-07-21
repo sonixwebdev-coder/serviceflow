@@ -50,7 +50,7 @@ const TestimonialsBlock = ({ data, settings, isEditing = false, onClick }) => {
   const TestimonialCard = ({ testimonial, className }) => {
     const displayName = testimonial.name || testimonial.author || '';
     return (
-      <div className={cn('bg-white rounded-lg border shadow-sm p-6', className)}>
+      <div className={cn('bg-white rounded-lg border shadow-xs p-6', className)}>
         <Quote className="h-8 w-8 text-blue-200 mb-4" />
 
         <p className="text-gray-600 mb-6 italic">"{testimonial.content}"</p>

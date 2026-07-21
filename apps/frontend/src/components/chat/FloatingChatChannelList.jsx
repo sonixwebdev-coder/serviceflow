@@ -12,8 +12,8 @@ const ChannelSkeleton = () => (
   <div className="flex items-center gap-3 px-4 py-3">
     <div className="h-11 w-11 animate-pulse rounded-full bg-gray-200" />
     <div className="flex-1 space-y-2">
-      <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-      <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+      <div className="h-4 w-32 animate-pulse rounded-sm bg-gray-200" />
+      <div className="h-3 w-24 animate-pulse rounded-sm bg-gray-200" />
     </div>
   </div>
 );
@@ -65,7 +65,7 @@ export default function FloatingChatChannelList({
                 <button
                   type="button"
                   onClick={() => handleSelectChannel(channel.id)}
-                  className={`group flex w-full items-center gap-3 px-4 py-3 text-left transition-all hover:bg-orange-50/50 ${
+                  className={`group flex w-full items-center gap-3 px-4 py-3 text-left transition-all hover:rbc-today ${
                     unread > 0 ? 'bg-orange-50/30' : ''
                   }`}
                 >
@@ -97,7 +97,7 @@ export default function FloatingChatChannelList({
                       </p>
                       <div className="flex items-center gap-2">
                         {timeAgo && (
-                          <span className="flex-shrink-0 text-[11px] text-gray-400">{timeAgo}</span>
+                          <span className="shrink-0 text-[11px] text-gray-400">{timeAgo}</span>
                         )}
                         {unread > 0 && (
                           <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">

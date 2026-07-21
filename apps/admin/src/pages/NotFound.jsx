@@ -12,7 +12,7 @@ export default function NotFound() {
         </p>
         <Link
           to="/"
-          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 hover:shadow transition-all"
+          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-gray-800 hover:shadow-sm transition-all"
         >
           <ArrowLeft className="h-4 w-4" />
           Inapoi la dashboard

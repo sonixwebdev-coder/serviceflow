@@ -10,8 +10,8 @@ const ListSkeleton = () => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="w-1.5 h-8 animate-pulse rounded-full bg-gray-200" />
         <div className="flex-1 space-y-1">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-          <div className="h-3 w-16 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-32 animate-pulse rounded-sm bg-gray-200" />
+          <div className="h-3 w-16 animate-pulse rounded-sm bg-gray-200" />
         </div>
       </div>
     ))}
@@ -70,7 +70,7 @@ export default function RemindersWidget() {
             }`}
           >
             <div
-              className={`w-1.5 h-8 rounded-full flex-shrink-0 ${
+              className={`w-1.5 h-8 rounded-full shrink-0 ${
                 isOverdue
                   ? 'bg-red-500'
                   : priority === 'URGENT'

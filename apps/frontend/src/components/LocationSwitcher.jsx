@@ -82,7 +82,7 @@ const LocationSwitcher = () => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-xs transition hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-1"
       >
         <MapPin size={16} className="text-primary" />
         <span className="max-w-[150px] truncate">

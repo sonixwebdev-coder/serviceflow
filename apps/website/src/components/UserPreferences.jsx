@@ -32,7 +32,7 @@ export default function UserPreferences({ primaryColor }) {
       <div className="max-w-xl mx-auto bg-white rounded-xl shadow-2xl border border-gray-200 p-5 sm:p-6">
         <div className="flex items-start gap-4">
           <div
-            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
             style={{ backgroundColor: `${primaryColor}15` }}
           >
             <Cookie className="h-5 w-5" style={{ color: primaryColor }} />
@@ -60,7 +60,7 @@ export default function UserPreferences({ primaryColor }) {
           </div>
           <button
             onClick={decline}
-            className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            className="shrink-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>

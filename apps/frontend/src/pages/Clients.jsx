@@ -524,7 +524,7 @@ const Clients = () => {
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 hover:shadow-md transition-all"
           >
             <Upload size={16} />
             Importa CSV
@@ -548,7 +548,7 @@ const Clients = () => {
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
             placeholder="Cauta dupa nume, companie, email, telefon sau card fidelitate..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
         {search && (
@@ -563,11 +563,9 @@ const Clients = () => {
         )}
       </div>
 
-      {/* Clients Table Card */}
       <div
-        className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}
+        className={`bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden transition-opacity ${isFetching && !isLoading ? 'opacity-70' : ''}`}
       >
-        {/* Desktop Table */}
         <div className="hidden lg:block">
           <div
             className={`grid gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50 ${hasAssets ? 'grid-cols-7' : 'grid-cols-6'}`}
@@ -649,7 +647,6 @@ const Clients = () => {
           )}
         </div>
 
-        {/* Mobile Cards */}
         <div className="lg:hidden">
           {isLoading ? (
             <div className="flex justify-center py-12">
@@ -889,7 +886,7 @@ const Clients = () => {
                                 type="text"
                                 value={editForm.companyName}
                                 onChange={(e) => handleInputChange('companyName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -901,7 +898,7 @@ const Clients = () => {
                                 type="text"
                                 value={editForm.contactName}
                                 onChange={(e) => handleInputChange('contactName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div>
@@ -912,7 +909,7 @@ const Clients = () => {
                                 type="text"
                                 value={editForm.vatNumber}
                                 onChange={(e) => handleInputChange('vatNumber', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div>
@@ -925,7 +922,7 @@ const Clients = () => {
                                 onChange={(e) =>
                                   handleInputChange('registrationNumber', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               />
                             </div>
                           </>
@@ -939,7 +936,7 @@ const Clients = () => {
                                 type="text"
                                 value={editForm.firstName}
                                 onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -951,7 +948,7 @@ const Clients = () => {
                                 type="text"
                                 value={editForm.lastName}
                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -965,7 +962,7 @@ const Clients = () => {
                             type="email"
                             value={editForm.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -976,7 +973,7 @@ const Clients = () => {
                             type="tel"
                             value={editForm.phone}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div className="col-span-2">
@@ -987,7 +984,7 @@ const Clients = () => {
                             type="text"
                             value={editForm.address}
                             onChange={(e) => handleInputChange('address', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div className="col-span-2">
@@ -998,7 +995,7 @@ const Clients = () => {
                             type="text"
                             value={editForm.fidelityCardSerie}
                             onChange={(e) => handleInputChange('fidelityCardSerie', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             placeholder="Serie card fidelitate"
                           />
                         </div>
@@ -1008,7 +1005,7 @@ const Clients = () => {
                               type="checkbox"
                               checked={editForm.isOnline || false}
                               onChange={(e) => handleInputChange('isOnline', e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              className="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary"
                             />
                             <span className="text-sm font-medium text-gray-700">
                               Client online (disponibil si in magazin fizic)
@@ -1026,7 +1023,7 @@ const Clients = () => {
                             value={editForm.notes}
                             onChange={(e) => handleInputChange('notes', e.target.value)}
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             placeholder="Notite despre client..."
                           />
                         </div>
@@ -2059,7 +2056,10 @@ const Clients = () => {
                       <h4 className="text-xs font-semibold text-red-900 mb-2">Erori Validare:</h4>
                       <div className="max-h-40 overflow-y-auto space-y-1">
                         {importResults.errors.map((error, index) => (
-                          <div key={index} className="text-xs text-red-700 bg-red-50 rounded p-2">
+                          <div
+                            key={index}
+                            className="text-xs text-red-700 bg-red-50 rounded-sm p-2"
+                          >
                             <span className="font-medium">Rand {error.row}:</span>{' '}
                             {error.errors.join(', ')}
                           </div>
@@ -2078,7 +2078,7 @@ const Clients = () => {
                         {importResults.duplicates.map((dup, index) => (
                           <div
                             key={index}
-                            className="text-xs text-yellow-700 bg-yellow-50 rounded p-2"
+                            className="text-xs text-yellow-700 bg-yellow-50 rounded-sm p-2"
                           >
                             <span className="font-medium">Rand {dup.row}:</span> {dup.reason}
                           </div>

@@ -252,7 +252,7 @@ const WebsiteLeads = () => {
   if (!hasWebsite) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-lg mx-auto bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="max-w-lg mx-auto bg-white rounded-xl shadow-xs border border-gray-200">
           <div className="text-center py-12 px-6">
             <Globe className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <h2 className="text-lg font-semibold mb-2">Nu exista website</h2>
@@ -310,7 +310,7 @@ const WebsiteLeads = () => {
             onClick={() => handleTabChange(tab.key)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               sourceTab === tab.key
-                ? 'bg-white text-gray-900 shadow-sm'
+                ? 'bg-white text-gray-900 shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -322,7 +322,7 @@ const WebsiteLeads = () => {
       {/* Stats */}
       {isReviewTab ? (
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total recenzii</p>
@@ -333,7 +333,7 @@ const WebsiteLeads = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Rating mediu</p>
@@ -350,7 +350,7 @@ const WebsiteLeads = () => {
         </div>
       ) : (
         <div className="grid grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Lead-uri noi</p>
@@ -361,7 +361,7 @@ const WebsiteLeads = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Contactati</p>
@@ -372,7 +372,7 @@ const WebsiteLeads = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Calificati</p>
@@ -383,7 +383,7 @@ const WebsiteLeads = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Convertiti</p>
@@ -398,7 +398,7 @@ const WebsiteLeads = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-4 mb-6">
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -429,7 +429,7 @@ const WebsiteLeads = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">

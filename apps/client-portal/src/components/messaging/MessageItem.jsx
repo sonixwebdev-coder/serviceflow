@@ -149,7 +149,7 @@ export default function MessageItem({ message, isOwnMessage, onPreviewFile }) {
       {/* Avatar */}
       <div
         className={cn(
-          'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+          'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
           isClientMessage ? 'bg-primary-100' : 'bg-gray-200'
         )}
       >
@@ -188,7 +188,7 @@ export default function MessageItem({ message, isOwnMessage, onPreviewFile }) {
         >
           {/* Text content */}
           {message.body && !isVoice && (
-            <p className="text-sm whitespace-pre-wrap break-words">{message.body}</p>
+            <p className="text-sm whitespace-pre-wrap wrap-break-word">{message.body}</p>
           )}
 
           {/* Voice message */}

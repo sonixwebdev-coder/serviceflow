@@ -28,7 +28,7 @@ export default function PrivacyNotice() {
     <div className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl border border-gray-200 p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <div className="hidden sm:flex h-10 w-10 rounded-xl bg-primary-100 items-center justify-center flex-shrink-0">
+          <div className="hidden sm:flex h-10 w-10 rounded-xl bg-primary-100 items-center justify-center shrink-0">
             <Shield className="h-5 w-5 text-primary-600" />
           </div>
           <div className="flex-1 min-w-0">
@@ -58,7 +58,7 @@ export default function PrivacyNotice() {
           </div>
           <button
             onClick={acceptEssential}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors shrink-0"
           >
             <X className="h-4 w-4" />
           </button>

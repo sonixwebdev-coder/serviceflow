@@ -12,7 +12,7 @@ function formatBytes(bytes) {
 
 function StatCard({ icon: Icon, label, value, sub }) {
   return (
-    <div className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100">
           <Icon className="h-4 w-4 text-gray-500" />
@@ -112,7 +112,7 @@ function CleanupButton({ label, type, mutation, showToast }) {
     <button
       onClick={handleClick}
       disabled={loading || mutation.isPending}
-      className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow disabled:opacity-50"
+      className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-xs transition-all hover:bg-gray-50 hover:shadow-sm disabled:opacity-50"
     >
       {loading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -241,7 +241,7 @@ export default function Maintenance() {
       {/* Jobs */}
       {stats?.jobs && (
         <Section title="Joburi Automate">
-          <div className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs">
             <div className="flex flex-wrap gap-5 text-sm">
               {Object.entries(stats.jobs.cleanup || {}).map(([name, status]) => (
                 <div key={name} className="flex items-center gap-2">
@@ -267,7 +267,7 @@ export default function Maintenance() {
             </span>
           }
         >
-          <div className="rounded-2xl border border-gray-200/60 bg-white shadow-sm">
+          <div className="rounded-2xl border border-gray-200/60 bg-white shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

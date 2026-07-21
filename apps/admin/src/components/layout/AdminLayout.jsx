@@ -60,8 +60,8 @@ export default function AdminLayout() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 px-5 border-b border-white/[0.06]">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-bold text-white shadow-lg shadow-primary-500/20">
+      <div className="flex h-16 items-center gap-3 px-5 border-b border-white/6">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-primary-500 to-primary-700 text-sm font-bold text-white shadow-lg shadow-primary-500/20">
           F
         </div>
         <div>
@@ -91,8 +91,8 @@ export default function AdminLayout() {
                   className={({ isActive }) =>
                     `group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
                       isActive
-                        ? 'bg-white/[0.08] text-white shadow-sm'
-                        : 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'
+                        ? 'bg-white/8 text-white shadow-xs'
+                        : 'text-gray-400 hover:bg-white/4 hover:text-gray-200'
                     }`
                   }
                 >
@@ -107,9 +107,9 @@ export default function AdminLayout() {
       </nav>
 
       {/* User footer */}
-      <div className="border-t border-white/[0.06] p-4">
+      <div className="border-t border-white/6 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-gray-600 to-gray-700 text-xs font-semibold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-gray-600 to-gray-700 text-xs font-semibold text-white">
             {user?.firstName?.[0]}
             {user?.lastName?.[0]}
           </div>
@@ -121,7 +121,7 @@ export default function AdminLayout() {
           </div>
           <button
             onClick={() => logout()}
-            className="rounded-lg p-2 text-gray-500 hover:bg-white/[0.06] hover:text-gray-300 transition-colors"
+            className="rounded-lg p-2 text-gray-500 hover:bg-white/6 hover:text-gray-300 transition-colors"
             title="Logout"
           >
             <LogOut className="h-4 w-4" />
@@ -136,7 +136,7 @@ export default function AdminLayout() {
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -149,7 +149,7 @@ export default function AdminLayout() {
       >
         <button
           onClick={() => setSidebarOpen(false)}
-          className="absolute right-3 top-4 rounded-lg p-1.5 text-gray-400 hover:bg-white/[0.06] hover:text-white"
+          className="absolute right-3 top-4 rounded-lg p-1.5 text-gray-400 hover:bg-white/6 hover:text-white"
         >
           <X className="h-5 w-5" />
         </button>

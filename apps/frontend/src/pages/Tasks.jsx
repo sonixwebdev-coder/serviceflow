@@ -502,7 +502,7 @@ const Tasks = () => {
             return (
               <div
                 key={task._id}
-                className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+                className="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden"
               >
                 {/* Task Header */}
                 <div className="p-6">
@@ -593,7 +593,7 @@ const Tasks = () => {
                         disabled={
                           statusMutation.isPending && statusMutation.variables?.taskId === task._id
                         }
-                        className="w-full sm:w-auto rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {statusOptions.map((status) => {
                           const meta = STATUS_META[status];
@@ -671,7 +671,7 @@ const Tasks = () => {
                                 }))
                               }
                               placeholder="Adauga un comentariu..."
-                              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary resize-none"
                               rows={2}
                             />
                             <button
@@ -744,7 +744,7 @@ const Tasks = () => {
                   name="title"
                   value={taskForm.title}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   placeholder="Introduceti titlul task-ului..."
                   required
                 />
@@ -756,7 +756,7 @@ const Tasks = () => {
                   name="description"
                   value={taskForm.description}
                   onChange={handleFormChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   rows={3}
                   placeholder="Detalii despre task..."
                 />
@@ -769,7 +769,7 @@ const Tasks = () => {
                     name="taskType"
                     value={taskForm.taskType}
                     onChange={handleFormChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   >
                     {Object.entries(TASK_TYPE_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
@@ -785,7 +785,7 @@ const Tasks = () => {
                     name="priority"
                     value={taskForm.priority}
                     onChange={handleFormChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   >
                     {priorityOptions.map((priority) => {
                       const meta = PRIORITY_META[priority];
@@ -830,7 +830,7 @@ const Tasks = () => {
                           type="checkbox"
                           checked={checked}
                           onChange={() => handleAssigneeToggle(employee._id)}
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                          className="rounded-sm border-gray-300 text-primary focus:ring-primary"
                         />
                         <span>
                           {employee.firstName} {employee.lastName}

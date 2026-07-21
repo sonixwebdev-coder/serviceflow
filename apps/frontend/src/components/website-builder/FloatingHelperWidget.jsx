@@ -135,7 +135,7 @@ export default function FloatingHelperWidget({ selectedBlockType }) {
       {!isOpen && (
         <button
           onClick={handleOpen}
-          className="fixed z-40 bottom-24 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg transition-all hover:bg-amber-600 hover:shadow-xl hover:scale-105 focus:outline-none"
+          className="fixed z-40 bottom-24 right-6 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg transition-all hover:bg-amber-600 hover:shadow-xl hover:scale-105 focus:outline-hidden"
           title="Sfaturi website builder"
         >
           <Lightbulb className="h-5 w-5" />
@@ -152,7 +152,7 @@ export default function FloatingHelperWidget({ selectedBlockType }) {
           )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b bg-gradient-to-r from-amber-50 to-orange-50 rounded-t-2xl">
+          <div className="flex items-center justify-between px-4 py-3 border-b bg-linear-to-r from-amber-50 to-orange-50 rounded-t-2xl">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
                 <Lightbulb className="h-4 w-4 text-amber-600" />

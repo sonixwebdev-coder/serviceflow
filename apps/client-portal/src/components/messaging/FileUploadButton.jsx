@@ -67,7 +67,7 @@ export default function FileUploadButton({ onUpload, isUploading, disabled }) {
 
       {/* Error tooltip */}
       {error && (
-        <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-red-50 text-red-600 text-xs rounded border border-red-200 whitespace-nowrap">
+        <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-red-50 text-red-600 text-xs rounded-sm border border-red-200 whitespace-nowrap">
           {error}
         </div>
       )}

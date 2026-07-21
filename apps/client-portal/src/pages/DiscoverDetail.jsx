@@ -92,7 +92,7 @@ export default function DiscoverDetail() {
     <div className="space-y-6">
       {/* Header banner */}
       <div
-        className={`-mx-6 -mt-6 bg-gradient-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}
+        className={`-mx-6 -mt-6 bg-linear-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}
       >
         <div className="px-6 sm:px-8 py-8">
           {/* Back link */}
@@ -105,14 +105,14 @@ export default function DiscoverDetail() {
           </Link>
 
           <div className="flex items-start gap-4">
-            <div className="hidden sm:flex h-14 w-14 rounded-xl bg-white/20 backdrop-blur-sm items-center justify-center flex-shrink-0">
+            <div className="hidden sm:flex h-14 w-14 rounded-xl bg-white/20 backdrop-blur-xs items-center justify-center shrink-0">
               {SectorIcon && <SectorIcon className="h-7 w-7 text-white" />}
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">{org.name}</h1>
                 {sector && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-white/20 text-white backdrop-blur-xs">
                     {sector.label}
                   </span>
                 )}
@@ -161,7 +161,7 @@ export default function DiscoverDetail() {
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 ml-4 flex-shrink-0">
+                    <div className="flex items-center gap-4 ml-4 shrink-0">
                       {service.duration && (
                         <span className="text-sm text-gray-400">{service.duration} min</span>
                       )}
@@ -190,7 +190,7 @@ export default function DiscoverDetail() {
                     <CardContent>
                       <div className="flex items-start gap-3">
                         <div
-                          className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center flex-shrink-0`}
+                          className={`h-10 w-10 rounded-lg ${sector?.iconBg || 'bg-primary-100'} flex items-center justify-center shrink-0`}
                         >
                           <MapPin
                             className={`h-5 w-5 ${sector?.iconColor || 'text-primary-600'}`}
@@ -211,7 +211,7 @@ export default function DiscoverDetail() {
                           )}
                           {loc.operatingHours && Object.keys(loc.operatingHours).length > 0 && (
                             <div className="mt-2 flex items-start gap-1.5 text-sm text-gray-500">
-                              <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                              <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                               <div className="space-y-0.5">
                                 {DAY_ORDER.filter((day) => loc.operatingHours[day]).map((day) => {
                                   const hours = loc.operatingHours[day];
@@ -543,7 +543,7 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                     <div className="flex items-start gap-3">
                       <MapPin
                         className={cn(
-                          'h-5 w-5 mt-0.5 flex-shrink-0',
+                          'h-5 w-5 mt-0.5 shrink-0',
                           formData.selectedLocation?.id === loc.id
                             ? 'text-primary-600'
                             : 'text-gray-400'
@@ -573,7 +573,7 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                         {loc.phone && <p className="mt-1 text-xs text-gray-400">{loc.phone}</p>}
                       </div>
                       {formData.selectedLocation?.id === loc.id && (
-                        <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center shrink-0">
                           <svg
                             className="w-3 h-3 text-white"
                             fill="none"
@@ -739,7 +739,7 @@ function BookingModal({ slug, org, locations, profile, assets, onClose, onSucces
                   value={formData.description}
                   onChange={(e) => updateFormData('description', e.target.value)}
                   rows={2}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-primary-500 focus:ring-primary-500/20 transition-shadow"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:border-primary-500 focus:ring-primary-500/20 transition-shadow"
                   placeholder="Detalii suplimentare..."
                 />
               </div>

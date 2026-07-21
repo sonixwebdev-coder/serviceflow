@@ -207,7 +207,7 @@ export default function LoyaltySettings() {
                       onChange={(e) =>
                         handleChange(`${tierLower}Threshold`, Number(e.target.value))
                       }
-                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white"
+                      className="w-full rounded-sm border border-gray-300 px-2 py-1.5 text-sm bg-white"
                     />
                   </div>
                   <div>
@@ -219,7 +219,7 @@ export default function LoyaltySettings() {
                       step="0.5"
                       value={form[`${tierLower}Discount`]}
                       onChange={(e) => handleChange(`${tierLower}Discount`, Number(e.target.value))}
-                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm bg-white"
+                      className="w-full rounded-sm border border-gray-300 px-2 py-1.5 text-sm bg-white"
                     />
                   </div>
                 </div>

@@ -276,7 +276,7 @@ export default function BookingPage() {
   if (bookingResult) {
     return (
       <div className="flex items-center justify-center py-16 px-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-xs border border-gray-200 p-8">
           <div className="text-center">
             <div
               className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4"
@@ -320,7 +320,7 @@ export default function BookingPage() {
   }
 
   const inputClass =
-    'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent';
+    'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:border-transparent';
 
   return (
     <div className="py-8 px-4">
@@ -369,7 +369,7 @@ export default function BookingPage() {
         </div>
 
         {/* Step content */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">{steps[currentStep]?.title}</h2>
           </div>
@@ -403,7 +403,7 @@ export default function BookingPage() {
                     >
                       <div className="flex items-start gap-3">
                         <MapPin
-                          className="h-5 w-5 mt-0.5 flex-shrink-0"
+                          className="h-5 w-5 mt-0.5 shrink-0"
                           style={{
                             color:
                               formData.selectedLocation?.id === location.id
@@ -936,7 +936,7 @@ export default function BookingPage() {
                       type="checkbox"
                       checked={formData.createAccount}
                       onChange={(e) => updateFormData('createAccount', e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300"
+                      className="w-4 h-4 rounded-sm border-gray-300"
                       style={{ accentColor: primaryColor }}
                     />
                     <span className="text-sm text-gray-700">

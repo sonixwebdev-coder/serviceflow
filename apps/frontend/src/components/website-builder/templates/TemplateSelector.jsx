@@ -143,7 +143,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
           <div
             key={template.id}
             className={cn(
-              'bg-white rounded-lg border shadow-sm overflow-hidden cursor-pointer transition-all hover:shadow-lg',
+              'bg-white rounded-lg border shadow-xs overflow-hidden cursor-pointer transition-all hover:shadow-lg',
               selectedTemplate?.id === template.id && 'ring-2 ring-blue-500',
               currentTemplateId === template.id && 'bg-blue-50'
             )}
@@ -164,7 +164,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
               )}
               {currentTemplateId === template.id && (
                 <div className="absolute top-2 right-2">
-                  <span className="inline-flex items-center px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
+                  <span className="inline-flex items-center px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-sm">
                     <Check className="h-3 w-3 mr-1" />
                     Activ
                   </span>
@@ -175,7 +175,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">{template.name}</h3>
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-sm">
                   {sectorLabels[template.sector]}
                 </span>
               </div>
@@ -251,7 +251,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
               </div>
               <button
                 onClick={() => setPreviewOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -279,7 +279,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
             {/* Content - Structured block preview */}
             <div className="flex-1 overflow-auto p-4 bg-gray-100">
               {activePage ? (
-                <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div className="bg-white rounded-lg shadow-xs border overflow-hidden">
                   {/* Page header */}
                   <div className="px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
                     <div className="flex gap-1.5">
@@ -288,7 +288,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
                       <div className="w-3 h-3 rounded-full bg-green-400" />
                     </div>
                     <div className="flex-1 mx-8">
-                      <div className="bg-white border rounded px-3 py-1 text-xs text-gray-400 text-center">
+                      <div className="bg-white border rounded-sm px-3 py-1 text-xs text-gray-400 text-center">
                         /{activePage.slug}
                       </div>
                     </div>
@@ -315,7 +315,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
                         >
                           <div
                             className={cn(
-                              'w-8 h-8 rounded flex items-center justify-center flex-shrink-0',
+                              'w-8 h-8 rounded-sm flex items-center justify-center shrink-0',
                               isHero ? 'bg-white/20' : 'bg-blue-50'
                             )}
                           >
@@ -347,7 +347,7 @@ const TemplateSelector = ({ onSelect, selectedSector, currentTemplateId }) => {
                             <img
                               src={blk.data.backgroundImage}
                               alt=""
-                              className="w-20 h-12 rounded object-cover opacity-60"
+                              className="w-20 h-12 rounded-sm object-cover opacity-60"
                             />
                           )}
                         </div>

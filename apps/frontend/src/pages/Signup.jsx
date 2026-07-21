@@ -332,7 +332,7 @@ const Signup = () => {
   };
 
   const inputClasses =
-    'w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none';
+    'w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-hidden';
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center mb-8">
@@ -410,9 +410,9 @@ const Signup = () => {
             onChange={handleChange}
             className={`${inputClasses} ${
               slugAvailable === false
-                ? '!border-red-400 focus:!border-red-500 focus:!ring-red-500/20'
+                ? 'border-red-400! focus:border-red-500! focus:ring-red-500/20!'
                 : slugAvailable === true
-                  ? '!border-green-400 focus:!border-green-500 focus:!ring-green-500/20'
+                  ? 'border-green-400! focus:border-green-500! focus:ring-green-500/20!'
                   : ''
             }`}
             placeholder="numele-companiei"
@@ -557,7 +557,7 @@ const Signup = () => {
               setFormData((prev) => ({ ...prev, acceptedTerms: e.target.checked }));
               setError('');
             }}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            className="mt-0.5 h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary"
             disabled={loading}
           />
           <span className="text-sm text-gray-600">
@@ -710,7 +710,7 @@ const Signup = () => {
             type="text"
             value={companyData.companyAddress}
             onChange={(e) => handleCompanyChange('companyAddress', e.target.value)}
-            className={`${inputClasses} ${companyErrors.companyAddress ? '!border-red-400' : ''}`}
+            className={`${inputClasses} ${companyErrors.companyAddress ? 'border-red-400!' : ''}`}
             disabled={loading}
           />
           {companyErrors.companyAddress && (
@@ -724,7 +724,7 @@ const Signup = () => {
             type="email"
             value={companyData.companyEmail}
             onChange={(e) => handleCompanyChange('companyEmail', e.target.value)}
-            className={`${inputClasses} ${companyErrors.companyEmail ? '!border-red-400' : ''}`}
+            className={`${inputClasses} ${companyErrors.companyEmail ? 'border-red-400!' : ''}`}
             disabled={loading}
           />
           {companyErrors.companyEmail && (
@@ -738,7 +738,7 @@ const Signup = () => {
             type="tel"
             value={companyData.companyPhone}
             onChange={(e) => handleCompanyChange('companyPhone', e.target.value)}
-            className={`${inputClasses} ${companyErrors.companyPhone ? '!border-red-400' : ''}`}
+            className={`${inputClasses} ${companyErrors.companyPhone ? 'border-red-400!' : ''}`}
             disabled={loading}
           />
           {companyErrors.companyPhone && (
@@ -914,7 +914,7 @@ const Signup = () => {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-8 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-8 shadow-xs">
             {renderStepIndicator()}
 
             {error && (
@@ -946,7 +946,7 @@ const Signup = () => {
                     type="button"
                     onClick={handleNext}
                     disabled={loading || (currentStep === 0 && (slugChecking || !slugAvailable))}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Urmatorul
                     <ArrowRight className="h-4 w-4" />
@@ -955,7 +955,7 @@ const Signup = () => {
                   <button
                     type="submit"
                     disabled={loading || vatValidation.status !== 'valid'}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Se creeaza...' : 'Creeaza Contul'}
                     {!loading && <Check className="h-4 w-4" />}
@@ -987,7 +987,7 @@ const Signup = () => {
               href="https://anpc.ro/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+              className="inline-flex items-center rounded-sm border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
             >
               ANPC
             </a>
@@ -995,7 +995,7 @@ const Signup = () => {
               href="https://anpc.ro/ce-este-sal/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+              className="inline-flex items-center rounded-sm border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
             >
               SAL
             </a>

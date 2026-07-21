@@ -32,10 +32,10 @@ import useToast from '../../context/useToast';
 // Skeleton for channel header
 const HeaderSkeleton = () => (
   <div className="flex items-center gap-3 px-4 py-3">
-    <div className="h-5 w-5 animate-pulse rounded bg-gray-200" />
+    <div className="h-5 w-5 animate-pulse rounded-sm bg-gray-200" />
     <div className="flex-1 space-y-2">
-      <div className="h-5 w-40 animate-pulse rounded bg-gray-200" />
-      <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+      <div className="h-5 w-40 animate-pulse rounded-sm bg-gray-200" />
+      <div className="h-3 w-24 animate-pulse rounded-sm bg-gray-200" />
     </div>
   </div>
 );
@@ -45,7 +45,7 @@ const MessageSkeleton = ({ isOwn }) => (
   <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
     {!isOwn && <div className="mr-3 h-10 w-10 animate-pulse rounded-full bg-gray-200" />}
     <div className={`space-y-2 ${isOwn ? 'items-end' : 'items-start'}`}>
-      {!isOwn && <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />}
+      {!isOwn && <div className="h-3 w-24 animate-pulse rounded-sm bg-gray-200" />}
       <div
         className={`h-16 w-64 animate-pulse rounded-2xl ${isOwn ? 'bg-orange-200' : 'bg-gray-200'}`}
       />
@@ -134,13 +134,13 @@ export default function ChatView({ isMobile = false }) {
   if (channelLoading) {
     return (
       <div className="flex h-full flex-col bg-white">
-        <div className="flex-shrink-0 border-b border-gray-200 bg-white">
+        <div className="shrink-0 border-b border-gray-200 bg-white">
           <HeaderSkeleton />
         </div>
         <div className="min-h-0 flex-1 overflow-hidden bg-gray-50">
           <MessagesLoadingSkeleton />
         </div>
-        <div className="flex-shrink-0 border-t border-gray-200 bg-white p-4">
+        <div className="shrink-0 border-t border-gray-200 bg-white p-4">
           <div className="h-10 w-full animate-pulse rounded-lg bg-gray-200" />
         </div>
       </div>
@@ -275,7 +275,7 @@ export default function ChatView({ isMobile = false }) {
   return (
     <div className="flex h-full flex-col bg-white">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 bg-white px-4 py-3">
+      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Left side - Sidebar toggle and channel info */}
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -401,7 +401,7 @@ export default function ChatView({ isMobile = false }) {
       </div>
 
       {/* Message Composer */}
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <MessageComposer channelId={activeChannelId} />
       </div>
 

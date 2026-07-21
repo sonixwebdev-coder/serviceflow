@@ -82,7 +82,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
   const renderTestimonial = (testimonial, index) => (
     <div
       key={index}
-      className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300"
+      className="bg-white rounded-xl p-8 shadow-xs border border-gray-100 hover:shadow-md transition-shadow duration-300"
     >
       <Quote className="h-10 w-10 mb-4 opacity-20" style={{ color: primaryColor }} />
       {showRating && testimonial.rating && (
@@ -186,7 +186,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
               Lasa o recenzie
             </button>
           ) : (
-            <div className="max-w-lg mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-left">
+            <div className="max-w-lg mx-auto bg-white rounded-xl shadow-xs border border-gray-200 p-6 text-left">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Scrie o recenzie</h3>
               <form onSubmit={handleSubmitReview} className="space-y-4">
                 {/* Star Rating */}
@@ -222,7 +222,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
                       type="text"
                       value={reviewForm.name}
                       onChange={(e) => setReviewForm((prev) => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:border-transparent"
                       placeholder="Numele tau"
                       required
                     />
@@ -235,7 +235,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
                       onChange={(e) =>
                         setReviewForm((prev) => ({ ...prev, email: e.target.value }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:border-transparent"
                       placeholder="email@exemplu.ro"
                       required
                     />
@@ -251,7 +251,7 @@ export default function TestimonialsBlock({ data, branding, subdomain }) {
                     onChange={(e) =>
                       setReviewForm((prev) => ({ ...prev, content: e.target.value }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent min-h-[100px]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:border-transparent min-h-[100px]"
                     placeholder="Spune-ne experienta ta (minim 10 caractere)"
                     required
                     minLength={10}

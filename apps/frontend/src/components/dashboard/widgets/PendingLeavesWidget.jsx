@@ -19,8 +19,8 @@ const ListSkeleton = () => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
         <div className="flex-1 space-y-1">
-          <div className="h-4 w-28 animate-pulse rounded bg-gray-200" />
-          <div className="h-3 w-40 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-28 animate-pulse rounded-sm bg-gray-200" />
+          <div className="h-3 w-40 animate-pulse rounded-sm bg-gray-200" />
         </div>
       </div>
     ))}
@@ -59,7 +59,7 @@ export default function PendingLeavesWidget() {
           onClick={() => navigate('/leaves')}
           className="flex items-center gap-3 p-3 rounded-lg bg-yellow-50 hover:bg-yellow-100 cursor-pointer transition"
         >
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-yellow-200 text-yellow-700 flex items-center justify-center text-sm font-semibold">
+          <div className="shrink-0 w-10 h-10 rounded-full bg-yellow-200 text-yellow-700 flex items-center justify-center text-sm font-semibold">
             {request.employee?.firstName?.[0] || '?'}
             {request.employee?.lastName?.[0] || ''}
           </div>
@@ -73,7 +73,7 @@ export default function PendingLeavesWidget() {
             </p>
           </div>
           {request.startDate && (
-            <span className="text-xs text-gray-500 flex-shrink-0">
+            <span className="text-xs text-gray-500 shrink-0">
               {format(parseISO(request.startDate), 'dd MMM', { locale: roDateLocale })}
             </span>
           )}

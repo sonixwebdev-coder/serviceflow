@@ -10,11 +10,11 @@ const TimelineSkeleton = () => (
     {[1, 2, 3].map((i) => (
       <div key={i} className="flex gap-3">
         <div className="w-14 space-y-1">
-          <div className="h-4 w-10 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-10 animate-pulse rounded-sm bg-gray-200" />
         </div>
         <div className="flex-1 p-3 rounded-lg bg-gray-50">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200 mb-2" />
-          <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-32 animate-pulse rounded-sm bg-gray-200 mb-2" />
+          <div className="h-3 w-24 animate-pulse rounded-sm bg-gray-200" />
         </div>
       </div>
     ))}
@@ -79,7 +79,7 @@ export default function TodayScheduleWidget() {
             onClick={() => navigate('/crm/appointments')}
             className={`flex gap-3 cursor-pointer group ${isPastItem && !isCurrent ? 'opacity-50' : ''}`}
           >
-            <div className="w-14 text-right flex-shrink-0 pt-3">
+            <div className="w-14 text-right shrink-0 pt-3">
               <p
                 className={`text-sm font-semibold ${isCurrent ? 'text-primary' : 'text-gray-700'}`}
               >
@@ -87,7 +87,7 @@ export default function TodayScheduleWidget() {
               </p>
             </div>
 
-            <div className="flex-shrink-0 pt-4">
+            <div className="shrink-0 pt-4">
               {isCurrent ? (
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>

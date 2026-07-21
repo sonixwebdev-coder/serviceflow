@@ -82,7 +82,7 @@ function FilterSelect({ label, value, options, allLabel, onChange }) {
         <select
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
         >
           <option value="">{allLabel}</option>
           {options.map((option) => (

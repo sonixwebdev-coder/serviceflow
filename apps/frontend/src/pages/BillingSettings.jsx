@@ -774,7 +774,7 @@ export default function BillingSettings() {
                 onClick={() => setInterval('monthly')}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   interval === 'monthly'
-                    ? 'bg-white text-gray-900 shadow-sm'
+                    ? 'bg-white text-gray-900 shadow-xs'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -784,7 +784,7 @@ export default function BillingSettings() {
                 onClick={() => setInterval('annual')}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   interval === 'annual'
-                    ? 'bg-white text-gray-900 shadow-sm'
+                    ? 'bg-white text-gray-900 shadow-xs'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >

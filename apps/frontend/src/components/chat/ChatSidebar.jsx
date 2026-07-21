@@ -9,8 +9,8 @@ import CreateChannelDialog from './CreateChannelDialog';
 // Skeleton component for channel items
 const ChannelSkeleton = () => (
   <div className="flex items-center gap-2 px-3 py-2">
-    <div className="h-4 w-4 animate-pulse rounded bg-gray-200" />
-    <div className="h-4 flex-1 animate-pulse rounded bg-gray-200" />
+    <div className="h-4 w-4 animate-pulse rounded-sm bg-gray-200" />
+    <div className="h-4 flex-1 animate-pulse rounded-sm bg-gray-200" />
   </div>
 );
 
@@ -18,7 +18,7 @@ const ChannelSkeleton = () => (
 const SectionSkeleton = () => (
   <div className="mb-4">
     <div className="mb-2 flex items-center gap-2 px-3">
-      <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
+      <div className="h-3 w-20 animate-pulse rounded-sm bg-gray-200" />
     </div>
     <div className="space-y-1">
       <ChannelSkeleton />
@@ -144,12 +144,12 @@ export default function ChatSidebar({ isMobile = false }) {
       className={`flex h-full flex-col border-r border-gray-200 bg-white ${isMobile ? 'w-full' : 'w-64'}`}
     >
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 p-4">
+      <div className="shrink-0 border-b border-gray-200 p-4">
         <h2 className="text-lg font-semibold text-gray-900">Chat</h2>
       </div>
 
       {/* Search */}
-      <div className="flex-shrink-0 border-b border-gray-200 p-3">
+      <div className="shrink-0 border-b border-gray-200 p-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -157,7 +157,7 @@ export default function ChatSidebar({ isMobile = false }) {
             placeholder="Caută canale..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
           />
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function ChatSidebar({ isMobile = false }) {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex-shrink-0 border-t border-gray-200 p-3">
+      <div className="shrink-0 border-t border-gray-200 p-3">
         <div className="space-y-2">
           <button
             onClick={() => setShowCreateDM(true)}

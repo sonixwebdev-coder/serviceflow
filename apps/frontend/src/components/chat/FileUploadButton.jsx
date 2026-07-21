@@ -131,7 +131,7 @@ export default function FileUploadButton({ channelId, onUploadComplete }) {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
           title="Atașează fișier"
           disabled={isUploading}
         >

@@ -197,7 +197,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="Nume grup..."
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             />
           </div>
         )}
@@ -211,7 +211,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Caută utilizatori..."
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             />
           </div>
         </div>
@@ -260,7 +260,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
               onChange={(e) => setInitialMessage(e.target.value)}
               placeholder="Scrie un mesaj de început..."
               rows={3}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary resize-none"
             />
           </div>
         )}
@@ -294,7 +294,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
                   >
                     {/* Avatar */}
                     <div
-                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-white ${
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white ${
                         isSelected ? 'bg-primary' : 'bg-gray-500'
                       }`}
                     >
@@ -312,7 +312,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
 
                     {/* Checkmark */}
                     {isSelected && (
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                           <svg
                             className="h-3 w-3 text-white"
@@ -338,7 +338,7 @@ export default function CreateDMDialog({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4 flex-shrink-0">
+        <div className="border-t border-gray-200 p-4 shrink-0">
           <div className="flex gap-2">
             <button
               onClick={handleClose}

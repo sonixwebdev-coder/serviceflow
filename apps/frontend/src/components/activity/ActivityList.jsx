@@ -7,10 +7,10 @@ const ListSkeleton = () => (
       <div key={i} className="flex gap-3 p-3">
         <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-3/4 animate-pulse rounded-sm bg-gray-200" />
           <div className="flex gap-2">
             <div className="h-5 w-16 animate-pulse rounded-full bg-gray-200" />
-            <div className="h-5 w-20 animate-pulse rounded bg-gray-200" />
+            <div className="h-5 w-20 animate-pulse rounded-sm bg-gray-200" />
           </div>
         </div>
       </div>
