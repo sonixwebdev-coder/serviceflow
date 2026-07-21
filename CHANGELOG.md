@@ -11,6 +11,7 @@ All notable project changes will be documented here. The format follows Keep a C
 - Repository-wide formatting, linting, environment coverage, and baseline application tests.
 - Deterministic CycloneDX SBOM, dependency-license inventory, and production module-size ratchet.
 - Disposable PostgreSQL/Redis integration harness with migration, persistence, cache, and readiness checks.
+- Focused static-container smoke gate for runtime configuration, SPA fallback, and security headers.
 - Complete REST route catalog with deterministic OpenAPI synchronization and route/spec parity checks.
 - Reviewed OpenAPI request, response, pagination, and error contracts for all location operations.
 - Enforced 500 kB production JavaScript chunk budget across all browser applications.
@@ -20,8 +21,9 @@ All notable project changes will be documented here. The format follows Keep a C
 
 - Consolidated dependency installation into one root lockfile.
 - Split large browser routes and removed full-catalog icon imports to keep production chunks below the warning threshold.
-- Split service-order, billing, client-import, appointment-message, chat-attachment, task, and push-notification backend modules behind their existing public façades.
-- Split the CRM dashboard shell and client-portal profile and landing pages into focused, tested components while preserving their routes and responsive behavior.
+- Split service-order, billing, client-import, appointment-message, chat-attachment, location-assignment, public-booking, organization-signup, website-page, user-profile/password, task, and push-notification backend modules behind their existing public façades.
+- Split the CRM dashboard shell, organization signup schemas, and client-portal profile and landing pages into focused, tested components while preserving their routes and responsive behavior.
+- Split the floating chat widget into focused channel-list, message, and presentation-helper components with keyboard and screen-reader labels retained at the façade.
 - Replaced legacy ExcelJS transitive packages with tested compatibility overrides and removed all current npm audit findings.
 - Moved Prisma CLI settings from deprecated package metadata to `prisma.config.ts`.
 - Normalized backend image source permissions and added a build-time non-root module-load check.

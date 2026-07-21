@@ -39,6 +39,17 @@ runs the backend integration suite, and removes the containers and temporary vol
 Compose v2 must be available; the command deliberately ignores any existing database URLs so it
 cannot target a shared database.
 
+After starting the production static containers, run the focused HTTP smoke path:
+
+```bash
+STATIC_APP_URLS="frontend=http://localhost:5173,portal=http://localhost:5174,admin=http://localhost:5176,website=http://localhost:5175" npm run static:smoke
+```
+
+The smoke path checks each application shell, runtime configuration endpoint, SPA fallback route,
+and required security headers. It is intentionally a lightweight container gate; full
+authentication, tenant-boundary, booking, upload, and responsive browser coverage belongs in the
+Playwright release suite.
+
 Frontend tests use Vitest and Testing Library. Backend tests use Jest and Supertest. Put tests next to the owning application and name only real test modules with `.test.*` or `.spec.*`.
 
 ## Database changes

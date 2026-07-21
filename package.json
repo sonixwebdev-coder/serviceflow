@@ -35,6 +35,7 @@
     "test:tooling": "node --test scripts/*.test.js",
     "test": "npm run test:tooling && npm run test --workspaces --if-present",
     "test:integration": "node scripts/run-integration-tests.js",
+    "static:smoke": "node scripts/static-app-smoke.js",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "env:check": "node scripts/check-env-example.js",
     "docs:check": "node scripts/check-doc-links.js",
