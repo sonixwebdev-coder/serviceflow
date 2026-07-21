@@ -3,7 +3,6 @@
  * Creates ZIP archives containing multiple export files
  */
 
-const archiver = require('archiver');
 const { Readable } = require('stream');
 const { formatDateTime } = require('./exportUtils');
 const { getPlatformConfig } = require('../../config/platform');
@@ -14,14 +13,16 @@ const { getPlatformConfig } = require('../../config/platform');
  * @param {Object} options - Archive options
  * @returns {Promise<Buffer>} ZIP file as buffer
  */
-const createZipArchive = (files) => {
+const createZipArchive = async (files) => {
+  const { ZipArchive } = await import('archiver');
+
   return new Promise((resolve, reject) => {
     if (!Array.isArray(files) || files.length === 0) {
       return reject(new Error('Files array must not be empty'));
     }
 
     // Create archive
-    const archive = archiver('zip', {
+    const archive = new ZipArchive({
       zlib: { level: 9 }, // Maximum compression
     });
 
@@ -119,13 +120,15 @@ const exportEntitiesToZip = async (entities, metadata = {}) => {
 /**
  * Create folder structure in ZIP
  */
-const createZipWithFolders = (structure) => {
+const createZipWithFolders = async (structure) => {
+  const { ZipArchive } = await import('archiver');
+
   return new Promise((resolve, reject) => {
     if (!structure || typeof structure !== 'object') {
       return reject(new Error('Structure must be an object'));
     }
 
-    const archive = archiver('zip', {
+    const archive = new ZipArchive({
       zlib: { level: 9 },
     });
 

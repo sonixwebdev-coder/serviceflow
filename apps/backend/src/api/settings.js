@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = rateLimit;
 const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
 const authorize = require('../middleware/authorize');
@@ -177,7 +178,7 @@ const vatValidationLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || req.ip,
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip),
   store: makeVatRateLimitStore(),
 });
 

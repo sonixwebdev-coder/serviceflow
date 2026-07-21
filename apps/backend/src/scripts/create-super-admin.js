@@ -12,9 +12,11 @@
 require('dotenv').config();
 const readline = require('readline');
 const bcrypt = require('bcryptjs');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 const rl = readline.createInterface({
   input: process.stdin,

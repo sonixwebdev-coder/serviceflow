@@ -4,19 +4,19 @@ const envSchema = z
   .object({
     // ── Core (always required) ──
     DATABASE_URL: z
-      .string({ required_error: 'DATABASE_URL is required' })
+      .string({ error: 'DATABASE_URL is required' })
       .startsWith('postgresql://', 'DATABASE_URL must start with postgresql://'),
     JWT_ACCESS_SECRET: z
-      .string({ required_error: 'JWT_ACCESS_SECRET is required' })
+      .string({ error: 'JWT_ACCESS_SECRET is required' })
       .min(16, 'JWT_ACCESS_SECRET must be at least 16 characters'),
     JWT_REFRESH_SECRET: z
-      .string({ required_error: 'JWT_REFRESH_SECRET is required' })
+      .string({ error: 'JWT_REFRESH_SECRET is required' })
       .min(16, 'JWT_REFRESH_SECRET must be at least 16 characters'),
     CSRF_SECRET: z
-      .string({ required_error: 'CSRF_SECRET is required' })
+      .string({ error: 'CSRF_SECRET is required' })
       .min(16, 'CSRF_SECRET must be at least 16 characters'),
     NODE_ENV: z.enum(['development', 'production', 'test'], {
-      required_error: 'NODE_ENV is required',
+      error: 'NODE_ENV is required',
     }),
 
     // ── Production-only (required when NODE_ENV=production) ──

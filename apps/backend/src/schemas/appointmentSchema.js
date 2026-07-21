@@ -4,28 +4,28 @@ const lineItemSchema = z.object({
   name: z.string().min(1, 'Numele articolului este obligatoriu'),
   description: z.string().optional(),
   quantity: z
-    .number({ invalid_type_error: 'Cantitatea trebuie sa fie un numar' })
+    .number({ error: 'Cantitatea trebuie sa fie un numar' })
     .positive('Cantitatea trebuie sa fie mai mare decat 0')
     .optional(),
   unitPrice: z
-    .number({ invalid_type_error: 'Pretul trebuie sa fie un numar' })
+    .number({ error: 'Pretul trebuie sa fie un numar' })
     .nonnegative('Pretul nu poate fi negativ')
     .optional(),
   // New fields for separate hardware/labor tracking
   hardwareQuantity: z
-    .number({ invalid_type_error: 'Cantitatea piese trebuie sa fie un numar' })
+    .number({ error: 'Cantitatea piese trebuie sa fie un numar' })
     .nonnegative('Cantitatea piese nu poate fi negativa')
     .optional(),
   laborQuantity: z
-    .number({ invalid_type_error: 'Cantitatea manopera trebuie sa fie un numar' })
+    .number({ error: 'Cantitatea manopera trebuie sa fie un numar' })
     .nonnegative('Cantitatea manopera nu poate fi negativa')
     .optional(),
   hardwarePrice: z
-    .number({ invalid_type_error: 'Pretul piese trebuie sa fie un numar' })
+    .number({ error: 'Pretul piese trebuie sa fie un numar' })
     .nonnegative('Pretul piese nu poate fi negativ')
     .optional(),
   laborPrice: z
-    .number({ invalid_type_error: 'Pretul manopera trebuie sa fie un numar' })
+    .number({ error: 'Pretul manopera trebuie sa fie un numar' })
     .nonnegative('Pretul manopera nu poate fi negativ')
     .optional(),
   hardwareUnit: z.string().optional(),
@@ -38,7 +38,7 @@ const serviceOrderSchema = z
     notes: z.string().optional(),
     metadata: z.record(z.any()).optional(),
     lineItems: z
-      .array(lineItemSchema, { invalid_type_error: 'Lista de articole trebuie sa fie un array' })
+      .array(lineItemSchema, { error: 'Lista de articole trebuie sa fie un array' })
       .optional(),
   })
   .optional();
@@ -48,7 +48,7 @@ const clientSchema = z
     id: z.string().optional(),
     type: z
       .enum(['PF', 'SRL'], {
-        errorMap: () => ({ message: 'Tipul clientului trebuie sa fie PF sau SRL' }),
+        error: 'Tipul clientului trebuie sa fie PF sau SRL',
       })
       .optional(),
     firstName: z.string().optional(),
@@ -73,7 +73,7 @@ const assetSchema = z
     manufacturer: z.string().optional(), // Replaces 'make' for vehicles, 'brand' for others
     model: z.string().optional(),
     year: z
-      .number({ invalid_type_error: 'Anul trebuie sa fie un numar' })
+      .number({ error: 'Anul trebuie sa fie un numar' })
       .int('Anul trebuie sa fie un numar intreg')
       .min(1900, 'Anul trebuie sa fie dupa 1900')
       .max(2100, 'Anul trebuie sa fie inainte de 2100')
@@ -88,19 +88,19 @@ const baseAppointmentSchema = z.object({
   title: z.string().min(1, 'Titlul programarii este obligatoriu'),
   description: z.string().optional(),
   status: z.string().optional(),
-  scheduledStart: z.coerce.date({ invalid_type_error: 'Data de inceput invalida' }).optional(),
-  scheduledEnd: z.coerce.date({ invalid_type_error: 'Data de sfarsit invalida' }).optional(),
+  scheduledStart: z.coerce.date({ error: 'Data de inceput invalida' }).optional(),
+  scheduledEnd: z.coerce.date({ error: 'Data de sfarsit invalida' }).optional(),
   location: z.string().optional(),
   clientId: z.string().min(1, 'ID-ul clientului este obligatoriu').optional(),
   assetId: z.string().optional(),
   assigneeIds: z
     .array(z.string().min(1, 'ID-ul tehnicianului este invalid'), {
-      invalid_type_error: 'Lista de tehnicieni trebuie sa fie un array',
+      error: 'Lista de tehnicieni trebuie sa fie un array',
     })
     .optional(),
   metadata: z.record(z.any()).optional(),
   advancePayment: z
-    .number({ invalid_type_error: 'Avansul trebuie sa fie un numar' })
+    .number({ error: 'Avansul trebuie sa fie un numar' })
     .nonnegative('Avansul nu poate fi negativ')
     .optional(),
   client: clientSchema,
@@ -136,8 +136,8 @@ const recordPaymentSchema = z.object({
 const portalCreateAppointmentSchema = z.object({
   title: z.string().min(1, 'Titlul programarii este obligatoriu'),
   description: z.string().optional(),
-  scheduledStart: z.coerce.date({ invalid_type_error: 'Data de inceput invalida' }),
-  scheduledEnd: z.coerce.date({ invalid_type_error: 'Data de sfarsit invalida' }),
+  scheduledStart: z.coerce.date({ error: 'Data de inceput invalida' }),
+  scheduledEnd: z.coerce.date({ error: 'Data de sfarsit invalida' }),
   location: z.string().optional(),
   locationId: z.string().optional(),
   assetId: z.string().optional(),

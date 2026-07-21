@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const fs = require('fs');
 const path = require('path');
 
@@ -6,20 +7,17 @@ const path = require('path');
  * Prisma client singleton to avoid exhausting DB connections
  * during local development with hot-reloads.
  *
- * Connection pool size is configured via DATABASE_URL query params:
- *   ?connection_limit=20&pool_timeout=30
- * Defaults: connection_limit = num_cpus * 2 + 1 (too small for 1000 concurrent users)
+ * Connection pooling is provided by node-postgres through Prisma's PostgreSQL
+ * driver adapter. Pool size and connection timeout remain environment driven.
  */
 const isDev = process.env.NODE_ENV !== 'production';
 const SLOW_QUERY_THRESHOLD = Number(process.env.SLOW_QUERY_THRESHOLD) || 500; // ms
 
-// Append connection pool params if not already present in DATABASE_URL
-const buildDbUrl = () => {
-  const url = process.env.DATABASE_URL || '';
-  if (url.includes('connection_limit')) return url;
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}connection_limit=${process.env.DB_POOL_SIZE || 20}&pool_timeout=${process.env.DB_POOL_TIMEOUT || 30}`;
-};
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL || '',
+  max: Number(process.env.DB_POOL_SIZE) || 20,
+  connectionTimeoutMillis: (Number(process.env.DB_POOL_TIMEOUT) || 30) * 1000,
+});
 
 // --- Slow query file logger ---
 
@@ -52,11 +50,7 @@ const logSlowQuery = (e) => {
 const prisma =
   global.__prisma ||
   new PrismaClient({
-    datasources: {
-      db: {
-        url: buildDbUrl(),
-      },
-    },
+    adapter,
     log: [{ level: 'query', emit: 'event' }],
   });
 

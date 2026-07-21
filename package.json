@@ -16,7 +16,7 @@
     "node": ">=24.0.0 <25",
     "npm": ">=11.0.0 <12"
   },
-  "packageManager": "npm@11.16.0",
+  "packageManager": "npm@11.18.0",
   "scripts": {
     "dev": "node scripts/start-all.js",
     "dev:frontend": "npm run dev --workspace apps/frontend",
@@ -60,7 +60,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.4.0",
     "prettier": "^3.6.2",
-    "prisma": "6.19.3"
+    "prisma": "7.9.0"
   },
   "overrides": {
     "exceljs": {
@@ -69,9 +69,9 @@
     }
   },
   "allowScripts": {
-    "@prisma/client@6.19.3": true,
-    "@prisma/engines@6.19.3": true,
+    "@prisma/client@7.9.0": true,
+    "@prisma/engines@7.9.0": true,
     "esbuild@0.28.1": true,
-    "prisma@6.19.3": true
+    "prisma@7.9.0": true
   }
 }

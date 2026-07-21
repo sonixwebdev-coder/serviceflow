@@ -1,6 +1,5 @@
 const nodemailer = require('nodemailer');
 const Handlebars = require('handlebars');
-const Brevo = require('@getbrevo/brevo');
 const logger = require('../../utils/logger');
 const { getRedisClient, isAvailable: isRedisAvailable } = require('../../lib/redis');
 const { getPlatformConfig } = require('../../config/platform');
@@ -12,9 +11,6 @@ const EMAIL_RATE_WINDOW = 3600; // 1 hour in seconds
 // Create reusable transporter for SMTP
 let transporter = null;
 
-// Create Brevo API instance
-let brevoApiInstance = null;
-
 /**
  * Check if Brevo is configured
  */
@@ -23,22 +19,10 @@ const isBrevoConfigured = () => {
 };
 
 /**
- * Initialize Brevo API client
+ * Get the Brevo API key
  */
 const initBrevo = () => {
-  if (brevoApiInstance) return brevoApiInstance;
-
-  if (!process.env.BREVO_API_KEY) {
-    return null;
-  }
-
-  const apiInstance = new Brevo.TransactionalEmailsApi();
-  // The enum value for apiKey is 0 (Brevo.TransactionalEmailsApiApiKeys.apiKey = 0)
-  apiInstance.setApiKey(0, process.env.BREVO_API_KEY);
-  brevoApiInstance = apiInstance;
-
-  logger.info('Email service: Brevo API initialized');
-  return brevoApiInstance;
+  return process.env.BREVO_API_KEY || null;
 };
 
 /**
@@ -73,29 +57,39 @@ const initTransporter = () => {
  * Send email via Brevo API
  */
 const sendViaBrevo = async (to, subject, html, text) => {
-  const api = initBrevo();
-  if (!api) {
+  const apiKey = initBrevo();
+  if (!apiKey) {
     throw new Error('Brevo API not initialized');
   }
-
-  const sendSmtpEmail = new Brevo.SendSmtpEmail();
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.htmlContent = html;
-  if (text) {
-    sendSmtpEmail.textContent = text;
-  }
-  sendSmtpEmail.sender = {
-    name: process.env.EMAIL_FROM_NAME || getPlatformConfig().name,
-    email: process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@example.com',
+  const sendSmtpEmail = {
+    subject,
+    htmlContent: html,
+    sender: {
+      name: process.env.EMAIL_FROM_NAME || getPlatformConfig().name,
+      email: process.env.EMAIL_FROM || process.env.BREVO_SENDER_EMAIL || 'noreply@example.com',
+    },
+    to: [{ email: to }],
+    ...(text ? { textContent: text } : {}),
   };
-  sendSmtpEmail.to = [{ email: to }];
-
   try {
-    const response = await api.sendTransacEmail(sendSmtpEmail);
-    logger.info(
-      `Email sent via Brevo to ${to}, messageId: ${response.body?.messageId || response.messageId}`
-    );
-    return response;
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(sendSmtpEmail),
+    });
+    const responseBody = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(responseBody.message || `Brevo request failed (${response.status})`);
+      error.body = responseBody;
+      error.statusCode = response.status;
+      throw error;
+    }
+    logger.info(`Email sent via Brevo to ${to}, messageId: ${responseBody.messageId}`);
+    return responseBody;
   } catch (error) {
     // Extract meaningful error from Brevo response
     const errorMessage =
@@ -103,7 +97,12 @@ const sendViaBrevo = async (to, subject, html, text) => {
       error.response?.body?.message ||
       error.message ||
       'Unknown Brevo error';
-    const errorCode = error.body?.code || error.response?.body?.code || error.status || 'UNKNOWN';
+    const errorCode =
+      error.body?.code ||
+      error.response?.body?.code ||
+      error.statusCode ||
+      error.status ||
+      'UNKNOWN';
     logger.error(`Brevo API error: ${errorCode} - ${errorMessage}`, {
       to,
       subject,

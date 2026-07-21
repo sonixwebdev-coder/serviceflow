@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
-import { User, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { User } from 'lucide-react';
+import { FacebookIcon, InstagramIcon, LinkedinIcon } from '@/components/icons/BrandIcons';
 import { getFileUrl } from '@/utils/api';
 
 const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [] }) => {
@@ -108,7 +109,7 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
                         rel="noopener noreferrer"
                         className="text-gray-400 hover:text-blue-600"
                       >
-                        <Facebook className="h-5 w-5" />
+                        <FacebookIcon className="h-5 w-5" />
                       </a>
                     )}
                     {member.socialLinks.instagram && (
@@ -118,7 +119,7 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
                         rel="noopener noreferrer"
                         className="text-gray-400 hover:text-pink-600"
                       >
-                        <Instagram className="h-5 w-5" />
+                        <InstagramIcon className="h-5 w-5" />
                       </a>
                     )}
                     {member.socialLinks.linkedin && (
@@ -128,7 +129,7 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
                         rel="noopener noreferrer"
                         className="text-gray-400 hover:text-blue-700"
                       >
-                        <Linkedin className="h-5 w-5" />
+                        <LinkedinIcon className="h-5 w-5" />
                       </a>
                     )}
                   </div>

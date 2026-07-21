@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Share2, Facebook, MessageCircle, Link as LinkIcon, Check } from 'lucide-react';
+import { Share2, MessageCircle, Link as LinkIcon, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FacebookIcon } from '@/components/icons/BrandIcons';
 
 export default function ShareButtons({ primaryColor }) {
   const [open, setOpen] = useState(false);
@@ -49,7 +50,7 @@ export default function ShareButtons({ primaryColor }) {
             className="w-12 h-12 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-colors"
             title="Distribuie pe Facebook"
           >
-            <Facebook className="h-5 w-5" />
+            <FacebookIcon className="h-5 w-5" />
           </button>
           <button
             onClick={shareToWhatsApp}

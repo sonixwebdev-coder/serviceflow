@@ -5,6 +5,7 @@
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = rateLimit;
 const asyncHandler = require('../middleware/asyncHandler');
 const authenticate = require('../middleware/authenticate');
 const validateRequest = require('../middleware/validateRequest');
@@ -42,7 +43,7 @@ const exportLimiter = rateLimit({
   legacyHeaders: false,
   // Use user ID if authenticated, otherwise IP address
   keyGenerator: (req) => {
-    return req.user?.id || req.ip;
+    return req.user?.id || ipKeyGenerator(req.ip);
   },
   skip: () => process.env.NODE_ENV === 'test',
 });
