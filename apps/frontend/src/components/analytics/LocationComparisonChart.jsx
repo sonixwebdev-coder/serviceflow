@@ -62,10 +62,10 @@ const LocationComparisonChart = ({ startDate, endDate }) => {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 w-48 bg-gray-200 rounded" />
+          <div className="h-6 w-48 bg-gray-200 rounded-sm" />
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-8 bg-gray-100 rounded" />
+              <div key={i} className="h-8 bg-gray-100 rounded-sm" />
             ))}
           </div>
         </div>
@@ -91,7 +91,7 @@ const LocationComparisonChart = ({ startDate, endDate }) => {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-xs">
       <div className="border-b border-gray-200 px-6 py-4">
         <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
           <MapPin className="h-5 w-5 text-orange-500" />

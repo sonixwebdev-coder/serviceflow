@@ -170,7 +170,7 @@ const EmailTemplates = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Template List */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
               <h3 className="text-sm font-medium text-gray-900">Template-uri Disponibile</h3>
             </div>
@@ -224,7 +224,7 @@ const EmailTemplates = () => {
         {/* Template Editor */}
         <div className="lg:col-span-2">
           {selectedTemplate ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
               {/* Editor Header */}
               <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -294,7 +294,7 @@ const EmailTemplates = () => {
                         onClick={() =>
                           setFormData((prev) => ({ ...prev, isActive: !prev.isActive }))
                         }
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
                           formData.isActive ? 'bg-green-500' : 'bg-gray-200'
                         }`}
                       >
@@ -428,7 +428,7 @@ const EmailTemplates = () => {
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-12 text-center">
               <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <Mail className="w-8 h-8 text-gray-400" />
               </div>

@@ -61,7 +61,7 @@ const NotificationSettings = () => {
     return (
       <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
         <div className="flex items-start gap-3">
-          <BellOff className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <BellOff className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
           <div>
             <h3 className="font-semibold text-yellow-900">Notificari Push Nesuportate</h3>
             <p className="text-sm text-yellow-700 mt-1">
@@ -90,7 +90,7 @@ const NotificationSettings = () => {
       {isBrave && !subscribed && (
         <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
           <div className="flex items-start gap-3">
-            <BellOff className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <BellOff className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
             <div>
               <h3 className="font-semibold text-orange-900">Setari Brave Browser</h3>
               <p className="text-sm text-orange-800 mt-1">
@@ -99,7 +99,7 @@ const NotificationSettings = () => {
               <ul className="text-sm text-orange-800 mt-2 list-disc list-inside space-y-1">
                 <li>
                   Mergi la{' '}
-                  <code className="bg-orange-100 px-1 rounded">brave://settings/privacy</code>
+                  <code className="bg-orange-100 px-1 rounded-sm">brave://settings/privacy</code>
                 </li>
                 <li>Activeaza "Use Google Services for Push Messaging"</li>
                 <li>Activeaza "Allow Google login buttons"</li>
@@ -115,9 +115,9 @@ const NotificationSettings = () => {
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
             {subscribed ? (
-              <Bell className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+              <Bell className="h-6 w-6 text-green-600 shrink-0 mt-0.5" />
             ) : (
-              <BellOff className="h-6 w-6 text-gray-400 flex-shrink-0 mt-0.5" />
+              <BellOff className="h-6 w-6 text-gray-400 shrink-0 mt-0.5" />
             )}
             <div>
               <h3 className="font-semibold text-gray-900">Notificari Push</h3>
@@ -127,7 +127,7 @@ const NotificationSettings = () => {
                   : 'Aboneaza-te pentru a primi notificari in timp real in browser.'}
               </p>
               {!hasPermission && !subscribed && (
-                <p className="text-xs text-yellow-700 mt-2 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 inline-block">
+                <p className="text-xs text-yellow-700 mt-2 bg-yellow-50 border border-yellow-200 rounded-sm px-2 py-1 inline-block">
                   Vei fi intrebat sa permiti notificarile
                 </p>
               )}
@@ -191,7 +191,7 @@ const NotificationSettings = () => {
                       disabled={updatingPreferences}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                 </div>
 
@@ -243,7 +243,7 @@ const NotificationSettings = () => {
                             disabled={updatingPreferences}
                             className="sr-only peer"
                           />
-                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
                         </label>
                       </div>
                     ))}
@@ -265,7 +265,7 @@ const NotificationSettings = () => {
       {/* Help Text */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
         <div className="flex items-start gap-3">
-          <Bell className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <Bell className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
           <div className="text-sm text-blue-900">
             <p className="font-medium">Despre Notificarile Push</p>
             <ul className="mt-2 space-y-1 list-disc list-inside text-blue-800">

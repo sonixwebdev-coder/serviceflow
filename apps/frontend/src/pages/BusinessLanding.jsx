@@ -420,13 +420,13 @@ export default function BusinessLanding() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: 'easeOut' }}
             >
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.08] border border-white/10 text-xs font-medium text-slate-300 mb-8">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/8 border border-white/10 text-xs font-medium text-slate-300 mb-8">
                 <Sparkles className="h-3.5 w-3.5 text-accent" />
                 Construit pentru service-uri, saloane si ateliere din Romania
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight leading-[1.1]">
                 Clientii se programeaza singuri.
-                <span className="block mt-2 bg-gradient-to-r from-primary-400 to-accent bg-clip-text text-transparent">
+                <span className="block mt-2 bg-linear-to-r from-primary-400 to-accent bg-clip-text text-transparent">
                   Tu te ocupi de business.
                 </span>
               </h1>
@@ -476,7 +476,7 @@ export default function BusinessLanding() {
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 shadow-2xl -rotate-3">
+                <div className="rounded-2xl border border-white/10 bg-white/6 backdrop-blur-md p-4 shadow-2xl -rotate-3">
                   <div className="flex items-center gap-3 mb-2.5">
                     <div className="h-9 w-9 rounded-xl bg-primary/20 flex items-center justify-center">
                       <Bell className="h-4 w-4 text-primary-400" />
@@ -496,7 +496,7 @@ export default function BusinessLanding() {
                 animate={{ y: [0, 6, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
               >
-                <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 shadow-2xl rotate-2">
+                <div className="rounded-2xl border border-white/10 bg-white/6 backdrop-blur-md p-4 shadow-2xl rotate-2">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold text-white">Azi - 9 feb</span>
                     <CalendarCheck className="h-4 w-4 text-primary-400" />
@@ -516,7 +516,7 @@ export default function BusinessLanding() {
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
               >
-                <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 shadow-2xl -rotate-1">
+                <div className="rounded-2xl border border-white/10 bg-white/6 backdrop-blur-md p-4 shadow-2xl -rotate-1">
                   <div className="flex items-center gap-3 mb-2.5">
                     <div className="h-9 w-9 rounded-xl bg-accent/20 flex items-center justify-center">
                       <Mail className="h-4 w-4 text-accent-400" />
@@ -644,7 +644,7 @@ export default function BusinessLanding() {
           <AnimatedSection className="mt-12 text-center" delay={0.3}>
             <Link
               to="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-xs shadow-primary/25"
             >
               Vreau sa incerc gratuit <ArrowRight className="h-4 w-4" />
             </Link>
@@ -944,7 +944,7 @@ export default function BusinessLanding() {
               />
               <Link
                 to="/signup"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25 self-start"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-xs shadow-primary/25 self-start"
               >
                 Incearca gratuit <ArrowRight className="h-4 w-4" />
               </Link>

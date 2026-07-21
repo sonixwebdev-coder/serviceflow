@@ -64,7 +64,7 @@ export default function PublicHeader() {
             </Link>
             <Link
               to="/signup"
-              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25"
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-xs shadow-primary/25"
             >
               Incearca gratuit
             </Link>

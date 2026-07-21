@@ -70,7 +70,7 @@ export default function MetricCard({
           {subtitle && <p className="mt-2 text-sm text-gray-500">{subtitle}</p>}
         </div>
         {Icon && (
-          <div className={`p-2 sm:p-3 rounded-lg ${iconBg} flex-shrink-0`}>
+          <div className={`p-2 sm:p-3 rounded-lg ${iconBg} shrink-0`}>
             <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${iconColor}`} />
           </div>
         )}

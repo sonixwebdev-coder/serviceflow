@@ -55,7 +55,7 @@ export function OrganizationBillingTable({ data, isLoading, page, onPageChange, 
   if (!data?.subscriptions?.length) return <EmptyState />;
 
   return (
-    <div ref={tableRef} className="rounded-2xl border border-gray-200/60 bg-white shadow-sm">
+    <div ref={tableRef} className="rounded-2xl border border-gray-200/60 bg-white shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <OrganizationTableHead showTrialInfo={showTrialInfo} />
@@ -195,7 +195,7 @@ function BillingActionMenu({ organization, position, onClose }) {
 
   return (
     <div
-      className="animate-fade-in fixed z-[9999] w-60 rounded-xl border border-gray-200 bg-white py-1.5 shadow-xl"
+      className="animate-fade-in fixed z-9999 w-60 rounded-xl border border-gray-200 bg-white py-1.5 shadow-xl"
       style={{
         top: position.top,
         left: position.left,
@@ -324,13 +324,13 @@ function TrialExtensionForm({ value, onChange, onSubmit }) {
           placeholder="14"
           min="1"
           max="365"
-          className="w-20 rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          className="w-20 rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20"
           autoFocus
         />
         <button
           type="button"
           onClick={onSubmit}
-          className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-primary-700"
+          className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-primary-700"
         >
           Extinde
         </button>

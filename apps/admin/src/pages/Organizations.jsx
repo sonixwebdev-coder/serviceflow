@@ -26,7 +26,7 @@ export default function Organizations() {
   return (
     <div className="space-y-5">
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -37,7 +37,7 @@ export default function Organizations() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50/50 py-2 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50/50 py-2 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
           />
         </div>
         <select
@@ -46,7 +46,7 @@ export default function Organizations() {
             setStatus(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate statusurile</option>
           {STATUS_OPTIONS.filter(Boolean).map((s) => (
@@ -61,7 +61,7 @@ export default function Organizations() {
             setPlan(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate planurile</option>
           {PLAN_OPTIONS.filter(Boolean).map((p) => (
@@ -76,7 +76,7 @@ export default function Organizations() {
             setSector(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate sectoarele</option>
           {SECTOR_OPTIONS.filter(Boolean).map((s) => (
@@ -88,7 +88,7 @@ export default function Organizations() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-xs">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />

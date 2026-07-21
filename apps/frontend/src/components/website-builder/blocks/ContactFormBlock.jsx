@@ -87,7 +87,7 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
         >
           {/* Form */}
           <div className={hasContactSidebar ? 'lg:col-span-3' : ''}>
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-100">
                 <h3 className="text-lg font-semibold">Trimite-ne un mesaj</h3>
                 <p className="text-sm text-gray-500 mt-1">
@@ -194,7 +194,7 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
 
               {showPhone && contactInfo?.phone && (
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
                     <Phone className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -206,7 +206,7 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
 
               {contactInfo?.email && (
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
                     <Mail className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -218,7 +218,7 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
 
               {showAddress && contactInfo?.address && (
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
                     <MapPin className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -230,7 +230,7 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
 
               {contactInfo?.schedule && (
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
                     <Clock className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
@@ -242,7 +242,7 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
 
               {/* Map preview placeholder */}
               {showMap && contactInfo?.address && (
-                <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                <div className="rounded-xl overflow-hidden border border-gray-200 shadow-xs">
                   <div className="h-48 bg-gray-100 flex items-center justify-center text-gray-400">
                     <div className="text-center">
                       <MapPin className="h-8 w-8 mx-auto mb-2" />
@@ -273,10 +273,10 @@ const ContactFormBlock = ({ data, settings, isEditing = false, onClick, crmData 
               {displayLocations.map((location, index) => (
                 <div
                   key={location.id || index}
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-5"
+                  className="bg-white rounded-xl border border-gray-200 shadow-xs p-5"
                 >
                   <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <MapPin className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                     <div>
                       <h4 className="font-semibold text-gray-900">{location.name}</h4>
                       {location.address && (

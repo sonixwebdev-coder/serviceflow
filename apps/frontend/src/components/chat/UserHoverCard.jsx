@@ -124,7 +124,7 @@ export default function UserHoverCard({ user, children, disabled = false }) {
           {/* Header with avatar */}
           <div className="p-4">
             <div className="flex items-start gap-3">
-              <div className="relative flex-shrink-0">
+              <div className="relative shrink-0">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white">
                   {user.firstName?.[0] || '?'}
                   {user.lastName?.[0] || ''}

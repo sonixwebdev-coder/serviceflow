@@ -317,7 +317,7 @@ const Profile = () => {
       </div>
 
       {/* Personal Information Section */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Informatii personale</h2>
           {!isEditingProfile && (
@@ -390,7 +390,7 @@ const Profile = () => {
                   value={profileForm.firstName}
                   onChange={handleProfileChange}
                   maxLength={100}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   placeholder="Ion"
                   required
                 />
@@ -406,7 +406,7 @@ const Profile = () => {
                   value={profileForm.lastName}
                   onChange={handleProfileChange}
                   maxLength={100}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   placeholder="Popescu"
                   required
                 />
@@ -424,7 +424,7 @@ const Profile = () => {
                 value={profileForm.email}
                 onChange={handleProfileChange}
                 maxLength={255}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 placeholder="ion.popescu@example.com"
                 required
               />
@@ -441,7 +441,7 @@ const Profile = () => {
                 value={profileForm.phoneNumber}
                 onChange={handleProfileChange}
                 maxLength={20}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 placeholder="+40712345678"
               />
             </div>
@@ -470,7 +470,7 @@ const Profile = () => {
       </div>
 
       {/* Change Password Section */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Schimba parola</h2>
@@ -524,7 +524,7 @@ const Profile = () => {
                 value={passwordForm.currentPassword}
                 onChange={handlePasswordChange}
                 maxLength={128}
-                className={`w-full rounded-lg border ${passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+                className={`w-full rounded-lg border ${passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary`}
                 placeholder="Introdu parola curenta"
               />
               {passwordErrors.currentPassword && (
@@ -543,7 +543,7 @@ const Profile = () => {
                 value={passwordForm.newPassword}
                 onChange={handlePasswordChange}
                 maxLength={128}
-                className={`w-full rounded-lg border ${passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+                className={`w-full rounded-lg border ${passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary`}
                 placeholder="Minim 8 caractere"
               />
               {passwordErrors.newPassword && (
@@ -568,7 +568,7 @@ const Profile = () => {
                 value={passwordForm.confirmPassword}
                 onChange={handlePasswordChange}
                 maxLength={128}
-                className={`w-full rounded-lg border ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary`}
+                className={`w-full rounded-lg border ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'} px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary`}
                 placeholder="Introdu din nou parola noua"
               />
               {passwordErrors.confirmPassword && (
@@ -600,7 +600,7 @@ const Profile = () => {
       </div>
 
       {/* Two-Factor Authentication Section */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Autentificare in doi pasi (2FA)</h2>
@@ -666,7 +666,7 @@ const Profile = () => {
               <img src={qrData.qrCodeDataUrl} alt="QR Code 2FA" className="w-48 h-48" />
               <div className="text-center">
                 <p className="text-xs text-gray-500 mb-1">Sau introdu manual acest cod:</p>
-                <code className="block bg-gray-100 rounded px-3 py-1.5 text-sm font-mono text-gray-800 select-all">
+                <code className="block bg-gray-100 rounded-sm px-3 py-1.5 text-sm font-mono text-gray-800 select-all">
                   {qrData.secret}
                 </code>
               </div>
@@ -684,7 +684,7 @@ const Profile = () => {
                   onChange={(e) => setTwoFACode(e.target.value)}
                   placeholder="000000"
                   maxLength={6}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-center tracking-widest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-center tracking-widest focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
                 <button
                   type="button"
@@ -744,7 +744,7 @@ const Profile = () => {
               {backupCodes.map((code, i) => (
                 <code
                   key={i}
-                  className="bg-gray-100 rounded px-3 py-1.5 text-sm font-mono text-center text-gray-800"
+                  className="bg-gray-100 rounded-sm px-3 py-1.5 text-sm font-mono text-center text-gray-800"
                 >
                   {code}
                 </code>
@@ -836,7 +836,7 @@ const Profile = () => {
                 type="password"
                 value={disableForm.password}
                 onChange={(e) => setDisableForm((prev) => ({ ...prev, password: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 placeholder="Parola contului"
               />
             </div>
@@ -847,7 +847,7 @@ const Profile = () => {
                 inputMode="numeric"
                 value={disableForm.code}
                 onChange={(e) => setDisableForm((prev) => ({ ...prev, code: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-center tracking-widest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-center tracking-widest focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 placeholder="000000"
                 maxLength={6}
               />
@@ -897,7 +897,7 @@ const Profile = () => {
       </div>
 
       {/* Account Information */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Informatii cont</h2>
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between py-2 border-b border-gray-100">
@@ -931,7 +931,7 @@ const Profile = () => {
       </div>
 
       {/* Notification Settings */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-xs">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Notificari Push</h2>
         <p className="text-sm text-gray-500 mb-6">
           Gestioneaza preferintele pentru notificarile push in browser

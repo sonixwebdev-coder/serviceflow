@@ -19,7 +19,7 @@ export default function LandingHeader() {
             </Link>
             <Link
               to="/login"
-              className="text-sm font-semibold text-white bg-primary hover:bg-primary-700 px-5 py-2.5 rounded-xl transition-colors shadow-sm shadow-primary/25"
+              className="text-sm font-semibold text-white bg-primary hover:bg-primary-700 px-5 py-2.5 rounded-xl transition-colors shadow-xs shadow-primary/25"
             >
               Autentificare
             </Link>

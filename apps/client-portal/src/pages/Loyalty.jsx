@@ -246,7 +246,7 @@ export default function Loyalty() {
       </div>
 
       {/* Hero Card */}
-      <div className="rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white">
+      <div className="rounded-2xl bg-linear-to-br from-gray-900 to-gray-800 p-6 text-white">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <TierProgressRing
             currentTier={account.currentTier}
@@ -378,7 +378,7 @@ export default function Loyalty() {
                 }
               }}
               placeholder="REF-XXXXXX"
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-hidden"
             />
             {!validationResult ? (
               <button

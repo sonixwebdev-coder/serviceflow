@@ -98,7 +98,7 @@ export default function PlatformSettings() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors';
+    'w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors';
 
   const secretField = (label, key, placeholder = 'sk_live_...') => (
     <div key={key}>
@@ -125,7 +125,7 @@ export default function PlatformSettings() {
   return (
     <div className="flex flex-col gap-5 lg:flex-row lg:gap-6">
       {/* Sidebar tabs */}
-      <nav className="flex lg:w-52 lg:shrink-0 lg:flex-col gap-1 overflow-x-auto lg:overflow-visible rounded-2xl border border-gray-200/60 bg-white p-2 shadow-sm lg:self-start">
+      <nav className="flex lg:w-52 lg:shrink-0 lg:flex-col gap-1 overflow-x-auto lg:overflow-visible rounded-2xl border border-gray-200/60 bg-white p-2 shadow-xs lg:self-start">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -414,7 +414,7 @@ export default function PlatformSettings() {
               <button
                 type="submit"
                 disabled={changingPassword}
-                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 disabled:opacity-50 transition-all hover:shadow"
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-gray-800 disabled:opacity-50 transition-all hover:shadow-sm"
               >
                 {changingPassword ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -433,7 +433,7 @@ export default function PlatformSettings() {
 
 function Card({ title, description, children }) {
   return (
-    <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-xs">
       <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
       {description && <p className="mt-0.5 mb-4 text-[11px] text-gray-400">{description}</p>}
       {!description && <div className="mb-4" />}
@@ -448,7 +448,7 @@ function SaveButton({ saving }) {
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-all hover:shadow"
+        className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-primary-700 disabled:opacity-50 transition-all hover:shadow-sm"
       >
         {saving ? (
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

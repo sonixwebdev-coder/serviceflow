@@ -195,9 +195,9 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
         aria-label="Exporta date"
         className={`
           inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2
-          text-sm font-medium text-gray-700 shadow-sm transition
+          text-sm font-medium text-gray-700 shadow-xs transition
           hover:bg-gray-50 hover:border-gray-400
-          focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+          focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2
           disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white
           ${isOpen ? 'bg-gray-50 border-gray-400' : ''}
         `}
@@ -243,7 +243,7 @@ const ExportButton = ({ entityType, filters = {}, disabled = false, className = 
                     flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm
                     transition
                     hover:bg-gray-50
-                    focus:bg-gray-50 focus:outline-none
+                    focus:bg-gray-50 focus:outline-hidden
                     disabled:cursor-not-allowed disabled:opacity-50
                   `}
                 >

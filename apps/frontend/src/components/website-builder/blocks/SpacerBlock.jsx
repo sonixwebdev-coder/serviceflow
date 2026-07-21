@@ -19,7 +19,7 @@ const SpacerBlock = ({ data, settings, isEditing = false, onClick }) => {
     >
       {isEditing && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs text-gray-400 bg-white px-2 py-1 rounded border">
+          <span className="text-xs text-gray-400 bg-white px-2 py-1 rounded-sm border">
             Spatiu: {height}px
           </span>
         </div>

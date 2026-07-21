@@ -71,7 +71,7 @@ const ServicesGridBlock = ({ data, settings, isEditing = false, onClick, crmData
             displayServices.map((service, index) => (
               <div
                 key={service.id || index}
-                className="bg-white rounded-lg border shadow-sm overflow-hidden"
+                className="bg-white rounded-lg border shadow-xs overflow-hidden"
               >
                 {service.image && (
                   <div className="h-48 overflow-hidden">

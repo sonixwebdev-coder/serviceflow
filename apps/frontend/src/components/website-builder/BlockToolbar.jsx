@@ -29,7 +29,7 @@ const BlockToolbar = ({
       {/* Move Up */}
       <button
         className={cn(
-          'h-7 w-7 inline-flex items-center justify-center rounded hover:bg-gray-100 transition-colors',
+          'h-7 w-7 inline-flex items-center justify-center rounded-sm hover:bg-gray-100 transition-colors',
           !canMoveUp && 'opacity-50 cursor-not-allowed'
         )}
         onClick={onMoveUp}
@@ -42,7 +42,7 @@ const BlockToolbar = ({
       {/* Move Down */}
       <button
         className={cn(
-          'h-7 w-7 inline-flex items-center justify-center rounded hover:bg-gray-100 transition-colors',
+          'h-7 w-7 inline-flex items-center justify-center rounded-sm hover:bg-gray-100 transition-colors',
           !canMoveDown && 'opacity-50 cursor-not-allowed'
         )}
         onClick={onMoveDown}
@@ -56,7 +56,7 @@ const BlockToolbar = ({
 
       {/* Duplicate */}
       <button
-        className="h-7 w-7 inline-flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
+        className="h-7 w-7 inline-flex items-center justify-center rounded-sm hover:bg-gray-100 transition-colors"
         onClick={onDuplicate}
         title="Duplica"
       >
@@ -65,7 +65,7 @@ const BlockToolbar = ({
 
       {/* Settings */}
       <button
-        className="h-7 w-7 inline-flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
+        className="h-7 w-7 inline-flex items-center justify-center rounded-sm hover:bg-gray-100 transition-colors"
         onClick={onSettings}
         title="Setari bloc"
       >
@@ -76,7 +76,7 @@ const BlockToolbar = ({
 
       {/* Delete */}
       <button
-        className="h-7 w-7 inline-flex items-center justify-center rounded text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+        className="h-7 w-7 inline-flex items-center justify-center rounded-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
         onClick={onDelete}
         title="Sterge"
       >

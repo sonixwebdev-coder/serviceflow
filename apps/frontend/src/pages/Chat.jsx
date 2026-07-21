@@ -118,7 +118,7 @@ export default function Chat() {
   return (
     <div
       style={containerStyle}
-      className="flex bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200"
+      className="flex bg-white rounded-lg overflow-hidden shadow-xs border border-gray-200"
     >
       {/* Sidebar */}
       {showSidebar && <ChatSidebar isMobile={isMobile} />}

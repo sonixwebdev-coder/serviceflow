@@ -427,7 +427,7 @@ const OnlineClients = () => {
           <button
             type="button"
             onClick={openAddClientModal}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-primary/90 transition-all hover:shadow-md"
           >
             <Plus size={16} />
             Adauga Client Online
@@ -435,7 +435,7 @@ const OnlineClients = () => {
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 hover:shadow-md transition-all"
           >
             <Upload size={16} />
             Importa CSV
@@ -450,9 +450,8 @@ const OnlineClients = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 card-hover">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Total Clienti Online</p>
@@ -464,7 +463,7 @@ const OnlineClients = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 card-hover">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Procent din Total</p>
@@ -476,7 +475,7 @@ const OnlineClients = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 card-hover">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Adaugati Recent (7 zile)</p>
@@ -498,7 +497,7 @@ const OnlineClients = () => {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Cauta dupa nume, companie, email, telefon, adresa sau card fidelitate..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
         {search && (
@@ -513,9 +512,7 @@ const OnlineClients = () => {
         )}
       </div>
 
-      {/* Clients Table/Cards */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {/* Desktop Table */}
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
         <div className="hidden lg:block">
           <div className="grid grid-cols-8 gap-4 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50/50">
             <span>Client</span>
@@ -566,7 +563,7 @@ const OnlineClients = () => {
                   <div className="truncate">
                     {client.address ? (
                       <span className="flex items-center gap-1.5" title={client.address}>
-                        <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                        <MapPin size={14} className="text-gray-400 shrink-0" />
                         <span className="truncate">{client.address}</span>
                       </span>
                     ) : (
@@ -589,7 +586,7 @@ const OnlineClients = () => {
                       type="button"
                       onClick={() => handleToggleOnline(client.id, client.isOnline)}
                       disabled={updateClientMutation.isLoading}
-                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
+                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
                       title={client.isOnline ? 'Marcheaza ca offline' : 'Marcheaza ca online'}
                     >
                       <span
@@ -673,7 +670,7 @@ const OnlineClients = () => {
                         type="button"
                         onClick={() => handleToggleOnline(client.id, client.isOnline)}
                         disabled={updateClientMutation.isLoading}
-                        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary ml-2 flex-shrink-0"
+                        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary ml-2 shrink-0"
                         title={client.isOnline ? 'Marcheaza ca offline' : 'Marcheaza ca online'}
                       >
                         <span
@@ -867,7 +864,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.companyName}
                                 onChange={(e) => handleInputChange('companyName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -879,7 +876,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.contactName}
                                 onChange={(e) => handleInputChange('contactName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div>
@@ -890,7 +887,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.vatNumber}
                                 onChange={(e) => handleInputChange('vatNumber', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div>
@@ -903,7 +900,7 @@ const OnlineClients = () => {
                                 onChange={(e) =>
                                   handleInputChange('registrationNumber', e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               />
                             </div>
                           </>
@@ -917,7 +914,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.firstName}
                                 onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -929,7 +926,7 @@ const OnlineClients = () => {
                                 type="text"
                                 value={editForm.lastName}
                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                 required
                               />
                             </div>
@@ -943,7 +940,7 @@ const OnlineClients = () => {
                             type="email"
                             value={editForm.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             required
                           />
                         </div>
@@ -955,7 +952,7 @@ const OnlineClients = () => {
                             type="tel"
                             value={editForm.phone}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             required
                           />
                         </div>
@@ -967,7 +964,7 @@ const OnlineClients = () => {
                             type="text"
                             value={editForm.address}
                             onChange={(e) => handleInputChange('address', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div className="col-span-2">
@@ -978,7 +975,7 @@ const OnlineClients = () => {
                             type="text"
                             value={editForm.fidelityCardSerie}
                             onChange={(e) => handleInputChange('fidelityCardSerie', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             placeholder="Serie card fidelitate"
                           />
                         </div>
@@ -988,7 +985,7 @@ const OnlineClients = () => {
                               type="checkbox"
                               checked={editForm.isOnline || false}
                               onChange={(e) => handleInputChange('isOnline', e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              className="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary"
                             />
                             <span className="text-sm font-medium text-gray-700">
                               Client online (disponibil si in magazin fizic)
@@ -1006,7 +1003,7 @@ const OnlineClients = () => {
                             value={editForm.notes}
                             onChange={(e) => handleInputChange('notes', e.target.value)}
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             placeholder="Notite despre client..."
                           />
                         </div>
@@ -1116,7 +1113,7 @@ const OnlineClients = () => {
                                   handleToggleOnline(selectedClient.id, selectedClient.isOnline)
                                 }
                                 disabled={updateClientMutation.isLoading}
-                                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
+                                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-primary"
                               >
                                 <span
                                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${selectedClient.isOnline ? 'translate-x-6' : 'translate-x-1'}`}
@@ -1377,7 +1374,10 @@ const OnlineClients = () => {
                       <h4 className="text-xs font-semibold text-red-900 mb-2">Erori Validare:</h4>
                       <div className="max-h-40 overflow-y-auto space-y-1">
                         {importResults.errors.map((error, index) => (
-                          <div key={index} className="text-xs text-red-700 bg-red-50 rounded p-2">
+                          <div
+                            key={index}
+                            className="text-xs text-red-700 bg-red-50 rounded-sm p-2"
+                          >
                             <span className="font-medium">Rand {error.row}:</span>{' '}
                             {error.errors.join(', ')}
                           </div>
@@ -1396,7 +1396,7 @@ const OnlineClients = () => {
                         {importResults.duplicates.map((dup, index) => (
                           <div
                             key={index}
-                            className="text-xs text-yellow-700 bg-yellow-50 rounded p-2"
+                            className="text-xs text-yellow-700 bg-yellow-50 rounded-sm p-2"
                           >
                             <span className="font-medium">Rand {dup.row}:</span> {dup.reason}
                           </div>
@@ -1513,7 +1513,7 @@ const OnlineClients = () => {
                           onChange={(e) =>
                             handleAddClientInputChange('companyName', e.target.value)
                           }
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           required
                           placeholder="SC Exemplu SRL"
                         />
@@ -1528,7 +1528,7 @@ const OnlineClients = () => {
                           onChange={(e) =>
                             handleAddClientInputChange('contactName', e.target.value)
                           }
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           placeholder="Ion Popescu"
                         />
                       </div>
@@ -1538,7 +1538,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.vatNumber}
                           onChange={(e) => handleAddClientInputChange('vatNumber', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           placeholder="RO12345678"
                         />
                       </div>
@@ -1552,7 +1552,7 @@ const OnlineClients = () => {
                           onChange={(e) =>
                             handleAddClientInputChange('registrationNumber', e.target.value)
                           }
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           placeholder="J40/1234/2020"
                         />
                       </div>
@@ -1567,7 +1567,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.firstName}
                           onChange={(e) => handleAddClientInputChange('firstName', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           required
                           placeholder="Ion"
                         />
@@ -1580,7 +1580,7 @@ const OnlineClients = () => {
                           type="text"
                           value={addClientForm.lastName}
                           onChange={(e) => handleAddClientInputChange('lastName', e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           required
                           placeholder="Popescu"
                         />
@@ -1593,7 +1593,7 @@ const OnlineClients = () => {
                       type="email"
                       value={addClientForm.email}
                       onChange={(e) => handleAddClientInputChange('email', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       required
                       placeholder="client@example.com"
                     />
@@ -1606,7 +1606,7 @@ const OnlineClients = () => {
                       type="tel"
                       value={addClientForm.phone}
                       onChange={(e) => handleAddClientInputChange('phone', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       required
                       placeholder="0712345678"
                     />
@@ -1617,7 +1617,7 @@ const OnlineClients = () => {
                       type="text"
                       value={addClientForm.address}
                       onChange={(e) => handleAddClientInputChange('address', e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       placeholder="Str. Exemplu nr. 1, Bucuresti, Sector 1"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -1634,7 +1634,7 @@ const OnlineClients = () => {
                       onChange={(e) =>
                         handleAddClientInputChange('fidelityCardSerie', e.target.value)
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       placeholder="Serie card fidelitate"
                     />
                   </div>
@@ -1644,7 +1644,7 @@ const OnlineClients = () => {
                       value={addClientForm.notes}
                       onChange={(e) => handleAddClientInputChange('notes', e.target.value)}
                       rows={3}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       placeholder="Notite despre client..."
                     />
                   </div>

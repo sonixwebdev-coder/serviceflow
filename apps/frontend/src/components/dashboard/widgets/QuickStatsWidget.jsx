@@ -77,8 +77,8 @@ export default function QuickStatsWidget() {
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="p-4 rounded-lg bg-gray-50">
             <div className="h-8 w-8 animate-pulse rounded-lg bg-gray-200 mb-2" />
-            <div className="h-6 w-10 animate-pulse rounded bg-gray-200 mb-1" />
-            <div className="h-3 w-16 animate-pulse rounded bg-gray-200" />
+            <div className="h-6 w-10 animate-pulse rounded-sm bg-gray-200 mb-1" />
+            <div className="h-3 w-16 animate-pulse rounded-sm bg-gray-200" />
           </div>
         ))}
       </div>

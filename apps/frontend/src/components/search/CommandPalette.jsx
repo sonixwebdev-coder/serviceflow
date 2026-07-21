@@ -320,10 +320,10 @@ export default function CommandPalette() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 text-lg outline-none placeholder-gray-400"
+            className="flex-1 text-lg outline-hidden placeholder-gray-400"
           />
           <div className="flex items-center gap-2">
-            <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded">
+            <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-sm">
               ESC
             </kbd>
             <button onClick={closePalette} className="p-1 hover:bg-gray-100 rounded-lg transition">
@@ -356,7 +356,7 @@ export default function CommandPalette() {
                       onClick={() => handleSelect(item)}
                       onMouseEnter={() => setSelectedIndex(item.flatIndex)}
                       className={`w-full flex items-center gap-3 px-4 py-3 text-left transition ${
-                        isSelected ? 'bg-primary/5' : 'hover:bg-gray-50'
+                        isSelected ? 'rbc-selected-cell' : 'hover:bg-gray-50'
                       }`}
                     >
                       <div className={`p-2 rounded-lg ${TYPE_COLORS[item.type] || 'bg-gray-100'}`}>
@@ -369,7 +369,7 @@ export default function CommandPalette() {
                         )}
                       </div>
                       {isSelected && (
-                        <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded">
+                        <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-sm">
                           Enter
                         </kbd>
                       )}
@@ -385,12 +385,12 @@ export default function CommandPalette() {
         <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white border border-gray-200 rounded">↑</kbd>
-              <kbd className="px-1.5 py-0.5 bg-white border border-gray-200 rounded">↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white border border-gray-200 rounded-sm">↑</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white border border-gray-200 rounded-sm">↓</kbd>
               navigare
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-white border border-gray-200 rounded">Enter</kbd>
+              <kbd className="px-1.5 py-0.5 bg-white border border-gray-200 rounded-sm">Enter</kbd>
               selectare
             </span>
           </div>

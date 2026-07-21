@@ -10,12 +10,12 @@ const ListSkeleton = () => (
     {[1, 2, 3].map((i) => (
       <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
         <div className="w-12 space-y-1">
-          <div className="h-4 w-10 animate-pulse rounded bg-gray-200" />
-          <div className="h-3 w-6 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-10 animate-pulse rounded-sm bg-gray-200" />
+          <div className="h-3 w-6 animate-pulse rounded-sm bg-gray-200" />
         </div>
         <div className="flex-1 space-y-1">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-          <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-32 animate-pulse rounded-sm bg-gray-200" />
+          <div className="h-3 w-20 animate-pulse rounded-sm bg-gray-200" />
         </div>
       </div>
     ))}
@@ -75,10 +75,10 @@ export default function UpcomingAppointmentsWidget() {
             key={apt.id}
             onClick={() => navigate('/crm/appointments')}
             className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
-              isTodayApt ? 'bg-primary/5 hover:bg-primary/10' : 'bg-gray-50 hover:bg-gray-100'
+              isTodayApt ? 'rbc-selected-cell hover:bg-primary/10' : 'bg-gray-50 hover:bg-gray-100'
             } ${isPast ? 'opacity-50' : ''}`}
           >
-            <div className="w-12 text-center flex-shrink-0">
+            <div className="w-12 text-center shrink-0">
               <p
                 className={`text-sm font-semibold ${isTodayApt ? 'text-primary' : 'text-gray-900'}`}
               >
@@ -99,7 +99,7 @@ export default function UpcomingAppointmentsWidget() {
               )}
             </div>
             {isTodayApt && (
-              <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+              <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-medium shrink-0">
                 AZI
               </span>
             )}

@@ -56,13 +56,13 @@ export default function ClientGrowthChart({ data = [], byType = {}, isLoading })
       {/* Type breakdown */}
       <div className="flex gap-4">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-emerald-500" />
+          <div className="w-3 h-3 rounded-sm bg-emerald-500" />
           <span className="text-sm text-gray-600">
             Persoane fizice: <span className="font-medium">{byType.PF || 0}</span>
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-blue-500" />
+          <div className="w-3 h-3 rounded-sm bg-blue-500" />
           <span className="text-sm text-gray-600">
             Firme: <span className="font-medium">{byType.SRL || 0}</span>
           </span>

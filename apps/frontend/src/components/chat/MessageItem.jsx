@@ -138,7 +138,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
                 }`}
               >
                 <div
-                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
                     isOwnMessage ? 'bg-white/30' : 'bg-primary/10'
                   }`}
                 >
@@ -196,7 +196,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
       {!isOwnMessage &&
         (showAvatar ? (
           <UserHoverCard user={message.author}>
-            <div className="flex-shrink-0 cursor-pointer">
+            <div className="shrink-0 cursor-pointer">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
                 {message.author?.firstName?.[0] || '?'}
                 {message.author?.lastName?.[0] || ''}
@@ -204,7 +204,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
             </div>
           </UserHoverCard>
         ) : (
-          <div className="w-10 flex-shrink-0"></div>
+          <div className="w-10 shrink-0"></div>
         ))}
 
       {/* Message Content */}
@@ -228,7 +228,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
             <textarea
               value={editedBody}
               onChange={(e) => setEditedBody(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
               rows={3}
               autoFocus
             />
@@ -236,7 +236,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
               <button
                 onClick={handleEdit}
                 disabled={updateMessageMutation.isPending}
-                className="rounded bg-primary px-3 py-1 text-sm text-white hover:bg-orange-600 disabled:opacity-50"
+                className="rounded-sm bg-primary px-3 py-1 text-sm text-white hover:bg-orange-600 disabled:opacity-50"
               >
                 Salvează
               </button>
@@ -245,7 +245,7 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
                   setIsEditing(false);
                   setEditedBody(message.body);
                 }}
-                className="rounded bg-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-gray-300"
+                className="rounded-sm bg-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-gray-300"
               >
                 Anulează
               </button>
@@ -256,13 +256,13 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
             className={`inline-block rounded-2xl px-4 py-2 text-sm ${
               isOwnMessage
                 ? 'bg-primary text-white rounded-br-md'
-                : 'bg-white text-gray-900 shadow-sm border border-gray-100 rounded-bl-md'
+                : 'bg-white text-gray-900 shadow-xs border border-gray-100 rounded-bl-md'
             } ${isPending ? 'opacity-70' : ''}`}
           >
             {message.isDeleted ? (
               <span className="italic opacity-70">{displayBody}</span>
             ) : (
-              <p className="whitespace-pre-wrap break-words">{displayBody}</p>
+              <p className="whitespace-pre-wrap wrap-break-word">{displayBody}</p>
             )}
             {/* Timestamp for own messages */}
             {isOwnMessage && (
@@ -287,18 +287,18 @@ function MessageItem({ message, showAvatar, isOwnMessage: isOwnMessageProp, isPe
       {/* Actions Menu */}
       {showActions && isOwnMessage && !message.isDeleted && !isEditing && !isPending && (
         <div
-          className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} top-0 flex gap-1 rounded-lg bg-white shadow-sm border border-gray-200 p-1`}
+          className={`absolute ${isOwnMessage ? 'left-0' : 'right-0'} top-0 flex gap-1 rounded-lg bg-white shadow-xs border border-gray-200 p-1`}
         >
           <button
             onClick={() => setIsEditing(true)}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            className="rounded-sm p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             title="Editează mesaj"
           >
             <Edit2 className="h-4 w-4" />
           </button>
           <button
             onClick={handleDelete}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+            className="rounded-sm p-1 text-gray-500 hover:bg-gray-100 hover:text-red-600"
             title="Șterge mesaj"
           >
             <Trash2 className="h-4 w-4" />

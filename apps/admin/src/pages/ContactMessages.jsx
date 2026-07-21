@@ -105,7 +105,7 @@ export default function ContactMessages() {
           ].map((stat) => (
             <div
               key={stat.key}
-              className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs"
             >
               <div className="flex items-center gap-3">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}>
@@ -128,7 +128,7 @@ export default function ContactMessages() {
           onChange={(e) =>
             setFilters((prev) => ({ ...prev, page: 1, status: e.target.value || undefined }))
           }
-          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+          className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
         >
           <option value="">Toate ({total})</option>
           <option value="NEW">Noi ({stats?.new || 0})</option>
@@ -157,7 +157,7 @@ export default function ContactMessages() {
             return (
               <div
                 key={msg.id}
-                className={`rounded-2xl border bg-white shadow-sm transition-all ${
+                className={`rounded-2xl border bg-white shadow-xs transition-all ${
                   msg.status === 'NEW' ? 'border-blue-200' : 'border-gray-200/60'
                 }`}
               >
@@ -166,7 +166,7 @@ export default function ContactMessages() {
                   onClick={() => toggleExpand(msg.id, msg.status)}
                 >
                   <div
-                    className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-xl border ${statusCfg.color}`}
+                    className={`shrink-0 flex h-9 w-9 items-center justify-center rounded-xl border ${statusCfg.color}`}
                   >
                     <statusCfg.icon className="h-4 w-4" />
                   </div>
@@ -205,7 +205,7 @@ export default function ContactMessages() {
                       <a
                         href={`mailto:${msg.email}?subject=Re: ${encodeURIComponent(msg.subject)}`}
                         onClick={() => handleStatusChange(msg.id, 'REPLIED')}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-xs hover:bg-primary-700 transition-colors"
                       >
                         <Reply className="h-3.5 w-3.5" /> Raspunde
                       </a>

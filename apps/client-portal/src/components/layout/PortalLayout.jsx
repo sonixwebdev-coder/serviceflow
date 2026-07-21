@@ -269,7 +269,7 @@ export default function PortalLayout() {
                           </p>
                         </div>
                         {!notification.isRead && (
-                          <span className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-primary-500" />
+                          <span className="shrink-0 w-2 h-2 mt-2 rounded-full bg-primary-500" />
                         )}
                       </div>
                     </button>

@@ -131,7 +131,7 @@ export default function Analytics() {
           <button
             onClick={handleRefreshAll}
             disabled={isAnyFetching}
-            className="p-2.5 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 hover:shadow-md transition-all disabled:opacity-50"
+            className="p-2.5 rounded-lg border border-gray-200 bg-white shadow-xs hover:bg-gray-50 hover:shadow-md transition-all disabled:opacity-50"
             title="Reincarca datele"
           >
             <RefreshCw className={`h-4 w-4 text-gray-600 ${isAnyFetching ? 'animate-spin' : ''}`} />

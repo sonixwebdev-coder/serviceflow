@@ -44,7 +44,7 @@ export function BillingOverview() {
 
       {stats && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-xs">
             <h3 className="mb-4 text-sm font-semibold text-gray-900">Distributie pe status</h3>
             <div className="space-y-2.5">
               {Object.entries(stats.statusBreakdown || {}).map(([status, count]) => (
@@ -55,7 +55,7 @@ export function BillingOverview() {
               ))}
             </div>
           </div>
-          <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-xs">
             <h3 className="mb-4 text-sm font-semibold text-gray-900">Distributie pe plan</h3>
             <div className="space-y-2.5">
               {Object.entries(stats.planBreakdown || {}).map(([plan, count]) => (
@@ -89,7 +89,7 @@ function SummaryCard({ icon: Icon, label, value, color, tooltip }) {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-200/60 bg-white p-5 shadow-xs">
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colors[color]}`}>
           <Icon className="h-5 w-5" />

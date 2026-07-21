@@ -54,7 +54,10 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      ...reactHooks.configs['recommended-latest'].rules,
+      // The React Compiler is not enabled in this project. Keep the hooks
+      // correctness rules without opting into compiler-specific diagnostics.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       'react/jsx-uses-vars': 'error',
       'no-unused-vars': [
         'error',

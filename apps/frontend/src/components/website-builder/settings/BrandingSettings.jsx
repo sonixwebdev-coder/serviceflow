@@ -45,7 +45,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
   return (
     <div className="space-y-6">
       {/* Colors */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Palette className="h-5 w-5" />
@@ -65,7 +65,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
                 type="color"
                 value={localBranding.primaryColor}
                 onChange={(e) => handleChange('primaryColor', e.target.value)}
-                className="w-16 h-10 p-1 cursor-pointer border border-gray-300 rounded"
+                className="w-16 h-10 p-1 cursor-pointer border border-gray-300 rounded-sm"
               />
               <input
                 type="text"
@@ -89,7 +89,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
                 type="color"
                 value={localBranding.secondaryColor}
                 onChange={(e) => handleChange('secondaryColor', e.target.value)}
-                className="w-16 h-10 p-1 cursor-pointer border border-gray-300 rounded"
+                className="w-16 h-10 p-1 cursor-pointer border border-gray-300 rounded-sm"
               />
               <input
                 type="text"
@@ -126,7 +126,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
       </div>
 
       {/* Typography */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Type className="h-5 w-5" />
@@ -168,7 +168,7 @@ const BrandingSettings = ({ branding = {}, onChange, isLoading = false }) => {
       </div>
 
       {/* Logo & Favicon */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Image className="h-5 w-5" />

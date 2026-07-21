@@ -157,7 +157,7 @@ export default function MessageComposer({ channelId }) {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="Scrie un mesaj..."
-            className="max-h-32 w-full resize-none rounded-lg px-3 py-2 text-sm focus:outline-none"
+            className="max-h-32 w-full resize-none rounded-lg px-3 py-2 text-sm focus:outline-hidden"
             rows={1}
             disabled={isSending}
           />
@@ -169,7 +169,7 @@ export default function MessageComposer({ channelId }) {
             ref={emojiButtonRef}
             type="button"
             onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-            className={`flex-shrink-0 rounded-lg p-2 hover:bg-gray-100 ${
+            className={`shrink-0 rounded-lg p-2 hover:bg-gray-100 ${
               isEmojiPickerOpen ? 'text-primary' : 'text-gray-500 hover:text-gray-700'
             }`}
             title="Adaugă emoji"
@@ -189,7 +189,7 @@ export default function MessageComposer({ channelId }) {
           type="button"
           onClick={handleSend}
           disabled={!body.trim() || isSending}
-          className="flex-shrink-0 rounded-lg bg-primary p-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-lg bg-primary p-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
           title="Trimite mesajul"
         >
           <Send className="h-5 w-5" />

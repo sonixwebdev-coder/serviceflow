@@ -189,7 +189,7 @@ export default function FloatingChatWidget() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          className="group fixed z-50 flex h-14 w-14 cursor-grab items-center justify-center rounded-full bg-primary text-white shadow-lg transition-colors duration-200 hover:bg-orange-600 hover:shadow-xl focus:outline-none active:cursor-grabbing"
+          className="group fixed z-50 flex h-14 w-14 cursor-grab items-center justify-center rounded-full bg-primary text-white shadow-lg transition-colors duration-200 hover:bg-orange-600 hover:shadow-xl focus:outline-hidden active:cursor-grabbing"
           style={{ bottom: btnPos.bottom, right: btnPos.right, touchAction: 'none' }}
         >
           <MessageSquare className="h-6 w-6 transition-transform group-hover:scale-110" />

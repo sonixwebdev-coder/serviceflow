@@ -1316,7 +1316,7 @@ const Appointments = () => {
           <button
             type="button"
             onClick={() => openCreateModal(new Date())}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-primary/90 transition-all hover:shadow-md"
           >
             <Plus size={16} />
             Programare noua
@@ -1352,7 +1352,7 @@ const Appointments = () => {
             <select
               value={selectedClientId || ''}
               onChange={(e) => setSelectedClientId(e.target.value || undefined)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
             >
               <option value="">Toti clientii</option>
               {uniqueClients.map((client) => (
@@ -1372,7 +1372,7 @@ const Appointments = () => {
             <select
               value={selectedAssigneeId || ''}
               onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
-              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
             >
               <option value="">Toti responsabilii</option>
               {assigneeOptions.map((employee) => (
@@ -1410,7 +1410,7 @@ const Appointments = () => {
       </div>
 
       {/* Calendar Card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 shadow-xs">
         {isLoading ? (
           <div className="py-10 text-center text-sm text-gray-500">Se incarca programarile...</div>
         ) : (
@@ -1527,7 +1527,7 @@ const Appointments = () => {
                 </div>
               )}
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
                 <h3 className="text-base font-semibold text-gray-900">Informatii programare</h3>
                 <div className="mt-4 space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12 items-end">
@@ -1539,7 +1539,7 @@ const Appointments = () => {
                         onChange={(event) =>
                           setFormState((prev) => ({ ...prev, title: event.target.value }))
                         }
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                         placeholder="Ex. Programare client"
                       />
                     </div>
@@ -1582,7 +1582,7 @@ const Appointments = () => {
                         setFormState((prev) => ({ ...prev, description: event.target.value }))
                       }
                       rows={3}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   <div>
@@ -1620,7 +1620,7 @@ const Appointments = () => {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-base font-semibold text-gray-900">Detalii client</h3>
                   <button
@@ -1677,7 +1677,7 @@ const Appointments = () => {
                                   <select
                                     value={selectedAsset?.id || ''}
                                     onChange={(e) => handleAssetSelect(e.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
                                   >
                                     {selectedClient.assets.map((asset) => (
                                       <option key={asset.id} value={asset.id}>
@@ -1754,7 +1754,7 @@ const Appointments = () => {
                                 companyName: event.target.value,
                               }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1770,7 +1770,7 @@ const Appointments = () => {
                                 contactName: event.target.value,
                               }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1781,7 +1781,7 @@ const Appointments = () => {
                             onChange={(event) =>
                               setClientForm((prev) => ({ ...prev, vatNumber: event.target.value }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1797,7 +1797,7 @@ const Appointments = () => {
                                 registrationName: event.target.value,
                               }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                       </>
@@ -1813,7 +1813,7 @@ const Appointments = () => {
                             onChange={(event) =>
                               setClientForm((prev) => ({ ...prev, firstName: event.target.value }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                         <div>
@@ -1824,7 +1824,7 @@ const Appointments = () => {
                             onChange={(event) =>
                               setClientForm((prev) => ({ ...prev, lastName: event.target.value }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           />
                         </div>
                       </>
@@ -1837,7 +1837,7 @@ const Appointments = () => {
                         onChange={(event) =>
                           setClientForm((prev) => ({ ...prev, email: event.target.value }))
                         }
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -1848,7 +1848,7 @@ const Appointments = () => {
                         onChange={(event) =>
                           setClientForm((prev) => ({ ...prev, phone: event.target.value }))
                         }
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -1865,7 +1865,7 @@ const Appointments = () => {
                           }))
                         }
                         placeholder="FL123456"
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -1876,7 +1876,7 @@ const Appointments = () => {
                           setClientForm((prev) => ({ ...prev, notes: event.target.value }))
                         }
                         rows={2}
-                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </div>
@@ -1885,7 +1885,7 @@ const Appointments = () => {
 
               {/* Asset Details Section - only shown for sectors with assets */}
               {hasAssets && (
-                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
                   <h3 className="text-base font-semibold text-gray-900">
                     Detalii {assetSingular.toLowerCase()}
                   </h3>
@@ -1914,7 +1914,7 @@ const Appointments = () => {
                           setAssetForm((prev) => ({ ...prev, notes: event.target.value }))
                         }
                         rows={2}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                         placeholder={`Observatii sau detalii suplimentare despre ${assetSingular.toLowerCase()}`}
                       />
                     </div>
@@ -1922,7 +1922,7 @@ const Appointments = () => {
                 </div>
               )}
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
                 <div className="mb-4">
                   <h3 className="text-base font-semibold text-gray-900">Articole comanda</h3>
                   <p className="text-xs text-gray-500 mt-1">
@@ -1953,14 +1953,14 @@ const Appointments = () => {
                               onChange={(event) =>
                                 handleLineItemChange(index, 'name', event.target.value)
                               }
-                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               placeholder="ex: Serviciu, Produs, etc."
                             />
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveLineItem(index)}
-                            className="mt-5 rounded p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500"
+                            className="mt-5 rounded-sm p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500"
                             title="Sterge linia"
                           >
                             <Trash2 size={16} />
@@ -1978,7 +1978,7 @@ const Appointments = () => {
                             onChange={(event) =>
                               handleLineItemChange(index, 'description', event.target.value)
                             }
-                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             placeholder="Detalii suplimentare"
                           />
                         </div>
@@ -2024,7 +2024,7 @@ const Appointments = () => {
                                           event.target.value
                                         )
                                       }
-                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
+                                      className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-hidden"
                                     />
                                   </div>
                                   <div className="flex-1">
@@ -2040,7 +2040,7 @@ const Appointments = () => {
                                           event.target.value
                                         )
                                       }
-                                      className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-primary focus:outline-none"
+                                      className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-xs focus:border-primary focus:outline-hidden"
                                     >
                                       <option value="">-</option>
                                       {HARDWARE_UNITS.map((unit) => (
@@ -2067,7 +2067,7 @@ const Appointments = () => {
                                         event.target.value
                                       )
                                     }
-                                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-none"
+                                    className="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-hidden"
                                     placeholder="0.00"
                                   />
                                 </div>
@@ -2109,7 +2109,7 @@ const Appointments = () => {
                                         event.target.value
                                       )
                                     }
-                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-none"
+                                    className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-sm focus:border-primary focus:outline-hidden"
                                   />
                                 </div>
                                 <div className="flex-1">
@@ -2121,7 +2121,7 @@ const Appointments = () => {
                                     onChange={(event) =>
                                       handleLineItemChange(index, 'laborUnit', event.target.value)
                                     }
-                                    className="w-full rounded border border-gray-300 px-1.5 py-1 text-xs focus:border-primary focus:outline-none"
+                                    className="w-full rounded-sm border border-gray-300 px-1.5 py-1 text-xs focus:border-primary focus:outline-hidden"
                                   >
                                     <option value="">-</option>
                                     {LABOR_UNITS.map((unit) => (
@@ -2144,7 +2144,7 @@ const Appointments = () => {
                                   onChange={(event) =>
                                     handleLineItemChange(index, 'laborPrice', event.target.value)
                                   }
-                                  className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-none"
+                                  className="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm focus:border-primary focus:outline-hidden"
                                   placeholder="0.00"
                                 />
                               </div>
@@ -2166,7 +2166,7 @@ const Appointments = () => {
                   <button
                     type="button"
                     onClick={handleAddLineItem}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-primary hover:rbc-selected-cell hover:text-primary"
                   >
                     <Plus size={16} /> Adauga articol/serviciu
                   </button>
@@ -2205,7 +2205,7 @@ const Appointments = () => {
                         setFormState((prev) => ({ ...prev, advancePayment: event.target.value }))
                       }
                       placeholder="0.00"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
                       RON
@@ -2340,7 +2340,7 @@ const Appointments = () => {
               <span className="flex items-center gap-2">
                 Mesaje
                 {unreadCount > 0 && (
-                  <span className="inline-flex items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white min-w-[1.25rem]">
+                  <span className="inline-flex items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white min-w-5">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
@@ -2371,7 +2371,7 @@ const Appointments = () => {
                             onChange={(e) =>
                               setEditForm((prev) => ({ ...prev, title: e.target.value }))
                             }
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             placeholder="Ex. Programare client"
                           />
                         </div>
@@ -2417,7 +2417,7 @@ const Appointments = () => {
                               setEditForm((prev) => ({ ...prev, description: e.target.value }))
                             }
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                             placeholder="Descriere programare..."
                           />
                         </div>
@@ -2471,7 +2471,7 @@ const Appointments = () => {
                                     value={selectedAppointment.status || 'PENDING'}
                                     disabled={updateMutation.isPending}
                                     onChange={(event) => handleStatusChange(event.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-8 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-8 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
                                   >
                                     {STATUS_SEQUENCE.filter(
                                       (s) =>
@@ -2888,7 +2888,7 @@ const Appointments = () => {
                             return (
                               <div
                                 key={index}
-                                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                                className="rounded-lg border border-gray-200 bg-white p-4 shadow-xs"
                               >
                                 {/* Header: Item name and remove button */}
                                 <div className="flex items-start gap-3 mb-3">
@@ -2902,7 +2902,7 @@ const Appointments = () => {
                                       onChange={(event) =>
                                         handleLineItemChange(index, 'name', event.target.value)
                                       }
-                                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                       placeholder="ex: Serviciu, Produs, etc."
                                     />
                                   </div>
@@ -2927,7 +2927,7 @@ const Appointments = () => {
                                     onChange={(event) =>
                                       handleLineItemChange(index, 'description', event.target.value)
                                     }
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                     placeholder="Detalii suplimentare despre serviciu"
                                   />
                                 </div>
@@ -2973,7 +2973,7 @@ const Appointments = () => {
                                                   event.target.value
                                                 )
                                               }
-                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                             />
                                           </div>
                                           <div className="flex-1">
@@ -2989,7 +2989,7 @@ const Appointments = () => {
                                                   event.target.value
                                                 )
                                               }
-                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                             >
                                               <option value="">Alege...</option>
                                               {HARDWARE_UNITS.map((unit) => (
@@ -3016,7 +3016,7 @@ const Appointments = () => {
                                                 event.target.value
                                               )
                                             }
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                             placeholder="0.00"
                                           />
                                         </div>
@@ -3066,7 +3066,7 @@ const Appointments = () => {
                                                 event.target.value
                                               )
                                             }
-                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                           />
                                         </div>
                                         <div className="flex-1">
@@ -3082,7 +3082,7 @@ const Appointments = () => {
                                                 event.target.value
                                               )
                                             }
-                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                           >
                                             <option value="">Alege...</option>
                                             {LABOR_UNITS.map((unit) => (
@@ -3109,7 +3109,7 @@ const Appointments = () => {
                                               event.target.value
                                             )
                                           }
-                                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                                           placeholder="0.00"
                                         />
                                       </div>
@@ -3141,7 +3141,7 @@ const Appointments = () => {
                           <button
                             type="button"
                             onClick={handleAddLineItem}
-                            className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+                            className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-primary hover:rbc-selected-cell hover:text-primary"
                           >
                             <Plus size={16} /> Adauga articol/serviciu
                           </button>
@@ -3169,7 +3169,7 @@ const Appointments = () => {
                               setOrderDraft((prev) => ({ ...prev, notes: event.target.value }))
                             }
                             rows={3}
-                            className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                            className="mt-1 w-full rounded-sm border border-gray-200 px-3 py-2 text-sm focus:border-primary focus:outline-hidden"
                           />
                         </div>
 
@@ -3397,7 +3397,7 @@ const Appointments = () => {
                                   ? `${getFileUrl(serviceOrder.pdfUrl)}&t=${new Date(serviceOrder.updatedAt || Date.now()).getTime()}&r=${Math.random()}#toolbar=0`
                                   : ''
                               }
-                              className="h-80 w-full rounded border border-gray-200 bg-white"
+                              className="h-80 w-full rounded-sm border border-gray-200 bg-white"
                             />
                           </div>
                         ) : null}
@@ -3419,7 +3419,7 @@ const Appointments = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-4 rounded border border-dashed border-gray-200 p-4 text-sm text-gray-500">
+                      <div className="mt-4 rounded-sm border border-dashed border-gray-200 p-4 text-sm text-gray-500">
                         Nu exista inca o comanda de service. Foloseste butonul Editeaza pentru a
                         adauga articole si totaluri.
                       </div>
@@ -3543,7 +3543,7 @@ const Appointments = () => {
                                           <button
                                             type="button"
                                             onClick={() => handleDeletePayment(payment.id)}
-                                            className="ml-2 rounded p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                                            className="ml-2 rounded-sm p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
                                             title="Sterge plata"
                                           >
                                             <Trash2 size={14} />
@@ -3628,7 +3628,7 @@ const Appointments = () => {
                             type="checkbox"
                             checked={applyLoyaltyDiscount}
                             onChange={(e) => setApplyLoyaltyDiscount(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                            className="h-4 w-4 rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                           />
                           <span className="text-xs text-gray-700">
                             Aplică reducere fidelitate{' '}
@@ -3704,7 +3704,7 @@ const Appointments = () => {
                         >
                           {/* Avatar */}
                           <div
-                            className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isClientMessage ? 'bg-blue-100' : 'bg-primary/10'}`}
+                            className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isClientMessage ? 'bg-blue-100' : 'bg-primary/10'}`}
                           >
                             <User
                               size={14}
@@ -3734,7 +3734,7 @@ const Appointments = () => {
                             >
                               {/* Text content */}
                               {message.body && !isVoice && (
-                                <p className="text-sm whitespace-pre-wrap break-words">
+                                <p className="text-sm whitespace-pre-wrap wrap-break-word">
                                   {message.body}
                                 </p>
                               )}
@@ -4024,7 +4024,7 @@ const Appointments = () => {
                     placeholder="Scrie un mesaj..."
                     rows={1}
                     disabled={isSendingMessage}
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary disabled:bg-gray-50 disabled:cursor-not-allowed resize-none"
                     style={{ minHeight: '40px', maxHeight: '100px' }}
                   />
                   <button
@@ -4118,7 +4118,7 @@ const Appointments = () => {
                       setPaymentForm((prev) => ({ ...prev, amount: e.target.value }))
                     }
                     placeholder="0.00"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     autoFocus
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
@@ -4152,7 +4152,7 @@ const Appointments = () => {
                   onChange={(e) =>
                     setPaymentForm((prev) => ({ ...prev, paymentMethod: e.target.value }))
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 >
                   <option value="CASH">Numerar</option>
                   <option value="CARD">Card</option>
@@ -4177,7 +4177,7 @@ const Appointments = () => {
                     setPaymentForm((prev) => ({ ...prev, reference: e.target.value }))
                   }
                   placeholder="Nr. chitanta, ID tranzactie, etc."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -4195,7 +4195,7 @@ const Appointments = () => {
                   onChange={(e) => setPaymentForm((prev) => ({ ...prev, notes: e.target.value }))}
                   placeholder="Detalii suplimentare despre plata..."
                   rows={2}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>

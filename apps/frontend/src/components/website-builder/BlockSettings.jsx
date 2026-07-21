@@ -78,7 +78,7 @@ function ImageUploadField({ value, onChange, label, placeholder = 'https://...' 
         <img
           src={value}
           alt=""
-          className="mt-2 h-16 w-auto rounded border object-cover"
+          className="mt-2 h-16 w-auto rounded-sm border object-cover"
           onError={(e) => {
             e.target.style.display = 'none';
           }}
@@ -246,11 +246,11 @@ const EndpointField = ({ endpoint }) => {
   };
   return (
     <div className="flex items-center gap-2">
-      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-blue-100 text-blue-700">
         {endpoint.method}
       </span>
       <code
-        className="flex-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded truncate"
+        className="flex-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-sm truncate"
         title={endpoint.path}
       >
         {endpoint.path}
@@ -258,7 +258,7 @@ const EndpointField = ({ endpoint }) => {
       <button
         type="button"
         onClick={handleCopy}
-        className="shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded"
+        className="shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded-sm"
         title="Copiaza"
       >
         {copied ? (
@@ -411,7 +411,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <h3 className="font-semibold">{blockConfig?.name || block.type}</h3>
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded">
+        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-sm">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -1056,7 +1056,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                     ];
                                     updateData('testimonials', testimonials);
                                   }}
-                                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                  className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
                                 >
                                   <ChevronUp className="h-3.5 w-3.5" />
                                 </button>
@@ -1072,7 +1072,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                     ];
                                     updateData('testimonials', testimonials);
                                   }}
-                                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                  className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
                                 >
                                   <ChevronDown className="h-3.5 w-3.5" />
                                 </button>
@@ -1084,7 +1084,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                   testimonials.splice(idx, 1);
                                   updateData('testimonials', testimonials);
                                 }}
-                                className="p-1 text-red-400 hover:text-red-600 rounded"
+                                className="p-1 text-red-400 hover:text-red-600 rounded-sm"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -1099,7 +1099,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('testimonials', testimonials);
                             }}
                             placeholder="Nume"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                           <textarea
                             value={testimonial.content || ''}
@@ -1110,7 +1110,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                             }}
                             placeholder="Continut recenzie"
                             rows={2}
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                           <div className="flex gap-2">
                             <input
@@ -1122,7 +1122,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                 updateData('testimonials', testimonials);
                               }}
                               placeholder="Rol (ex: Client)"
-                              className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                              className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                             />
                             <div className="flex items-center gap-0.5">
                               {[1, 2, 3, 4, 5].map((star) => (
@@ -1157,7 +1157,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('testimonials', testimonials);
                             }}
                             placeholder="URL avatar (optional)"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                         </div>
                       ))}
@@ -1245,7 +1245,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                 <img
                                   src={image.src}
                                   alt=""
-                                  className="w-10 h-10 object-cover rounded"
+                                  className="w-10 h-10 object-cover rounded-sm"
                                 />
                               )}
                               <span className="text-xs font-medium text-gray-500">#{idx + 1}</span>
@@ -1259,7 +1259,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                     [images[idx - 1], images[idx]] = [images[idx], images[idx - 1]];
                                     updateData('images', images);
                                   }}
-                                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                  className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
                                 >
                                   <ChevronUp className="h-3.5 w-3.5" />
                                 </button>
@@ -1272,7 +1272,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                     [images[idx], images[idx + 1]] = [images[idx + 1], images[idx]];
                                     updateData('images', images);
                                   }}
-                                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                  className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
                                 >
                                   <ChevronDown className="h-3.5 w-3.5" />
                                 </button>
@@ -1284,7 +1284,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                   images.splice(idx, 1);
                                   updateData('images', images);
                                 }}
-                                className="p-1 text-red-400 hover:text-red-600 rounded"
+                                className="p-1 text-red-400 hover:text-red-600 rounded-sm"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -1308,7 +1308,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('images', images);
                             }}
                             placeholder="Text alternativ (ALT)"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                         </div>
                       ))}
@@ -1380,7 +1380,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                     [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]];
                                     updateData('items', items);
                                   }}
-                                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                  className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
                                 >
                                   <ChevronUp className="h-3.5 w-3.5" />
                                 </button>
@@ -1393,7 +1393,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                     [items[idx], items[idx + 1]] = [items[idx + 1], items[idx]];
                                     updateData('items', items);
                                   }}
-                                  className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                  className="p-1 text-gray-400 hover:text-gray-600 rounded-sm"
                                 >
                                   <ChevronDown className="h-3.5 w-3.5" />
                                 </button>
@@ -1405,7 +1405,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                   items.splice(idx, 1);
                                   updateData('items', items);
                                 }}
-                                className="p-1 text-red-400 hover:text-red-600 rounded"
+                                className="p-1 text-red-400 hover:text-red-600 rounded-sm"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -1420,7 +1420,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('items', items);
                             }}
                             placeholder="Intrebare"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                           <textarea
                             value={item.answer || ''}
@@ -1431,7 +1431,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                             }}
                             placeholder="Raspuns"
                             rows={2}
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                         </div>
                       ))}
@@ -1504,7 +1504,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                 stats.splice(idx, 1);
                                 updateData('stats', stats);
                               }}
-                              className="p-1 text-red-400 hover:text-red-600 rounded"
+                              className="p-1 text-red-400 hover:text-red-600 rounded-sm"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -1518,7 +1518,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('stats', stats);
                             }}
                             placeholder="Valoare (ex: 500+)"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                           <input
                             type="text"
@@ -1529,7 +1529,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('stats', stats);
                             }}
                             placeholder="Eticheta (ex: Clienti multumiti)"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                           <input
                             type="text"
@@ -1540,7 +1540,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('stats', stats);
                             }}
                             placeholder="Descriere (optional)"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                         </div>
                       ))}
@@ -1698,7 +1698,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                 plans.splice(idx, 1);
                                 updateData('plans', plans);
                               }}
-                              className="p-1 text-red-400 hover:text-red-600 rounded"
+                              className="p-1 text-red-400 hover:text-red-600 rounded-sm"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -1712,7 +1712,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('plans', plans);
                             }}
                             placeholder="Nume pachet"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                           <input
                             type="text"
@@ -1723,7 +1723,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               updateData('plans', plans);
                             }}
                             placeholder="Descriere (optional)"
-                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                           />
                           <div className="grid grid-cols-3 gap-2">
                             <input
@@ -1735,7 +1735,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                 updateData('plans', plans);
                               }}
                               placeholder="Pret"
-                              className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                              className="px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                             />
                             <input
                               type="text"
@@ -1746,7 +1746,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                 updateData('plans', plans);
                               }}
                               placeholder="RON"
-                              className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                              className="px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                             />
                             <input
                               type="text"
@@ -1757,7 +1757,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                                 updateData('plans', plans);
                               }}
                               placeholder="luna"
-                              className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                              className="px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                             />
                           </div>
                           <div className="flex items-center justify-between">
@@ -1792,7 +1792,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                               }}
                               placeholder="Caracteristica 1&#10;Caracteristica 2&#10;..."
                               rows={3}
-                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-sm focus:ring-1 focus:ring-blue-500"
                             />
                           </div>
                         </div>
@@ -1846,7 +1846,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     type="color"
                     value={block.settings?.backgroundColor || '#ffffff'}
                     onChange={(e) => updateSettings('backgroundColor', e.target.value)}
-                    className="w-12 h-10 p-1 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-10 p-1 border border-gray-300 rounded-sm cursor-pointer"
                   />
                   <input
                     type="text"
@@ -1864,7 +1864,7 @@ const BlockSettings = ({ block, onUpdate, onClose }) => {
                     type="color"
                     value={block.settings?.textColor || '#1f2937'}
                     onChange={(e) => updateSettings('textColor', e.target.value)}
-                    className="w-12 h-10 p-1 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-10 p-1 border border-gray-300 rounded-sm cursor-pointer"
                   />
                   <input
                     type="text"

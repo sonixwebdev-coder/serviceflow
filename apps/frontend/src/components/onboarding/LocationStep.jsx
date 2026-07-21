@@ -178,7 +178,7 @@ const LocationStep = ({ onNext, onBack, isSaving }) => {
                     type="checkbox"
                     checked={dayHours.isOpen}
                     onChange={(e) => handleHoursChange(key, 'isOpen', e.target.checked)}
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                    className="rounded-sm border-gray-300 text-primary focus:ring-primary"
                   />
                   <span className="text-sm text-gray-700">{label}</span>
                 </label>

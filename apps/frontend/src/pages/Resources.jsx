@@ -109,7 +109,7 @@ const Resources = () => {
         </div>
         <button
           onClick={() => setIsCreating(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-primary/90 transition-all hover:shadow-md"
         >
           <Plus size={16} />
           Adauga {resourceSingular.toLowerCase()}
@@ -125,7 +125,7 @@ const Resources = () => {
             placeholder={`Cauta ${resourcePlural.toLowerCase()} dupa nume, tip...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
       </div>
@@ -195,7 +195,7 @@ const Resources = () => {
                   type="checkbox"
                   checked={resourceForm.isActive}
                   onChange={(e) => setResourceForm({ ...resourceForm, isActive: e.target.checked })}
-                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  className="w-4 h-4 text-primary border-gray-300 rounded-sm focus:ring-primary"
                 />
                 <span className="ml-2 text-sm text-gray-700">Active</span>
               </label>

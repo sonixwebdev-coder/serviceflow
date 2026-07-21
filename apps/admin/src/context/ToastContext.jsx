@@ -66,13 +66,13 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2 pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-100 flex w-full max-w-sm flex-col gap-2 pointer-events-none">
         {toasts.map((toast) => {
           const Icon = ICONS[toast.type] || ICONS.info;
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto animate-slide-in-right rounded-xl border px-4 py-3 shadow-xl backdrop-blur-sm transition-all ${TYPE_CLASSES[toast.type] || TYPE_CLASSES.info}`}
+              className={`pointer-events-auto animate-slide-in-right rounded-xl border px-4 py-3 shadow-xl backdrop-blur-xs transition-all ${TYPE_CLASSES[toast.type] || TYPE_CLASSES.info}`}
             >
               <div className="flex items-start gap-3">
                 <Icon

@@ -102,7 +102,7 @@ export default function SupportTicketDetail() {
       </div>
 
       {/* Messages */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-xs">
         <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto p-4 space-y-3">
           {ticket.messages?.map((msg) => {
             const isOrgUser = msg.authorType === 'ORG_USER';

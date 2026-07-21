@@ -142,7 +142,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
       >
         {/* Form - takes more space */}
         <div className={hasContactInfo ? 'lg:col-span-3' : ''}>
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900">Trimite-ne un mesaj</h3>
               <p className="text-sm text-gray-500 mt-1">
@@ -164,7 +164,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
                         required={field.required}
                         value={formData[field.key] || ''}
                         onChange={(e) => handleChange(field.key, e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden transition-shadow"
                         onFocus={inputFocusStyle}
                         onBlur={inputBlurStyle}
                       />
@@ -186,7 +186,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
                         value={formData[field.key] || ''}
                         onChange={(e) => handleChange(field.key, e.target.value)}
                         rows={4}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow resize-none"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden transition-shadow resize-none"
                         onFocus={inputFocusStyle}
                         onBlur={inputBlurStyle}
                       />
@@ -195,7 +195,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
                         required={field.required}
                         value={formData[field.key] || ''}
                         onChange={(e) => handleChange(field.key, e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden transition-shadow"
                         onFocus={inputFocusStyle}
                         onBlur={inputBlurStyle}
                       >
@@ -212,7 +212,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
                         required={field.required}
                         value={formData[field.key] || ''}
                         onChange={(e) => handleChange(field.key, e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none transition-shadow"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-hidden transition-shadow"
                         onFocus={inputFocusStyle}
                         onBlur={inputBlurStyle}
                       />
@@ -253,7 +253,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
             {showPhone && resolvedContactInfo.phone && (
               <div className="flex items-center gap-4">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${primaryColor}15` }}
                 >
                   <Phone className="h-5 w-5" style={{ color: primaryColor }} />
@@ -273,7 +273,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
             {resolvedContactInfo.email && (
               <div className="flex items-center gap-4">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${primaryColor}15` }}
                 >
                   <Mail className="h-5 w-5" style={{ color: primaryColor }} />
@@ -293,7 +293,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
             {showAddress && resolvedContactInfo.address && (
               <div className="flex items-start gap-4">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${primaryColor}15` }}
                 >
                   <MapPin className="h-5 w-5" style={{ color: primaryColor }} />
@@ -308,7 +308,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
             {resolvedContactInfo.schedule && (
               <div className="flex items-start gap-4">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
                   style={{ backgroundColor: `${primaryColor}15` }}
                 >
                   <Clock className="h-5 w-5" style={{ color: primaryColor }} />
@@ -324,7 +324,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
 
             {/* Map embed */}
             {showMap && resolvedContactInfo.address && (
-              <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200">
+              <div className="rounded-xl overflow-hidden shadow-xs border border-gray-200">
                 <iframe
                   src={getMapEmbedUrl(resolvedContactInfo.address)}
                   className="w-full h-[200px]"
@@ -347,7 +347,7 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
 
           {/* Map for first location */}
           {showMap && (
-            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200 mb-6">
+            <div className="rounded-xl overflow-hidden shadow-xs border border-gray-200 mb-6">
               <iframe
                 src={getMapEmbedUrl(
                   [locations[0].address, locations[0].city, locations[0].county]
@@ -370,13 +370,10 @@ export default function ContactFormBlock({ data, subdomain, branding, organizati
             {locations.map((location, index) => (
               <div
                 key={location.id || index}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                className="bg-white rounded-xl shadow-xs border border-gray-200 p-6"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <MapPin
-                    className="h-5 w-5 flex-shrink-0 mt-0.5"
-                    style={{ color: primaryColor }}
-                  />
+                  <MapPin className="h-5 w-5 shrink-0 mt-0.5" style={{ color: primaryColor }} />
                   <div>
                     <h4 className="font-semibold text-gray-900">{location.name}</h4>
                     {location.address && (

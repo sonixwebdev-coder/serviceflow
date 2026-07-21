@@ -6,7 +6,7 @@ import useToast from '../context/useToast';
 
 const ServiceCard = ({ service, onEdit, onDelete, isDeleting }) => {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm transition hover:shadow-md overflow-hidden">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-xs transition hover:shadow-md overflow-hidden">
       {service.image && (
         <div className="h-40 w-full overflow-hidden bg-gray-100">
           <img
@@ -112,7 +112,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
               placeholder="ex: Consultanta IT"
               required
             />
@@ -123,7 +123,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
               placeholder="Descriere scurta a serviciului"
               rows={3}
               maxLength={500}
@@ -137,7 +137,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
                 type="text"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 placeholder="ex: 150 RON"
               />
             </div>
@@ -148,7 +148,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
                 type="text"
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 placeholder="ex: 60 min"
               />
             </div>
@@ -165,7 +165,7 @@ const ServiceModal = ({ service, onClose, onSave, isSaving }) => {
               type="text"
               value={formData.image}
               onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
               placeholder="https://exemplu.com/imagine.jpg"
             />
           </div>
@@ -307,7 +307,7 @@ const Services = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cauta servicii..."
-          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
         />
       </div>
 

@@ -152,7 +152,7 @@ function WidgetToggle({ widgetId, visible, onToggle }) {
       onClick={() => onToggle(widgetId)}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition ${
         visible
-          ? 'bg-primary/5 border-primary text-primary'
+          ? 'rbc-selected-cell border-primary text-primary'
           : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
       }`}
     >

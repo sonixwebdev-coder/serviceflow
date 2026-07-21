@@ -1,6 +1,509 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+  --color-primary-950: #1e1b4b;
+  --color-primary: #4f46e5;
+
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+  --color-accent-800: #92400e;
+  --color-accent-900: #78350f;
+  --color-accent: #f59e0b;
+
+  --color-secondary: #1e293b;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility rbc-calendar {
+  /* ========================
+     React Big Calendar Styles
+     ======================== */
+  @apply rounded-xl bg-white font-sans;
+}
+
+@utility rbc-toolbar {
+  /* Toolbar */
+  @apply mb-5 flex flex-wrap items-center justify-between gap-3 px-1;
+
+  & button {
+    @apply rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300;
+  }
+
+  & button:active {
+    @apply border-primary bg-primary/10 text-primary shadow-xs;
+  }
+
+  & button.rbc-active {
+    @apply border-primary bg-primary/10 text-primary shadow-xs;
+  }
+}
+
+@utility rbc-toolbar-label {
+  @apply text-lg font-semibold text-gray-900 capitalize;
+}
+
+@utility rbc-btn-group {
+  @apply flex gap-1;
+}
+
+@utility rbc-active {
+  .rbc-toolbar button& {
+    @apply border-primary bg-primary/10 text-primary shadow-xs;
+  }
+}
+
+@utility rbc-header {
+  /* Header row (day names) */
+  @apply border-b-0 bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-gray-500;
+
+  & + & {
+    @apply border-l-0;
+  }
+}
+
+@utility rbc-today {
+  /* Today highlight */
+  @apply bg-orange-50/50;
+}
+
+@utility rbc-off-range-bg {
+  @apply bg-gray-50/50;
+}
+
+@utility rbc-month-view {
+  /* ========================
+     Month View
+     ======================== */
+  @apply border border-gray-200 rounded-xl overflow-hidden;
+}
+
+@utility rbc-month-row {
+  @apply border-b border-gray-100;
+  min-height: 120px;
+
+  &:last-child {
+    @apply border-b-0;
+  }
+}
+
+@utility rbc-day-bg {
+  @apply border-r border-gray-100 transition-colors;
+
+  &:last-child {
+    @apply border-r-0;
+  }
+
+  &:hover {
+    @apply bg-gray-50/50;
+  }
+}
+
+@utility rbc-date-cell {
+  @apply px-2 py-1.5 text-right;
+
+  & > a {
+    @apply text-sm font-medium text-gray-600 hover:text-gray-900;
+  }
+
+  &.rbc-now > a {
+    @apply text-primary font-bold;
+  }
+
+  &.rbc-off-range > a {
+    @apply text-gray-400;
+  }
+}
+
+@utility rbc-now {
+  &.rbc-date-cell > a {
+    @apply text-primary font-bold;
+  }
+}
+
+@utility rbc-off-range {
+  &.rbc-date-cell > a {
+    @apply text-gray-400;
+  }
+}
+
+@utility rbc-time-view {
+  /* ========================
+     Week/Day View
+     ======================== */
+  @apply border border-gray-200 rounded-xl overflow-hidden;
+}
+
+@utility rbc-time-header {
+  @apply border-b border-gray-200 bg-gray-50/50;
+}
+
+@utility rbc-time-header-content {
+  @apply border-l border-gray-200;
+
+  &:first-child {
+    @apply border-l-0;
+  }
+}
+
+@utility rbc-allday-cell {
+  @apply bg-white;
+}
+
+@utility rbc-time-content {
+  @apply border-t-0;
+}
+
+@utility rbc-time-gutter {
+  @apply bg-gray-50/50;
+}
+
+@utility rbc-label {
+  @apply px-3 py-0 text-xs font-medium text-gray-500;
+}
+
+@utility rbc-timeslot-group {
+  @apply border-b border-gray-100;
+  min-height: 60px;
+}
+
+@utility rbc-time-slot {
+  @apply border-t border-gray-50;
+
+  .rbc-day-slot & {
+    @apply border-t border-gray-100/50;
+  }
+}
+
+@utility rbc-day-slot {
+  & .rbc-time-slot {
+    @apply border-t border-gray-100/50;
+  }
+
+  & .rbc-events-container {
+    @apply mr-2;
+  }
+}
+
+@utility rbc-events-container {
+  .rbc-day-slot & {
+    @apply mr-2;
+  }
+}
+
+@utility rbc-current-time-indicator {
+  @apply h-0.5 bg-primary;
+
+  &::before {
+    content: '';
+    @apply absolute -left-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-primary;
+  }
+}
+
+@utility rbc-event {
+  /* ========================
+     Events
+     ======================== */
+  @apply cursor-pointer rounded-lg border-l-4 border-l-current bg-white px-2.5 py-1.5 text-xs font-medium shadow-xs transition-all;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+
+  &:hover {
+    @apply shadow-md scale-[1.02];
+  }
+
+  &:focus {
+    @apply outline-hidden ring-2 ring-primary ring-offset-1;
+  }
+
+  &.rbc-selected {
+    @apply ring-2 ring-primary ring-offset-1;
+  }
+
+  /* Status colors - left border style */
+  &.status-pending {
+    @apply border-l-yellow-500 bg-yellow-50 text-yellow-900;
+  }
+
+  &.status-prezentat {
+    @apply border-l-blue-500 bg-blue-50 text-blue-900;
+  }
+
+  &.status-in-progress {
+    @apply border-l-amber-500 bg-amber-50 text-amber-900;
+  }
+
+  &.status-in_progress {
+    @apply border-l-amber-500 bg-amber-50 text-amber-900;
+  }
+
+  &.status-completed {
+    @apply border-l-emerald-500 bg-emerald-50 text-emerald-900;
+  }
+
+  &.status-cancelled {
+    @apply border-l-red-500 bg-red-50 text-red-900;
+  }
+
+  &.status-unknown {
+    @apply border-l-gray-400 bg-gray-50 text-gray-700;
+  }
+
+  /* Month view events (compact) */
+  .rbc-row-segment & {
+    @apply py-0 px-1.5;
+    margin-bottom: 1px;
+  }
+
+  &.is-selected {
+    @apply ring-2 ring-primary ring-offset-1;
+  }
+
+  .rbc-overlay > & {
+    @apply mb-2;
+  }
+}
+
+@utility rbc-selected {
+  &.rbc-event {
+    @apply ring-2 ring-primary ring-offset-1;
+  }
+}
+
+@utility rbc-event-label {
+  @apply text-[10px] font-normal opacity-80 block mb-0.5;
+}
+
+@utility rbc-event-content {
+  @apply truncate text-xs font-semibold;
+
+  .rbc-row-segment & {
+    @apply text-[11px];
+  }
+}
+
+@utility status-pending {
+  /* Status colors - left border style */
+  &.rbc-event {
+    @apply border-l-yellow-500 bg-yellow-50 text-yellow-900;
+  }
+}
+
+@utility status-prezentat {
+  &.rbc-event {
+    @apply border-l-blue-500 bg-blue-50 text-blue-900;
+  }
+}
+
+@utility status-in-progress {
+  &.rbc-event {
+    @apply border-l-amber-500 bg-amber-50 text-amber-900;
+  }
+}
+
+@utility status-in_progress {
+  &.rbc-event {
+    @apply border-l-amber-500 bg-amber-50 text-amber-900;
+  }
+}
+
+@utility status-completed {
+  &.rbc-event {
+    @apply border-l-emerald-500 bg-emerald-50 text-emerald-900;
+  }
+}
+
+@utility status-cancelled {
+  &.rbc-event {
+    @apply border-l-red-500 bg-red-50 text-red-900;
+  }
+}
+
+@utility status-unknown {
+  &.rbc-event {
+    @apply border-l-gray-400 bg-gray-50 text-gray-700;
+  }
+}
+
+@utility rbc-row-segment {
+  /* Month view events (compact) */
+  & .rbc-event {
+    @apply py-0 px-1.5;
+    margin-bottom: 1px;
+  }
+
+  & .rbc-event-content {
+    @apply text-[11px];
+  }
+}
+
+@utility rbc-row-content {
+  @apply gap-0;
+}
+
+@utility is-selected {
+  &.rbc-event {
+    @apply ring-2 ring-primary ring-offset-1;
+  }
+}
+
+@utility rbc-show-more {
+  /* Show more link */
+  @apply cursor-pointer text-xs font-medium text-primary hover:text-orange-700 hover:underline px-2 py-1;
+}
+
+@utility rbc-overlay {
+  /* Overlay (popup for more events) */
+  @apply z-50 min-w-64 rounded-xl border border-gray-200 bg-white p-4 shadow-xl;
+
+  & > .rbc-event {
+    @apply mb-2;
+  }
+}
+
+@utility rbc-overlay-header {
+  @apply mb-3 border-b border-gray-100 pb-2 text-sm font-semibold text-gray-900;
+}
+
+@utility rbc-selected-cell {
+  /* Selected cell */
+  @apply bg-primary/5;
+}
+
+@utility rbc-agenda-view {
+  /* ========================
+     Agenda View
+     ======================== */
+  @apply border border-gray-200 rounded-xl overflow-hidden;
+}
+
+@utility rbc-agenda-table {
+  @apply w-full;
+
+  & thead {
+    @apply bg-gray-50;
+  }
+
+  & th {
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500;
+  }
+
+  & td {
+    @apply px-4 py-3 text-sm text-gray-700 border-t border-gray-100;
+  }
+}
+
+@utility rbc-agenda-date-cell {
+  @apply font-medium text-gray-900;
+}
+
+@utility rbc-agenda-time-cell {
+  @apply text-gray-500;
+}
+
+@utility rbc-agenda-event-cell {
+  @apply font-medium;
+}
+
+@utility card-hover {
+  /* ========================
+     Custom Utility Classes
+     ======================== */
+
+  /* Card hover effect */
+  @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+}
+
+@utility status-pill {
+  /* Status pill styles */
+  @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+}
+
+@utility page-header {
+  /* Page header pattern */
+  @apply mb-6;
+}
+
+@utility page-title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+@utility page-subtitle {
+  @apply mt-1 text-sm text-gray-500;
+}
+
+@utility filter-bar {
+  /* Filter bar pattern */
+  @apply flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-xs mb-4;
+}
+
+@utility filter-pill {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-50 cursor-pointer;
+
+  &.active {
+    @apply border-primary bg-primary/10 text-primary;
+  }
+}
+
+@utility active {
+  &.filter-pill {
+    @apply border-primary bg-primary/10 text-primary;
+  }
+}
+
+@utility empty-state {
+  /* Empty state pattern */
+  @apply flex flex-col items-center justify-center py-12 text-center;
+}
+
+@utility empty-state-icon {
+  @apply mb-4 h-12 w-12 text-gray-300;
+}
+
+@utility empty-state-title {
+  @apply text-lg font-medium text-gray-900;
+}
+
+@utility empty-state-text {
+  @apply mt-1 text-sm text-gray-500;
+}
 
 @layer base {
   body {
@@ -11,349 +514,5 @@
 
   .margin-top-zero {
     margin-top: 0 !important;
-  }
-}
-
-@layer components {
-  /* ========================
-     React Big Calendar Styles
-     ======================== */
-
-  .rbc-calendar {
-    @apply rounded-xl bg-white font-sans;
-  }
-
-  /* Toolbar */
-  .rbc-toolbar {
-    @apply mb-5 flex flex-wrap items-center justify-between gap-3 px-1;
-  }
-
-  .rbc-toolbar-label {
-    @apply text-lg font-semibold text-gray-900 capitalize;
-  }
-
-  .rbc-btn-group {
-    @apply flex gap-1;
-  }
-
-  .rbc-toolbar button {
-    @apply rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300;
-  }
-
-  .rbc-toolbar button:active,
-  .rbc-toolbar button.rbc-active {
-    @apply border-primary bg-primary/10 text-primary shadow-sm;
-  }
-
-  /* Header row (day names) */
-  .rbc-header {
-    @apply border-b-0 bg-transparent py-3 text-xs font-semibold uppercase tracking-wider text-gray-500;
-  }
-
-  .rbc-header + .rbc-header {
-    @apply border-l-0;
-  }
-
-  /* Today highlight */
-  .rbc-today {
-    @apply bg-orange-50/50;
-  }
-
-  .rbc-off-range-bg {
-    @apply bg-gray-50/50;
-  }
-
-  /* ========================
-     Month View
-     ======================== */
-  .rbc-month-view {
-    @apply border border-gray-200 rounded-xl overflow-hidden;
-  }
-
-  .rbc-month-row {
-    @apply border-b border-gray-100;
-    min-height: 120px;
-  }
-
-  .rbc-month-row:last-child {
-    @apply border-b-0;
-  }
-
-  .rbc-day-bg {
-    @apply border-r border-gray-100 transition-colors;
-  }
-
-  .rbc-day-bg:last-child {
-    @apply border-r-0;
-  }
-
-  .rbc-day-bg:hover {
-    @apply bg-gray-50/50;
-  }
-
-  .rbc-date-cell {
-    @apply px-2 py-1.5 text-right;
-  }
-
-  .rbc-date-cell > a {
-    @apply text-sm font-medium text-gray-600 hover:text-gray-900;
-  }
-
-  .rbc-date-cell.rbc-now > a {
-    @apply text-primary font-bold;
-  }
-
-  .rbc-date-cell.rbc-off-range > a {
-    @apply text-gray-400;
-  }
-
-  /* ========================
-     Week/Day View
-     ======================== */
-  .rbc-time-view {
-    @apply border border-gray-200 rounded-xl overflow-hidden;
-  }
-
-  .rbc-time-header {
-    @apply border-b border-gray-200 bg-gray-50/50;
-  }
-
-  .rbc-time-header-content {
-    @apply border-l border-gray-200;
-  }
-
-  .rbc-time-header-content:first-child {
-    @apply border-l-0;
-  }
-
-  .rbc-allday-cell {
-    @apply bg-white;
-  }
-
-  .rbc-time-content {
-    @apply border-t-0;
-  }
-
-  .rbc-time-gutter {
-    @apply bg-gray-50/50;
-  }
-
-  .rbc-label {
-    @apply px-3 py-0 text-xs font-medium text-gray-500;
-  }
-
-  .rbc-timeslot-group {
-    @apply border-b border-gray-100;
-    min-height: 60px;
-  }
-
-  .rbc-time-slot {
-    @apply border-t border-gray-50;
-  }
-
-  .rbc-day-slot .rbc-time-slot {
-    @apply border-t border-gray-100/50;
-  }
-
-  .rbc-day-slot .rbc-events-container {
-    @apply mr-2;
-  }
-
-  .rbc-current-time-indicator {
-    @apply h-0.5 bg-primary;
-  }
-
-  .rbc-current-time-indicator::before {
-    content: '';
-    @apply absolute -left-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-primary;
-  }
-
-  /* ========================
-     Events
-     ======================== */
-  .rbc-event {
-    @apply cursor-pointer rounded-lg border-l-4 border-l-current bg-white px-2.5 py-1.5 text-xs font-medium shadow-sm transition-all;
-    border-top: none;
-    border-right: none;
-    border-bottom: none;
-  }
-
-  .rbc-event:hover {
-    @apply shadow-md scale-[1.02];
-  }
-
-  .rbc-event:focus {
-    @apply outline-none ring-2 ring-primary ring-offset-1;
-  }
-
-  .rbc-event.rbc-selected {
-    @apply ring-2 ring-primary ring-offset-1;
-  }
-
-  .rbc-event-label {
-    @apply text-[10px] font-normal opacity-80 block mb-0.5;
-  }
-
-  .rbc-event-content {
-    @apply truncate text-xs font-semibold;
-  }
-
-  /* Status colors - left border style */
-  .rbc-event.status-pending {
-    @apply border-l-yellow-500 bg-yellow-50 text-yellow-900;
-  }
-
-  .rbc-event.status-prezentat {
-    @apply border-l-blue-500 bg-blue-50 text-blue-900;
-  }
-
-  .rbc-event.status-in-progress,
-  .rbc-event.status-in_progress {
-    @apply border-l-amber-500 bg-amber-50 text-amber-900;
-  }
-
-  .rbc-event.status-completed {
-    @apply border-l-emerald-500 bg-emerald-50 text-emerald-900;
-  }
-
-  .rbc-event.status-cancelled {
-    @apply border-l-red-500 bg-red-50 text-red-900;
-  }
-
-  .rbc-event.status-unknown {
-    @apply border-l-gray-400 bg-gray-50 text-gray-700;
-  }
-
-  /* Month view events (compact) */
-  .rbc-row-segment .rbc-event {
-    @apply py-0 px-1.5;
-    margin-bottom: 1px;
-  }
-
-  .rbc-row-segment .rbc-event-content {
-    @apply text-[11px];
-  }
-
-  .rbc-row-content {
-    @apply gap-0;
-  }
-
-  .rbc-event.is-selected {
-    @apply ring-2 ring-primary ring-offset-1;
-  }
-
-  /* Show more link */
-  .rbc-show-more {
-    @apply cursor-pointer text-xs font-medium text-primary hover:text-orange-700 hover:underline px-2 py-1;
-  }
-
-  /* Overlay (popup for more events) */
-  .rbc-overlay {
-    @apply z-50 min-w-64 rounded-xl border border-gray-200 bg-white p-4 shadow-xl;
-  }
-
-  .rbc-overlay-header {
-    @apply mb-3 border-b border-gray-100 pb-2 text-sm font-semibold text-gray-900;
-  }
-
-  .rbc-overlay > .rbc-event {
-    @apply mb-2;
-  }
-
-  /* Selected cell */
-  .rbc-selected-cell {
-    @apply bg-primary/5;
-  }
-
-  /* ========================
-     Agenda View
-     ======================== */
-  .rbc-agenda-view {
-    @apply border border-gray-200 rounded-xl overflow-hidden;
-  }
-
-  .rbc-agenda-table {
-    @apply w-full;
-  }
-
-  .rbc-agenda-table thead {
-    @apply bg-gray-50;
-  }
-
-  .rbc-agenda-table th {
-    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500;
-  }
-
-  .rbc-agenda-table td {
-    @apply px-4 py-3 text-sm text-gray-700 border-t border-gray-100;
-  }
-
-  .rbc-agenda-date-cell {
-    @apply font-medium text-gray-900;
-  }
-
-  .rbc-agenda-time-cell {
-    @apply text-gray-500;
-  }
-
-  .rbc-agenda-event-cell {
-    @apply font-medium;
-  }
-
-  /* ========================
-     Custom Utility Classes
-     ======================== */
-
-  /* Card hover effect */
-  .card-hover {
-    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
-  }
-
-  /* Status pill styles */
-  .status-pill {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
-  }
-
-  /* Page header pattern */
-  .page-header {
-    @apply mb-6;
-  }
-
-  .page-title {
-    @apply text-2xl font-bold text-gray-900;
-  }
-
-  .page-subtitle {
-    @apply mt-1 text-sm text-gray-500;
-  }
-
-  /* Filter bar pattern */
-  .filter-bar {
-    @apply flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm mb-4;
-  }
-
-  .filter-pill {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-50 cursor-pointer;
-  }
-
-  .filter-pill.active {
-    @apply border-primary bg-primary/10 text-primary;
-  }
-
-  /* Empty state pattern */
-  .empty-state {
-    @apply flex flex-col items-center justify-center py-12 text-center;
-  }
-
-  .empty-state-icon {
-    @apply mb-4 h-12 w-12 text-gray-300;
-  }
-
-  .empty-state-title {
-    @apply text-lg font-medium text-gray-900;
-  }
-
-  .empty-state-text {
-    @apply mt-1 text-sm text-gray-500;
   }
 }

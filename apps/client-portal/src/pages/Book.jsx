@@ -428,7 +428,7 @@ export default function Book() {
                       <div className="flex items-start gap-3">
                         <MapPin
                           className={cn(
-                            'h-5 w-5 mt-0.5 flex-shrink-0',
+                            'h-5 w-5 mt-0.5 shrink-0',
                             formData.selectedLocation?.id === location.id
                               ? 'text-primary-600'
                               : 'text-gray-400'
@@ -662,7 +662,7 @@ export default function Book() {
                           onChange={(e) =>
                             updateNestedFormData('device', 'deviceType', e.target.value)
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         >
                           <option value="">Selecteaza...</option>
                           <option value="Telefon">Telefon</option>
@@ -699,7 +699,7 @@ export default function Book() {
                           onChange={(e) =>
                             updateNestedFormData('device', 'condition', e.target.value)
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         >
                           <option value="">Selecteaza...</option>
                           <option value="Functional">Functional</option>
@@ -737,7 +737,7 @@ export default function Book() {
                           updateNestedFormData('device', 'problemDescription', e.target.value)
                         }
                         placeholder="Descrieti problema dispozitivului..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent min-h-[80px]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent min-h-[80px]"
                       />
                     </div>
                     <div>
@@ -888,7 +888,7 @@ export default function Book() {
                       type="checkbox"
                       checked={formData.acceptedTerms}
                       onChange={(e) => updateFormData('acceptedTerms', e.target.checked)}
-                      className="w-4 h-4 mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      className="w-4 h-4 mt-0.5 rounded-sm border-gray-300 text-primary-600 focus:ring-primary-500"
                     />
                     <span className="text-sm text-gray-700">
                       Am citit si sunt de acord cu{' '}
@@ -916,7 +916,7 @@ export default function Book() {
                       type="checkbox"
                       checked={formData.createAccount}
                       onChange={(e) => updateFormData('createAccount', e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      className="w-4 h-4 rounded-sm border-gray-300 text-primary-600 focus:ring-primary-500"
                     />
                     <span className="text-sm text-gray-700">
                       Vreau sa imi creez un cont pentru a-mi urmari programarile

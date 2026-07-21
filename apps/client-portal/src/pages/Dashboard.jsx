@@ -94,7 +94,7 @@ export default function Dashboard() {
             </div>
           ) : upcomingAppointments?.length === 0 ? (
             <div className="empty-state py-8">
-              <Calendar className="empty-state-icon !h-10 !w-10 !mb-2" />
+              <Calendar className="empty-state-icon h-10! w-10! mb-2!" />
               <p className="empty-state-title text-base">Nu exista programari viitoare</p>
             </div>
           ) : (

@@ -71,7 +71,7 @@ const TeamGridBlock = ({ data, settings, isEditing = false, onClick, crmData = [
             displayMembers.map((member, index) => (
               <div
                 key={member.id || index}
-                className="bg-white rounded-lg border shadow-sm text-center p-6"
+                className="bg-white rounded-lg border shadow-xs text-center p-6"
               >
                 {/* Avatar */}
                 <div className="mx-auto w-32 h-32 rounded-full overflow-hidden mb-4 bg-gray-100">

@@ -143,7 +143,7 @@ export default function ImagePreviewModal({ isOpen, onClose, src, alt, fileName 
       onClick={handleBackdropClick}
     >
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-linear-to-b from-black/50 to-transparent">
         <div className="text-white">
           {fileName && <p className="text-sm font-medium truncate max-w-md">{fileName}</p>}
         </div>

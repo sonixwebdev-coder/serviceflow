@@ -44,7 +44,7 @@ export default function PaymentCard({ data, isLoading }) {
         : 0;
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-5 relative overflow-hidden h-full">
+    <div className="bg-linear-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-5 relative overflow-hidden h-full">
       <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 rounded-full -mr-16 -mt-16"></div>
 
       <div className="relative">

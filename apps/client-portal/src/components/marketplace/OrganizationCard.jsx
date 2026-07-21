@@ -11,7 +11,7 @@ export default function OrganizationCard({ org, basePath = '/marketplace' }) {
       <div className="relative h-full bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-gray-300 hover:-translate-y-0.5">
         {/* Colored top accent bar */}
         <div
-          className={`h-1.5 bg-gradient-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}
+          className={`h-1.5 bg-linear-to-r ${sector?.gradient || 'from-primary-500 to-primary-600'}`}
         />
 
         <div className="p-5">
@@ -45,13 +45,13 @@ export default function OrganizationCard({ org, basePath = '/marketplace' }) {
           <div className="mt-3 flex flex-col gap-2">
             {org.city && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
-                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
                 {org.city}
               </div>
             )}
             {org.serviceCount > 0 && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
+                <Briefcase className="h-3.5 w-3.5 shrink-0" />
                 {org.serviceCount} {org.serviceCount === 1 ? 'serviciu' : 'servicii'}
               </div>
             )}

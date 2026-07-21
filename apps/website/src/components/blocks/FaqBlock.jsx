@@ -35,7 +35,7 @@ export default function FaqBlock({ data, branding }) {
             return (
               <div
                 key={index}
-                className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-shadow hover:shadow-sm"
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-shadow hover:shadow-xs"
               >
                 <button
                   onClick={() => toggleItem(index)}
@@ -44,7 +44,7 @@ export default function FaqBlock({ data, branding }) {
                   <span className="font-semibold text-gray-900 pr-4">{item.question}</span>
                   <ChevronDown
                     className={cn(
-                      'h-5 w-5 flex-shrink-0 transition-transform duration-200',
+                      'h-5 w-5 shrink-0 transition-transform duration-200',
                       isOpen ? 'rotate-180' : ''
                     )}
                     style={{ color: isOpen ? primaryColor : '#9ca3af' }}

@@ -33,14 +33,14 @@ export default function PublicLayout() {
               {isAuthenticated ? (
                 <Link
                   to="/dashboard"
-                  className="ml-2 text-sm font-semibold text-white bg-primary hover:bg-primary-700 px-4 py-2 rounded-xl transition-colors shadow-sm shadow-primary/25"
+                  className="ml-2 text-sm font-semibold text-white bg-primary hover:bg-primary-700 px-4 py-2 rounded-xl transition-colors shadow-xs shadow-primary/25"
                 >
                   Dashboard
                 </Link>
               ) : (
                 <Link
                   to="/login"
-                  className="ml-2 text-sm font-semibold text-white bg-primary hover:bg-primary-700 px-4 py-2 rounded-xl transition-colors shadow-sm shadow-primary/25"
+                  className="ml-2 text-sm font-semibold text-white bg-primary hover:bg-primary-700 px-4 py-2 rounded-xl transition-colors shadow-xs shadow-primary/25"
                 >
                   Autentificare
                 </Link>

@@ -47,7 +47,7 @@ const ForgotPassword = () => {
       {/* Main */}
       <div className="flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-8 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-8 shadow-xs">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold tracking-tight text-gray-900">Recuperare parola</h1>
               <p className="mt-2 text-sm text-gray-500">
@@ -95,7 +95,7 @@ const ForgotPassword = () => {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 focus:outline-hidden"
                       placeholder="ion.popescu@example.com"
                       disabled={loading}
                     />
@@ -104,7 +104,7 @@ const ForgotPassword = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Se trimite...' : 'Trimite link de resetare'}
                   </button>
@@ -133,7 +133,7 @@ const ForgotPassword = () => {
               href="https://anpc.ro/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+              className="inline-flex items-center rounded-sm border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
             >
               ANPC
             </a>
@@ -141,7 +141,7 @@ const ForgotPassword = () => {
               href="https://anpc.ro/ce-este-sal/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
+              className="inline-flex items-center rounded-sm border border-gray-300 px-2.5 py-1.5 font-medium transition hover:bg-gray-100 hover:text-gray-700"
             >
               SAL
             </a>

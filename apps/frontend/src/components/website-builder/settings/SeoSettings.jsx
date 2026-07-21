@@ -66,7 +66,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
   return (
     <div className="space-y-6">
       {/* Search Engine Preview */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Search className="h-5 w-5" />
@@ -91,7 +91,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Meta Title */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold">Titlu (Meta Title)</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -121,7 +121,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Meta Description */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold">Descriere (Meta Description)</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -151,7 +151,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Keywords */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold">Cuvinte cheie (Keywords)</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -201,7 +201,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Social Media Preview */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Share2 className="h-5 w-5" />
@@ -223,7 +223,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Canonical URL */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Link2 className="h-5 w-5" />
@@ -246,7 +246,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Robots Meta */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -262,7 +262,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
               type="checkbox"
               checked={localSeo.robotsIndex}
               onChange={(e) => handleChange('robotsIndex', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded-sm border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
               <span className="text-sm font-medium text-gray-900">Permite indexarea</span>
@@ -276,7 +276,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
               type="checkbox"
               checked={localSeo.robotsFollow}
               onChange={(e) => handleChange('robotsFollow', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded-sm border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
               <span className="text-sm font-medium text-gray-900">
@@ -291,7 +291,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Custom Schema.org / JSON-LD */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Code className="h-5 w-5" />
@@ -320,7 +320,7 @@ const SeoSettings = ({ seoDefaults = {}, onChange, siteName = '', isLoading = fa
       </div>
 
       {/* Custom Head Code */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Code className="h-5 w-5" />

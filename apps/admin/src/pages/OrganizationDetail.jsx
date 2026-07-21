@@ -75,13 +75,13 @@ export default function OrganizationDetail() {
       <div className="flex items-start gap-3">
         <button
           onClick={() => navigate('/organizations')}
-          className="mt-1 flex-shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          className="mt-1 shrink-0 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-900 break-words">{org.name}</h1>
+            <h1 className="text-xl font-bold text-gray-900 wrap-break-word">{org.name}</h1>
             <StatusBadge status={org.status} />
             <PlanBadge plan={org.plan} />
             {org.planOverride && (
@@ -122,7 +122,7 @@ export default function OrganizationDetail() {
             {!editing && (
               <button
                 onClick={startEditing}
-                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 transition-colors"
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-primary-700 transition-colors"
               >
                 Editeaza
               </button>
@@ -170,7 +170,7 @@ export default function OrganizationDetail() {
       </div>
 
       {/* Details / Edit form */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm sm:p-6">
+      <div className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs sm:p-6">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-sm font-semibold text-gray-900">Detalii Organizatie</h3>
           {editing && (
@@ -178,7 +178,7 @@ export default function OrganizationDetail() {
               <button
                 onClick={handleSave}
                 disabled={updateMutation.isPending}
-                className="rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-primary-600 px-4 py-1.5 text-sm font-medium text-white shadow-xs hover:bg-primary-700 disabled:opacity-50 transition-colors"
               >
                 {updateMutation.isPending ? 'Se salveaza...' : 'Salveaza'}
               </button>
@@ -198,7 +198,7 @@ export default function OrganizationDetail() {
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
               >
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>
@@ -212,7 +212,7 @@ export default function OrganizationDetail() {
                 type="number"
                 value={form.maxUsers ?? ''}
                 onChange={(e) => setForm({ ...form, maxUsers: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
               />
             </FormField>
             <FormField label="Max Clienti">
@@ -220,7 +220,7 @@ export default function OrganizationDetail() {
                 type="number"
                 value={form.maxClients ?? ''}
                 onChange={(e) => setForm({ ...form, maxClients: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
               />
             </FormField>
             <FormField label="Max Programari">
@@ -228,7 +228,7 @@ export default function OrganizationDetail() {
                 type="number"
                 value={form.maxAppointments ?? ''}
                 onChange={(e) => setForm({ ...form, maxAppointments: e.target.value })}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
               />
             </FormField>
           </div>
@@ -288,7 +288,7 @@ function ActionBtn({ onClick, disabled, variant, icon: Icon, children }) {
 
 function MiniStatCard({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm">
+    <div className="flex items-center gap-3 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs">
       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100">
         <Icon className="h-4 w-4 text-gray-500" />
       </div>
@@ -314,7 +314,7 @@ function InfoField({ label, value, mono }) {
     <div>
       <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{label}</p>
       <p
-        className={`mt-0.5 break-words text-sm font-medium text-gray-900 ${mono ? 'break-all font-mono text-xs' : ''}`}
+        className={`mt-0.5 wrap-break-word text-sm font-medium text-gray-900 ${mono ? 'break-all font-mono text-xs' : ''}`}
       >
         {value}
       </p>

@@ -172,14 +172,14 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
           >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.08] border border-white/10 text-xs font-medium text-slate-300 mb-8">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/8 border border-white/10 text-xs font-medium text-slate-300 mb-8">
               <Sparkles className="h-3.5 w-3.5 text-accent" />
               Fara telefon, fara asteptare, fara hartii
             </div>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05]">
               Programeaza-te
               <br />
-              <span className="bg-gradient-to-r from-primary-400 to-accent bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-primary-400 to-accent bg-clip-text text-transparent">
                 in 30 de secunde.
               </span>
             </h1>
@@ -197,7 +197,7 @@ export default function Landing() {
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-medium text-slate-300 bg-white/[0.06] hover:bg-white/10 border border-white/10 rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-medium text-slate-300 bg-white/6 hover:bg-white/10 border border-white/10 rounded-xl transition-colors"
               >
                 Ai deja cont? Autentifica-te
               </Link>
@@ -304,10 +304,10 @@ export default function Landing() {
               <StaggerItem key={step.title}>
                 <div className="flex flex-col items-center text-center relative">
                   <div className="relative mb-6">
-                    <div className="h-20 w-20 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center relative z-10 group-hover:shadow-md transition-shadow">
+                    <div className="h-20 w-20 rounded-2xl bg-white border border-gray-200 shadow-xs flex items-center justify-center relative z-10 group-hover:shadow-md transition-shadow">
                       <step.icon className="h-8 w-8 text-primary" />
                     </div>
-                    <div className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center z-20 shadow-sm shadow-primary/30">
+                    <div className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center z-20 shadow-xs shadow-primary/30">
                       {i + 1}
                     </div>
                   </div>
@@ -322,7 +322,7 @@ export default function Landing() {
           <AnimatedSection className="mt-14 text-center" delay={0.3}>
             <Link
               to="/marketplace"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-sm shadow-primary/25 text-sm"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-xs shadow-primary/25 text-sm"
             >
               Incepe acum
               <ArrowRight className="h-4 w-4" />
@@ -352,7 +352,7 @@ export default function Landing() {
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 -mt-6 mb-10">
                 {businessFeatures.map((f) => (
                   <li key={f.text} className="flex items-center gap-2.5 text-slate-300 text-sm">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary-400 flex-shrink-0" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary-400 shrink-0" />
                     {f.text}
                   </li>
                 ))}
@@ -367,7 +367,7 @@ export default function Landing() {
                 </a>
                 <a
                   href={FRONTEND_URL}
-                  className="inline-flex items-center gap-2 px-6 py-3 border border-white/15 text-slate-300 font-medium rounded-xl hover:bg-white/[0.06] transition-colors text-sm"
+                  className="inline-flex items-center gap-2 px-6 py-3 border border-white/15 text-slate-300 font-medium rounded-xl hover:bg-white/6 transition-colors text-sm"
                 >
                   Afla mai multe
                 </a>
@@ -398,7 +398,7 @@ export default function Landing() {
                 },
               ].map((item) => (
                 <StaggerItem key={item.title}>
-                  <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm p-6 hover:bg-white/[0.06] transition-colors">
+                  <div className="rounded-2xl border border-white/8 bg-white/4 backdrop-blur-xs p-6 hover:bg-white/6 transition-colors">
                     <item.icon className="h-6 w-6 text-primary-400 mb-3" />
                     <p className="text-sm font-semibold text-white mb-1">{item.title}</p>
                     <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
@@ -424,7 +424,7 @@ export default function Landing() {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors text-sm shadow-sm shadow-primary/25"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors text-sm shadow-xs shadow-primary/25"
               >
                 Creeaza cont gratuit
                 <ArrowRight className="h-4 w-4" />

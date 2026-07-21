@@ -27,7 +27,7 @@ export default function FloatingChatMessages({
 }) {
   return (
     <>
-      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white p-4">
+      <div className="flex-1 overflow-y-auto bg-linear-to-b from-gray-50 to-white p-4">
         {messagesLoading ? (
           <div className="space-y-3">
             <MessageSkeleton isOwn={false} />
@@ -66,12 +66,12 @@ export default function FloatingChatMessages({
                     <div
                       className={`relative rounded-2xl px-4 py-2.5 text-sm ${
                         isOwn
-                          ? 'bg-primary text-white rounded-br-md shadow-sm'
-                          : 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5 rounded-bl-md'
+                          ? 'bg-primary text-white rounded-br-md shadow-xs'
+                          : 'bg-white text-gray-900 shadow-xs ring-1 ring-gray-900/5 rounded-bl-md'
                       } ${isPending ? 'opacity-70' : ''}`}
                     >
                       {message.body && (
-                        <p className="whitespace-pre-wrap break-words leading-relaxed">
+                        <p className="whitespace-pre-wrap wrap-break-word leading-relaxed">
                           {message.body}
                         </p>
                       )}
@@ -102,13 +102,13 @@ export default function FloatingChatMessages({
                             rel="noopener noreferrer"
                             className={`flex items-center gap-1.5 mt-1 text-xs underline ${isOwn ? 'text-white/80' : 'text-gray-600'}`}
                           >
-                            <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+                            <FileText className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate max-w-[160px]">{attachment.fileName}</span>
                           </a>
                         );
                       })}
                       {!message.body && !message.attachments?.length && (
-                        <p className="whitespace-pre-wrap break-words leading-relaxed opacity-70">
+                        <p className="whitespace-pre-wrap wrap-break-word leading-relaxed opacity-70">
                           Atașament
                         </p>
                       )}
@@ -150,7 +150,7 @@ export default function FloatingChatMessages({
               onChange={(event) => setBody(event.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Scrie un mesaj..."
-              className="max-h-24 min-h-[44px] w-full resize-none rounded-xl border-0 bg-gray-100 px-4 py-3 pr-12 text-sm placeholder-gray-500 transition-colors focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="max-h-24 min-h-[44px] w-full resize-none rounded-xl border-0 bg-gray-100 px-4 py-3 pr-12 text-sm placeholder-gray-500 transition-colors focus:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-primary/20"
               rows={1}
               disabled={isSending}
             />
@@ -159,7 +159,7 @@ export default function FloatingChatMessages({
             type="button"
             onClick={handleSend}
             disabled={!body.trim() || isSending}
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-xs transition-all hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
             title="Trimite"
           >
             <Send className={`h-4 w-4 ${isSending ? 'animate-pulse' : ''}`} />

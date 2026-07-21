@@ -51,9 +51,9 @@ function validateFields(form) {
 }
 
 const inputClass =
-  'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
+  'mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary';
 const inputErrorClass =
-  'mt-1 w-full rounded-lg border border-red-400 bg-red-50 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500';
+  'mt-1 w-full rounded-lg border border-red-400 bg-red-50 px-3 py-2 text-sm focus:border-red-500 focus:outline-hidden focus:ring-1 focus:ring-red-500';
 
 function LockedField({ label, value, hint }) {
   return (
@@ -337,16 +337,16 @@ const CompanySettings = () => {
       </div>
 
       {isLoading ? (
-        <div className="rounded-xl border border-gray-100 bg-white p-6 text-sm text-gray-500 shadow-sm">
+        <div className="rounded-xl border border-gray-100 bg-white p-6 text-sm text-gray-500 shadow-xs">
           Se incarca profilul companiei...
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
           {/* Logo Upload */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Logo companie</h2>
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 {logoPreview ? (
                   <div className="relative">
                     <div className="h-28 w-28 sm:h-32 sm:w-32 overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50">
@@ -417,7 +417,7 @@ const CompanySettings = () => {
           </div>
 
           {/* Identity fields - locked */}
-          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-gray-900">Date de identificare</h2>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
@@ -450,7 +450,7 @@ const CompanySettings = () => {
           {/* Editable registration number / CNP (if not set at signup) */}
           {((formState.entityType === 'SRL' && !formState.registrationNumber) ||
             (formState.entityType === 'PFA' && !formState.cnp)) && (
-            <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-5 shadow-sm">
+            <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-5 shadow-xs">
               <p className="text-xs font-medium text-amber-700 mb-3">
                 {formState.entityType === 'PFA'
                   ? 'CNP-ul nu a fost completat la inregistrare. Il poti adauga acum.'
@@ -488,7 +488,7 @@ const CompanySettings = () => {
           )}
 
           {/* Company Details - editable */}
-          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
             <h2 className="text-base font-semibold text-gray-900 mb-4">
               Detalii contact si facturare
             </h2>
@@ -566,7 +566,7 @@ const CompanySettings = () => {
                   onChange={(e) => handleChange('address', e.target.value)}
                   rows={3}
                   placeholder="Str. Exemplu nr. 1, Oras, Judet"
-                  className={`mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none`}
+                  className={`mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary resize-none`}
                 />
               </div>
 
@@ -619,7 +619,7 @@ const CompanySettings = () => {
                     id="tvaEnabled"
                     checked={formState.tvaEnabled === true || formState.tvaEnabled === 'true'}
                     onChange={(e) => handleChange('tvaEnabled', e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    className="mt-1 h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary"
                   />
                   <div>
                     <label htmlFor="tvaEnabled" className="block text-sm font-medium text-gray-700">
@@ -664,7 +664,7 @@ const CompanySettings = () => {
           </div>
 
           {/* Document notes */}
-          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Note documente generate</h2>
             <div className="space-y-4">
               <div>
@@ -675,7 +675,7 @@ const CompanySettings = () => {
                   value={formState.footerNote ?? ''}
                   onChange={(e) => handleChange('footerNote', e.target.value)}
                   rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary resize-none"
                 />
               </div>
               <div>
@@ -685,7 +685,7 @@ const CompanySettings = () => {
                   onChange={(e) => handleChange('gdprNote', e.target.value)}
                   rows={4}
                   placeholder="Explicati cum sunt stocate si procesate datele clientilor."
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary resize-none"
                 />
               </div>
               <div>
@@ -697,14 +697,14 @@ const CompanySettings = () => {
                   onChange={(e) => handleChange('additionalNote', e.target.value)}
                   rows={4}
                   placeholder="Orice text suplimentar de inclus pe documentele generate."
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary resize-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Invoice Numbering */}
-          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
             <h2 className="text-base font-semibold text-gray-900 mb-1">Numerotare facturi</h2>
             <p className="text-sm text-gray-500 mb-4">
               Configureaza formatul numerelor de factura.
@@ -729,7 +729,7 @@ const CompanySettings = () => {
                   }
                   maxLength={10}
                   placeholder="INV"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
@@ -739,7 +739,7 @@ const CompanySettings = () => {
                   onChange={(e) =>
                     setInvoiceSeq((prev) => ({ ...prev, separator: e.target.value }))
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 >
                   <option value="-">Linie ( - )</option>
                   <option value="/">Slash ( / )</option>
@@ -756,7 +756,7 @@ const CompanySettings = () => {
                   onChange={(e) =>
                     setInvoiceSeq((prev) => ({ ...prev, paddingDigits: Number(e.target.value) }))
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 >
                   {[3, 4, 5, 6, 7, 8].map((n) => (
                     <option key={n} value={n}>
@@ -773,7 +773,7 @@ const CompanySettings = () => {
                   onChange={(e) =>
                     setInvoiceSeq((prev) => ({ ...prev, includeYear: e.target.checked }))
                   }
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded-sm"
                 />
                 <label htmlFor="includeYear" className="text-sm font-medium text-gray-700">
                   Include anul in numar
@@ -793,7 +793,7 @@ const CompanySettings = () => {
                       startingNumber: Math.max(1, Number(e.target.value)),
                     }))
                   }
-                  className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full md:w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Daca ai deja 50 de facturi emise in alt sistem, seteaza 51. Se aplica pentru{' '}
@@ -806,7 +806,7 @@ const CompanySettings = () => {
                 type="button"
                 onClick={saveInvoiceSeq}
                 disabled={savingInvoiceSeq}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-xs text-sm font-medium text-white bg-primary hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
               >
                 {savingInvoiceSeq ? 'Se salveaza...' : 'Salveaza numerotarea'}
               </button>
@@ -814,7 +814,7 @@ const CompanySettings = () => {
           </div>
 
           {/* Export */}
-          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="text-base font-semibold text-gray-900">Exporta toate datele</h2>

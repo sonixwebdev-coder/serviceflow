@@ -18,7 +18,7 @@ export default function WebsiteHeader({
   const isActive = (page) => isWebsitePageActive(currentPath, subdomain, page);
 
   return (
-    <header className={cn('z-50 bg-white shadow-sm', settings.sticky ? 'sticky top-0' : '')}>
+    <header className={cn('z-50 bg-white shadow-xs', settings.sticky ? 'sticky top-0' : '')}>
       <nav aria-label="Navigatie principala" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between">
           <div className="flex items-center">

@@ -59,9 +59,9 @@ export default function LocationsMapBlock({ data, subdomain, branding }) {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
-              <div className="h-5 w-32 bg-gray-200 rounded mb-3" />
-              <div className="h-4 w-48 bg-gray-200 rounded mb-2" />
-              <div className="h-4 w-36 bg-gray-200 rounded" />
+              <div className="h-5 w-32 bg-gray-200 rounded-sm mb-3" />
+              <div className="h-4 w-48 bg-gray-200 rounded-sm mb-2" />
+              <div className="h-4 w-36 bg-gray-200 rounded-sm" />
             </div>
           ))}
         </div>
@@ -71,7 +71,7 @@ export default function LocationsMapBlock({ data, subdomain, branding }) {
         <div className="space-y-8">
           {/* Map + Cards Layout */}
           {showMap && locations.length > 0 && (
-            <div className="rounded-xl overflow-hidden shadow-sm border border-gray-200">
+            <div className="rounded-xl overflow-hidden shadow-xs border border-gray-200">
               <iframe
                 src={getMapEmbedUrl(locations[0])}
                 className="w-full h-[300px] md:h-[400px]"
@@ -88,13 +88,10 @@ export default function LocationsMapBlock({ data, subdomain, branding }) {
             {locations.map((location, index) => (
               <div
                 key={location.id || index}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                className="bg-white rounded-xl shadow-xs border border-gray-200 p-6"
               >
                 <div className="flex items-start gap-3 mb-4">
-                  <MapPin
-                    className="h-6 w-6 flex-shrink-0 mt-0.5"
-                    style={{ color: primaryColor }}
-                  />
+                  <MapPin className="h-6 w-6 shrink-0 mt-0.5" style={{ color: primaryColor }} />
                   <div>
                     <h3 className="font-semibold text-gray-900">{location.name}</h3>
                     {location.address && (

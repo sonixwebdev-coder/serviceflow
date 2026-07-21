@@ -12,7 +12,7 @@ const Toggle = ({ checked, onChange, label, description }) => (
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
         checked ? 'bg-blue-600' : 'bg-gray-200'
       }`}
     >
@@ -94,7 +94,7 @@ const HeaderFooterSettings = ({ theme = {}, onChange, isLoading = false }) => {
   return (
     <div className="space-y-6">
       {/* Header Settings */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <PanelTop className="h-5 w-5" />
@@ -136,7 +136,7 @@ const HeaderFooterSettings = ({ theme = {}, onChange, isLoading = false }) => {
       </div>
 
       {/* Footer Settings */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <PanelBottom className="h-5 w-5" />

@@ -64,7 +64,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
   return (
     <div className="space-y-6">
       {/* Search Engine Preview */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Search className="h-5 w-5" />
@@ -88,7 +88,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
       </div>
 
       {/* Meta Title */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold">Titlu (Meta Title)</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -118,7 +118,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
       </div>
 
       {/* Meta Description */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold">Descriere (Meta Description)</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -148,7 +148,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
       </div>
 
       {/* Keywords */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold">Cuvinte cheie (Keywords)</h3>
           <p className="text-sm text-gray-500 mt-1">
@@ -198,7 +198,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
       </div>
 
       {/* Social Media Preview */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Share2 className="h-5 w-5" />
@@ -220,7 +220,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
       </div>
 
       {/* Canonical URL */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Link2 className="h-5 w-5" />
@@ -242,7 +242,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
       </div>
 
       {/* Robots Meta */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -258,7 +258,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
               type="checkbox"
               checked={localSeo.robotsIndex}
               onChange={(e) => handleChange('robotsIndex', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded-sm border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
               <span className="text-sm font-medium text-gray-900">Permite indexarea</span>
@@ -272,7 +272,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
               type="checkbox"
               checked={localSeo.robotsFollow}
               onChange={(e) => handleChange('robotsFollow', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded-sm border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div>
               <span className="text-sm font-medium text-gray-900">
@@ -287,7 +287,7 @@ const PageSeoSettings = ({ pageSeo = {}, onSave, isLoading = false }) => {
       </div>
 
       {/* Custom Schema.org / JSON-LD */}
-      <div className="bg-white rounded-lg border shadow-sm">
+      <div className="bg-white rounded-lg border shadow-xs">
         <div className="p-6 border-b">
           <h3 className="font-semibold flex items-center gap-2">
             <Code className="h-5 w-5" />

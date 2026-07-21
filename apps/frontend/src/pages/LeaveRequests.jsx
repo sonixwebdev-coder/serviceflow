@@ -486,7 +486,7 @@ const LeaveRequests = () => {
             type="button"
             onClick={openRequestModal}
             disabled={!selectedDates.start || !selectedDates.end}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-primary/90 transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CalendarIcon size={16} />
             Trimite cerere
@@ -495,7 +495,7 @@ const LeaveRequests = () => {
             <button
               type="button"
               onClick={openMedicalLeaveModal}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-all hover:shadow-md"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-blue-700 transition-all hover:shadow-md"
             >
               <UserPlus size={16} />
               Adauga concediu medical
@@ -505,7 +505,7 @@ const LeaveRequests = () => {
       </div>
 
       {/* Calendar View */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-xs p-6">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-gray-900 mb-1">
             Selecteaza perioada concediului
@@ -572,7 +572,7 @@ const LeaveRequests = () => {
                   ${isPast && currentMonthDay ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' : ''}
                   ${selected && !isPast && currentMonthDay ? 'bg-primary/15 border-primary shadow-md ring-2 ring-primary/20' : 'border-gray-200'}
                   ${today && !selected && currentMonthDay ? 'border-primary ring-2 ring-primary/30' : ''}
-                  ${!isPast && !selected && currentMonthDay ? 'hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm' : ''}
+                  ${!isPast && !selected && currentMonthDay ? 'hover:bg-blue-50 hover:border-blue-300 hover:shadow-xs' : ''}
                   ${isAtLimit && currentMonthDay ? 'ring-2 ring-red-300' : ''}
                 `}
               >
@@ -596,7 +596,7 @@ const LeaveRequests = () => {
                       return (
                         <div
                           key={i}
-                          className={`text-[10px] px-1.5 py-0.5 rounded font-medium truncate shadow-sm ${colorClass}`}
+                          className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium truncate shadow-xs ${colorClass}`}
                           title={`${req.employee?.firstName} ${req.employee?.lastName}`}
                         >
                           {req.employee?.firstName?.[0]}
@@ -605,7 +605,7 @@ const LeaveRequests = () => {
                       );
                     })}
                     {isAtLimit && (
-                      <div className="text-[10px] px-1.5 py-0.5 rounded bg-red-500 text-white font-bold shadow-sm">
+                      <div className="text-[10px] px-1.5 py-0.5 rounded-sm bg-red-500 text-white font-bold shadow-xs">
                         FULL
                       </div>
                     )}
@@ -632,13 +632,13 @@ const LeaveRequests = () => {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex gap-0.5">
-                <div className="w-3 h-6 rounded bg-blue-500"></div>
-                <div className="w-3 h-6 rounded bg-purple-500"></div>
+                <div className="w-3 h-6 rounded-sm bg-blue-500"></div>
+                <div className="w-3 h-6 rounded-sm bg-purple-500"></div>
               </div>
               <span className="text-gray-700 font-medium">Concedii aprobate</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-white text-[10px] font-bold shadow-sm">
+              <div className="w-6 h-6 rounded-lg bg-red-500 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
                 FULL
               </div>
               <span className="text-gray-700 font-medium">Limita atinsa (3/zi)</span>
@@ -656,7 +656,7 @@ const LeaveRequests = () => {
       </div>
 
       {/* Request History */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4">
           <h2 className="text-base font-semibold text-gray-900">Istoric cereri</h2>
         </div>
@@ -758,7 +758,7 @@ const LeaveRequests = () => {
                                 }))
                               }
                               placeholder="Notite (obligatorii pentru respingere)"
-                              className="rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                               rows={2}
                             />
                             <div className="flex gap-2">
@@ -862,7 +862,7 @@ const LeaveRequests = () => {
                             }))
                           }
                           placeholder="Notite (obligatorii pentru respingere)"
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                           rows={2}
                         />
                         <div className="flex gap-2">
@@ -931,7 +931,7 @@ const LeaveRequests = () => {
                   name="leaveType"
                   value={formData.leaveType}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                 >
                   {Object.entries(LEAVE_TYPE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
@@ -980,7 +980,7 @@ const LeaveRequests = () => {
                   name="reason"
                   value={formData.reason}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   rows={3}
                   placeholder="Explica motivul cererii tale..."
                   required
@@ -1049,7 +1049,7 @@ const LeaveRequests = () => {
                   name="employeeId"
                   value={medicalLeaveForm.employeeId}
                   onChange={handleMedicalLeaveInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   required
                 >
                   <option value="">Selecteaza angajat...</option>
@@ -1089,7 +1089,7 @@ const LeaveRequests = () => {
                   name="reason"
                   value={medicalLeaveForm.reason}
                   onChange={handleMedicalLeaveInputChange}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                   rows={3}
                   placeholder="Motivul concediului medical..."
                   required

@@ -90,12 +90,12 @@ export default function Marketplace({ basePath = '/marketplace' }) {
                 placeholder="Cauta dupa nume, serviciu sau oras..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-shadow"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-shadow"
               />
               {search && (
                 <button
                   onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-gray-100"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-sm hover:bg-gray-100"
                 >
                   <X className="h-3.5 w-3.5 text-gray-400" />
                 </button>
@@ -104,7 +104,7 @@ export default function Marketplace({ basePath = '/marketplace' }) {
           </div>
         </div>
       ) : (
-        <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white">
+        <div className="bg-linear-to-br from-primary-600 to-primary-700 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
             <div className="max-w-2xl">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
@@ -124,7 +124,7 @@ export default function Marketplace({ basePath = '/marketplace' }) {
                   placeholder="Cauta dupa nume, serviciu sau oras..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 shadow-lg"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-hidden focus:ring-2 focus:ring-white/30 shadow-lg"
                 />
                 {search && (
                   <button
@@ -195,7 +195,7 @@ export default function Marketplace({ basePath = '/marketplace' }) {
                 <button key={s.key} onClick={() => handleSectorChange(s.key)} className={cardClass}>
                   <div className="flex items-start gap-4">
                     <div
-                      className={`h-12 w-12 rounded-xl ${s.iconBg} flex items-center justify-center flex-shrink-0`}
+                      className={`h-12 w-12 rounded-xl ${s.iconBg} flex items-center justify-center shrink-0`}
                     >
                       <Icon className={`h-6 w-6 ${s.iconColor}`} />
                     </div>
@@ -239,7 +239,7 @@ export default function Marketplace({ basePath = '/marketplace' }) {
                     onClick={() => handleCityChange(cityName)}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                       isActive
-                        ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                        ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >

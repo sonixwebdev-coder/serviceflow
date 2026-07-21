@@ -38,7 +38,7 @@ const BookingWidgetBlock = ({ data, settings, isEditing = false, onClick }) => {
       onClick={onClick}
     >
       <div
-        className={cn('mx-auto bg-white rounded-lg border shadow-sm', maxWidthClasses[maxWidth])}
+        className={cn('mx-auto bg-white rounded-lg border shadow-xs', maxWidthClasses[maxWidth])}
       >
         <div className="p-6 border-b text-center">
           <h3 className="font-semibold" style={{ color: textColor }}>
@@ -95,7 +95,7 @@ const BookingWidgetBlock = ({ data, settings, isEditing = false, onClick }) => {
                 <div
                   key={i}
                   className={cn(
-                    'text-center text-sm py-2 rounded cursor-pointer',
+                    'text-center text-sm py-2 rounded-sm cursor-pointer',
                     i === 3 && 'bg-blue-600 text-white',
                     i !== 3 && 'hover:bg-gray-100'
                   )}

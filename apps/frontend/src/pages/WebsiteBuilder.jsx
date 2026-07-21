@@ -496,7 +496,7 @@ const WebsiteBuilder = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-white text-gray-900 shadow-sm'
+                    ? 'bg-white text-gray-900 shadow-xs'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -511,7 +511,7 @@ const WebsiteBuilder = () => {
             <div className="grid grid-cols-12 gap-6">
               {/* Pages Sidebar */}
               <div className="col-span-3">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div className="bg-white rounded-xl shadow-xs border border-gray-200">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                     <h3 className="text-sm font-semibold">Pagini</h3>
                     <button
@@ -539,7 +539,7 @@ const WebsiteBuilder = () => {
                             onClick={() => setSelectedPageId(page.id)}
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <FileText className="h-4 w-4 flex-shrink-0" />
+                              <FileText className="h-4 w-4 shrink-0" />
                               <span className="truncate text-sm">{page.title}</span>
                             </div>
                             <div className="flex items-center gap-1">
@@ -558,7 +558,7 @@ const WebsiteBuilder = () => {
                                     e.stopPropagation();
                                     setOpenPageMenuId(openPageMenuId === page.id ? null : page.id);
                                   }}
-                                  className="p-1 rounded hover:bg-gray-200 transition-colors"
+                                  className="p-1 rounded-sm hover:bg-gray-200 transition-colors"
                                 >
                                   <MoreVertical className="h-3 w-3" />
                                 </button>
@@ -630,7 +630,7 @@ const WebsiteBuilder = () => {
 
               {/* Editor Area */}
               <div className="col-span-9">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
                   {selectedPage ? (
                     <div className="h-[calc(100vh-250px)]">
                       {/* Editor Header */}
@@ -652,7 +652,7 @@ const WebsiteBuilder = () => {
                                 }
                               }}
                               autoFocus
-                              className="font-semibold text-lg px-2 py-1 border border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                              className="font-semibold text-lg px-2 py-1 border border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                             />
                           ) : (
                             <h2
@@ -804,7 +804,7 @@ const WebsiteBuilder = () => {
         </div>
       ) : (
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="max-w-lg w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <div className="max-w-lg w-full bg-white rounded-xl shadow-xs border border-gray-200 p-8 text-center">
             <Globe className="h-12 w-12 text-primary mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Creeaza website-ul tau</h2>
             <p className="text-gray-500 mb-6">

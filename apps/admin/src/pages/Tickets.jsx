@@ -84,7 +84,7 @@ export default function Tickets() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-gray-200/60 bg-white p-4 shadow-xs"
             >
               <div className="flex items-center gap-3">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bg}`}>
@@ -109,7 +109,7 @@ export default function Tickets() {
             placeholder="Cauta dupa subiect..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50/50 pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50/50 pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 focus:border-primary-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
           />
         </div>
         {[
@@ -148,7 +148,7 @@ export default function Tickets() {
             key={f.key}
             value={filters[f.key] || ''}
             onChange={(e) => handleFilter(f.key, e.target.value)}
-            className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-colors"
+            className="rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-700 focus:border-primary-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-colors"
           >
             {f.options.map(([val, label]) => (
               <option key={val} value={val}>
@@ -160,7 +160,7 @@ export default function Tickets() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-200/60 bg-white shadow-xs">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />

@@ -253,7 +253,7 @@ const TimeTracking = () => {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition"
+              className="bg-white rounded-xl shadow-xs border border-gray-200 p-4 hover:shadow-md transition"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -271,8 +271,8 @@ const TimeTracking = () => {
 
       {/* Employee Clock In/Out Widget */}
       {!isManagerial && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-primary to-orange-600 px-6 py-4">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+          <div className="bg-linear-to-r from-primary to-orange-600 px-6 py-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Clock size={20} />
               Schimbul meu
@@ -320,7 +320,7 @@ const TimeTracking = () => {
                           breakDuration: Number(event.target.value),
                         }))
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   <div>
@@ -338,7 +338,7 @@ const TimeTracking = () => {
                         }))
                       }
                       placeholder="ex. Locatie Centru"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -375,7 +375,7 @@ const TimeTracking = () => {
 
       {/* Filters for Managers */}
       {isManagerial && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-xs p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Filtre</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
@@ -384,7 +384,7 @@ const TimeTracking = () => {
                 name="employee"
                 value={filters.employee || ''}
                 onChange={handleFilterChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
               >
                 <option value="">Toti angajatii</option>
                 {employees.map((employee) => (
@@ -418,7 +418,7 @@ const TimeTracking = () => {
       )}
 
       {/* Time Records */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">Inregistrari pontaj</h2>
         </div>

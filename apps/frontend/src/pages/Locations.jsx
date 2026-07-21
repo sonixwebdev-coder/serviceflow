@@ -56,7 +56,7 @@ const LocationCard = ({ location, onEdit, onDelete, onManageUsers }) => {
   const status = getLocationStatus(location.operatingHours);
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-xs transition hover:shadow-md">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
@@ -276,7 +276,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
             onClick={() => setActiveTab('general')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
               activeTab === 'general'
-                ? 'bg-white text-gray-900 shadow-sm'
+                ? 'bg-white text-gray-900 shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -288,7 +288,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
             onClick={() => setActiveTab('hours')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
               activeTab === 'hours'
-                ? 'bg-white text-gray-900 shadow-sm'
+                ? 'bg-white text-gray-900 shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -300,7 +300,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
             onClick={() => setActiveTab('pricing')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
               activeTab === 'pricing'
-                ? 'bg-white text-gray-900 shadow-sm'
+                ? 'bg-white text-gray-900 shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -321,7 +321,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="ex: Sediu Central"
                     required
                   />
@@ -333,7 +333,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="ex: Str. Exemplu nr. 10"
                   />
                 </div>
@@ -344,7 +344,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="ex: Bucuresti"
                   />
                 </div>
@@ -355,7 +355,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="text"
                     value={formData.county}
                     onChange={(e) => setFormData({ ...formData, county: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="ex: Ilfov"
                   />
                 </div>
@@ -366,7 +366,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="ex: 0721234567"
                   />
                 </div>
@@ -377,7 +377,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="ex: contact@locatie.ro"
                   />
                 </div>
@@ -389,7 +389,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                     type="checkbox"
                     checked={formData.isActive}
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    className="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary"
                   />
                   <span className="text-sm text-gray-700">Locatie activa</span>
                 </label>
@@ -400,7 +400,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                       type="checkbox"
                       checked={formData.isPrimary}
                       onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      className="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary"
                     />
                     <span className="text-sm text-gray-700">Seteaza ca principala</span>
                   </label>
@@ -428,7 +428,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                         type="checkbox"
                         checked={dayHours.isOpen}
                         onChange={(e) => updateOperatingHours(key, 'isOpen', e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary"
                       />
                       <span
                         className={`text-sm font-medium ${dayHours.isOpen ? 'text-gray-900' : 'text-gray-400'}`}
@@ -486,7 +486,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                         },
                       }))
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="100"
                   />
                   <p className="mt-1 text-xs text-gray-500">
@@ -516,7 +516,7 @@ const LocationModal = ({ location, onClose, onSave, isSaving }) => {
                         },
                       }))
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
                     placeholder="1.0"
                   />
                   <p className="mt-1 text-xs text-gray-500">
@@ -645,7 +645,7 @@ const UserAssignmentModal = ({ location, onClose }) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cauta utilizatori..."
-            className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
           />
         </div>
 
@@ -823,7 +823,7 @@ const Locations = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cauta locatii..."
-          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
         />
       </div>
 

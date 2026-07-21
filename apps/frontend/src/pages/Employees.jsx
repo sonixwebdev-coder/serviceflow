@@ -352,7 +352,7 @@ const Employees = () => {
             name="firstName"
             value={formState.firstName}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             placeholder="Ion"
             required
           />
@@ -363,7 +363,7 @@ const Employees = () => {
             name="lastName"
             value={formState.lastName}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             placeholder="Popescu"
             required
           />
@@ -377,7 +377,7 @@ const Employees = () => {
           name="email"
           value={formState.email}
           onChange={handleInputChange}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
           placeholder="ion.popescu@exemplu.ro"
           required
         />
@@ -390,7 +390,7 @@ const Employees = () => {
             name="phoneNumber"
             value={formState.phoneNumber}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             placeholder="+40712345678"
             required
           />
@@ -414,7 +414,7 @@ const Employees = () => {
             name="role"
             value={formState.role}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
           >
             {roles.map((role) => (
               <option key={role} value={role}>
@@ -432,7 +432,7 @@ const Employees = () => {
             name="password"
             value={formState.password}
             onChange={handleInputChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
             placeholder={modalMode === 'create' ? 'Parola temporara' : 'Lasa gol pentru a pastra'}
             required={modalMode === 'create'}
           />
@@ -459,7 +459,7 @@ const Employees = () => {
                     type="checkbox"
                     checked={formState.locationIds.includes(location.id)}
                     onChange={(e) => handleLocationToggle(location.id, e.target.checked)}
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                    className="rounded-sm border-gray-300 text-primary focus:ring-primary"
                   />
                   <span className="flex-1 text-sm text-gray-700">{location.name}</span>
                   {formState.locationIds.includes(location.id) && (
@@ -510,7 +510,7 @@ const Employees = () => {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-all hover:shadow-md"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-primary/90 transition-all hover:shadow-md"
             >
               <UserPlus size={16} />
               Adauga angajat
@@ -529,7 +529,7 @@ const Employees = () => {
             name="role"
             value={filters.role || ''}
             onChange={handleFilterChange}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           >
             <option value="">Toate</option>
             {roles.map((role) => (
@@ -548,7 +548,7 @@ const Employees = () => {
             name="isActive"
             value={filters.isActive?.toString() ?? 'true'}
             onChange={handleFilterChange}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20 transition-all"
           >
             <option value="true">Activ</option>
             <option value="false">Inactiv</option>
@@ -557,7 +557,7 @@ const Employees = () => {
       </div>
 
       {/* Team Directory */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
         {/* Desktop Table */}
         <div className="hidden lg:block overflow-x-auto">
           {loading ? (
@@ -606,7 +606,7 @@ const Employees = () => {
                     <tr key={employee._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <div className="shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-sm font-semibold text-primary">
                               {employee.firstName?.[0]}
                               {employee.lastName?.[0]}
@@ -748,7 +748,7 @@ const Employees = () => {
                   <div key={employee._id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-base font-semibold text-primary">
                             {employee.firstName?.[0]}
                             {employee.lastName?.[0]}

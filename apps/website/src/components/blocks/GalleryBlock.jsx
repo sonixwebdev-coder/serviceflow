@@ -94,7 +94,7 @@ export default function GalleryBlock({ data }) {
       {/* Lightbox */}
       {lightboxOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center"
           onClick={closeLightbox}
         >
           <button

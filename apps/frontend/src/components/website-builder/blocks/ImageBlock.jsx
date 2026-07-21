@@ -11,9 +11,9 @@ const widthClasses = {
 const aspectRatioClasses = {
   auto: '',
   '1:1': 'aspect-square',
-  '4:3': 'aspect-[4/3]',
+  '4:3': 'aspect-4/3',
   '16:9': 'aspect-video',
-  '21:9': 'aspect-[21/9]',
+  '21:9': 'aspect-21/9',
 };
 
 const ImageBlock = ({ data, settings, isEditing = false, onClick }) => {
