@@ -6,7 +6,7 @@
   "apps/backend/src/services/analyticsService.js": 1120,
   "apps/backend/src/services/appointmentService.js": 1439,
   "apps/backend/src/services/chatService.js": 824,
-  "apps/backend/src/services/email/emailService.js": 2168,
+  "apps/backend/src/services/email/emailService.js": 2167,
   "apps/backend/src/services/exportService.js": 1425,
   "apps/backend/src/services/google/googleCalendarService.js": 709,
   "apps/backend/src/services/invoiceService.js": 1306,

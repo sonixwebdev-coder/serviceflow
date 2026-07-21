@@ -1,4 +1,4 @@
-const { Decimal } = require('@prisma/client/runtime/library');
+const { Decimal } = require('@prisma/client');
 
 const decimalToNumber = (value) => {
   if (value === null || typeof value === 'undefined') {

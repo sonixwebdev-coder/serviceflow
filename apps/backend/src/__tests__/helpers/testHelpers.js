@@ -37,8 +37,8 @@ const createMockNext = () => jest.fn();
  * Helper to extract validation errors from Zod error
  */
 const extractValidationErrors = (zodError) => {
-  if (!zodError.errors) return [];
-  return zodError.errors.map((err) => ({
+  if (!zodError.issues) return [];
+  return zodError.issues.map((err) => ({
     path: err.path.join('.'),
     message: err.message,
   }));

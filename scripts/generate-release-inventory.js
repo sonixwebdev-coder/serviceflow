@@ -8,6 +8,7 @@ const outputDirectory = resolve(repositoryRoot, 'build/release');
 
 export const LICENSE_OVERRIDES = Object.freeze({
   'busboy@1.6.0': { licenses: ['MIT'], evidence: 'legacy package licenses metadata' },
+  'cldrjs@0.5.5': { licenses: ['MIT'], evidence: 'bundled LICENSE-MIT file' },
   'globalize@0.1.1': { licenses: ['MIT'], evidence: 'legacy package licenses metadata' },
   'streamsearch@1.1.0': { licenses: ['MIT'], evidence: 'legacy package licenses metadata' },
   'url-template@2.0.8': {

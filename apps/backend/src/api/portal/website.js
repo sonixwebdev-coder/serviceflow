@@ -1,5 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = rateLimit;
 const router = express.Router();
 const asyncHandler = require('../../middleware/asyncHandler');
 const validate = require('../../middleware/validate');
@@ -25,7 +26,7 @@ const leadSubmissionLimiter = rateLimit({
   message: { success: false, message: 'Prea multe incercari. Va rugam asteptati 15 minute.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `${req.ip}_${req.params.subdomain}`,
+  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}_${req.params.subdomain}`,
 });
 
 /**
@@ -124,7 +125,7 @@ const reviewSubmissionLimiter = rateLimit({
   message: { success: false, message: 'Prea multe recenzii. Va rugam asteptati o ora.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `review_${req.ip}_${req.params.subdomain}`,
+  keyGenerator: (req) => `review_${ipKeyGenerator(req.ip)}_${req.params.subdomain}`,
 });
 
 /**

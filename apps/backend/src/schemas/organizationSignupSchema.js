@@ -61,12 +61,22 @@ const signupSchema = z
       message: 'Domeniul de activitate este invalid',
     }),
     plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).default('PROFESSIONAL'),
-    vatNumber: safeString(20).pipe(z.string().min(1, 'CUI-ul este obligatoriu')),
+    vatNumber: safeString(20)
+      .pipe(z.string().min(1, 'CUI-ul este obligatoriu'))
+      .superRefine((value, context) => {
+        const checksumResult = validateCuiChecksum(value);
+        if (!checksumResult.valid) {
+          context.addIssue({
+            code: 'custom',
+            message: checksumResult.error,
+          });
+        }
+      }),
     companyAddress: safeString(500).pipe(z.string().min(1, 'Adresa companiei este obligatorie')),
     companyEmail: emailSchema,
     companyPhone: phoneSchema,
     entityType: z.enum(['SRL', 'PFA'], {
-      errorMap: () => ({ message: 'Tipul entitatii trebuie sa fie SRL sau PFA' }),
+      error: 'Tipul entitatii trebuie sa fie SRL sau PFA',
     }),
     registrationNumber: safeString(50).optional().or(z.literal('')),
     cnp: z
@@ -76,17 +86,7 @@ const signupSchema = z
       .optional()
       .or(z.literal('')),
   })
-  .strict()
-  .superRefine((data, context) => {
-    const checksumResult = validateCuiChecksum(data.vatNumber);
-    if (!checksumResult.valid) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: checksumResult.error,
-        path: ['vatNumber'],
-      });
-    }
-  });
+  .strict();
 
 const slugSchema = z.object({
   slug: z

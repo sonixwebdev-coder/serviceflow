@@ -12,7 +12,7 @@ const uuidSchema = z.string().uuid('Invalid UUID format').optional();
 // Export format validation
 const formatSchema = z
   .enum(['csv', 'excel', 'json', 'xml'], {
-    errorMap: () => ({ message: 'Format must be one of: csv, excel, json, xml' }),
+    error: 'Format must be one of: csv, excel, json, xml',
   })
   .optional()
   .default('excel');

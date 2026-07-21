@@ -35,7 +35,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const parsed = portalLoginSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { email, password } = parsed.data;
 
@@ -61,7 +61,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const parsed = portalRegisterSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { email, password, clientId, referralCode } = parsed.data;
 
@@ -278,7 +278,7 @@ router.post(
     const schema = z.object({ token: z.string().min(1), password: passwordSchema });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
 
     await portalAuthService.resetPassword(prisma, {
@@ -301,7 +301,7 @@ router.post(
     const schema = z.object({ currentPassword: z.string().min(1), newPassword: passwordSchema });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
 
     await portalAuthService.changePassword(prisma, {
